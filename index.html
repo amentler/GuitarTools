@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Gitarren-Lerntools</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <!-- HAUPTMENÜ                                                               -->
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <section id="view-menu" class="view">
+    <header class="menu-header">
+      <h1 class="menu-title">🎸 Gitarren-Lerntools</h1>
+      <p class="menu-subtitle">Wähle eine Übung</p>
+    </header>
+
+    <div class="menu-cards">
+      <article class="exercise-card">
+        <div class="card-icon">🎯</div>
+        <h2 class="card-title">Griffbrett: Töne erkennen</h2>
+        <p class="card-desc">
+          Ein Punkt auf dem Griffbrett wird markiert. Bestimme den richtigen Ton
+          aus allen 12 Halbtönen.
+        </p>
+        <button id="btn-start-fretboard" class="btn-start">Starten</button>
+      </article>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <!-- GRIFFBRETT-ÜBUNG                                                        -->
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <section id="view-fretboard" class="view">
+
+    <div class="exercise-header">
+      <button id="btn-back" class="btn-back">← Zurück zum Menü</button>
+      <div class="score-display">
+        Richtig: <span id="score-correct">0</span> von <span id="score-total">0</span>
+      </div>
+    </div>
+
+    <!-- SVG Griffbrett -->
+    <div id="fretboard-svg" class="fretboard-container"></div>
+
+    <!-- Frage -->
+    <p class="question-prompt">Welcher Ton ist markiert?</p>
+
+    <!-- Ton-Buttons (12 Halbtöne) -->
+    <div id="note-buttons" class="note-buttons"></div>
+
+    <!-- Feedback -->
+    <p id="feedback-text" class="feedback-text"></p>
+
+  </section>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>

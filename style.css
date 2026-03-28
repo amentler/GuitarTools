@@ -1,0 +1,279 @@
+/* === CSS Custom Properties === */
+:root {
+  --color-bg:         #1a1a2e;
+  --color-surface:    #16213e;
+  --color-card:       #0f3460;
+  --color-accent:     #e94560;
+  --color-accent-alt: #f5a623;
+  --color-text:       #eaeaea;
+  --color-text-muted: #8892a4;
+  --color-correct:    #4caf50;
+  --color-wrong:      #f44336;
+  --color-border:     #2a3a5e;
+
+  --fretboard-wood:   #3b1f0a;
+  --fretboard-fret:   #c0c0c0;
+  --fretboard-nut:    #f5e6c8;
+
+  --radius:  8px;
+  --radius-lg: 16px;
+}
+
+/* === Reset & Base === */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  height: 100%;
+}
+
+body {
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+  min-height: 100vh;
+}
+
+/* === Views === */
+.view {
+  display: none;
+  min-height: 100vh;
+}
+
+.view.active {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* === Main Menu === */
+#view-menu {
+  padding: 3rem 1rem 2rem;
+  gap: 2rem;
+}
+
+.menu-header {
+  text-align: center;
+}
+
+.menu-title {
+  font-size: clamp(1.8rem, 5vw, 3rem);
+  font-weight: 700;
+  color: var(--color-accent-alt);
+  letter-spacing: -0.02em;
+  text-shadow: 0 0 30px rgba(245, 166, 35, 0.3);
+}
+
+.menu-subtitle {
+  font-size: 1.1rem;
+  color: var(--color-text-muted);
+  margin-top: 0.5rem;
+}
+
+.menu-cards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  justify-content: center;
+  width: 100%;
+  max-width: 800px;
+}
+
+.exercise-card {
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 2rem;
+  width: 280px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  transition: transform 0.2s, border-color 0.2s;
+  cursor: default;
+}
+
+.exercise-card:hover {
+  transform: translateY(-3px);
+  border-color: var(--color-accent-alt);
+}
+
+.card-icon {
+  font-size: 2.5rem;
+}
+
+.card-title {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.card-desc {
+  font-size: 0.9rem;
+  color: var(--color-text-muted);
+  flex: 1;
+}
+
+.btn-start {
+  margin-top: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  background: var(--color-accent);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius);
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.1s;
+}
+
+.btn-start:hover {
+  background: #c73652;
+}
+
+.btn-start:active {
+  transform: scale(0.97);
+}
+
+/* === Fretboard Exercise === */
+#view-fretboard {
+  padding: 1rem;
+  gap: 1.25rem;
+  max-width: 660px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.exercise-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.btn-back {
+  background: transparent;
+  border: 1px solid var(--color-border);
+  color: var(--color-text-muted);
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius);
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: color 0.2s, border-color 0.2s;
+}
+
+.btn-back:hover {
+  color: var(--color-text);
+  border-color: var(--color-text-muted);
+}
+
+.score-display {
+  font-size: 1rem;
+  color: var(--color-text-muted);
+}
+
+.score-display span {
+  color: var(--color-accent-alt);
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+
+/* === Fretboard SVG Container === */
+.fretboard-container {
+  width: 100%;
+}
+
+.fretboard-container svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* === Question prompt === */
+.question-prompt {
+  font-size: 1rem;
+  color: var(--color-text-muted);
+  text-align: center;
+}
+
+/* === Note Buttons === */
+.note-buttons {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.btn-note {
+  padding: 0.75rem 0.25rem;
+  min-height: 48px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  color: var(--color-text);
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, transform 0.1s;
+}
+
+.btn-note:hover:not(:disabled) {
+  background: var(--color-card);
+  border-color: var(--color-accent-alt);
+}
+
+.btn-note:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+.btn-note:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.btn-note.correct {
+  background: var(--color-correct);
+  border-color: var(--color-correct);
+  color: #fff;
+}
+
+.btn-note.wrong {
+  background: var(--color-wrong);
+  border-color: var(--color-wrong);
+  color: #fff;
+}
+
+/* === Feedback Text === */
+.feedback-text {
+  min-height: 1.75rem;
+  text-align: center;
+  font-size: 1.1rem;
+  font-weight: 600;
+  transition: color 0.2s;
+}
+
+.feedback-text.correct {
+  color: var(--color-correct);
+}
+
+.feedback-text.wrong {
+  color: var(--color-wrong);
+}
+
+/* === Responsive === */
+@media (max-width: 400px) {
+  .note-buttons {
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  #view-fretboard {
+    padding: 0.75rem;
+    gap: 1rem;
+  }
+}
