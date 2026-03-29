@@ -1,6 +1,6 @@
 // App navigation – controls which view is visible
 
-import { startExercise, stopExercise } from './fretboardExercise.js';
+import { startExercise, stopExercise } from './spiele/fretboardExercise.js';
 
 const views = {
   menu:       document.getElementById('view-menu'),
