@@ -1,6 +1,6 @@
 // GuitarTools Service Worker – cache-first offline strategy
 
-const CACHE_NAME = 'guitartools-v3';
+const CACHE_NAME = 'guitartools-v4';
 
 // Derive base path from SW location so it works both at / and /GuitarTools/
 const BASE = self.location.pathname.replace('sw.js', '');
@@ -21,6 +21,7 @@ const ASSETS = [
   BASE + 'js/games/sheetMusicReading/sheetMusicReading.js',
   BASE + 'js/games/sheetMusicReading/sheetMusicLogic.js',
   BASE + 'js/games/sheetMusicReading/sheetMusicSVG.js',
+  'https://cdn.jsdelivr.net/npm/vexflow@4.2.2/build/cjs/vexflow-min.js',
 ];
 
 // Pre-cache all assets on install; wait for explicit SKIP_WAITING before activating

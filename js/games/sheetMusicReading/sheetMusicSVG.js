@@ -1,78 +1,102 @@
-// SVG score renderer – staff + optional tab below
+// SVG score renderer – VexFlow for notation, custom SVG for tab
 
-const VB_W       = 815;
-const STAFF_TOP  = 58;
-const LS         = 14;     // line spacing
-const STEP_H     = LS / 2; // 7 px per note step
-const STAFF_BOT  = STAFF_TOP + 4 * LS;  // 114  (bottom line = E4, step 0)
-const STAFF_L    = 66;
-const BAR_W      = 185;
-const STAFF_R    = STAFF_L + 4 * BAR_W; // 806
-const BEAT_SP    = 38;     // pixels between beats
+const VEXFLOW_CDN = 'https://cdn.jsdelivr.net/npm/vexflow@4.2.2/build/cjs/vexflow-min.js';
 
-const NOTE_RX    = 6;
-const NOTE_RY    = 5;
-const STEM_LEN   = 35;
-
+// Tab constants (custom SVG below VexFlow notation)
+const TAB_VB_W   = 815;
+const TAB_STAFF_L = 20;
+const TAB_STAFF_R = 805;
 const STR_SP     = 13;
 const STR_COUNT  = 6;
 
-// ── Helpers ──────────────────────────────────────────────────────────────────
-
-function el(tag, attrs = {}, text) {
+function tabEl(tag, attrs = {}, text) {
   const e = document.createElementNS('http://www.w3.org/2000/svg', tag);
   for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, String(v));
   if (text != null) e.textContent = text;
   return e;
 }
 
-function noteY(step) {
-  return STAFF_BOT - step * STEP_H;
+function noteX(bar, beat, barW, firstBarW) {
+  // First bar is wider (clef + time sig take space)
+  const x = bar === 0
+    ? firstBarW * 0.35 + beat * (firstBarW * 0.65 / 4)
+    : firstBarW + (bar - 1) * barW + barW * 0.15 + beat * (barW * 0.85 / 4);
+  return x;
 }
 
-function noteX(bar, beat) {
-  return STAFF_L + bar * BAR_W + 22 + beat * BEAT_SP;
-}
+/** Renders custom SVG tab section into tabDiv. */
+function renderTab(tabDiv, bars, totalW) {
+  tabDiv.innerHTML = '';
 
-/** Y positions of required ledger lines for notes below the staff. */
-function ledgerYs(step) {
-  const ys = [];
-  for (let s = -2; Math.abs(s) <= Math.abs(step); s -= 2) ys.push(noteY(s));
-  return ys;
-}
+  const vbH = (STR_COUNT - 1) * STR_SP + 28;
+  const svg = tabEl('svg', {
+    viewBox: `0 0 ${TAB_VB_W} ${vbH}`,
+    width: '100%',
+    height: 'auto',
+  });
 
-// ── Treble clef (SVG path approximation) ─────────────────────────────────────
-
-function drawClef(svg) {
-  const cx  = 20;
-  const gY  = STAFF_BOT - LS;        // G4 line = second from bottom
-  const top = STAFF_TOP - 10;
-  const bot = STAFF_BOT + 22;
-
-  // Simplified treble clef path
-  const d = [
-    `M ${cx} ${bot}`,
-    `C ${cx + 14} ${bot}     ${cx + 16} ${bot - 12}  ${cx}     ${STAFF_BOT - 2}`,
-    `C ${cx - 12} ${gY + 12} ${cx - 14} ${gY - 2}   ${cx}     ${gY - 2}`,
-    `C ${cx + 15} ${gY - 4}  ${cx + 17} ${gY - 20}  ${cx + 2} ${gY - 16}`,
-    `C ${cx - 10} ${gY - 12} ${cx - 13} ${gY - 36}  ${cx}     ${top + 14}`,
-    `C ${cx + 14} ${top + 2} ${cx + 15} ${top + 14} ${cx + 7} ${top + 22}`,
-  ].join(' ');
-
-  svg.appendChild(el('path', {
-    d,
-    fill: 'none',
-    stroke: 'var(--color-text)',
-    'stroke-width': 2.5,
-    'stroke-linecap': 'round',
-    'stroke-linejoin': 'round',
+  // Background
+  svg.appendChild(tabEl('rect', {
+    x: 0, y: 0, width: TAB_VB_W, height: vbH,
+    fill: 'var(--color-surface)', rx: 6,
   }));
-}
 
-// ── Public API ───────────────────────────────────────────────────────────────
+  // "T A B" label on first 3 string lines
+  for (const [char, i] of [['T', 0], ['A', 1], ['B', 2]]) {
+    svg.appendChild(tabEl('text', {
+      x: 10, y: 4 + i * STR_SP,
+      fill: 'var(--color-text-muted)', 'font-size': 11, 'font-weight': 700,
+      'text-anchor': 'middle', 'dominant-baseline': 'middle',
+    }, char));
+  }
+
+  // 6 string lines
+  for (let s = 0; s < STR_COUNT; s++) {
+    svg.appendChild(tabEl('line', {
+      x1: TAB_STAFF_L, y1: 4 + s * STR_SP,
+      x2: TAB_STAFF_R, y2: 4 + s * STR_SP,
+      stroke: 'var(--color-border)', 'stroke-width': 1,
+    }));
+  }
+
+  // Bar dividers (approximate alignment with notation above)
+  const barW = (TAB_STAFF_R - TAB_STAFF_L) / 4;
+  for (let i = 0; i <= 4; i++) {
+    const x = TAB_STAFF_L + i * barW;
+    svg.appendChild(tabEl('line', {
+      x1: x, y1: 0, x2: x, y2: (STR_COUNT - 1) * STR_SP + 8,
+      stroke: 'var(--color-border)', 'stroke-width': i === 0 || i === 4 ? 2 : 1,
+    }));
+  }
+
+  // Fret numbers – evenly spaced within each bar
+  const beatSpacing = barW / 5;
+  for (let bi = 0; bi < bars.length; bi++) {
+    for (let ni = 0; ni < bars[bi].length; ni++) {
+      const note = bars[bi][ni];
+      const x    = TAB_STAFF_L + bi * barW + beatSpacing * (ni + 1);
+      const sy   = 4 + (note.string - 1) * STR_SP;
+      const txt  = String(note.fret);
+      const bgW  = txt.length > 1 ? 16 : 12;
+
+      svg.appendChild(tabEl('rect', {
+        x: x - bgW / 2, y: sy - 6, width: bgW, height: 12,
+        fill: 'var(--color-surface)',
+      }));
+      svg.appendChild(tabEl('text', {
+        x, y: sy,
+        fill: 'var(--color-text)', 'font-size': 11, 'font-family': 'monospace',
+        'text-anchor': 'middle', 'dominant-baseline': 'middle',
+      }, txt));
+    }
+  }
+
+  tabDiv.appendChild(svg);
+}
 
 /**
- * Renders the 4-bar score into `container`.
+ * Renders the 4-bar score into container using VexFlow for notation
+ * and custom SVG for the optional tab section below.
  * @param {HTMLElement} container
  * @param {Array<Array<object>>} bars
  * @param {boolean} showTab
@@ -80,141 +104,88 @@ function drawClef(svg) {
 export function renderScore(container, bars, showTab) {
   container.innerHTML = '';
 
-  // Lowest note Y in this set of bars (depends on which notes appear)
-  let lowestNoteY = STAFF_BOT + NOTE_RY;
-  for (const bar of bars)
-    for (const note of bar)
-      lowestNoteY = Math.max(lowestNoteY, noteY(note.step) + NOTE_RY);
+  const { Renderer, Stave, StaveNote, Voice, Formatter } = window.VexFlow;
 
-  const tabTop = lowestNoteY + 18;
-  const vbH = showTab
-    ? tabTop + (STR_COUNT - 1) * STR_SP + 18
-    : lowestNoteY + 12;
+  // ── Notation section (VexFlow) ──────────────────────────────────────────
+  const notationDiv = document.createElement('div');
+  notationDiv.className = 'notation-wrapper';
+  container.appendChild(notationDiv);
 
-  const svg = el('svg', {
-    viewBox: `0 0 ${VB_W} ${vbH}`,
-    width: '100%',
-    height: 'auto',
-  });
+  const totalW   = container.clientWidth || 800;
+  const height   = 180;
+  const renderer = new Renderer(notationDiv, Renderer.Backends.SVG);
+  renderer.resize(totalW, height);
 
-  // Background
-  svg.appendChild(el('rect', {
-    x: 0, y: 0, width: VB_W, height: vbH,
-    fill: 'var(--color-surface)', rx: 8,
-  }));
+  const ctx = renderer.getContext();
 
-  // ── Staff lines ────────────────────────────────────────────────────────
-  for (let i = 0; i < 5; i++) {
-    const y = STAFF_TOP + i * LS;
-    svg.appendChild(el('line', {
-      x1: STAFF_L, y1: y, x2: STAFF_R, y2: y,
-      stroke: 'var(--color-text)', 'stroke-width': 1,
-    }));
+  // Match dark theme
+  const style  = getComputedStyle(document.documentElement);
+  const fg     = style.getPropertyValue('--color-text').trim()    || '#eaeaea';
+  const muted  = style.getPropertyValue('--color-text-muted').trim() || '#8892a4';
+  ctx.setFillStyle(fg);
+  ctx.setStrokeStyle(fg);
+  ctx.setFont('Arial', 10, '');
+
+  // Style the VexFlow SVG to match the app
+  const vfSvg = notationDiv.querySelector('svg');
+  if (vfSvg) {
+    vfSvg.style.background = 'transparent';
+    vfSvg.style.display    = 'block';
+    vfSvg.style.width      = '100%';
+    vfSvg.style.height     = 'auto';
   }
 
-  // ── Treble clef ────────────────────────────────────────────────────────
-  drawClef(svg);
+  // Layout: first bar is wider because it holds the clef + time signature
+  const firstBarW = Math.round(totalW * 0.29);
+  const restBarW  = Math.round((totalW - firstBarW) / 3);
+  const staveY    = 30;
 
-  // ── Time signature ─────────────────────────────────────────────────────
-  const tsX = STAFF_L - 20;
-  for (const [digit, row] of [['4', 1.5], ['4', 3.0]]) {
-    svg.appendChild(el('text', {
-      x: tsX, y: STAFF_TOP + LS * row,
-      fill: 'var(--color-text)', 'font-size': 17, 'font-weight': 700,
-      'text-anchor': 'middle', 'dominant-baseline': 'middle',
-    }, digit));
-  }
+  const staves = [];
+  let currentX = 0;
 
-  // ── Bar lines ──────────────────────────────────────────────────────────
-  for (let i = 0; i <= 4; i++) {
-    const x = STAFF_L + i * BAR_W;
-    svg.appendChild(el('line', {
-      x1: x, y1: STAFF_TOP, x2: x, y2: STAFF_BOT,
-      stroke: 'var(--color-text)',
-      'stroke-width': (i === 0 || i === 4) ? 2 : 1,
-    }));
-  }
-  // Double bar at end
-  svg.appendChild(el('line', {
-    x1: STAFF_R - 4, y1: STAFF_TOP, x2: STAFF_R - 4, y2: STAFF_BOT,
-    stroke: 'var(--color-text)', 'stroke-width': 4,
-  }));
-
-  // ── Notes ──────────────────────────────────────────────────────────────
   for (let bi = 0; bi < bars.length; bi++) {
-    for (let ni = 0; ni < bars[bi].length; ni++) {
-      const note = bars[bi][ni];
-      const x = noteX(bi, ni);
-      const y = noteY(note.step);
-
-      // Ledger lines below staff
-      for (const ly of ledgerYs(note.step)) {
-        svg.appendChild(el('line', {
-          x1: x - NOTE_RX - 4, y1: ly, x2: x + NOTE_RX + 4, y2: ly,
-          stroke: 'var(--color-text)', 'stroke-width': 1,
-        }));
-      }
-
-      // Note head
-      svg.appendChild(el('ellipse', {
-        cx: x, cy: y, rx: NOTE_RX, ry: NOTE_RY,
-        fill: 'var(--color-text)',
-      }));
-
-      // Stem — up for notes below B4 (step 4), down otherwise
-      const up = note.step < 4;
-      svg.appendChild(el('line', {
-        x1: up ? x + NOTE_RX : x - NOTE_RX,
-        y1: y,
-        x2: up ? x + NOTE_RX : x - NOTE_RX,
-        y2: up ? y - STEM_LEN : y + STEM_LEN,
-        stroke: 'var(--color-text)', 'stroke-width': 1.5,
-      }));
-    }
+    const w = bi === 0 ? firstBarW : restBarW;
+    const stave = new Stave(currentX, staveY, w);
+    if (bi === 0) stave.addClef('treble').addTimeSignature('4/4');
+    stave.setContext(ctx).draw();
+    staves.push(stave);
+    currentX += w;
   }
 
-  // ── Tab section ────────────────────────────────────────────────────────
+  // Close with double bar on last stave
+  staves[3].setEndBarType(3); // DOUBLE = 3
+
+  // Draw notes per bar
+  for (let bi = 0; bi < bars.length; bi++) {
+    const notes = bars[bi].map(n =>
+      new StaveNote({ clef: 'treble', keys: [n.vfKey], duration: 'q' })
+    );
+
+    const voice = new Voice({ num_beats: 4, beat_value: 4 });
+    voice.setMode(Voice.Mode.SOFT); // don't throw on beat mismatch
+    voice.addTickables(notes);
+
+    const w = bi === 0 ? firstBarW : restBarW;
+    new Formatter().joinVoices([voice]).format([voice], w - 25);
+    voice.draw(ctx, staves[bi]);
+  }
+
+  // Override VexFlow's hardcoded black fills/strokes to match theme
+  if (vfSvg) {
+    vfSvg.querySelectorAll('[fill="black"], [fill="#000000"]')
+      .forEach(el => el.setAttribute('fill', fg));
+    vfSvg.querySelectorAll('[stroke="black"], [stroke="#000000"]')
+      .forEach(el => el.setAttribute('stroke', fg));
+    // Time signature and clef labels
+    vfSvg.querySelectorAll('text')
+      .forEach(el => { if (!el.getAttribute('fill') || el.getAttribute('fill') === 'black') el.setAttribute('fill', fg); });
+  }
+
+  // ── Tab section (custom SVG) ────────────────────────────────────────────
   if (showTab) {
-    // "T A B" label on lines 0–2
-    for (const [char, i] of [['T', 0], ['A', 1], ['B', 2]]) {
-      svg.appendChild(el('text', {
-        x: 10, y: tabTop + i * STR_SP,
-        fill: 'var(--color-text-muted)', 'font-size': 11, 'font-weight': 700,
-        'text-anchor': 'middle', 'dominant-baseline': 'middle',
-      }, char));
-    }
-
-    // String lines
-    for (let s = 0; s < STR_COUNT; s++) {
-      svg.appendChild(el('line', {
-        x1: STAFF_L, y1: tabTop + s * STR_SP,
-        x2: STAFF_R, y2: tabTop + s * STR_SP,
-        stroke: 'var(--color-border)', 'stroke-width': 1,
-      }));
-    }
-
-    // Fret numbers
-    for (let bi = 0; bi < bars.length; bi++) {
-      for (let ni = 0; ni < bars[bi].length; ni++) {
-        const note = bars[bi][ni];
-        const x    = noteX(bi, ni);
-        const sy   = tabTop + (note.string - 1) * STR_SP;
-        const txt  = String(note.fret);
-        const bgW  = txt.length > 1 ? 16 : 11;
-
-        svg.appendChild(el('rect', {
-          x: x - bgW / 2, y: sy - 6, width: bgW, height: 12,
-          fill: 'var(--color-surface)',
-        }));
-        svg.appendChild(el('text', {
-          x, y: sy,
-          fill: 'var(--color-text)',
-          'font-size': 11, 'font-family': 'monospace',
-          'text-anchor': 'middle', 'dominant-baseline': 'middle',
-        }, txt));
-      }
-    }
+    const tabDiv = document.createElement('div');
+    tabDiv.className = 'tab-wrapper';
+    container.appendChild(tabDiv);
+    renderTab(tabDiv, bars, totalW);
   }
-
-  container.appendChild(svg);
 }
