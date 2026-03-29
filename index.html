@@ -162,28 +162,64 @@
       btn.textContent = '…';
       btn.disabled = true;
 
-      try {
-        if (!swReg) swReg = await navigator.serviceWorker.getRegistration('./sw.js');
+      function done(text) {
+        btn.textContent = text;
+        setTimeout(() => { btn.textContent = '⟳ Aktualisieren'; btn.disabled = false; }, 2000);
+      }
 
-        if (!swReg) {
-          btn.textContent = '✓ Aktuell';
-          setTimeout(() => { btn.textContent = '⟳ Aktualisieren'; btn.disabled = false; }, 2000);
-          return;
-        }
+      function activate(worker) {
+        navigator.serviceWorker.addEventListener(
+          'controllerchange', () => window.location.reload(), { once: true }
+        );
+        worker.postMessage({ type: 'SKIP_WAITING' });
+      }
+
+      try {
+        if (!swReg) swReg = await navigator.serviceWorker.getRegistration('./');
+        if (!swReg) { done('✓ Aktuell'); return; }
+
+        // A waiting SW from a previous update cycle → activate immediately
+        if (swReg.waiting) { activate(swReg.waiting); return; }
+
+        // Register updatefound listener BEFORE calling update() so we don't
+        // miss the event in Firefox where update() can resolve very quickly.
+        const updateFoundPromise = new Promise(resolve => {
+          swReg.addEventListener('updatefound', () => resolve(swReg.installing), { once: true });
+        });
 
         await swReg.update();
 
-        const sw = swReg.installing || swReg.waiting;
-        if (sw) {
-          navigator.serviceWorker.addEventListener('controllerchange', () => window.location.reload());
-          sw.postMessage({ type: 'SKIP_WAITING' });
+        // update() may have surfaced a waiting SW without firing updatefound
+        if (swReg.waiting) { activate(swReg.waiting); return; }
+
+        // Wait up to 8 s for a new SW to start installing (or give up = already current)
+        const installing = await Promise.race([
+          updateFoundPromise,
+          new Promise(resolve => setTimeout(() => resolve(null), 8000)),
+        ]);
+
+        if (!installing) { done('✓ Aktuell'); return; }
+
+        // Wait for the installing SW to finish (installed or redundant = install failed)
+        await new Promise(resolve => {
+          if (installing.state === 'installed' || installing.state === 'redundant') {
+            resolve(); return;
+          }
+          installing.addEventListener('statechange', function h() {
+            if (installing.state === 'installed' || installing.state === 'redundant') {
+              installing.removeEventListener('statechange', h);
+              resolve();
+            }
+          });
+        });
+
+        if (installing.state === 'installed') {
+          activate(installing);
         } else {
-          btn.textContent = '✓ Aktuell';
-          setTimeout(() => { btn.textContent = '⟳ Aktualisieren'; btn.disabled = false; }, 2000);
+          done('✗ Fehler'); // install failed (e.g. fetch error)
         }
       } catch {
-        btn.textContent = '✗ Fehler';
-        setTimeout(() => { btn.textContent = '⟳ Aktualisieren'; btn.disabled = false; }, 2000);
+        done('✗ Fehler');
       }
     });
   </script>

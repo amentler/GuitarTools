@@ -6,8 +6,8 @@ import { Renderer, Stave, StaveNote, Voice, Formatter } from 'https://cdn.jsdeli
 // Using a wider-than-screen virtual width makes notes appear smaller on screen
 // while keeping VexFlow's default coordinate system intact.
 const VW      = 1000;  // virtual canvas width
-const VH      = 220;   // virtual canvas height
-const STAVE_Y = 85;    // y of top staff line (leaves room for clef curl above)
+const VH      = 170;   // virtual canvas height (reduced to keep notes compact)
+const STAVE_Y = 60;    // y of top staff line
 
 // First bar is wider to accommodate clef + time signature glyphs.
 const FIRST_BAR_RATIO = 0.27;
@@ -117,15 +117,20 @@ export function renderScore(container, bars, showTab) {
   ctx.setFillStyle(fg);
   ctx.setStrokeStyle(fg);
 
-  // Make SVG responsive: fix viewBox so CSS `width:100%; height:auto` scales correctly
+  // Make SVG responsive.
+  // Set both attribute AND inline style — Firefox ignores CSS height:auto on SVG
+  // when a pixel height attribute is present, so we must override both.
   const vfSvg = notationDiv.querySelector('svg');
-  if (vfSvg) {
+  const applyResponsive = () => {
+    if (!vfSvg) return;
     vfSvg.setAttribute('viewBox', `0 0 ${VW} ${VH}`);
     vfSvg.setAttribute('width', '100%');
-    vfSvg.removeAttribute('height');
-    vfSvg.style.display = 'block';
+    vfSvg.setAttribute('height', 'auto');
+    vfSvg.style.width   = '100%';
     vfSvg.style.height  = 'auto';
-  }
+    vfSvg.style.display = 'block';
+  };
+  applyResponsive();
 
   // ── Draw staves ─────────────────────────────────────────────────────────
   const staves = [];
@@ -161,6 +166,10 @@ export function renderScore(container, bars, showTab) {
     new Formatter().joinVoices([voice]).format([voice], w * 0.7);
     voice.draw(ctx, staves[bi]);
   }
+
+  // Re-apply responsive attributes after VexFlow finishes drawing
+  // (VexFlow may reset width/height during render)
+  applyResponsive();
 
   // ── Override VexFlow's hardcoded black to match dark theme ──────────────
   if (vfSvg) {
