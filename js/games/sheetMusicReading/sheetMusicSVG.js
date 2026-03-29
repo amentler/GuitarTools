@@ -2,12 +2,24 @@
 
 import { Renderer, Stave, StaveNote, Voice, Formatter } from 'https://cdn.jsdelivr.net/npm/vexflow@4.2.2/+esm';
 
+// Fixed virtual canvas – CSS scales this to the actual container width.
+// Using a wider-than-screen virtual width makes notes appear smaller on screen
+// while keeping VexFlow's default coordinate system intact.
+const VW      = 1000;  // virtual canvas width
+const VH      = 220;   // virtual canvas height
+const STAVE_Y = 85;    // y of top staff line (leaves room for clef curl above)
+
+// First bar is wider to accommodate clef + time signature glyphs.
+const FIRST_BAR_RATIO = 0.27;
+const FIRST_BAR_W     = Math.round(VW * FIRST_BAR_RATIO);
+const REST_BAR_W      = Math.round((VW - FIRST_BAR_W) / 3);
+
 // Tab constants (custom SVG below VexFlow notation)
-const TAB_VB_W   = 815;
+const TAB_VB_W    = 900;
 const TAB_STAFF_L = 20;
-const TAB_STAFF_R = 805;
-const STR_SP     = 13;
-const STR_COUNT  = 6;
+const TAB_STAFF_R = 885;
+const STR_SP      = 13;
+const STR_COUNT   = 6;
 
 function tabEl(tag, attrs = {}, text) {
   const e = document.createElementNS('http://www.w3.org/2000/svg', tag);
@@ -16,16 +28,7 @@ function tabEl(tag, attrs = {}, text) {
   return e;
 }
 
-function noteX(bar, beat, barW, firstBarW) {
-  // First bar is wider (clef + time sig take space)
-  const x = bar === 0
-    ? firstBarW * 0.35 + beat * (firstBarW * 0.65 / 4)
-    : firstBarW + (bar - 1) * barW + barW * 0.15 + beat * (barW * 0.85 / 4);
-  return x;
-}
-
-/** Renders custom SVG tab section into tabDiv. */
-function renderTab(tabDiv, bars, totalW) {
+function renderTab(tabDiv, bars) {
   tabDiv.innerHTML = '';
 
   const vbH = (STR_COUNT - 1) * STR_SP + 28;
@@ -35,13 +38,11 @@ function renderTab(tabDiv, bars, totalW) {
     height: 'auto',
   });
 
-  // Background
   svg.appendChild(tabEl('rect', {
     x: 0, y: 0, width: TAB_VB_W, height: vbH,
     fill: 'var(--color-surface)', rx: 6,
   }));
 
-  // "T A B" label on first 3 string lines
   for (const [char, i] of [['T', 0], ['A', 1], ['B', 2]]) {
     svg.appendChild(tabEl('text', {
       x: 10, y: 4 + i * STR_SP,
@@ -50,7 +51,6 @@ function renderTab(tabDiv, bars, totalW) {
     }, char));
   }
 
-  // 6 string lines
   for (let s = 0; s < STR_COUNT; s++) {
     svg.appendChild(tabEl('line', {
       x1: TAB_STAFF_L, y1: 4 + s * STR_SP,
@@ -59,7 +59,6 @@ function renderTab(tabDiv, bars, totalW) {
     }));
   }
 
-  // Bar dividers (approximate alignment with notation above)
   const barW = (TAB_STAFF_R - TAB_STAFF_L) / 4;
   for (let i = 0; i <= 4; i++) {
     const x = TAB_STAFF_L + i * barW;
@@ -69,7 +68,6 @@ function renderTab(tabDiv, bars, totalW) {
     }));
   }
 
-  // Fret numbers – evenly spaced within each bar
   const beatSpacing = barW / 5;
   for (let bi = 0; bi < bars.length; bi++) {
     for (let ni = 0; ni < bars[bi].length; ni++) {
@@ -109,74 +107,72 @@ export function renderScore(container, bars, showTab) {
   notationDiv.className = 'notation-wrapper';
   container.appendChild(notationDiv);
 
-  const totalW   = container.clientWidth || 800;
-  const height   = 180;
   const renderer = new Renderer(notationDiv, Renderer.Backends.SVG);
-  renderer.resize(totalW, height);
-
+  renderer.resize(VW, VH);
   const ctx = renderer.getContext();
 
   // Match dark theme
-  const style  = getComputedStyle(document.documentElement);
-  const fg     = style.getPropertyValue('--color-text').trim()    || '#eaeaea';
-  const muted  = style.getPropertyValue('--color-text-muted').trim() || '#8892a4';
+  const style = getComputedStyle(document.documentElement);
+  const fg    = style.getPropertyValue('--color-text').trim() || '#eaeaea';
   ctx.setFillStyle(fg);
   ctx.setStrokeStyle(fg);
-  ctx.setFont('Arial', 10, '');
 
-  // Style the VexFlow SVG to match the app
+  // Make SVG responsive: fix viewBox so CSS `width:100%; height:auto` scales correctly
   const vfSvg = notationDiv.querySelector('svg');
   if (vfSvg) {
-    vfSvg.style.background = 'transparent';
-    vfSvg.style.display    = 'block';
-    vfSvg.style.width      = '100%';
-    vfSvg.style.height     = 'auto';
+    vfSvg.setAttribute('viewBox', `0 0 ${VW} ${VH}`);
+    vfSvg.setAttribute('width', '100%');
+    vfSvg.removeAttribute('height');
+    vfSvg.style.display = 'block';
+    vfSvg.style.height  = 'auto';
   }
 
-  // Layout: first bar is wider because it holds the clef + time signature
-  const firstBarW = Math.round(totalW * 0.29);
-  const restBarW  = Math.round((totalW - firstBarW) / 3);
-  const staveY    = 30;
-
+  // ── Draw staves ─────────────────────────────────────────────────────────
   const staves = [];
-  let currentX = 0;
+  let x = 0;
 
   for (let bi = 0; bi < bars.length; bi++) {
-    const w = bi === 0 ? firstBarW : restBarW;
-    const stave = new Stave(currentX, staveY, w);
+    const w     = bi === 0 ? FIRST_BAR_W : REST_BAR_W;
+    const stave = new Stave(x, STAVE_Y, w);
+
     if (bi === 0) stave.addClef('treble').addTimeSignature('4/4');
+    if (bi === bars.length - 1) {
+      // End barline – wrap in try/catch since enum values differ across VF versions
+      try { stave.setEndBarType(3); } catch (_) {}
+    }
+
     stave.setContext(ctx).draw();
     staves.push(stave);
-    currentX += w;
+    x += w;
   }
 
-  // Close with double bar on last stave
-  staves[3].setEndBarType(3); // DOUBLE = 3
-
-  // Draw notes per bar
+  // ── Draw notes per bar ──────────────────────────────────────────────────
   for (let bi = 0; bi < bars.length; bi++) {
     const notes = bars[bi].map(n =>
       new StaveNote({ clef: 'treble', keys: [n.vfKey], duration: 'q' })
     );
 
     const voice = new Voice({ num_beats: 4, beat_value: 4 });
-    voice.setMode(Voice.Mode.SOFT); // don't throw on beat mismatch
+    try { voice.setMode(Voice.Mode.SOFT); } catch (_) {}
     voice.addTickables(notes);
 
-    const w = bi === 0 ? firstBarW : restBarW;
-    new Formatter().joinVoices([voice]).format([voice], w - 25);
+    const w = bi === 0 ? FIRST_BAR_W : REST_BAR_W;
+    // Use w*0.7 as formatter width → notes cluster more tightly within each bar
+    new Formatter().joinVoices([voice]).format([voice], w * 0.7);
     voice.draw(ctx, staves[bi]);
   }
 
-  // Override VexFlow's hardcoded black fills/strokes to match theme
+  // ── Override VexFlow's hardcoded black to match dark theme ──────────────
   if (vfSvg) {
-    vfSvg.querySelectorAll('[fill="black"], [fill="#000000"]')
+    vfSvg.querySelectorAll('[fill="black"],[fill="#000000"]')
       .forEach(el => el.setAttribute('fill', fg));
-    vfSvg.querySelectorAll('[stroke="black"], [stroke="#000000"]')
+    vfSvg.querySelectorAll('[stroke="black"],[stroke="#000000"]')
       .forEach(el => el.setAttribute('stroke', fg));
-    // Time signature and clef labels
     vfSvg.querySelectorAll('text')
-      .forEach(el => { if (!el.getAttribute('fill') || el.getAttribute('fill') === 'black') el.setAttribute('fill', fg); });
+      .forEach(el => {
+        const f = el.getAttribute('fill');
+        if (!f || f === 'black' || f === '#000000') el.setAttribute('fill', fg);
+      });
   }
 
   // ── Tab section (custom SVG) ────────────────────────────────────────────
@@ -184,6 +180,6 @@ export function renderScore(container, bars, showTab) {
     const tabDiv = document.createElement('div');
     tabDiv.className = 'tab-wrapper';
     container.appendChild(tabDiv);
-    renderTab(tabDiv, bars, totalW);
+    renderTab(tabDiv, bars);
   }
 }
