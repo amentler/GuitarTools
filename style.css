@@ -367,6 +367,42 @@ input[type="range"] {
 }
 
 /* === Tuner View === */
+/* === Sheet Music Reading === */
+#view-sheet-music {
+  padding: 1rem;
+  gap: 1rem;
+  max-width: 840px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.score-container {
+  width: 100%;
+}
+
+.score-container svg {
+  width: 100%;
+  height: auto;
+  display: block;
+  border-radius: var(--radius);
+}
+
+.btn-new-bars {
+  padding: 0.6rem 1.6rem;
+  background: var(--color-accent);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius);
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.1s;
+}
+
+.btn-new-bars:hover  { background: #c73652; }
+.btn-new-bars:active { transform: scale(0.97); }
+
+/* === Tuner View === */
 #view-tuner {
   padding: 1rem;
   gap: 1.25rem;

@@ -1,6 +1,6 @@
 // GuitarTools Service Worker – cache-first offline strategy
 
-const CACHE_NAME = 'guitartools-v2';
+const CACHE_NAME = 'guitartools-v3';
 
 // Derive base path from SW location so it works both at / and /GuitarTools/
 const BASE = self.location.pathname.replace('sw.js', '');
@@ -18,6 +18,9 @@ const ASSETS = [
   BASE + 'js/tools/guitarTuner/guitarTuner.js',
   BASE + 'js/tools/guitarTuner/tunerLogic.js',
   BASE + 'js/tools/guitarTuner/tunerSVG.js',
+  BASE + 'js/games/sheetMusicReading/sheetMusicReading.js',
+  BASE + 'js/games/sheetMusicReading/sheetMusicLogic.js',
+  BASE + 'js/games/sheetMusicReading/sheetMusicSVG.js',
 ];
 
 // Pre-cache all assets on install; wait for explicit SKIP_WAITING before activating
