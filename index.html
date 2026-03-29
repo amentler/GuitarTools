@@ -27,6 +27,16 @@
         </p>
         <button id="btn-start-fretboard" class="btn-start">Starten</button>
       </article>
+
+      <article class="exercise-card">
+        <div class="card-icon">🎵</div>
+        <h2 class="card-title">Gitarren-Stimmgerät</h2>
+        <p class="card-desc">
+          Stimme deine Gitarre mit dem Mikrofon deines Geräts. Zeiger links = zu
+          tief, rechts = zu hoch, Mitte = perfekt.
+        </p>
+        <button id="btn-start-tuner" class="btn-start">Starten</button>
+      </article>
     </div>
   </section>
 
@@ -82,6 +92,28 @@
         </div>
       </div>
     </div>
+
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <!-- STIMMGERÄT                                                              -->
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <section id="view-tuner" class="view">
+
+    <!-- Header: Zurück + Modus-Toggle -->
+    <div class="exercise-header" id="tuner-header">
+      <button id="btn-back-tuner" class="btn-back">← Zurück zum Menü</button>
+      <div class="tuner-mode-toggle">
+        <button id="btn-mode-standard" class="btn-mode active">Standard</button>
+        <button id="btn-mode-chromatic" class="btn-mode">Chromatisch</button>
+      </div>
+    </div>
+
+    <!-- Mikrofon-Berechtigung / Fehler -->
+    <p id="tuner-permission" class="tuner-permission" style="display:none"></p>
+
+    <!-- SVG Stimmgerät -->
+    <div id="tuner-display" class="tuner-container"></div>
 
   </section>
 

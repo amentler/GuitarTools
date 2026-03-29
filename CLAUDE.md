@@ -11,15 +11,21 @@ A static web app for learning guitar, running directly on GitHub Pages without a
 ## Project Structure
 
 ```
-index.html          – Main HTML, contains all views (#view-menu, #view-fretboard)
+index.html          – Main HTML, contains all views (#view-menu, #view-fretboard, #view-tuner)
 style.css           – Global styles and CSS Custom Properties
 js/
-├── app.js          – View navigation (menu ↔ exercises)
-└── games/          – Self-contained interactive games/exercises
-    └── fretboardToneRecognition/
-        ├── fretboardExercise.js  – Exercise state & DOM interaction
-        ├── fretboardLogic.js     – Pure note calculation utilities
-        ├── fretboardSVG.js       – SVG fretboard rendering
+├── app.js          – View navigation (menu ↔ exercises/tools)
+├── games/          – Self-contained interactive games/exercises
+│   └── fretboardToneRecognition/
+│       ├── fretboardExercise.js  – Exercise state & DOM interaction
+│       ├── fretboardLogic.js     – Pure note calculation utilities
+│       ├── fretboardSVG.js       – SVG fretboard rendering
+│       └── CLAUDE.md
+└── tools/          – Standalone tools (no scoring, utility-focused)
+    └── guitarTuner/
+        ├── guitarTuner.js  – Main controller, mic access, audio loop
+        ├── tunerLogic.js   – Pitch detection, frequency→note utilities
+        ├── tunerSVG.js     – SVG gauge rendering
         └── CLAUDE.md
 ```
 
