@@ -1,7 +1,7 @@
 // Fretboard exercise – state management & DOM interaction
 
-import { CHROMATIC_NOTES, getNoteAtPosition, getRandomPosition } from '../tools/fretboardLogic.js';
-import { renderFretboard } from '../tools/fretboardSVG.js';
+import { CHROMATIC_NOTES, getNoteAtPosition, getRandomPosition } from './fretboardLogic.js';
+import { renderFretboard } from './fretboardSVG.js';
 
 // ── Module-level flags ────────────────────────────────────────────────────────
 let settingsWired = false;
