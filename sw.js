@@ -1,6 +1,6 @@
 // GuitarTools Service Worker – cache-first offline strategy
 
-const CACHE_NAME = 'guitartools-v1';
+const CACHE_NAME = 'guitartools-v2';
 
 // Derive base path from SW location so it works both at / and /GuitarTools/
 const BASE = self.location.pathname.replace('sw.js', '');
@@ -20,12 +20,16 @@ const ASSETS = [
   BASE + 'js/tools/guitarTuner/tunerSVG.js',
 ];
 
-// Pre-cache all assets on install
+// Pre-cache all assets on install; wait for explicit SKIP_WAITING before activating
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS))
   );
-  self.skipWaiting();
+});
+
+// Page sends this when the user taps the update button
+self.addEventListener('message', event => {
+  if (event.data?.type === 'SKIP_WAITING') self.skipWaiting();
 });
 
 // Remove old caches on activate

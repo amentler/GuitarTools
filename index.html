@@ -21,6 +21,7 @@
     <header class="menu-header">
       <h1 class="menu-title">🎸 Gitarren-Lerntools</h1>
       <p class="menu-subtitle">Wähle eine Übung</p>
+      <button id="btn-update" class="btn-update">⟳ Aktualisieren</button>
     </header>
 
     <div class="menu-cards">
@@ -125,11 +126,43 @@
 
   <script type="module" src="js/app.js"></script>
   <script>
+    let swReg = null;
+
     if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js');
+      window.addEventListener('load', async () => {
+        swReg = await navigator.serviceWorker.register('./sw.js');
       });
     }
+
+    document.getElementById('btn-update').addEventListener('click', async () => {
+      const btn = document.getElementById('btn-update');
+      btn.textContent = '…';
+      btn.disabled = true;
+
+      try {
+        if (!swReg) swReg = await navigator.serviceWorker.getRegistration('./sw.js');
+
+        if (!swReg) {
+          btn.textContent = '✓ Aktuell';
+          setTimeout(() => { btn.textContent = '⟳ Aktualisieren'; btn.disabled = false; }, 2000);
+          return;
+        }
+
+        await swReg.update();
+
+        const sw = swReg.installing || swReg.waiting;
+        if (sw) {
+          navigator.serviceWorker.addEventListener('controllerchange', () => window.location.reload());
+          sw.postMessage({ type: 'SKIP_WAITING' });
+        } else {
+          btn.textContent = '✓ Aktuell';
+          setTimeout(() => { btn.textContent = '⟳ Aktualisieren'; btn.disabled = false; }, 2000);
+        }
+      } catch {
+        btn.textContent = '✗ Fehler';
+        setTimeout(() => { btn.textContent = '⟳ Aktualisieren'; btn.disabled = false; }, 2000);
+      }
+    });
   </script>
 </body>
 </html>
