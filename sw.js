@@ -1,6 +1,6 @@
 // GuitarTools Service Worker – cache-first offline strategy
 
-const CACHE_NAME = 'guitartools-v4';
+const CACHE_NAME = 'guitartools-v5';
 
 // Derive base path from SW location so it works both at / and /GuitarTools/
 const BASE = self.location.pathname.replace('sw.js', '');
@@ -21,13 +21,21 @@ const ASSETS = [
   BASE + 'js/games/sheetMusicReading/sheetMusicReading.js',
   BASE + 'js/games/sheetMusicReading/sheetMusicLogic.js',
   BASE + 'js/games/sheetMusicReading/sheetMusicSVG.js',
-  'https://cdn.jsdelivr.net/npm/vexflow@4.2.2/build/cjs/vexflow-min.js',
+];
+
+// CDN assets cached opportunistically – install won't fail if unreachable
+const CDN_ASSETS = [
+  'https://cdn.jsdelivr.net/npm/vexflow@4.2.2/+esm',
 ];
 
 // Pre-cache all assets on install; wait for explicit SKIP_WAITING before activating
 self.addEventListener('install', event => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS))
+    caches.open(CACHE_NAME).then(async cache => {
+      await cache.addAll(ASSETS);
+      // Cache CDN assets if reachable – failure here doesn't block install
+      await Promise.allSettled(CDN_ASSETS.map(url => cache.add(url)));
+    })
   );
 });
 

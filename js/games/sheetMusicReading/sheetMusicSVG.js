@@ -1,6 +1,6 @@
 // SVG score renderer – VexFlow for notation, custom SVG for tab
 
-const VEXFLOW_CDN = 'https://cdn.jsdelivr.net/npm/vexflow@4.2.2/build/cjs/vexflow-min.js';
+import { Renderer, Stave, StaveNote, Voice, Formatter } from 'https://cdn.jsdelivr.net/npm/vexflow@4.2.2/+esm';
 
 // Tab constants (custom SVG below VexFlow notation)
 const TAB_VB_W   = 815;
@@ -103,8 +103,6 @@ function renderTab(tabDiv, bars, totalW) {
  */
 export function renderScore(container, bars, showTab) {
   container.innerHTML = '';
-
-  const { Renderer, Stave, StaveNote, Voice, Formatter } = window.VexFlow;
 
   // ── Notation section (VexFlow) ──────────────────────────────────────────
   const notationDiv = document.createElement('div');
