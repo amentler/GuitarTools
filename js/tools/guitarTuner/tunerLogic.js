@@ -12,7 +12,9 @@ export const STANDARD_TUNING = [
 const NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
 
 /**
- * Detects the fundamental frequency in a PCM buffer via autocorrelation.
+ * Detects the fundamental frequency using the YIN algorithm.
+ * More reliable than naive autocorrelation – correctly identifies the
+ * fundamental even when overtones have higher energy.
  * @param {Float32Array} buffer
  * @param {number} sampleRate
  * @returns {number|null} Hz, or null if silence / no clear pitch
@@ -24,44 +26,65 @@ export function detectPitch(buffer, sampleRate) {
   rms = Math.sqrt(rms / buffer.length);
   if (rms < 0.01) return null;
 
-  const minPeriod = Math.floor(sampleRate / 1400); // ~70 Hz lower bound
-  const maxPeriod = Math.floor(sampleRate / 70);   // ~1400 Hz upper bound
-  const n = buffer.length;
+  const minPeriod = Math.floor(sampleRate / 1400);
+  const maxPeriod = Math.floor(sampleRate / 70);
+  const halfN = Math.floor(buffer.length / 2);
 
-  // Autocorrelation
-  let bestTau = -1;
-  let bestVal = -Infinity;
-
-  for (let tau = minPeriod; tau <= maxPeriod; tau++) {
+  // Step 1: squared difference function
+  // d[tau] = sum_i (x[i] - x[i+tau])^2
+  const diff = new Float32Array(maxPeriod + 1);
+  for (let tau = 1; tau <= maxPeriod; tau++) {
     let sum = 0;
-    for (let i = 0; i < n - tau; i++) {
-      sum += buffer[i] * buffer[i + tau];
+    for (let i = 0; i < halfN; i++) {
+      const delta = buffer[i] - buffer[i + tau];
+      sum += delta * delta;
     }
-    if (sum > bestVal) {
-      bestVal = sum;
+    diff[tau] = sum;
+  }
+
+  // Step 2: cumulative mean normalized difference function
+  // d'[0] = 1, d'[tau] = d[tau] / ((1/tau) * sum_{j=1}^{tau} d[j])
+  const cmnd = new Float32Array(maxPeriod + 1);
+  cmnd[0] = 1;
+  let runningSum = 0;
+  for (let tau = 1; tau <= maxPeriod; tau++) {
+    runningSum += diff[tau];
+    cmnd[tau] = runningSum === 0 ? 0 : (diff[tau] * tau) / runningSum;
+  }
+
+  // Step 3: find first tau >= minPeriod where cmnd dips below threshold,
+  // then walk to the local minimum of that dip
+  const THRESHOLD = 0.15;
+  let bestTau = -1;
+
+  for (let tau = minPeriod; tau <= maxPeriod - 1; tau++) {
+    if (cmnd[tau] < THRESHOLD) {
+      while (tau + 1 <= maxPeriod && cmnd[tau + 1] < cmnd[tau]) tau++;
       bestTau = tau;
+      break;
     }
   }
 
-  if (bestTau === -1) return null;
+  // Fallback: no dip below threshold – pick absolute minimum in range
+  if (bestTau === -1) {
+    let minVal = Infinity;
+    for (let tau = minPeriod; tau <= maxPeriod; tau++) {
+      if (cmnd[tau] < minVal) { minVal = cmnd[tau]; bestTau = tau; }
+    }
+    // Only accept if reasonably confident
+    if (minVal > 0.5) return null;
+  }
 
-  // Parabolic interpolation for sub-sample accuracy
-  const y1 = bestTau > minPeriod ? autocorr(buffer, bestTau - 1) : bestVal;
-  const y2 = bestVal;
-  const y3 = bestTau < maxPeriod ? autocorr(buffer, bestTau + 1) : bestVal;
-  const denom = 2 * (2 * y2 - y1 - y3);
-  const refinedTau = denom !== 0
-    ? bestTau + (y1 - y3) / denom
-    : bestTau;
+  // Step 4: parabolic interpolation for sub-sample accuracy
+  if (bestTau > 1 && bestTau < maxPeriod) {
+    const y1 = cmnd[bestTau - 1];
+    const y2 = cmnd[bestTau];
+    const y3 = cmnd[bestTau + 1];
+    const denom = 2 * (2 * y2 - y1 - y3);
+    if (denom !== 0) bestTau = bestTau + (y1 - y3) / denom;
+  }
 
-  return sampleRate / refinedTau;
-}
-
-function autocorr(buffer, tau) {
-  let sum = 0;
-  const n = buffer.length;
-  for (let i = 0; i < n - tau; i++) sum += buffer[i] * buffer[i + tau];
-  return sum;
+  return sampleRate / bestTau;
 }
 
 /**
