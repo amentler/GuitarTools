@@ -35,10 +35,32 @@
   <!-- ═══════════════════════════════════════════════════════════════════════ -->
   <section id="view-fretboard" class="view">
 
+    <!-- Header: Zurück + Score -->
     <div class="exercise-header">
       <button id="btn-back" class="btn-back">← Zurück zum Menü</button>
       <div class="score-display">
         Richtig: <span id="score-correct">0</span> von <span id="score-total">0</span>
+      </div>
+    </div>
+
+    <!-- Settings: Bund-Slider + Saitenauswahl -->
+    <div id="settings-panel" class="settings-panel">
+      <div class="settings-row">
+        <label for="fret-range-slider" class="settings-label">
+          Bünde: <span id="fret-range-label">0 – 4</span>
+        </label>
+        <input type="range" id="fret-range-slider" min="1" max="12" value="4" />
+      </div>
+      <div class="settings-row">
+        <span class="settings-label">Saiten:</span>
+        <div id="string-toggles" class="string-toggles">
+          <button class="btn-string active" data-string="0">E2</button>
+          <button class="btn-string active" data-string="1">A2</button>
+          <button class="btn-string active" data-string="2">D3</button>
+          <button class="btn-string active" data-string="3">G3</button>
+          <button class="btn-string active" data-string="4">B3</button>
+          <button class="btn-string active" data-string="5">E4</button>
+        </div>
       </div>
     </div>
 
@@ -50,6 +72,13 @@
 
     <!-- Ton-Buttons (12 Halbtöne) -->
     <div id="note-buttons" class="note-buttons"></div>
+
+    <!-- Chancen-Anzeige -->
+    <div id="chances-display" class="chances-display">
+      <span class="chance-icon" data-index="0">●</span>
+      <span class="chance-icon" data-index="1">●</span>
+      <span class="chance-icon" data-index="2">●</span>
+    </div>
 
     <!-- Feedback -->
     <p id="feedback-text" class="feedback-text"></p>

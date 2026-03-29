@@ -5,47 +5,60 @@ import { renderFretboard } from './fretboardSVG.js';
 
 // ── State ─────────────────────────────────────────────────────────────────────
 let state = {
-  targetPosition: null,   // { string, fret }
-  feedbackState: null,    // null | 'correct' | 'wrong'
+  targetPosition: null,
+  feedbackState:  null,
   score: { correct: 0, total: 0 },
   feedbackTimeout: null,
   isDisabled: false,
+  settings: {
+    maxFret: 4,
+    activeStrings: [0, 1, 2, 3, 4, 5],
+  },
+  chancesLeft:  3,
+  wrongAnswers: [],
+  selectedNote: null,
+  correctNote:  null,
 };
 
 // ── DOM refs (resolved when exercise starts) ──────────────────────────────────
-let svgContainer, noteButtonsEl, feedbackTextEl, scoreCorrectEl, scoreTotalEl;
+let svgContainer, noteButtonsEl, feedbackTextEl, scoreCorrectEl, scoreTotalEl, chancesDisplayEl;
 
 // ── Public API ────────────────────────────────────────────────────────────────
 
-/**
- * Initialize and start the exercise.
- * Call this each time the user navigates to the fretboard view.
- */
 export function startExercise() {
-  svgContainer    = document.getElementById('fretboard-svg');
-  noteButtonsEl   = document.getElementById('note-buttons');
-  feedbackTextEl  = document.getElementById('feedback-text');
-  scoreCorrectEl  = document.getElementById('score-correct');
-  scoreTotalEl    = document.getElementById('score-total');
+  svgContainer      = document.getElementById('fretboard-svg');
+  noteButtonsEl     = document.getElementById('note-buttons');
+  feedbackTextEl    = document.getElementById('feedback-text');
+  scoreCorrectEl    = document.getElementById('score-correct');
+  scoreTotalEl      = document.getElementById('score-total');
+  chancesDisplayEl  = document.getElementById('chances-display');
 
-  // Reset state on every start
   if (state.feedbackTimeout) clearTimeout(state.feedbackTimeout);
+
+  // Preserve settings across restarts, reset everything else
   state = {
-    targetPosition: getRandomPosition(),
-    feedbackState: null,
+    targetPosition: getRandomPosition(null, state.settings),
+    feedbackState:  null,
     score: { correct: 0, total: 0 },
     feedbackTimeout: null,
     isDisabled: false,
+    settings: state.settings,
+    chancesLeft:  3,
+    wrongAnswers: [],
+    selectedNote: null,
+    correctNote:  null,
   };
+
+  // Sync settings UI to current state
+  syncSettingsUI();
 
   buildNoteButtons();
   updateScore();
+  updateChancesDisplay();
   render();
+  wireSettings();
 }
 
-/**
- * Clean up timeouts when leaving the exercise.
- */
 export function stopExercise() {
   if (state.feedbackTimeout) {
     clearTimeout(state.feedbackTimeout);
@@ -53,10 +66,74 @@ export function stopExercise() {
   }
 }
 
-// ── Internal ──────────────────────────────────────────────────────────────────
+// ── Settings wiring ───────────────────────────────────────────────────────────
+
+function wireSettings() {
+  const slider     = document.getElementById('fret-range-slider');
+  const rangeLabel = document.getElementById('fret-range-label');
+
+  // Remove old listeners by cloning the elements
+  const newSlider = slider.cloneNode(true);
+  slider.parentNode.replaceChild(newSlider, slider);
+
+  newSlider.addEventListener('input', () => {
+    state.settings.maxFret = parseInt(newSlider.value, 10);
+    rangeLabel.textContent = `0 – ${state.settings.maxFret}`;
+    if (state.targetPosition.fret > state.settings.maxFret) {
+      resetAndAdvance();
+    } else {
+      render();
+    }
+  });
+
+  document.querySelectorAll('.btn-string').forEach(btn => {
+    const newBtn = btn.cloneNode(true);
+    btn.parentNode.replaceChild(newBtn, btn);
+
+    newBtn.addEventListener('click', () => {
+      const idx    = parseInt(newBtn.dataset.string, 10);
+      const active = state.settings.activeStrings;
+
+      if (active.includes(idx)) {
+        if (active.length > 1) {
+          active.splice(active.indexOf(idx), 1);
+          newBtn.classList.remove('active');
+        }
+      } else {
+        active.push(idx);
+        active.sort((a, b) => a - b);
+        newBtn.classList.add('active');
+      }
+
+      if (!active.includes(state.targetPosition.string)) {
+        resetAndAdvance();
+      }
+    });
+  });
+}
+
+function syncSettingsUI() {
+  const slider     = document.getElementById('fret-range-slider');
+  const rangeLabel = document.getElementById('fret-range-label');
+  slider.value = state.settings.maxFret;
+  rangeLabel.textContent = `0 – ${state.settings.maxFret}`;
+
+  document.querySelectorAll('.btn-string').forEach(btn => {
+    const idx = parseInt(btn.dataset.string, 10);
+    btn.classList.toggle('active', state.settings.activeStrings.includes(idx));
+  });
+}
+
+// ── Core rendering ────────────────────────────────────────────────────────────
 
 function render() {
-  renderFretboard(svgContainer, state.targetPosition.string, state.targetPosition.fret, state.feedbackState);
+  renderFretboard(
+    svgContainer,
+    state.targetPosition.string,
+    state.targetPosition.fret,
+    state.feedbackState,
+    state.settings.maxFret
+  );
   updateNoteButtons();
   updateFeedbackText();
 }
@@ -65,7 +142,7 @@ function buildNoteButtons() {
   noteButtonsEl.innerHTML = '';
   for (const note of CHROMATIC_NOTES) {
     const btn = document.createElement('button');
-    btn.className = 'btn-note';
+    btn.className   = 'btn-note';
     btn.textContent = note;
     btn.dataset.note = note;
     btn.addEventListener('click', () => handleAnswer(note));
@@ -73,47 +150,88 @@ function buildNoteButtons() {
   }
 }
 
+// ── Answer handling ───────────────────────────────────────────────────────────
+
 function handleAnswer(note) {
   if (state.isDisabled) return;
+  if (state.wrongAnswers.includes(note)) return;
 
   const correctNote = getNoteAtPosition(state.targetPosition.string, state.targetPosition.fret);
-  const isCorrect = note === correctNote;
+  const isCorrect   = note === correctNote;
 
-  state.isDisabled = true;
-  state.feedbackState = isCorrect ? 'correct' : 'wrong';
-  state.score.total += 1;
-  if (isCorrect) state.score.correct += 1;
-
-  // Store which note was selected so we can highlight it
   state.selectedNote = note;
-  state.correctNote = correctNote;
+  state.correctNote  = correctNote;
 
-  updateScore();
-  render();
-
-  state.feedbackTimeout = setTimeout(() => {
-    state.targetPosition = getRandomPosition(state.targetPosition);
-    state.feedbackState = null;
-    state.selectedNote = null;
-    state.correctNote = null;
-    state.isDisabled = false;
+  if (isCorrect) {
+    state.isDisabled  = true;
+    state.feedbackState = 'correct';
+    state.score.correct += 1;
+    state.score.total   += 1;
+    updateScore();
     render();
-  }, 1200);
+    state.feedbackTimeout = setTimeout(advanceToNextPosition, 1200);
+
+  } else {
+    state.wrongAnswers.push(note);
+    state.chancesLeft -= 1;
+
+    if (state.chancesLeft > 0) {
+      // Partial feedback – keep other buttons active
+      state.feedbackState = 'wrong';
+      updateNoteButtons();
+      updateChancesDisplay();
+      updateFeedbackText();
+
+    } else {
+      // No chances left – reveal answer and advance
+      state.isDisabled    = true;
+      state.feedbackState = 'wrong';
+      state.score.total  += 1;
+      updateScore();
+      render();
+      updateChancesDisplay();
+      state.feedbackTimeout = setTimeout(advanceToNextPosition, 1200);
+    }
+  }
 }
+
+function advanceToNextPosition() {
+  state.targetPosition = getRandomPosition(state.targetPosition, state.settings);
+  state.feedbackState  = null;
+  state.selectedNote   = null;
+  state.correctNote    = null;
+  state.isDisabled     = false;
+  state.chancesLeft    = 3;
+  state.wrongAnswers   = [];
+  render();
+  updateChancesDisplay();
+}
+
+function resetAndAdvance() {
+  if (state.feedbackTimeout) clearTimeout(state.feedbackTimeout);
+  advanceToNextPosition();
+}
+
+// ── DOM update helpers ────────────────────────────────────────────────────────
 
 function updateNoteButtons() {
   const buttons = noteButtonsEl.querySelectorAll('.btn-note');
   buttons.forEach(btn => {
     const note = btn.dataset.note;
     btn.classList.remove('correct', 'wrong');
-    btn.disabled = state.isDisabled;
 
-    if (state.feedbackState) {
-      if (note === state.correctNote) {
-        btn.classList.add('correct');
-      } else if (note === state.selectedNote && note !== state.correctNote) {
-        btn.classList.add('wrong');
-      }
+    // Disable: globally (terminal state) OR individually (already guessed wrong)
+    btn.disabled = state.isDisabled || state.wrongAnswers.includes(note);
+
+    // Colour the most-recently-clicked wrong button red
+    if (state.wrongAnswers.includes(note) && note === state.selectedNote) {
+      btn.classList.add('wrong');
+    }
+
+    // Show correct note green on correct answer OR on final wrong (all chances used)
+    if (state.correctNote && note === state.correctNote &&
+        (state.feedbackState === 'correct' || (state.isDisabled && state.feedbackState === 'wrong'))) {
+      btn.classList.add('correct');
     }
   });
 }
@@ -125,8 +243,14 @@ function updateFeedbackText() {
     feedbackTextEl.textContent = 'Richtig! ✓';
     feedbackTextEl.classList.add('correct');
   } else if (state.feedbackState === 'wrong') {
-    feedbackTextEl.textContent = `Falsch! Der richtige Ton war ${state.correctNote}`;
-    feedbackTextEl.classList.add('wrong');
+    if (state.chancesLeft > 0) {
+      const v = state.chancesLeft === 1 ? 'Versuch' : 'Versuche';
+      feedbackTextEl.textContent = `Falsch – noch ${state.chancesLeft} ${v}`;
+      feedbackTextEl.classList.add('wrong');
+    } else {
+      feedbackTextEl.textContent = `Falsch! Der richtige Ton war ${state.correctNote}`;
+      feedbackTextEl.classList.add('wrong');
+    }
   } else {
     feedbackTextEl.textContent = '';
   }
@@ -134,5 +258,13 @@ function updateFeedbackText() {
 
 function updateScore() {
   scoreCorrectEl.textContent = state.score.correct;
-  scoreTotalEl.textContent = state.score.total;
+  scoreTotalEl.textContent   = state.score.total;
+}
+
+function updateChancesDisplay() {
+  const icons = chancesDisplayEl.querySelectorAll('.chance-icon');
+  const used  = 3 - state.chancesLeft;
+  icons.forEach((icon, i) => {
+    icon.classList.toggle('used', i < used);
+  });
 }

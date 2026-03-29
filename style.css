@@ -267,6 +267,85 @@ body {
 }
 
 /* === Responsive === */
+/* === Settings Panel === */
+.settings-panel {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 0.75rem 1rem;
+}
+
+.settings-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.settings-label {
+  font-size: 0.9rem;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+  min-width: 90px;
+}
+
+input[type="range"] {
+  flex: 1;
+  min-width: 120px;
+  accent-color: var(--color-accent-alt);
+  cursor: pointer;
+}
+
+/* === String Toggle Buttons === */
+.string-toggles {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.btn-string {
+  padding: 0.35rem 0.6rem;
+  min-height: 36px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  color: var(--color-text-muted);
+  font-size: 0.8rem;
+  font-family: monospace;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.btn-string.active {
+  background: var(--color-card);
+  border-color: var(--color-accent-alt);
+  color: var(--color-accent-alt);
+}
+
+/* === Chances Display === */
+.chances-display {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.chance-icon {
+  color: var(--color-accent-alt);
+  transition: opacity 0.3s, color 0.3s;
+}
+
+.chance-icon.used {
+  color: var(--color-text-muted);
+  opacity: 0.3;
+}
+
+/* === Responsive === */
 @media (max-width: 400px) {
   .note-buttons {
     grid-template-columns: repeat(4, 1fr);
