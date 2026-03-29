@@ -3,6 +3,9 @@
 import { CHROMATIC_NOTES, getNoteAtPosition, getRandomPosition } from './fretboardLogic.js';
 import { renderFretboard } from './fretboardSVG.js';
 
+// ── Module-level flags ────────────────────────────────────────────────────────
+let settingsWired = false;
+
 // ── State ─────────────────────────────────────────────────────────────────────
 let state = {
   targetPosition: null,
@@ -49,14 +52,17 @@ export function startExercise() {
     correctNote:  null,
   };
 
-  // Sync settings UI to current state
-  syncSettingsUI();
-
   buildNoteButtons();
   updateScore();
   updateChancesDisplay();
   render();
-  wireSettings();
+
+  if (!settingsWired) {
+    wireSettings();
+    settingsWired = true;
+  }
+  // Sync settings UI to current state (after wiring so elements are original)
+  syncSettingsUI();
 }
 
 export function stopExercise() {
@@ -72,42 +78,29 @@ function wireSettings() {
   const slider     = document.getElementById('fret-range-slider');
   const rangeLabel = document.getElementById('fret-range-label');
 
-  // Remove old listeners by cloning the elements
-  const newSlider = slider.cloneNode(true);
-  slider.parentNode.replaceChild(newSlider, slider);
-
-  newSlider.addEventListener('input', () => {
-    state.settings.maxFret = parseInt(newSlider.value, 10);
+  slider.addEventListener('input', () => {
+    state.settings.maxFret = parseInt(slider.value, 10);
     rangeLabel.textContent = `0 – ${state.settings.maxFret}`;
-    if (state.targetPosition.fret > state.settings.maxFret) {
-      resetAndAdvance();
-    } else {
-      render();
-    }
+    resetAndAdvance();
   });
 
   document.querySelectorAll('.btn-string').forEach(btn => {
-    const newBtn = btn.cloneNode(true);
-    btn.parentNode.replaceChild(newBtn, btn);
-
-    newBtn.addEventListener('click', () => {
-      const idx    = parseInt(newBtn.dataset.string, 10);
+    btn.addEventListener('click', () => {
+      const idx    = parseInt(btn.dataset.string, 10);
       const active = state.settings.activeStrings;
 
       if (active.includes(idx)) {
         if (active.length > 1) {
           active.splice(active.indexOf(idx), 1);
-          newBtn.classList.remove('active');
+          btn.classList.remove('active');
         }
       } else {
         active.push(idx);
         active.sort((a, b) => a - b);
-        newBtn.classList.add('active');
+        btn.classList.add('active');
       }
 
-      if (!active.includes(state.targetPosition.string)) {
-        resetAndAdvance();
-      }
+      resetAndAdvance();
     });
   });
 }
@@ -223,8 +216,8 @@ function updateNoteButtons() {
     // Disable: globally (terminal state) OR individually (already guessed wrong)
     btn.disabled = state.isDisabled || state.wrongAnswers.includes(note);
 
-    // Colour the most-recently-clicked wrong button red
-    if (state.wrongAnswers.includes(note) && note === state.selectedNote) {
+    // Keep all previously guessed wrong buttons red
+    if (state.wrongAnswers.includes(note)) {
       btn.classList.add('wrong');
     }
 
