@@ -78,7 +78,7 @@ body {
 .menu-cards {
   display: flex;
   flex-wrap: wrap;
-  gap: 1.5rem;
+  gap: 0.5rem;
   justify-content: center;
   width: 100%;
   max-width: 800px;
@@ -87,45 +87,44 @@ body {
 .exercise-card {
   background: var(--color-card);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  padding: 2rem;
-  width: 280px;
+  border-radius: var(--radius);
+  padding: 0.6rem 0.75rem;
+  width: 140px;
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 0.25rem;
   transition: transform 0.2s, border-color 0.2s;
   cursor: default;
 }
 
 .exercise-card:hover {
-  transform: translateY(-3px);
+  transform: translateY(-2px);
   border-color: var(--color-accent-alt);
 }
 
 .card-icon {
-  font-size: 2.5rem;
+  font-size: 1.1rem;
 }
 
 .card-title {
-  font-size: 1.2rem;
+  font-size: 0.78rem;
   font-weight: 600;
   color: var(--color-text);
+  line-height: 1.3;
 }
 
 .card-desc {
-  font-size: 0.9rem;
-  color: var(--color-text-muted);
-  flex: 1;
+  display: none;
 }
 
 .btn-start {
-  margin-top: 0.5rem;
-  padding: 0.75rem 1.5rem;
+  margin-top: 0.25rem;
+  padding: 0.35rem 0.5rem;
   background: var(--color-accent);
   color: #fff;
   border: none;
   border-radius: var(--radius);
-  font-size: 1rem;
+  font-size: 0.78rem;
   font-weight: 600;
   cursor: pointer;
   transition: background 0.2s, transform 0.1s;
