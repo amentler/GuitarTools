@@ -14,7 +14,6 @@ const NOTE_RX    = 6;
 const NOTE_RY    = 5;
 const STEM_LEN   = 35;
 
-const TAB_TOP    = 178;
 const STR_SP     = 13;
 const STR_COUNT  = 6;
 
@@ -81,9 +80,16 @@ function drawClef(svg) {
 export function renderScore(container, bars, showTab) {
   container.innerHTML = '';
 
+  // Lowest note Y in this set of bars (depends on which notes appear)
+  let lowestNoteY = STAFF_BOT + NOTE_RY;
+  for (const bar of bars)
+    for (const note of bar)
+      lowestNoteY = Math.max(lowestNoteY, noteY(note.step) + NOTE_RY);
+
+  const tabTop = lowestNoteY + 18;
   const vbH = showTab
-    ? TAB_TOP + (STR_COUNT - 1) * STR_SP + 18
-    : STAFF_BOT + 50;
+    ? tabTop + (STR_COUNT - 1) * STR_SP + 18
+    : lowestNoteY + 12;
 
   const svg = el('svg', {
     viewBox: `0 0 ${VB_W} ${vbH}`,
@@ -172,7 +178,7 @@ export function renderScore(container, bars, showTab) {
     // "T A B" label on lines 0–2
     for (const [char, i] of [['T', 0], ['A', 1], ['B', 2]]) {
       svg.appendChild(el('text', {
-        x: 10, y: TAB_TOP + i * STR_SP,
+        x: 10, y: tabTop + i * STR_SP,
         fill: 'var(--color-text-muted)', 'font-size': 11, 'font-weight': 700,
         'text-anchor': 'middle', 'dominant-baseline': 'middle',
       }, char));
@@ -181,8 +187,8 @@ export function renderScore(container, bars, showTab) {
     // String lines
     for (let s = 0; s < STR_COUNT; s++) {
       svg.appendChild(el('line', {
-        x1: STAFF_L, y1: TAB_TOP + s * STR_SP,
-        x2: STAFF_R, y2: TAB_TOP + s * STR_SP,
+        x1: STAFF_L, y1: tabTop + s * STR_SP,
+        x2: STAFF_R, y2: tabTop + s * STR_SP,
         stroke: 'var(--color-border)', 'stroke-width': 1,
       }));
     }
@@ -192,7 +198,7 @@ export function renderScore(container, bars, showTab) {
       for (let ni = 0; ni < bars[bi].length; ni++) {
         const note = bars[bi][ni];
         const x    = noteX(bi, ni);
-        const sy   = TAB_TOP + (note.string - 1) * STR_SP;
+        const sy   = tabTop + (note.string - 1) * STR_SP;
         const txt  = String(note.fret);
         const bgW  = txt.length > 1 ? 16 : 11;
 
