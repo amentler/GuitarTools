@@ -5,9 +5,9 @@ import { Renderer, Stave, StaveNote, Voice, Formatter } from 'https://cdn.jsdeli
 // Fixed virtual canvas – CSS scales this to the actual container width.
 // Using a wider-than-screen virtual width makes notes appear smaller on screen
 // while keeping VexFlow's default coordinate system intact.
-const VW      = 1000;  // virtual canvas width
-const VH      = 170;   // virtual canvas height (reduced to keep notes compact)
-const STAVE_Y = 60;    // y of top staff line
+const VW      = 1200;  // wider virtual canvas → CSS scales notes down to ~70% on desktop
+const VH      = 200;   // tall enough for treble clef top + 3 ledger lines below
+const STAVE_Y = 80;    // y of top staff line (leaves ~60 px for clef curl above)
 
 // First bar is wider to accommodate clef + time signature glyphs.
 const FIRST_BAR_RATIO = 0.27;
