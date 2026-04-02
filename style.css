@@ -321,6 +321,13 @@ input[type="range"] {
   cursor: pointer;
 }
 
+.settings-checkbox {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--color-accent-alt);
+  cursor: pointer;
+}
+
 /* === String Toggle Buttons === */
 .string-toggles {
   display: flex;
