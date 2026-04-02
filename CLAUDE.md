@@ -56,6 +56,16 @@ Branch `claude/guitar-learning-app-i9WM3`, root `/` — no build pipeline needed
 - **Architecture:** Maintain the project's "Vanilla JS" and SVG-focused architecture.
 - **Analysis document:** Repository-wide initial analyses can be documented in `/codex.md`.
 
+## CI & Testing
+
+Phase 1 CI pipeline is active. Tests run on every push and pull request.
+
+- **Run tests:** `npm test` (uses Vitest)
+- **Test files:** `tests/unit/` — pure logic tests only, no DOM/audio
+- **CI workflow:** `.github/workflows/ci.yml`
+
+When adding logic to `*Logic.js` files, add corresponding tests in `tests/unit/`.
+
 ## Adding a New Game
 
 1. Create `js/games/myGame/` with `myGame.js` exporting `startExercise()` and `stopExercise()`

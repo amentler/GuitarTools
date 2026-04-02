@@ -1,6 +1,6 @@
 # CI- und Qualitätspipeline – Roadmap
 
-Stand: 2026-04-02
+Stand: 2026-04-02 (Phase 1 abgeschlossen)
 
 ---
 
@@ -47,8 +47,8 @@ CI-Pipeline eingeführt wird.
 
 | Phase | Inhalt | Voraussetzung |
 |-------|--------|---------------|
-| **Phase 0** | Dokumentation, Planung, Scope-Abgrenzung | – (dieser PR) |
-| **Phase 1** | Minimale CI-Pipeline: `package.json` + Testrunner + erste Unit-Tests für Logikmodule | Phase 0 |
+| **Phase 0** | Dokumentation, Planung, Scope-Abgrenzung | – (abgeschlossen) |
+| **Phase 1** | Minimale CI-Pipeline: `package.json` + Vitest + erste Unit-Tests für Logikmodule | Phase 0 (abgeschlossen) |
 | **Phase 2** | Linting (ESLint) in der Pipeline | Phase 1 |
 | **Phase 3** | TypeScript-Prüfung (`tsc --noEmit`, `checkJs`) | Phase 2 |
 | **Phase 4** | Schrittweise TS-Migration der Logikmodule | Phase 3 |
@@ -57,33 +57,36 @@ CI-Pipeline eingeführt wird.
 
 ---
 
-## 3. Phase 1 – Definition
+## 3. Phase 1 – Umgesetzt
 
-### Scope
+### Umfang
 
-- `package.json` mit minimalem Dev-Tooling anlegen
-- Test-Runner einrichten (bevorzugt **Vitest**, da gut mit ES Modules und ohne Transpilation)
-- **Erste Unit-Tests** für `fretboardLogic.js` und `tunerLogic.js` (ca. 10–15 Tests)
-- **GitHub Actions Workflow** für automatische Testausführung bei `push` und `pull_request`
+- `package.json` mit Vitest als einzige Dev-Dependency angelegt
+- `vitest.config.js` für ES-Module-kompatible Testkonfiguration
+- **Unit-Tests** für `fretboardLogic.js` (7 Tests) und `tunerLogic.js` (9 Tests)
+- **GitHub Actions Workflow** (`.github/workflows/ci.yml`) bei `push` und `pull_request`
+
+### Neue Dateien
+
+| Datei | Zweck |
+|-------|-------|
+| `package.json` | npm-Projektdatei mit `vitest` Dev-Dependency und `test`-Script |
+| `vitest.config.js` | Vitest-Konfiguration (`tests/unit/**/*.test.js`) |
+| `tests/unit/fretboardLogic.test.js` | Unit-Tests für Notenberechnung am Griffbrett |
+| `tests/unit/tunerLogic.test.js` | Unit-Tests für Frequenz-/Notenberechnung im Tuner |
+| `.github/workflows/ci.yml` | CI-Workflow: Checkout → Node setup → `npm ci` → `npm test` |
+| `.gitignore` | Schließt `node_modules/` aus dem Repository aus |
 
 ### Minimaler sichtbarer Nutzen
 
-- Jeder Push löst automatisch Tests aus
+- Jeder Push und jeder Pull Request löst automatisch die 16 Unit-Tests aus
 - GitHub zeigt grün/rot direkt beim Pull Request
 - Fehler in zentralen Logikfunktionen werden sofort erkannt
 
-### Was Phase 1 demonstriert
+### Warum Vitest (nicht Jest)
 
-- Die Pipeline läuft und tut messbar etwas
-- Der Workflow funktioniert mit dem Vanilla-JS/ES-Modules-Aufbau
-- Tests für reine Logikfunktionen sind ohne Build-Umbau möglich
-- Grundlage für alle weiteren Phasen ist gesetzt
-
-### Bevorzugte Variante: Vitest (nicht Jest)
-
-Vitest kommt ohne CommonJS-Konversion aus und unterstützt ES Modules nativ – passend zur
-bestehenden Modulstruktur. Jest würde eine zusätzliche Transformation benötigen. Vitest lässt
-sich später auch mit `jsdom` für einfache DOM-Tests erweitern.
+Vitest unterstützt ES Modules nativ – passend zur bestehenden Modulstruktur ohne
+CommonJS-Konversion. Lässt sich später mit `jsdom` für einfache DOM-Tests erweitern.
 
 ---
 
@@ -106,13 +109,14 @@ Folgendes erfolgt **nicht** in Phase 1 und wird explizit auf spätere Phasen ver
 
 ## 5. Aufgabenteilung: Agent vs. manuell
 
-### Was ein Agent automatisiert umsetzen kann
+### Was der Agent in Phase 1 umgesetzt hat
 
-- `package.json` anlegen (mit `vitest` als Dev-Dependency)
-- `vitest.config.js` anlegen
-- Testdateien erstellen: `tests/unit/fretboardLogic.test.js`, `tests/unit/tunerLogic.test.js`
-- `.github/workflows/test.yml` erstellen (Trigger: `push`, `pull_request`)
-- Dokumentation aktualisieren
+- `package.json` angelegt (mit `vitest` als Dev-Dependency)
+- `vitest.config.js` angelegt
+- Testdateien erstellt: `tests/unit/fretboardLogic.test.js`, `tests/unit/tunerLogic.test.js`
+- `.github/workflows/ci.yml` erstellt (Trigger: `push`, `pull_request`)
+- `.gitignore` angelegt
+- Dokumentation aktualisiert
 
 ### Was manuell in GitHub konfiguriert werden muss
 

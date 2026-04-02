@@ -13,6 +13,7 @@ As an AI agent working on this project, you MUST adhere to the following rules:
 - **SVG for UI:** Prefer SVG for interactive components (fretboard, tuner, etc.).
 - **Mobile First:** The UI must be responsive and touch-friendly.
 - **PWA Ready:** Keep the Service Worker (`sw.js`) and manifest updated if new assets are added.
+- **Testing:** Run `npm test` to execute unit tests. Add tests in `tests/unit/` for any logic in `*Logic.js` files.
 
 ## 3. Workflow
 - **Research -> Strategy -> Execution -> Validation**
