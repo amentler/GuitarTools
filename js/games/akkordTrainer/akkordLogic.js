@@ -1,6 +1,7 @@
 /**
  * chordLogic.js
  * Chord definitions and validation for the Chord Trainer.
+ * String mapping: 1 = high e (top), 6 = low E (bottom)
  */
 
 export const CHORDS = {
@@ -89,28 +90,21 @@ export function getRandomChord(level = 1) {
 
 /**
  * Validates the user's positions against the reference chord.
- * Both should be arrays of {string, fret, muted}.
  */
 export function validateChord(chordName, userPositions) {
   const reference = CHORDS[chordName];
   if (!reference) return false;
 
-  // For each string (1-6), check if the state matches
   for (let s = 1; s <= 6; s++) {
     const refPos = reference.find(p => p.string === s);
     const userPos = userPositions.find(p => p.string === s);
 
-    // If string should be muted
     if (refPos.muted) {
       if (!userPos || !userPos.muted) return false;
-    } 
-    // If string should be open (fret 0)
-    else if (refPos.fret === 0) {
-      if (!userPos || userPos.fret !== 0) return false;
-    }
-    // If string should be fretted
-    else {
-      if (!userPos || userPos.fret !== refPos.fret) return false;
+    } else if (refPos.fret === 0) {
+      if (!userPos || userPos.fret !== 0 || userPos.muted) return false;
+    } else {
+      if (!userPos || userPos.fret !== refPos.fret || userPos.muted) return false;
     }
   }
 
