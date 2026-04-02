@@ -8,6 +8,7 @@ const TOP_Y = 40;
 const BOTTOM_Y = 250;
 const STRING_SPACING = (BOTTOM_Y - TOP_Y) / 5;
 const INLAY_FRETS = [3, 5, 7, 9];
+const STRING_LABELS = ['E2', 'A2', 'D3', 'G3', 'B3', 'E4'];
 
 function stringY(stringIndex) {
   return BOTTOM_Y - stringIndex * STRING_SPACING;
@@ -145,6 +146,7 @@ export function renderInteractiveFretboard(
         'stroke-width': '2',
         'data-string': String(stringIndex),
         'data-fret': String(fret),
+        'aria-label': `Saite ${STRING_LABELS[stringIndex]}, Bund ${fret}`,
         style: 'cursor:pointer;',
       }));
     }
