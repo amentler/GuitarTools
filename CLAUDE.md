@@ -54,6 +54,7 @@ Branch `claude/guitar-learning-app-i9WM3`, root `/` — no build pipeline needed
 - **Update .md files:** After completing a task or implementing a feature, you MUST update all relevant `.md` files (this `CLAUDE.md`, `GEMINI.md`, and any plans in `plans/`).
 - **Keep Plans Current:** If a feature from `plans/` is implemented, update the file to reflect the new state and next steps.
 - **Architecture:** Maintain the project's "Vanilla JS" and SVG-focused architecture.
+- **Analysis document:** Repository-wide initial analyses can be documented in `/codex.md`.
 
 ## Adding a New Game
 
