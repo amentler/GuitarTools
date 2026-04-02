@@ -113,7 +113,7 @@ function wireSettings() {
 
   slider.addEventListener('input', () => {
     state.settings.maxFret = parseInt(slider.value, 10);
-    rangeLabel.textContent = `0 – ${state.settings.maxFret}`;
+    rangeLabel.textContent = state.settings.maxFret === 0 ? 'Nur Leer' : `0 – ${state.settings.maxFret}`;
     resetAndAdvance();
   });
 
@@ -151,7 +151,7 @@ function syncSettingsUI() {
   const slider     = document.getElementById('fret-range-slider');
   const rangeLabel = document.getElementById('fret-range-label');
   slider.value = state.settings.maxFret;
-  rangeLabel.textContent = `0 – ${state.settings.maxFret}`;
+  rangeLabel.textContent = state.settings.maxFret === 0 ? 'Nur Leer' : `0 – ${state.settings.maxFret}`;
 
   document.querySelectorAll('.btn-string').forEach(btn => {
     const idx = parseInt(btn.dataset.string, 10);
