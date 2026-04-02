@@ -48,6 +48,14 @@ function makeNoteOrder(shuffleNotes) {
   return shuffleNotes ? shuffleArray([...CHROMATIC_NOTES]) : [...CHROMATIC_NOTES];
 }
 
+function maybeReshuffleNotes() {
+  state.exercisesAnswered += 1;
+  if (state.settings.shuffleNotes && state.exercisesAnswered % RESHUFFLE_INTERVAL === 0) {
+    state.noteOrder = shuffleArray([...CHROMATIC_NOTES]);
+    state.noteOrderDirty = true;
+  }
+}
+
 // ── Public API ────────────────────────────────────────────────────────────────
 
 export function startExercise() {
@@ -198,11 +206,7 @@ function handleAnswer(note) {
     state.score.total   += 1;
     updateScore();
     render();
-    state.exercisesAnswered += 1;
-    if (state.settings.shuffleNotes && state.exercisesAnswered % RESHUFFLE_INTERVAL === 0) {
-      state.noteOrder = shuffleArray([...CHROMATIC_NOTES]);
-      state.noteOrderDirty = true;
-    }
+    maybeReshuffleNotes();
     state.feedbackTimeout = setTimeout(advanceToNextPosition, 1200);
 
   } else {
@@ -224,11 +228,7 @@ function handleAnswer(note) {
       updateScore();
       render();
       updateChancesDisplay();
-      state.exercisesAnswered += 1;
-      if (state.settings.shuffleNotes && state.exercisesAnswered % RESHUFFLE_INTERVAL === 0) {
-        state.noteOrder = shuffleArray([...CHROMATIC_NOTES]);
-        state.noteOrderDirty = true;
-      }
+      maybeReshuffleNotes();
       state.feedbackTimeout = setTimeout(advanceToNextPosition, 1200);
     }
   }
