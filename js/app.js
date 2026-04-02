@@ -4,6 +4,7 @@ import { startExercise as startFretboard,   stopExercise as stopFretboard   } fr
 import { startExercise as startTuner,       stopExercise as stopTuner       } from './tools/guitarTuner/guitarTuner.js';
 import { startExercise as startSheetMusic,  stopExercise as stopSheetMusic  } from './games/sheetMusicReading/sheetMusicReading.js';
 import { startExercise as startMetronome,   stopExercise as stopMetronome   } from './tools/metronome/metronome.js';
+import { startExercise as startAkkord,      stopExercise as stopAkkord      } from './games/akkordTrainer/akkordTrainer.js';
 
 const views = {
   menu:        document.getElementById('view-menu'),
@@ -11,6 +12,7 @@ const views = {
   tuner:       document.getElementById('view-tuner'),
   sheetMusic:  document.getElementById('view-sheet-music'),
   metronome:   document.getElementById('view-metronome'),
+  akkord:      document.getElementById('view-akkord-trainer'),
 };
 
 let currentView = 'menu';
@@ -27,6 +29,7 @@ function navigateTo(name) {
   if (currentView === 'tuner')      stopTuner();
   if (currentView === 'sheetMusic') stopSheetMusic();
   if (currentView === 'metronome')  stopMetronome();
+  if (currentView === 'akkord')     stopAkkord();
 
   currentView = name;
   showView(name);
@@ -35,6 +38,7 @@ function navigateTo(name) {
   if (name === 'tuner')      startTuner();
   if (name === 'sheetMusic') startSheetMusic();
   if (name === 'metronome')  startMetronome();
+  if (name === 'akkord')     startAkkord();
 }
 
 // ── Wire up buttons ──────────────────────────────────────────────────────────
@@ -50,6 +54,9 @@ document.getElementById('btn-back-sheet-music').addEventListener('click',  () =>
 
 document.getElementById('btn-start-metronome').addEventListener('click',   () => navigateTo('metronome'));
 document.getElementById('btn-back-metronome').addEventListener('click',    () => navigateTo('menu'));
+
+document.getElementById('btn-start-akkord-trainer').addEventListener('click', () => navigateTo('akkord'));
+document.getElementById('btn-back-akkord-trainer').addEventListener('click',  () => navigateTo('menu'));
 
 // ── Initial view ─────────────────────────────────────────────────────────────
 showView('menu');

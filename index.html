@@ -43,6 +43,15 @@
           <p class="card-desc">Spiele vier zufällige Takte vom Blatt.</p>
           <button id="btn-start-sheet-music" class="btn-start">Starten</button>
         </article>
+
+        <article class="exercise-card">
+          <div class="card-icon">🎸</div>
+          <h2 class="card-title">Akkord-Trainer</h2>
+          <p class="card-desc">
+            Lerne die wichtigsten Akkorde auf dem Griffbrett.
+          </p>
+          <button id="btn-start-akkord-trainer" class="btn-start">Starten</button>
+        </article>
       </div>
     </div>
 
@@ -80,6 +89,32 @@
         <a href="mailto:guitartools.rocking928@slmails.com" class="impressum-link">guitartools.rocking928@slmails.com</a>
       </p>
     </footer>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <!-- AKKORD-TRAINER                                                         -->
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <section id="view-akkord-trainer" class="view">
+
+    <div class="exercise-header">
+      <button id="btn-back-akkord-trainer" class="btn-back">← Zurück zum Menü</button>
+      <div class="score-display">
+        Richtig: <span id="chord-score-correct">0</span> von <span id="chord-score-total">0</span>
+      </div>
+    </div>
+
+    <div class="chord-trainer-container">
+      <h2 id="chord-name-display" class="chord-title-display">C-Dur</h2>
+      
+      <div id="chord-diagram-container" class="chord-diagram-container"></div>
+      
+      <p id="chord-feedback-text" class="feedback-text">Trage den Akkord ein...</p>
+
+      <div class="chord-controls">
+        <button id="btn-chord-check" class="btn-start">Prüfen</button>
+      </div>
+    </div>
+
   </section>
 
   <!-- ═══════════════════════════════════════════════════════════════════════ -->

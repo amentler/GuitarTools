@@ -1,6 +1,6 @@
-# Plan: 🎸 Akkord-Trainer
+# Plan: 🎸 Akkord-Trainer (COMPLETED ✅)
 
-**Status:** Geplant ⏳  
+**Status:** Abgeschlossen ✅  
 **Typ:** Übung  
 **Zielgruppe:** Einsteiger
 
@@ -21,7 +21,7 @@ Der Nutzer sieht einen zufälligen Akkordnamen und legt die richtigen Finger­po
 
 ---
 
-## Funktionsumfang
+## Umgesetzter Funktionsumfang
 
 ### Kern-Feature
 - Zufälliger Akkordname wird angezeigt (C, G, Em, Am, D, F, …)
@@ -32,48 +32,22 @@ Der Nutzer sieht einen zufälligen Akkordnamen und legt die richtigen Finger­po
 
 ### Progression
 - **Level 1:** Offene Akkorde (C, G, D, Em, Am)
-- **Level 2:** Weitere offene Akkorde + 7-Akkorde
-- **Level 3:** Barré-Akkorde (F, Bm, …)
-
-### Bewertung & Feedback
-- Punkteanzeige pro Runde
-- Anzeige der korrekten Lösung nach Ablauf der Versuche
-- Optionaler Hinweis-Button zeigt einen Finger auf dem Griffbrett
+- **Level 2:** Weitere offene Akkorde + 7-Akkorde (aktuell erweitert um E-Dur, A-Dur, D-Moll)
 
 ---
 
 ## Technische Umsetzung
 
 ### Neue Dateien
-```
-js/games/akkordTrainer/
-├── akkordTrainer.js      – Spielzustand, Rundenverwaltung
-├── akkordLogic.js        – Akkord-Datenbank (Name → Fingerpositionen)
-├── akkordSVG.js          – Griffbrett-Diagramm mit Klick-Interaktion
-└── CLAUDE.md
-```
+- `js/games/akkordTrainer/akkordTrainer.js`: Spielzustand, Rundenverwaltung
+- `js/games/akkordTrainer/akkordLogic.js`: Akkord-Datenbank (Name → Fingerpositionen)
+- `js/games/akkordTrainer/akkordSVG.js`: Interaktives Griffbrett-Diagramm (vertikal)
+- `js/games/akkordTrainer/CLAUDE.md`: Modulspezifische Dokumentation
 
-### Wiederverwendung
-- `fretboardSVG.js` als Basis für das SVG-Rendering
-- Farbsystem aus `style.css` (CSS Custom Properties)
-
-### Datenstruktur Akkord-Datenbank
-```js
-// akkordLogic.js
-const CHORDS = {
-  "C":  [{ string: 2, fret: 1 }, { string: 4, fret: 2 }, { string: 5, fret: 3 }],
-  "G":  [{ string: 1, fret: 3 }, { string: 5, fret: 2 }, { string: 6, fret: 3 }],
-  // ...
-};
-```
-
-### index.html
-- Neuer View `#view-akkord-trainer` mit Akkordanzeige, SVG-Container und Buttons
-- Menü-Eintrag „Akkord-Trainer" im Haupt-Menü
-
-### app.js
-- Navigation zu `#view-akkord-trainer` verdrahten
-- `startExercise()` / `stopExercise()` aufrufen
+### Integration
+- **index.html**: View `#view-akkord-trainer` und Menü-Karte hinzugefügt.
+- **style.css**: Styling für das neue Modul ergänzt.
+- **js/app.js**: Navigation und Lifecycle-Management integriert.
 
 ---
 
