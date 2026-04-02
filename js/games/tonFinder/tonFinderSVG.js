@@ -52,8 +52,8 @@ export function renderInteractiveFretboard(
   const svg = el('svg', {
     viewBox: `0 0 ${VB_W} ${VB_H}`,
     xmlns: SVG_NS,
-    role: 'img',
-    'aria-label': 'Ton-Finder Griffbrett',
+    role: 'group',
+    'aria-label': 'Interaktives Ton-Finder-Griffbrett',
   });
 
   svg.appendChild(el('rect', {
@@ -146,7 +146,7 @@ export function renderInteractiveFretboard(
         'stroke-width': '2',
         'data-string': String(stringIndex),
         'data-fret': String(fret),
-        'aria-label': `Saite ${STRING_LABELS[stringIndex]}, Bund ${fret}`,
+        'aria-label': `Griffbrett-Position: Saite ${STRING_LABELS[stringIndex]}, Bund ${fret}`,
         style: 'cursor:pointer;',
       }));
     }
