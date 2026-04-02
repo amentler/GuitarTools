@@ -19,3 +19,10 @@ As an AI agent working on this project, you MUST adhere to the following rules:
 - **Research -> Strategy -> Execution -> Validation**
 - Always verify changes with tests or by checking the app's functionality in the browser context if possible.
 - Update `CLAUDE.md` and `GEMINI.md` to reflect any new components or structure.
+
+## Current Components (updated)
+- Added game module: `js/games/tonFinder/`
+  - `tonFinder.js`
+  - `tonFinderLogic.js`
+  - `tonFinderSVG.js`
+- Integrated view: `#view-ton-finder` in `index.html`
