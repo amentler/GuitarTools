@@ -21,7 +21,7 @@
     <header class="menu-header">
       <h1 class="menu-title">🎸 Gitarren-Lerntools</h1>
       <p class="menu-subtitle">Wähle eine Übung oder ein Werkzeug</p>
-      <button id="btn-update" class="btn-update">⟳ Aktualisieren</button>
+      <button id="btn-update" class="btn-update">⟳ Neu laden</button>
     </header>
 
     <div class="menu-section">
@@ -224,78 +224,39 @@
 
   <script type="module" src="js/app.js"></script>
   <script>
-    let swReg = null;
-
     if ('serviceWorker' in navigator) {
-      window.addEventListener('load', async () => {
-        swReg = await navigator.serviceWorker.register('./sw.js');
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js');
       });
     }
 
-    document.getElementById('btn-update').addEventListener('click', async () => {
-      const btn = document.getElementById('btn-update');
-      btn.textContent = '…';
-      btn.disabled = true;
-
-      function done(text) {
-        btn.textContent = text;
-        setTimeout(() => { btn.textContent = '⟳ Aktualisieren'; btn.disabled = false; }, 2000);
-      }
-
-      function activate(worker) {
-        navigator.serviceWorker.addEventListener(
-          'controllerchange', () => window.location.reload(), { once: true }
-        );
-        worker.postMessage({ type: 'SKIP_WAITING' });
-      }
+    // Hard refresh: update SW, clear all caches, reload with cache-buster.
+    // Mirrors what "clear site data" does in Firefox, without leaving the app.
+    async function forceAppReload() {
+      try {
+        const registrations = await navigator.serviceWorker.getRegistrations();
+        for (const reg of registrations) {
+          try { await reg.update(); } catch (e) { console.warn('SW update failed:', e); }
+          if (reg.waiting) reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+          try { await reg.unregister(); } catch (e) { console.warn('SW unregister failed:', e); }
+        }
+      } catch (_) { /* SW not supported – continue to cache clearing */ }
 
       try {
-        if (!swReg) swReg = await navigator.serviceWorker.getRegistration('./');
-        if (!swReg) { done('✓ Aktuell'); return; }
+        const cacheNames = await caches.keys();
+        await Promise.all(cacheNames.map(name => caches.delete(name)));
+      } catch (e) { console.warn('Cache clearing failed:', e); }
 
-        // A waiting SW from a previous update cycle → activate immediately
-        if (swReg.waiting) { activate(swReg.waiting); return; }
+      // Reload with a cache-busting parameter so the browser fetches a fresh page
+      const url = new URL(window.location.href);
+      url.searchParams.set('refresh', Date.now());
+      window.location.replace(url.toString());
+    }
 
-        // Register updatefound listener BEFORE calling update() so we don't
-        // miss the event in Firefox where update() can resolve very quickly.
-        const updateFoundPromise = new Promise(resolve => {
-          swReg.addEventListener('updatefound', () => resolve(swReg.installing), { once: true });
-        });
-
-        await swReg.update();
-
-        // update() may have surfaced a waiting SW without firing updatefound
-        if (swReg.waiting) { activate(swReg.waiting); return; }
-
-        // Wait up to 8 s for a new SW to start installing (or give up = already current)
-        const installing = await Promise.race([
-          updateFoundPromise,
-          new Promise(resolve => setTimeout(() => resolve(null), 8000)),
-        ]);
-
-        if (!installing) { done('✓ Aktuell'); return; }
-
-        // Wait for the installing SW to finish (installed or redundant = install failed)
-        await new Promise(resolve => {
-          if (installing.state === 'installed' || installing.state === 'redundant') {
-            resolve(); return;
-          }
-          installing.addEventListener('statechange', function h() {
-            if (installing.state === 'installed' || installing.state === 'redundant') {
-              installing.removeEventListener('statechange', h);
-              resolve();
-            }
-          });
-        });
-
-        if (installing.state === 'installed') {
-          activate(installing);
-        } else {
-          done('✗ Fehler'); // install failed (e.g. fetch error)
-        }
-      } catch {
-        done('✗ Fehler');
-      }
+    document.getElementById('btn-update').addEventListener('click', async function () {
+      this.textContent = '…';
+      this.disabled = true;
+      await forceAppReload();
     });
   </script>
 </body>
