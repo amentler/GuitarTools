@@ -39,7 +39,7 @@ Aktueller Git-Stand:
 - Branch: `copilot/initialize-project-and-analyze-code-again`
 - Sehr wenige Commits auf dem Branch (u. a. Initial-Plan-Commit)
 
-## 4) Engineering-Disziplinen: Verbesserungs-vorschläge
+## 4) Engineering-Disziplinen: Verbesserungsvorschläge
 
 ### A. Architektur & Design
 1. **Gemeinsame Konvention für Modul-APIs festhalten**  
