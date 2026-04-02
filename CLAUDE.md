@@ -21,6 +21,11 @@ js/
 │       ├── fretboardLogic.js     – Pure note calculation utilities
 │       ├── fretboardSVG.js       – SVG fretboard rendering
 │       └── CLAUDE.md
+│   └── tonFinder/
+│       ├── tonFinder.js       – Inverse note-finding game controller
+│       ├── tonFinderLogic.js  – Pure tone-position and scoring logic
+│       ├── tonFinderSVG.js    – Interactive SVG fretboard rendering
+│       └── CLAUDE.md
 └── tools/          – Standalone tools (no scoring, utility-focused)
     └── guitarTuner/
         ├── guitarTuner.js  – Main controller, mic access, audio loop

@@ -1,6 +1,6 @@
 # Plan: 🔍 Ton-Finder (Griffbrett-Quiz umgekehrt)
 
-**Status:** Geplant ⏳ (Nächstes Todo?)  
+**Status:** Implementiert ✅  
 **Typ:** Übung  
 **Zielgruppe:** Einsteiger bis Fortgeschrittene
 
@@ -97,3 +97,22 @@ function getAllPositions(noteName, maxFret, activeStrings) {
 - Highscore pro Ton speichern (`localStorage`)
 - Ton-Sequenz-Modus: mehrere Töne hintereinander, Griffbrett-Mapping trainieren
 - Akustisches Feedback: korrekter Ton wird beim Tippen abgespielt
+
+---
+
+## Umsetzungsstand (2026-04-02)
+
+- View `#view-ton-finder` inkl. Menü-Eintrag und Navigation in `js/app.js` ist umgesetzt.
+- Neues Spielmodul unter `js/games/tonFinder/` wurde ergänzt:
+  - `tonFinder.js` (State, Runden, Auswertung, UI-Wiring)
+  - `tonFinderLogic.js` (Ton-Pool, Positionsberechnung, Auswertung)
+  - `tonFinderSVG.js` (interaktives SVG-Griffbrett)
+  - `CLAUDE.md`
+- Einstellungen umgesetzt:
+  - Bundbereich 0–12 (Default 0–5)
+  - Saiten-Toggles mit Mindestanzahl 1
+  - Schwierigkeit (natürliche Töne / alle Töne)
+- Auswertung umgesetzt:
+  - korrekt = grün, verpasst = orange, falsch = rot
+  - Scoreanzeige mit Punkte- und Rundenzähler
+- Unit-Tests ergänzt in `tests/unit/tonFinderLogic.test.js`.

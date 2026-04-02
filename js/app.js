@@ -5,6 +5,7 @@ import { startExercise as startTuner,       stopExercise as stopTuner       } fr
 import { startExercise as startSheetMusic,  stopExercise as stopSheetMusic  } from './games/sheetMusicReading/sheetMusicReading.js';
 import { startExercise as startMetronome,   stopExercise as stopMetronome   } from './tools/metronome/metronome.js';
 import { startExercise as startAkkord,      stopExercise as stopAkkord      } from './games/akkordTrainer/akkordTrainer.js';
+import { startExercise as startTonFinder,   stopExercise as stopTonFinder   } from './games/tonFinder/tonFinder.js';
 
 const views = {
   menu:        document.getElementById('view-menu'),
@@ -13,6 +14,7 @@ const views = {
   sheetMusic:  document.getElementById('view-sheet-music'),
   metronome:   document.getElementById('view-metronome'),
   akkord:      document.getElementById('view-akkord-trainer'),
+  tonFinder:   document.getElementById('view-ton-finder'),
 };
 
 let currentView = 'menu';
@@ -30,6 +32,7 @@ function navigateTo(name) {
   if (currentView === 'sheetMusic') stopSheetMusic();
   if (currentView === 'metronome')  stopMetronome();
   if (currentView === 'akkord')     stopAkkord();
+  if (currentView === 'tonFinder')  stopTonFinder();
 
   currentView = name;
   showView(name);
@@ -39,6 +42,7 @@ function navigateTo(name) {
   if (name === 'sheetMusic') startSheetMusic();
   if (name === 'metronome')  startMetronome();
   if (name === 'akkord')     startAkkord();
+  if (name === 'tonFinder')  startTonFinder();
 }
 
 // ── Wire up buttons ──────────────────────────────────────────────────────────
@@ -57,6 +61,9 @@ document.getElementById('btn-back-metronome').addEventListener('click',    () =>
 
 document.getElementById('btn-start-akkord-trainer').addEventListener('click', () => navigateTo('akkord'));
 document.getElementById('btn-back-akkord-trainer').addEventListener('click',  () => navigateTo('menu'));
+
+document.getElementById('btn-start-ton-finder').addEventListener('click', () => navigateTo('tonFinder'));
+document.getElementById('btn-back-ton-finder').addEventListener('click',  () => navigateTo('menu'));
 
 // ── Initial view ─────────────────────────────────────────────────────────────
 showView('menu');
