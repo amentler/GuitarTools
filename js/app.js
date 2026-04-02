@@ -3,12 +3,14 @@
 import { startExercise as startFretboard,   stopExercise as stopFretboard   } from './games/fretboardToneRecognition/fretboardExercise.js';
 import { startExercise as startTuner,       stopExercise as stopTuner       } from './tools/guitarTuner/guitarTuner.js';
 import { startExercise as startSheetMusic,  stopExercise as stopSheetMusic  } from './games/sheetMusicReading/sheetMusicReading.js';
+import { startExercise as startMetronome,   stopExercise as stopMetronome   } from './tools/metronome/metronome.js';
 
 const views = {
   menu:        document.getElementById('view-menu'),
   fretboard:   document.getElementById('view-fretboard'),
   tuner:       document.getElementById('view-tuner'),
   sheetMusic:  document.getElementById('view-sheet-music'),
+  metronome:   document.getElementById('view-metronome'),
 };
 
 let currentView = 'menu';
@@ -24,6 +26,7 @@ function navigateTo(name) {
   if (currentView === 'fretboard')  stopFretboard();
   if (currentView === 'tuner')      stopTuner();
   if (currentView === 'sheetMusic') stopSheetMusic();
+  if (currentView === 'metronome')  stopMetronome();
 
   currentView = name;
   showView(name);
@@ -31,6 +34,7 @@ function navigateTo(name) {
   if (name === 'fretboard')  startFretboard();
   if (name === 'tuner')      startTuner();
   if (name === 'sheetMusic') startSheetMusic();
+  if (name === 'metronome')  startMetronome();
 }
 
 // ── Wire up buttons ──────────────────────────────────────────────────────────
@@ -43,6 +47,9 @@ document.getElementById('btn-back-tuner').addEventListener('click',        () =>
 
 document.getElementById('btn-start-sheet-music').addEventListener('click', () => navigateTo('sheetMusic'));
 document.getElementById('btn-back-sheet-music').addEventListener('click',  () => navigateTo('menu'));
+
+document.getElementById('btn-start-metronome').addEventListener('click',   () => navigateTo('metronome'));
+document.getElementById('btn-back-metronome').addEventListener('click',    () => navigateTo('menu'));
 
 // ── Initial view ─────────────────────────────────────────────────────────────
 showView('menu');

@@ -1,7 +1,17 @@
 # Plan: 🗺️ Skalenvisualisierer
 
+**Status:** Geplant ⏳  
 **Typ:** Tool  
 **Zielgruppe:** Einsteiger bis Fortgeschrittene
+
+---
+
+## AI Collaboration & Mandate
+
+**IMPORTANT FOR ALL AGENTS (Claude, Gemini, Codex):**
+- **Update .md files:** After completing a task or implementing a feature, you MUST update all relevant `.md` files (root `CLAUDE.md`, root `GEMINI.md`, this plan, and any other relevant documentation).
+- **Keep Plans Current:** If this plan is part of an ongoing task, update the status and next steps after each work session.
+- **Consistency:** Maintain the project's "Vanilla JS" and SVG-focused architecture.
 
 ---
 

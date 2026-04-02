@@ -24,3 +24,10 @@ Optional: Tabs unterhalb der Notenzeile.
 - Zustand: `{ bars, showTab }`
 - Buttons: `#btn-new-bars` (neue Takte) und `#btn-show-tab` (Toggle)
 - `wired`-Flag verhindert doppeltes Event-Listener-Wiring
+
+## AI Collaboration & Documentation
+
+**IMPORTANT FOR ALL AGENTS (Claude, Gemini, Codex):**
+- **Update .md files:** After completing a task or implementing a feature, you MUST update all relevant `.md` files (root `CLAUDE.md`, root `GEMINI.md`, this `CLAUDE.md`, and any plans in `plans/`).
+- **Keep Plans Current:** If a feature from `plans/` is implemented, update the file to reflect the new state and next steps.
+- **Architecture:** Maintain the project's "Vanilla JS" and SVG-focused architecture.

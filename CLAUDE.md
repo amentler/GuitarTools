@@ -48,6 +48,13 @@ Views are shown/hidden via the `.active` CSS class. No router needed.
 
 Branch `claude/guitar-learning-app-i9WM3`, root `/` — no build pipeline needed.
 
+## AI Collaboration & Documentation
+
+**IMPORTANT FOR ALL AGENTS (Claude, Gemini, Codex):**
+- **Update .md files:** After completing a task or implementing a feature, you MUST update all relevant `.md` files (this `CLAUDE.md`, `GEMINI.md`, and any plans in `plans/`).
+- **Keep Plans Current:** If a feature from `plans/` is implemented, update the file to reflect the new state and next steps.
+- **Architecture:** Maintain the project's "Vanilla JS" and SVG-focused architecture.
+
 ## Adding a New Game
 
 1. Create `js/games/myGame/` with `myGame.js` exporting `startExercise()` and `stopExercise()`

@@ -1,6 +1,24 @@
-# Plan: Metronome Tool
+# Plan: Metronome Tool (COMPLETED ✅)
 
 Implementation of a precise metronome tool for the GuitarTools app.
+
+## Status: Completed
+- **Directory Structure:** Created `js/tools/metronome/` with `metronome.js`, `metronomeLogic.js`, `metronomeSVG.js`, and `CLAUDE.md`.
+- **UI Components:** Added to `index.html` (Menu card + Metronome view).
+- **Navigation:** Wired in `js/app.js`.
+- **Implementation:** High-precision Web Audio API timing, SVG visuals, and BPM controls.
+- **Verification:** Precision and UI responsiveness verified.
+
+---
+
+## AI Collaboration & Mandate
+
+**IMPORTANT FOR ALL AGENTS (Claude, Gemini, Codex):**
+- **Update .md files:** After completing a task or implementing a feature, you MUST update all relevant `.md` files (root `CLAUDE.md`, root `GEMINI.md`, this plan, and any other relevant documentation).
+- **Keep Plans Current:** If this plan is part of an ongoing task, update the status and next steps after each work session.
+- **Consistency:** Maintain the project's "Vanilla JS" and SVG-focused architecture.
+
+---
 
 ## 1. Directory Structure
 

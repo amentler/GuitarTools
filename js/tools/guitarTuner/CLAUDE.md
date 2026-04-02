@@ -48,3 +48,10 @@ Main controller. Exports `startExercise()` and `stopExercise()`.
 **Mode logic:**
 - `standard`: green dot only for E2/A2/D3/G3/B3/E4
 - `chromatic`: green dot for any note when in tune (|cents| ≤ 8)
+
+## AI Collaboration & Documentation
+
+**IMPORTANT FOR ALL AGENTS (Claude, Gemini, Codex):**
+- **Update .md files:** After completing a task or implementing a feature, you MUST update all relevant `.md` files (root `CLAUDE.md`, root `GEMINI.md`, this `CLAUDE.md`, and any plans in `plans/`).
+- **Keep Plans Current:** If a feature from `plans/` is implemented, update the file to reflect the new state and next steps.
+- **Architecture:** Maintain the project's "Vanilla JS" and SVG-focused architecture.

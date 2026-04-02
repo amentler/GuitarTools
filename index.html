@@ -51,6 +51,15 @@
         <p class="card-desc">Spiele vier zufällige Takte vom Blatt.</p>
         <button id="btn-start-sheet-music" class="btn-start">Starten</button>
       </article>
+
+      <article class="exercise-card">
+        <div class="card-icon">⏱️</div>
+        <h2 class="card-title">Metronom</h2>
+        <p class="card-desc">
+          Verbessere dein Timing mit einem präzisen Metronom.
+        </p>
+        <button id="btn-start-metronome" class="btn-start">Starten</button>
+      </article>
     </div>
   </section>
 
@@ -144,6 +153,49 @@
     <div id="score-container" class="score-container"></div>
 
     <button id="btn-new-bars" class="btn-new-bars">Neue Takte</button>
+
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <!-- METRONOM                                                                -->
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <section id="view-metronome" class="view">
+
+    <div class="exercise-header">
+      <button id="btn-back-metronome" class="btn-back">← Zurück zum Menü</button>
+    </div>
+
+    <div id="metronome-display" class="metronome-container"></div>
+
+    <div class="metronome-controls">
+      <div class="bpm-display-container">
+        <span id="metronome-bpm-value" class="bpm-value">120</span>
+        <span class="bpm-unit">BPM</span>
+      </div>
+
+      <input type="range" id="metronome-bpm-slider" min="40" max="240" value="120" class="bpm-slider" />
+
+      <div class="bpm-buttons">
+        <button id="btn-metronome-minus-5" class="btn-bpm">-5</button>
+        <button id="btn-metronome-minus-1" class="btn-bpm">-1</button>
+        <button id="btn-metronome-plus-1" class="btn-bpm">+1</button>
+        <button id="btn-metronome-plus-5" class="btn-bpm">+5</button>
+      </div>
+    </div>
+
+    <div class="metronome-settings">
+      <div class="settings-row">
+        <label for="metronome-beats-select" class="settings-label">Taktart:</label>
+        <select id="metronome-beats-select" class="metronome-select">
+          <option value="2">2/4</option>
+          <option value="3">3/4</option>
+          <option value="4" selected>4/4</option>
+          <option value="6">6/8</option>
+        </select>
+      </div>
+    </div>
+
+    <button id="btn-metronome-toggle" class="btn-start-toggle">Start</button>
 
   </section>
 

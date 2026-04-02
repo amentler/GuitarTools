@@ -1,6 +1,6 @@
 // GuitarTools Service Worker – cache-first offline strategy
 
-const CACHE_NAME = 'guitartools-v5';
+const CACHE_NAME = 'guitartools-v6';
 
 // Derive base path from SW location so it works both at / and /GuitarTools/
 const BASE = self.location.pathname.replace('sw.js', '');
@@ -21,6 +21,9 @@ const ASSETS = [
   BASE + 'js/games/sheetMusicReading/sheetMusicReading.js',
   BASE + 'js/games/sheetMusicReading/sheetMusicLogic.js',
   BASE + 'js/games/sheetMusicReading/sheetMusicSVG.js',
+  BASE + 'js/tools/metronome/metronome.js',
+  BASE + 'js/tools/metronome/metronomeLogic.js',
+  BASE + 'js/tools/metronome/metronomeSVG.js',
 ];
 
 // CDN assets cached opportunistically – install won't fail if unreachable

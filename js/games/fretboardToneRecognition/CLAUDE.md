@@ -59,3 +59,10 @@ Stateless — clears the container and builds a fresh SVG on every call.
 - 6 strings (y 40–250), tempered fret spacing
 - Inlay dots at frets 3, 5, 7, 9 (if within the visible range)
 - Target dot: amber + pulsing (question), green (correct), red (wrong)
+
+## AI Collaboration & Documentation
+
+**IMPORTANT FOR ALL AGENTS (Claude, Gemini, Codex):**
+- **Update .md files:** After completing a task or implementing a feature, you MUST update all relevant `.md` files (root `CLAUDE.md`, root `GEMINI.md`, this `CLAUDE.md`, and any plans in `plans/`).
+- **Keep Plans Current:** If a feature from `plans/` is implemented, update the file to reflect the new state and next steps.
+- **Architecture:** Maintain the project's "Vanilla JS" and SVG-focused architecture.
