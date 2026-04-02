@@ -26,6 +26,7 @@ Qualitätsmanagement (Ist):
 - Keine CI-Workflows
 - Service-Worker-Assetliste wird manuell versionsgeführt
 - Qualitätssicherung aktuell primär manuell
+- **Phase 0 abgeschlossen:** Roadmap und Scope-Abgrenzung dokumentiert in `docs/ci-quality-roadmap.md`
 
 ## 3) Dokumentations- und Agentenstatus
 
