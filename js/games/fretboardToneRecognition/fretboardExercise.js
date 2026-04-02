@@ -6,6 +6,9 @@ import { renderFretboard } from './fretboardSVG.js';
 // ── Module-level flags ────────────────────────────────────────────────────────
 let settingsWired = false;
 
+// ── Constants ─────────────────────────────────────────────────────────────────
+const RESHUFFLE_INTERVAL = 5;
+
 // ── State ─────────────────────────────────────────────────────────────────────
 let state = {
   targetPosition: null,
@@ -16,15 +19,42 @@ let state = {
   settings: {
     maxFret: 4,
     activeStrings: [0, 1, 2, 3, 4, 5],
+    shuffleNotes: false,
   },
   chancesLeft:  3,
   wrongAnswers: [],
   selectedNote: null,
   correctNote:  null,
+  noteOrder: [...CHROMATIC_NOTES],
+  exercisesAnswered: 0,
+  noteOrderDirty: false,
 };
 
 // ── DOM refs (resolved when exercise starts) ──────────────────────────────────
 let svgContainer, noteButtonsEl, feedbackTextEl, scoreCorrectEl, scoreTotalEl, chancesDisplayEl;
+
+// ── Utilities ─────────────────────────────────────────────────────────────────
+
+function shuffleArray(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function makeNoteOrder(shuffleNotes) {
+  return shuffleNotes ? shuffleArray([...CHROMATIC_NOTES]) : [...CHROMATIC_NOTES];
+}
+
+function maybeReshuffleNotes() {
+  state.exercisesAnswered += 1;
+  if (state.settings.shuffleNotes && state.exercisesAnswered % RESHUFFLE_INTERVAL === 0) {
+    state.noteOrder = shuffleArray([...CHROMATIC_NOTES]);
+    state.noteOrderDirty = true;
+  }
+}
 
 // ── Public API ────────────────────────────────────────────────────────────────
 
@@ -50,6 +80,9 @@ export function startExercise() {
     wrongAnswers: [],
     selectedNote: null,
     correctNote:  null,
+    noteOrder: makeNoteOrder(state.settings.shuffleNotes),
+    exercisesAnswered: 0,
+    noteOrderDirty: false,
   };
 
   buildNoteButtons();
@@ -103,6 +136,15 @@ function wireSettings() {
       resetAndAdvance();
     });
   });
+
+  const shuffleCheckbox = document.getElementById('shuffle-notes-checkbox');
+  shuffleCheckbox.addEventListener('change', () => {
+    state.settings.shuffleNotes = shuffleCheckbox.checked;
+    state.noteOrder = makeNoteOrder(state.settings.shuffleNotes);
+    state.exercisesAnswered = 0;
+    buildNoteButtons();
+    resetAndAdvance();
+  });
 }
 
 function syncSettingsUI() {
@@ -115,6 +157,8 @@ function syncSettingsUI() {
     const idx = parseInt(btn.dataset.string, 10);
     btn.classList.toggle('active', state.settings.activeStrings.includes(idx));
   });
+
+  document.getElementById('shuffle-notes-checkbox').checked = state.settings.shuffleNotes;
 }
 
 // ── Core rendering ────────────────────────────────────────────────────────────
@@ -133,7 +177,7 @@ function render() {
 
 function buildNoteButtons() {
   noteButtonsEl.innerHTML = '';
-  for (const note of CHROMATIC_NOTES) {
+  for (const note of state.noteOrder) {
     const btn = document.createElement('button');
     btn.className   = 'btn-note';
     btn.textContent = note;
@@ -162,6 +206,7 @@ function handleAnswer(note) {
     state.score.total   += 1;
     updateScore();
     render();
+    maybeReshuffleNotes();
     state.feedbackTimeout = setTimeout(advanceToNextPosition, 1200);
 
   } else {
@@ -183,6 +228,7 @@ function handleAnswer(note) {
       updateScore();
       render();
       updateChancesDisplay();
+      maybeReshuffleNotes();
       state.feedbackTimeout = setTimeout(advanceToNextPosition, 1200);
     }
   }
@@ -196,6 +242,13 @@ function advanceToNextPosition() {
   state.isDisabled     = false;
   state.chancesLeft    = 3;
   state.wrongAnswers   = [];
+
+  // Rebuild buttons if noteOrder was changed by a reshuffle
+  if (state.noteOrderDirty) {
+    state.noteOrderDirty = false;
+    buildNoteButtons();
+  }
+
   render();
   updateChancesDisplay();
 }
