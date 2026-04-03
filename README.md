@@ -76,10 +76,16 @@ manifest.json       – PWA-Manifest
 sw.js               – Service Worker (Offline-Cache)
 js/
 ├── app.js          – Navigation zwischen Views, Start/Stop der Module
+├── components/     – Wiederverwendbare Web Components (UI-Schicht)
+│   ├── index.js    – Registriert alle Custom Elements
+│   └── fretboard/
+│       ├── gt-fretboard.js         – <gt-fretboard> Web Component
+│       └── gt-fretboard-render.js  – Pure SVG-Renderfunktion
 ├── games/          – Übungen (selbstständige Module)
 │   ├── fretboardToneRecognition/   – Griffbrett: Töne erkennen
 │   ├── sheetMusicReading/          – Noten lesen
-│   └── akkordTrainer/              – Akkord-Trainer
+│   ├── akkordTrainer/              – Akkord-Trainer
+│   └── tonFinder/                  – Ton-Finder (nutzt <gt-fretboard>)
 └── tools/          – Werkzeuge (ohne Score)
     ├── guitarTuner/                – Gitarren-Stimmgerät
     └── metronome/                  – Metronom
