@@ -3,24 +3,22 @@
 
 import { Renderer, Stave, StaveNote, Voice, Formatter, Accidental } from 'https://cdn.jsdelivr.net/npm/vexflow@4.2.2/+esm';
 
-// ── Note → VexFlow key mapping ────────────────────────────────────────────────
-// Written pitch (guitar is transposing: sounds one octave lower than written).
-// Notes span one chromatic octave: E4 (bottom treble-clef line) through D#5
-// (4th line), so all 12 notes sit within the staff without ledger lines.
-const NOTE_DISPLAY = {
-  'E':  { vfKey: 'e/4',  acc: null },
-  'F':  { vfKey: 'f/4',  acc: null },
-  'F#': { vfKey: 'f#/4', acc: '#'  },
-  'G':  { vfKey: 'g/4',  acc: null },
-  'G#': { vfKey: 'g#/4', acc: '#'  },
-  'A':  { vfKey: 'a/4',  acc: null },
-  'A#': { vfKey: 'a#/4', acc: '#'  },
-  'B':  { vfKey: 'b/4',  acc: null },
-  'C':  { vfKey: 'c/5',  acc: null },
-  'C#': { vfKey: 'c#/5', acc: '#'  },
-  'D':  { vfKey: 'd/5',  acc: null },
-  'D#': { vfKey: 'd#/5', acc: '#'  },
-};
+// ── Octave-aware pitch → VexFlow key ──────────────────────────────────────────
+
+/**
+ * Converts an octave-aware pitch string (e.g. "C#4") to a VexFlow key and accidental.
+ * @param {string} pitch - e.g. "C#4", "E2", "A#3"
+ * @returns {{ vfKey: string, acc: string|null } | null}
+ */
+function pitchToVfKey(pitch) {
+  const match = pitch.match(/^([A-G]#?)(\d+)$/);
+  if (!match) return null;
+  const noteName = match[1];
+  const octave   = match[2];
+  const vfKey    = `${noteName.toLowerCase()}/${octave}`;
+  const acc      = noteName.includes('#') ? '#' : null;
+  return { vfKey, acc };
+}
 
 const VW = 220;
 const VH = 120;
@@ -30,9 +28,9 @@ const STAVE_W = 180;
 /**
  * Renders a single note (or rest) on a treble clef staff into the given container.
  * @param {HTMLElement} container
- * @param {string|null} noteName  - e.g. "C#", "E", or null for empty staff
+ * @param {string|null} pitch - octave-aware pitch string e.g. "C#4", "E2", or null for empty staff
  */
-export function renderNoteOnStaff(container, noteName) {
+export function renderNoteOnStaff(container, pitch) {
   container.innerHTML = '';
 
   const renderer = new Renderer(container, Renderer.Backends.SVG);
@@ -48,20 +46,23 @@ export function renderNoteOnStaff(container, noteName) {
   stave.addClef('treble');
   stave.setContext(ctx).draw();
 
-  if (noteName && NOTE_DISPLAY[noteName]) {
-    const { vfKey, acc } = NOTE_DISPLAY[noteName];
+  if (pitch) {
+    const parsed = pitchToVfKey(pitch);
+    if (parsed) {
+      const { vfKey, acc } = parsed;
 
-    const staveNote = new StaveNote({ clef: 'treble', keys: [vfKey], duration: 'q' });
-    if (acc) {
-      staveNote.addModifier(new Accidental(acc), 0);
+      const staveNote = new StaveNote({ clef: 'treble', keys: [vfKey], duration: 'q' });
+      if (acc) {
+        staveNote.addModifier(new Accidental(acc), 0);
+      }
+
+      const voice = new Voice({ num_beats: 1, beat_value: 4 });
+      try { voice.setMode(Voice.Mode.SOFT); } catch { /* VexFlow version compatibility */ }
+      voice.addTickables([staveNote]);
+
+      new Formatter().joinVoices([voice]).format([voice], STAVE_W * 0.5);
+      voice.draw(ctx, stave);
     }
-
-    const voice = new Voice({ num_beats: 1, beat_value: 4 });
-    try { voice.setMode(Voice.Mode.SOFT); } catch { /* VexFlow version compatibility */ }
-    voice.addTickables([staveNote]);
-
-    new Formatter().joinVoices([voice]).format([voice], STAVE_W * 0.5);
-    voice.draw(ctx, stave);
   }
 
   // Make SVG responsive

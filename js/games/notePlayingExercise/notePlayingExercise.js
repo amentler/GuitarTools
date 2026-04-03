@@ -2,7 +2,7 @@
 // Shows a target note; listens via microphone to verify the user plays it.
 
 import { detectPitch, frequencyToNote, pushAndMedian } from '../../tools/guitarTuner/tunerLogic.js';
-import { getRandomNote, getPositionsForNote } from './notePlayingLogic.js';
+import { getRandomPitch, getPositionsForPitch } from './notePlayingLogic.js';
 import { renderNoteOnStaff, renderNotePositionsTab } from './notePlayingSVG.js';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -81,7 +81,7 @@ export async function startExercise() {
   syncSettingsUI();
 
   // Pick initial target note
-  state.targetNote = getRandomNote(null, state.settings.maxFret, state.settings.activeStrings);
+  state.targetNote = getRandomPitch(null, state.settings.maxFret, state.settings.activeStrings);
   updateTargetDisplay();
   updateDetectedNote(null);
   updateFeedback(null);
@@ -199,7 +199,7 @@ function resetTargetNote() {
   state.isLocked = false;
   state.matchStreak = 0;
   state.hintLevel = 0;
-  state.targetNote = getRandomNote(null, state.settings.maxFret, state.settings.activeStrings);
+  state.targetNote = getRandomPitch(null, state.settings.maxFret, state.settings.activeStrings);
   updateTargetDisplay();
   updateDetectedNote(null);
   updateFeedback(null);
@@ -222,11 +222,12 @@ function analyzeFrame() {
   }
 
   const medianHz = pushAndMedian(freqHistory, hz);
-  const { note }  = frequencyToNote(medianHz);
+  const { note, octave } = frequencyToNote(medianHz);
+  const pitch = `${note}${octave}`;
 
-  updateDetectedNote(note);
+  updateDetectedNote(pitch);
 
-  if (note === state.targetNote) {
+  if (pitch === state.targetNote) {
     state.matchStreak++;
     if (state.matchStreak >= MATCH_STREAK_REQUIRED) {
       handleSuccess();
@@ -247,7 +248,7 @@ function handleSuccess() {
   updateFeedback('correct');
 
   state.advanceTimeout = setTimeout(() => {
-    state.targetNote = getRandomNote(
+    state.targetNote = getRandomPitch(
       state.targetNote,
       state.settings.maxFret,
       state.settings.activeStrings
@@ -289,7 +290,7 @@ function updateHintDisplay() {
     ui.hint2Btn.disabled = false;
   }
   if (state.hintLevel >= 2) {
-    const positions = getPositionsForNote(
+    const positions = getPositionsForPitch(
       state.targetNote,
       state.settings.maxFret,
       state.settings.activeStrings,
