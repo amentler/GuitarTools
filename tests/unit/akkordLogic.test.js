@@ -44,9 +44,9 @@ describe('validateChord', () => {
     expect(validateChord('C-Dur', exactInput)).toBe(true);
   });
 
-  it('returns false when one string is missing', () => {
+  it('returns false when one required fretted string is missing', () => {
     const missingString = CHORDS['C-Dur']
-      .filter(position => position.string !== 3)
+      .filter(position => position.string !== 5)
       .map(position => ({ ...position }));
 
     expect(validateChord('C-Dur', missingString)).toBe(false);
