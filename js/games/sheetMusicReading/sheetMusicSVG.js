@@ -5,7 +5,7 @@ import { Renderer, Stave, StaveNote, Voice, Formatter } from 'https://cdn.jsdeli
 // Fixed virtual canvas – CSS scales this to the actual container width.
 // A narrower virtual canvas means CSS scales up the notes, making them appear
 // larger on screen while the 4-bar layout still fits within the container.
-const VW      = 750;   // narrower virtual canvas → CSS scales notes to ~112% on desktop
+const VW      = 750;   // narrower virtual canvas → CSS scales notes to ~120% on 900px container
 const VH      = 160;   // trimmed height removes excess whitespace around stave
 const STAVE_Y = 50;    // y of top staff line (leaves ~50 px for clef curl above)
 
