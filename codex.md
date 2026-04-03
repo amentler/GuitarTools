@@ -1,6 +1,6 @@
 # Codex – Ist-Zustand GuitarTools
 
-Stand: 2026-04-03 (Phase 1 erweitert)
+Stand: 2026-04-03 (Phase 2 abgeschlossen)
 
 ## 1) Projektüberblick
 
@@ -27,7 +27,12 @@ Qualitätsmanagement (Ist):
   - `vitest.config.js`
   - 36 Unit-Tests für `fretboardLogic.js`, `tunerLogic.js`, `tonFinderLogic.js`, `akkordLogic.js`, `sheetMusicLogic.js` unter `tests/unit/`
   - GitHub Actions Workflow (`.github/workflows/ci.yml`) bei `push` und `pull_request`
-- Keine Linting-/Formatierungspipeline (Phase 2)
+- **Phase 2 abgeschlossen:** ESLint eingerichtet, Lint-Schritt in CI integriert
+  - `eslint.config.js` mit minimalen Regeln (Browser + ES Modules)
+  - `npm run lint` Script in `package.json`
+  - CI-Workflow führt jetzt Lint vor Tests aus
+  - 8 vorhandene Linting-Fehler in JS-Modulen korrigiert
+  - 10 neue Unit-Tests für `metronomeLogic.js` hinzugefügt (gesamt: 46 Tests)
 - Kein TypeScript (Phase 3–4)
 - Service-Worker-Assetliste wird manuell versionsgeführt
 - Service Worker nutzt **Network-First-Strategie**: Netzwerk bevorzugt, Cache als Fallback bei Offline

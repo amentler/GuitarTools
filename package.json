@@ -3,9 +3,13 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "vitest run"
+    "test": "vitest run",
+    "lint": "eslint ."
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.1.0",
+    "globals": "^17.4.0",
     "vitest": "^4.1.2"
   }
 }
