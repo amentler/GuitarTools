@@ -111,6 +111,121 @@ export function isStandardTuningNote(note, octave) {
   return STANDARD_TUNING.some(s => s.note === note && s.octave === octave);
 }
 
+// ── Guided tuning ─────────────────────────────────────────────────────────────
+
+/** Standard tuning steps from lowest (6th) to highest (1st) string. */
+export const GUIDED_TUNING_STEPS = [
+  { stringNumber: 6, note: 'E', octave: 2 },
+  { stringNumber: 5, note: 'A', octave: 2 },
+  { stringNumber: 4, note: 'D', octave: 3 },
+  { stringNumber: 3, note: 'G', octave: 3 },
+  { stringNumber: 2, note: 'B', octave: 3 },
+  { stringNumber: 1, note: 'E', octave: 4 },
+];
+
+/** Minimum cents deviation before direction guidance activates (≈ quarter tone). */
+export const QUARTER_TONE_CENTS = 50;
+
+/** Minimum number of consecutive consistent samples required to confirm a trend. */
+export const TREND_MIN_SAMPLES = 4;
+
+/** Maximum size of the guided trend history buffer. */
+export const TREND_HISTORY_SIZE = 6;
+
+/**
+ * Converts a note name and octave to frequency in Hz.
+ * @param {string} note   e.g. 'E', 'A', 'D#'
+ * @param {number} octave
+ * @returns {number} Hz
+ */
+export function noteToFrequency(note, octave) {
+  const idx = NOTE_NAMES.indexOf(note);
+  const midi = (octave + 1) * 12 + idx;
+  return 440 * Math.pow(2, (midi - 69) / 12);
+}
+
+/**
+ * Returns the cents difference of detectedFreq relative to targetFreq.
+ * Positive = detected is above target (too high).
+ * Negative = detected is below target (too low).
+ * @param {number} detectedFreq Hz
+ * @param {number} targetFreq   Hz
+ * @returns {number} cents
+ */
+export function getCentsToTarget(detectedFreq, targetFreq) {
+  return 1200 * Math.log2(detectedFreq / targetFreq);
+}
+
+/**
+ * Returns the required pitch-correction direction based on the cents offset.
+ * Returns 'none' when within the quarter-tone quiet zone.
+ * @param {number} centsToTarget  positive = too high, negative = too low
+ * @returns {'up'|'down'|'none'}
+ */
+export function getPitchDirection(centsToTarget) {
+  if (centsToTarget < -QUARTER_TONE_CENTS) return 'up';
+  if (centsToTarget > QUARTER_TONE_CENTS) return 'down';
+  return 'none';
+}
+
+/**
+ * Appends a centsToTarget value to the guided trend history
+ * (capped at TREND_HISTORY_SIZE). Mutates the array in place.
+ * @param {number[]} history
+ * @param {number}   centsToTarget
+ */
+export function pushGuidedHistory(history, centsToTarget) {
+  history.push(centsToTarget);
+  if (history.length > TREND_HISTORY_SIZE) history.shift();
+}
+
+/**
+ * Evaluates whether the pitch is approaching or moving away from the target,
+ * based on the most recent TREND_MIN_SAMPLES entries in history.
+ * Returns 'approaching' only when all consecutive absolute-distance pairs are
+ * strictly decreasing, 'moving-away' when all are strictly increasing, and
+ * 'unstable' otherwise (including when there are not enough samples yet).
+ * @param {number[]} history
+ * @returns {'approaching'|'moving-away'|'unstable'}
+ */
+export function evaluateTrend(history) {
+  if (history.length < TREND_MIN_SAMPLES) return 'unstable';
+  const recent = history.slice(-TREND_MIN_SAMPLES);
+  const absVals = recent.map(Math.abs);
+  let allDecreasing = true;
+  let allIncreasing = true;
+  for (let i = 1; i < absVals.length; i++) {
+    if (absVals[i] >= absVals[i - 1]) allDecreasing = false;
+    if (absVals[i] <= absVals[i - 1]) allIncreasing = false;
+  }
+  if (allDecreasing) return 'approaching';
+  if (allIncreasing) return 'moving-away';
+  return 'unstable';
+}
+
+/**
+ * Combines the current deviation and trend history into a full guided feedback state.
+ * @param {number}   centsToTarget  cents offset (positive = too high, negative = too low)
+ * @param {number[]} trendHistory   recent centsToTarget values
+ * @returns {{ direction: string, trend: string, arrowColor: string|null, warning: boolean }}
+ */
+export function getGuidedFeedback(centsToTarget, trendHistory) {
+  const direction = getPitchDirection(centsToTarget);
+  if (direction === 'none') {
+    return { direction: 'none', trend: 'none', arrowColor: null, warning: false };
+  }
+  const trend = evaluateTrend(trendHistory);
+  if (trend === 'unstable') {
+    return { direction, trend: 'unstable', arrowColor: null, warning: false };
+  }
+  return {
+    direction,
+    trend,
+    arrowColor: trend === 'approaching' ? 'orange' : 'red',
+    warning: trend === 'moving-away',
+  };
+}
+
 // ── Rolling median ────────────────────────────────────────────────────────────
 
 const HISTORY_SIZE = 5;
