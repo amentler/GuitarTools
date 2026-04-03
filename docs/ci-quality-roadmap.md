@@ -1,6 +1,6 @@
 # CI- und Qualitätspipeline – Roadmap
 
-Stand: 2026-04-03 (Phase 2 abgeschlossen)
+Stand: 2026-04-03 (Phase 3 abgeschlossen)
 
 ---
 
@@ -50,10 +50,11 @@ CI-Pipeline eingeführt wird.
 | **Phase 0** | Dokumentation, Planung, Scope-Abgrenzung | – (abgeschlossen) |
 | **Phase 1** | Minimale CI-Pipeline: `package.json` + Vitest + erste Unit-Tests für Logikmodule | Phase 0 (abgeschlossen) |
 | **Phase 2** | Linting (ESLint) in der Pipeline | Phase 1 (abgeschlossen) |
-| **Phase 3** | TypeScript-Prüfung (`tsc --noEmit`, `checkJs`) | Phase 2 |
-| **Phase 4** | Schrittweise TS-Migration der Logikmodule | Phase 3 |
-| **Phase 5** | Browsernahe Tests (Playwright Smoke Tests) | Phase 1 oder 3 |
-| **Phase 6** | Branch Protection + Pflicht-Statusprüfungen | Phase 1 |
+| **Phase 3** | Unit-Test-Abdeckung ausgebaut: `notePlayingLogic`, Edge Cases, 67 Tests gesamt | Phase 2 (abgeschlossen) |
+| **Phase 4** | TypeScript-Prüfung (`tsc --noEmit`, `checkJs`) | Phase 3 |
+| **Phase 5** | Schrittweise TS-Migration der Logikmodule | Phase 4 |
+| **Phase 6** | Browsernahe Tests (Playwright Smoke Tests) | Phase 1 oder 4 |
+| **Phase 7** | Branch Protection + Pflicht-Statusprüfungen | Phase 1 |
 
 ---
 
@@ -166,6 +167,14 @@ Folgendes erfolgt **nicht** in Phase 1/2 und wird explizit auf spätere Phasen v
 - Testdateien erstellt: `tests/unit/fretboardLogic.test.js`, `tests/unit/tunerLogic.test.js`
 - `.github/workflows/ci.yml` erstellt (Trigger: `push`, `pull_request`)
 - `.gitignore` angelegt
+- Dokumentation aktualisiert
+
+### Was der Agent in Phase 3 umgesetzt hat
+
+- Unit-Tests für `notePlayingLogic.js` hinzugefügt (`tests/unit/notePlayingLogic.test.js`, 14 Tests)
+- Edge-Case-Abdeckung in `tonFinderLogic.test.js` ergänzt (`positionKey` mit Nullwerten, `evaluateRound` für leer/korrekt/falsch)
+- Testabdeckung gesamt: **67 Tests** über 7 Testdateien
+- Abgedeckte Module: `fretboardLogic`, `tunerLogic`, `tonFinderLogic`, `akkordLogic`, `sheetMusicLogic`, `metronomeLogic`, `notePlayingLogic`
 - Dokumentation aktualisiert
 
 ### Was der Agent in Phase 2 umgesetzt hat

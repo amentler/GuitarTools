@@ -25,15 +25,19 @@ Qualitätsmanagement (Ist):
 - **Phase 1 abgeschlossen/erweitert:** CI-Pipeline eingerichtet und Unit-Testabdeckung ausgebaut
   - `package.json` + Vitest als Dev-Dependency
   - `vitest.config.js`
-  - 36 Unit-Tests für `fretboardLogic.js`, `tunerLogic.js`, `tonFinderLogic.js`, `akkordLogic.js`, `sheetMusicLogic.js` unter `tests/unit/`
+  - Unit-Tests für `fretboardLogic.js`, `tunerLogic.js`, `tonFinderLogic.js`, `akkordLogic.js`, `sheetMusicLogic.js` unter `tests/unit/`
   - GitHub Actions Workflow (`.github/workflows/ci.yml`) bei `push` und `pull_request`
 - **Phase 2 abgeschlossen:** ESLint eingerichtet, Lint-Schritt in CI integriert
   - `eslint.config.js` mit minimalen Regeln (Browser + ES Modules)
   - `npm run lint` Script in `package.json`
   - CI-Workflow führt jetzt Lint vor Tests aus
   - 8 vorhandene Linting-Fehler in JS-Modulen korrigiert
-  - 10 neue Unit-Tests für `metronomeLogic.js` hinzugefügt (gesamt: 46 Tests)
-- Kein TypeScript (Phase 3–4)
+  - 10 neue Unit-Tests für `metronomeLogic.js` hinzugefügt
+- **Phase 3 abgeschlossen:** Unit-Testabdeckung weiter ausgebaut und gehärtet
+  - `tests/unit/notePlayingLogic.test.js` (14 Tests für `notePlayingLogic.js`)
+  - Edge-Case-Abdeckung für `tonFinderLogic.js` ergänzt (`positionKey`, `evaluateRound` mit leer/korrekt/falsch)
+  - Gesamt: 67 Unit-Tests über 7 Testdateien: `fretboardLogic`, `tunerLogic`, `tonFinderLogic`, `akkordLogic`, `sheetMusicLogic`, `metronomeLogic`, `notePlayingLogic`
+- Kein TypeScript (Phase 4–5)
 - Service-Worker-Assetliste wird manuell versionsgeführt
 - Service Worker nutzt **Network-First-Strategie**: Netzwerk bevorzugt, Cache als Fallback bei Offline
 
