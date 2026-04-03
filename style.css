@@ -496,6 +496,147 @@ input[type="range"] {
   color: var(--color-accent-alt);
 }
 
+/* === Guided Tuner === */
+
+.guided-tuner-section {
+  margin-top: 1rem;
+  border-top: 1px solid var(--color-border);
+  padding-top: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.btn-start-guided {
+  width: 100%;
+  padding: 0.7rem 1rem;
+  background: var(--color-card);
+  border: 1px solid var(--color-accent-alt);
+  border-radius: var(--radius);
+  color: var(--color-accent-alt);
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+  text-align: center;
+}
+
+.btn-start-guided:hover {
+  background: #1a4080;
+}
+
+.btn-guided-next {
+  padding: 0.5rem 1.4rem;
+  background: var(--color-card);
+  border: 1px solid var(--color-accent-alt);
+  border-radius: var(--radius);
+  color: var(--color-accent-alt);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.btn-guided-next:hover {
+  background: #1a4080;
+}
+
+.guided-step-header {
+  text-align: center;
+}
+
+.guided-step-info {
+  font-size: 1.1rem;
+  color: var(--color-text);
+  margin-bottom: 0.5rem;
+}
+
+.guided-target-note {
+  color: var(--color-accent-alt);
+  font-size: 1.3rem;
+}
+
+.guided-step-progress {
+  display: flex;
+  justify-content: center;
+  gap: 0.4rem;
+  margin-top: 0.4rem;
+}
+
+.guided-progress-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--color-border);
+  display: inline-block;
+  transition: background 0.15s;
+}
+
+.guided-progress-dot.active {
+  background: var(--color-accent-alt);
+}
+
+.guided-progress-dot.done {
+  background: var(--color-correct);
+}
+
+.guided-feedback {
+  min-height: 90px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+}
+
+.guided-warning {
+  color: var(--color-wrong);
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.guided-arrow {
+  font-size: 3.5rem;
+  line-height: 1;
+  font-weight: 700;
+}
+
+.guided-arrow.orange {
+  color: var(--color-accent-alt);
+}
+
+.guided-arrow.red {
+  color: var(--color-wrong);
+}
+
+.guided-hint {
+  font-size: 0.9rem;
+  color: var(--color-text-muted);
+}
+
+.guided-actions {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+}
+
+.guided-finished {
+  text-align: center;
+  padding: 0.75rem 0;
+}
+
+.guided-done-icon {
+  font-size: 3rem;
+  margin-bottom: 0.4rem;
+}
+
+.guided-done-text {
+  font-size: 1.1rem;
+  color: var(--color-correct);
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+}
+
 /* === Metronome View === */
 #view-metronome {
   padding: 1rem;
