@@ -21,8 +21,8 @@ function pitchToVfKey(pitch) {
 }
 
 const VW = 220;
-const VH = 120;
-const STAVE_Y = 30;
+const VH = 185;
+const STAVE_Y = 50;
 const STAVE_W = 180;
 
 /**
