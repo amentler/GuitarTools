@@ -1,4 +1,3 @@
-import { renderInteractiveFretboard } from './tonFinderSVG.js';
 import { getAllPositions, getNotePool, evaluateRound, positionKey } from './tonFinderLogic.js';
 
 let settingsWired = false;
@@ -20,7 +19,7 @@ let ui;
 
 function resolveUI() {
   ui = {
-    svgContainer: document.getElementById('ton-finder-svg'),
+    fretboard: document.getElementById('ton-finder-svg'),
     targetNote: document.getElementById('ton-finder-target-note'),
     feedback: document.getElementById('ton-finder-feedback'),
     scorePoints: document.getElementById('ton-finder-score-points'),
@@ -91,6 +90,10 @@ function wireSettings() {
 
   ui.finishButton.addEventListener('click', finishRound);
   ui.nextButton.addEventListener('click', startNextRound);
+
+  ui.fretboard.addEventListener('fret-select', event => {
+    onPositionToggle(event.detail.stringIndex, event.detail.fret);
+  });
 }
 
 function syncSettingsUI() {
@@ -125,14 +128,26 @@ function startNextRound() {
 }
 
 function render() {
-  renderInteractiveFretboard(
-    ui.svgContainer,
-    state.settings.maxFret,
-    state.settings.activeStrings,
-    onPositionToggle,
-    state.selected,
-    state.resultMap
-  );
+  const fretboard = ui.fretboard;
+  fretboard.frets = state.settings.maxFret;
+  fretboard.activeStrings = state.settings.activeStrings;
+
+  const positions = [];
+  for (const [key, result] of state.resultMap) {
+    const [si, f] = parseKey(key);
+    positions.push({ stringIndex: si, fret: f, state: result });
+  }
+  for (const key of state.selected) {
+    if (!state.resultMap.has(key)) {
+      const [si, f] = parseKey(key);
+      positions.push({ stringIndex: si, fret: f, state: 'selected' });
+    }
+  }
+  fretboard.positions = positions;
+}
+
+function parseKey(key) {
+  return key.split(':').map(Number);
 }
 
 function onPositionToggle(stringIndex, fret) {

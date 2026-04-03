@@ -4,9 +4,31 @@ Der Ton-Finder zeigt einen Zielton (z. B. `G`) an. Die Aufgabe ist, alle Positio
 
 ## Dateien
 
-- `tonFinder.js` – State, Rundenfluss, Auswertung, DOM-Wiring
+- `tonFinder.js` – State, Rundenfluss, Auswertung, DOM-Wiring; nutzt `<gt-fretboard>`
 - `tonFinderLogic.js` – Pure Funktionen für Ton-Pool, Positionssuche und Auswertung
-- `tonFinderSVG.js` – Interaktives SVG-Griffbrett mit klickbaren Positionen
+- `tonFinderSVG.js` – Alter SVG-Renderer (Legacy, nicht mehr aktiv genutzt)
+
+## Griffbrett-Integration (Phase 1)
+
+`tonFinder.js` nutzt die `<gt-fretboard>` Web Component (registriert via `js/components/index.js`).
+
+In `index.html`:
+```html
+<gt-fretboard id="ton-finder-svg" class="fretboard-container" interactive></gt-fretboard>
+```
+
+In `tonFinder.js`:
+```js
+// Fretboard konfigurieren
+ui.fretboard.frets = state.settings.maxFret;
+ui.fretboard.activeStrings = state.settings.activeStrings;
+ui.fretboard.positions = positions; // Array<{stringIndex, fret, state?}>
+
+// User-Interaktion empfangen
+ui.fretboard.addEventListener('fret-select', event => {
+  onPositionToggle(event.detail.stringIndex, event.detail.fret);
+});
+```
 
 ## Ablauf
 
@@ -24,4 +46,4 @@ Der Ton-Finder zeigt einen Zielton (z. B. `G`) an. Die Aufgabe ist, alle Positio
 **IMPORTANT FOR ALL AGENTS (Claude, Gemini, Codex):**
 - **Update .md files:** After completing a task or implementing a feature, you MUST update all relevant `.md` files (root `CLAUDE.md`, root `GEMINI.md`, this `CLAUDE.md`, and any plans in `plans/`).
 - **Keep Plans Current:** If a feature from `plans/` is implemented, update the file to reflect the new state and next steps.
-- **Architecture:** Maintain the project's "Vanilla JS" and SVG-focused architecture.
+- **Architecture:** Maintain the project's "Vanilla JS", Web Component, and SVG-focused architecture.
