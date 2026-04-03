@@ -12,7 +12,7 @@ A static web app for learning guitar, running directly on GitHub Pages without a
 ## Project Structure
 
 ```
-index.html          – Main HTML, contains all views (#view-menu, #view-fretboard, #view-tuner, etc.)
+index.html          – Main HTML, contains all views (#view-menu, #view-fretboard, #view-tuner)
 style.css           – Global styles and CSS Custom Properties
 version.txt         – Version text shown on the main menu (format: `Version YYYY-MM-DD HH:MM`); update on each change
 js/
@@ -23,15 +23,11 @@ js/
 │       ├── gt-fretboard.js         – <gt-fretboard> Web Component
 │       └── gt-fretboard-render.js  – Pure SVG render function (no state)
 ├── games/          – Self-contained interactive games/exercises
-│   ├── fretboardToneRecognition/
-│   │   ├── fretboardExercise.js  – Exercise state & DOM interaction
-│   │   ├── fretboardLogic.js     – Pure note calculation utilities
-│   │   ├── fretboardSVG.js       – SVG fretboard rendering (legacy, not yet migrated)
-│   │   └── CLAUDE.md
-│   ├── notePlayingExercise/
-│   │   ├── notePlayingExercise.js – Controller: mic access, pitch-detection loop, state
-│   │   ├── notePlayingLogic.js    – Pure logic: getAvailableNotes, getRandomNote
-│   │   └── CLAUDE.md
+│   └── fretboardToneRecognition/
+│       ├── fretboardExercise.js  – Exercise state & DOM interaction
+│       ├── fretboardLogic.js     – Pure note calculation utilities
+│       ├── fretboardSVG.js       – SVG fretboard rendering (legacy, not yet migrated)
+│       └── CLAUDE.md
 │   └── tonFinder/
 │       ├── tonFinder.js       – Game controller; uses <gt-fretboard>
 │       ├── tonFinderLogic.js  – Pure tone-position and scoring logic
@@ -126,8 +122,8 @@ Phase 1 CI pipeline is active. Tests run on every push and pull request.
 - **Run linter:** `npm run lint` (uses ESLint)
 - **Test files:** `tests/unit/` — pure logic tests only, no DOM/audio
 - **CI workflow:** `.github/workflows/ci.yml`
-- **Current unit-test scope:** `fretboardLogic`, `tunerLogic`, `tonFinderLogic`, `akkordLogic`, `sheetMusicLogic`, `metronomeLogic`
-- **Current test count:** 46 passing Vitest tests (`tests/unit/**/*.test.js`)
+- **Current unit-test scope:** `fretboardLogic`, `tunerLogic`, `tonFinderLogic`, `akkordLogic`, `sheetMusicLogic`, `metronomeLogic`, `notePlayingLogic`
+- **Current test count:** 67 passing Vitest tests (`tests/unit/**/*.test.js`)
 
 When adding logic to `*Logic.js` files, add corresponding tests in `tests/unit/`.
 

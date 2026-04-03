@@ -416,7 +416,7 @@ input[type="range"] {
 #view-sheet-music {
   padding: 1rem;
   gap: 1rem;
-  max-width: 840px;
+  max-width: 900px;
   width: 100%;
   margin: 0 auto;
 }
@@ -762,24 +762,66 @@ input[type="range"] {
   padding: 2rem 1rem;
 }
 
+.note-play-notation {
+  width: 100%;
+  max-width: 260px;
+}
+
 .note-play-target-note {
-  font-size: 5rem;
+  font-size: 2.5rem;
   font-weight: 800;
   color: var(--color-accent-alt);
   line-height: 1;
   text-align: center;
-  min-height: 6rem;
+  min-height: 3rem;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-.note-play-detected-note {
-  font-size: 1.5rem;
-  font-weight: 600;
+.note-play-hints {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.btn-hint {
+  padding: 0.4rem 0.9rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  background: var(--color-bg);
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.btn-hint:hover:not(:disabled) {
+  background: var(--color-surface-2, var(--color-surface));
+  color: var(--color-text);
+}
+
+.btn-hint:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.note-play-tab {
+  width: 100%;
+  max-width: 280px;
+}
+
+.note-play-detected-label {
+  font-size: 0.8rem;
   color: var(--color-text-muted);
   text-align: center;
-  min-height: 2rem;
+}
+
+.note-play-detected-notation {
+  width: 100%;
+  max-width: 200px;
+  opacity: 0.65;
 }
 
 /* === Responsive === */
