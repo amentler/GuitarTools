@@ -105,6 +105,13 @@ body {
   cursor: default;
 }
 
+.app-version {
+  font-size: 0.72rem;
+  color: var(--color-text-muted);
+  opacity: 0.6;
+  margin-top: 0.25rem;
+}
+
 .menu-cards {
   display: flex;
   flex-wrap: wrap;
@@ -639,6 +646,14 @@ input[type="range"] {
   border-top: 1px solid var(--color-border);
   width: 100%;
   max-width: 800px;
+}
+
+.menu-footer-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0.9rem;
 }
 
 .impressum-title {

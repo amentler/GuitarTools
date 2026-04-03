@@ -14,6 +14,7 @@ A static web app for learning guitar, running directly on GitHub Pages without a
 ```
 index.html          – Main HTML, contains all views (#view-menu, #view-fretboard, #view-tuner)
 style.css           – Global styles and CSS Custom Properties
+version.txt         – Version text shown on the main menu (format: `Version YYYY-MM-DD HH:MM`); update on each change
 js/
 ├── app.js          – View navigation (menu ↔ exercises/tools); imports components/index.js
 ├── components/     – Reusable Web Components (UI layer)
@@ -97,6 +98,7 @@ board.addEventListener('fret-select', e => {
 - **Frets:** Slider 0–12 (default: up to fret 4)
 - **Strings:** Toggle buttons E2–E4, at least 1 must remain active
 - **Attempts:** 3 chances per note
+- **Menu Footer:** "Neu laden" button and app version are shown in the menu footer above the Impressum block
 
 ## GitHub Pages
 
@@ -106,6 +108,7 @@ Branch `claude/guitar-learning-app-i9WM3`, root `/` — no build pipeline needed
 
 **IMPORTANT FOR ALL AGENTS (Claude, Gemini, Codex):**
 - **Update .md files:** After completing a task or implementing a feature, you MUST update all relevant `.md` files (this `CLAUDE.md`, `GEMINI.md`, and any plans in `plans/`).
+- **Update `version.txt`:** After every code/content change, you MUST update `/version.txt` so the main page shows the new version timestamp.
 - **Keep Plans Current:** If a feature from `plans/` is implemented, update the file to reflect the new state and next steps.
 - **Ideen-Sammlung:** Weitere Tool- und Übungsideen werden in `plans/ideen.md` gepflegt.
 - **Architecture:** Maintain the project's "Vanilla JS", Web Component, and SVG-focused architecture.
