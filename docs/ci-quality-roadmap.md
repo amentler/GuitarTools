@@ -1,6 +1,6 @@
 # CI- und Qualitätspipeline – Roadmap
 
-Stand: 2026-04-02 (Phase 1 abgeschlossen)
+Stand: 2026-04-03 (Phase 1 erweitert)
 
 ---
 
@@ -63,7 +63,7 @@ CI-Pipeline eingeführt wird.
 
 - `package.json` mit Vitest als einzige Dev-Dependency angelegt
 - `vitest.config.js` für ES-Module-kompatible Testkonfiguration
-- **Unit-Tests** für `fretboardLogic.js` (7 Tests) und `tunerLogic.js` (9 Tests)
+- **Unit-Tests** für `fretboardLogic.js`, `tunerLogic.js`, `tonFinderLogic.js`, `akkordLogic.js`, `sheetMusicLogic.js`
 - **GitHub Actions Workflow** (`.github/workflows/ci.yml`) bei `push` und `pull_request`
 
 ### Neue Dateien
@@ -79,7 +79,7 @@ CI-Pipeline eingeführt wird.
 
 ### Minimaler sichtbarer Nutzen
 
-- Jeder Push und jeder Pull Request löst automatisch die 16 Unit-Tests aus
+- Jeder Push und jeder Pull Request löst automatisch die Unit-Tests aus (aktuell: 36)
 - GitHub zeigt grün/rot direkt beim Pull Request
 - Fehler in zentralen Logikfunktionen werden sofort erkannt
 
