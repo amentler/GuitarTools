@@ -30,23 +30,39 @@ export const NOTES = [
 ];
 
 /**
+ * Returns notes filtered by maximum fret and active strings.
+ * @param {number} maxFret - Highest fret to include (0–3)
+ * @param {number[]} activeStrings - 0-based string indices (0 = low E / string 6, 5 = high E / string 1)
+ * @returns {Array<object>}
+ */
+export function getFilteredNotes(maxFret, activeStrings) {
+  return NOTES.filter(note => {
+    const stringIndex = 6 - note.string; // guitar string 6..1 → 0-based index 0..5
+    return note.fret <= maxFret && activeStrings.includes(stringIndex);
+  });
+}
+
+/**
  * Generates random 4/4 bars of single quarter notes in C major (frets 0–3).
  * Consecutive notes are constrained to at most a third (±2 diatonic steps).
  * @param {number} numBars
  * @param {number} beatsPerBar
+ * @param {Array<object>} [notesPool] - Optional filtered notes pool; falls back to NOTES
  * @returns {Array<Array<object>>}
  */
-export function generateBars(numBars = 4, beatsPerBar = 4) {
-  const n = NOTES.length;
-  // Start in the middle third of the range (not at extremes)
-  let idx = 5 + Math.floor(Math.random() * (n - 10));
+export function generateBars(numBars = 4, beatsPerBar = 4, notesPool = NOTES) {
+  const notes = (notesPool && notesPool.length > 0) ? notesPool : NOTES;
+  const n = notes.length;
+  // Start in the middle of the range to avoid clustering at extremes
+  const margin = Math.min(2, Math.floor(n / 4));
+  let idx = margin + Math.floor(Math.random() * Math.max(1, n - 2 * margin));
 
   return Array.from({ length: numBars }, () =>
     Array.from({ length: beatsPerBar }, () => {
       const lo = Math.max(0, idx - 2);
       const hi = Math.min(n - 1, idx + 2);
       idx = lo + Math.floor(Math.random() * (hi - lo + 1));
-      return NOTES[idx];
+      return notes[idx];
     })
   );
 }
