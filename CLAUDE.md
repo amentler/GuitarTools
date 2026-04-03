@@ -12,7 +12,7 @@ A static web app for learning guitar, running directly on GitHub Pages without a
 ## Project Structure
 
 ```
-index.html          – Main HTML, contains all views (#view-menu, #view-fretboard, #view-tuner)
+index.html          – Main HTML, contains all views (#view-menu, #view-fretboard, #view-tuner, etc.)
 style.css           – Global styles and CSS Custom Properties
 version.txt         – Version text shown on the main menu (format: `Version YYYY-MM-DD HH:MM`); update on each change
 js/
@@ -23,11 +23,15 @@ js/
 │       ├── gt-fretboard.js         – <gt-fretboard> Web Component
 │       └── gt-fretboard-render.js  – Pure SVG render function (no state)
 ├── games/          – Self-contained interactive games/exercises
-│   └── fretboardToneRecognition/
-│       ├── fretboardExercise.js  – Exercise state & DOM interaction
-│       ├── fretboardLogic.js     – Pure note calculation utilities
-│       ├── fretboardSVG.js       – SVG fretboard rendering (legacy, not yet migrated)
-│       └── CLAUDE.md
+│   ├── fretboardToneRecognition/
+│   │   ├── fretboardExercise.js  – Exercise state & DOM interaction
+│   │   ├── fretboardLogic.js     – Pure note calculation utilities
+│   │   ├── fretboardSVG.js       – SVG fretboard rendering (legacy, not yet migrated)
+│   │   └── CLAUDE.md
+│   ├── notePlayingExercise/
+│   │   ├── notePlayingExercise.js – Controller: mic access, pitch-detection loop, state
+│   │   ├── notePlayingLogic.js    – Pure logic: getAvailableNotes, getRandomNote
+│   │   └── CLAUDE.md
 │   └── tonFinder/
 │       ├── tonFinder.js       – Game controller; uses <gt-fretboard>
 │       ├── tonFinderLogic.js  – Pure tone-position and scoring logic
