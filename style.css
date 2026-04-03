@@ -416,7 +416,7 @@ input[type="range"] {
 #view-sheet-music {
   padding: 1rem;
   gap: 1rem;
-  max-width: 840px;
+  max-width: 900px;
   width: 100%;
   margin: 0 auto;
 }
