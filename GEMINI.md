@@ -52,7 +52,6 @@ Location: `js/components/fretboard/gt-fretboard.js`
 - Game modules: `js/games/tonFinder/`, `js/games/fretboardToneRecognition/`, `js/games/akkordTrainer/`, `js/games/sheetMusicReading/`
 - Tool modules: `js/tools/guitarTuner/`, `js/tools/metronome/`
 - UI components: `js/components/fretboard/` (`gt-fretboard.js`, `gt-fretboard-render.js`)
-<<<<<<< HEAD
 - Logic modules with tests: `fretboardLogic`, `tunerLogic`, `tonFinderLogic`, `akkordLogic`, `sheetMusicLogic`, `metronomeLogic`
 
 ## Menu UI Status
