@@ -4,7 +4,7 @@
 import {
   detectPitch, frequencyToNote, isStandardTuningNote, pushAndMedian,
   GUIDED_TUNING_STEPS, noteToFrequency, getCentsToTarget,
-  pushGuidedHistory, getGuidedFeedback,
+  pushGuidedHistory, getGuidedFeedback, updateFeedbackDisplay,
 } from './tunerLogic.js';
 import { initTunerSVG, updateTunerDisplay } from './tunerSVG.js';
 
@@ -27,9 +27,10 @@ let state = {
 };
 
 let guidedState = {
-  active:       false,
-  stepIndex:    0,
-  trendHistory: [],
+  active:          false,
+  stepIndex:       0,
+  trendHistory:    [],
+  feedbackDisplay: null,
 };
 
 // ── Public lifecycle ──────────────────────────────────────────────────────────
@@ -55,13 +56,14 @@ export async function startExercise() {
   guidedState.active = false;
   guidedState.stepIndex = 0;
   guidedState.trendHistory = [];
+  guidedState.feedbackDisplay = null;
   const elBtnStart  = document.getElementById('btn-start-guided');
   const elActive    = document.getElementById('guided-active');
   const elFinished  = document.getElementById('guided-finished');
   if (elBtnStart)  elBtnStart.style.display  = '';
   if (elActive)    elActive.style.display    = 'none';
   if (elFinished)  elFinished.style.display  = 'none';
-  renderGuidedFeedback({ direction: 'none', trend: 'none', arrowColor: null, warning: false });
+  renderGuidedFeedback(null);
 
   // Wire mode buttons once
   if (!modeWired) {
@@ -148,13 +150,14 @@ export function stopExercise() {
   guidedState.active = false;
   guidedState.stepIndex = 0;
   guidedState.trendHistory = [];
+  guidedState.feedbackDisplay = null;
   const elBtnStart  = document.getElementById('btn-start-guided');
   const elActive    = document.getElementById('guided-active');
   const elFinished  = document.getElementById('guided-finished');
   if (elBtnStart)  elBtnStart.style.display  = '';
   if (elActive)    elActive.style.display    = 'none';
   if (elFinished)  elFinished.style.display  = 'none';
-  renderGuidedFeedback({ direction: 'none', trend: 'none', arrowColor: null, warning: false });
+  renderGuidedFeedback(null);
 }
 
 // ── Pitch analysis frame ──────────────────────────────────────────────────────
@@ -189,7 +192,8 @@ function analyzeFrame() {
     const centsToTarget = getCentsToTarget(medianHz, targetFreq);
     pushGuidedHistory(guidedState.trendHistory, centsToTarget);
     const feedback = getGuidedFeedback(centsToTarget, guidedState.trendHistory);
-    renderGuidedFeedback(feedback);
+    guidedState.feedbackDisplay = updateFeedbackDisplay(guidedState.feedbackDisplay, feedback, Date.now());
+    renderGuidedFeedback(guidedState.feedbackDisplay);
   }
 }
 
@@ -199,23 +203,25 @@ function startGuidedMode() {
   guidedState.active = true;
   guidedState.stepIndex = 0;
   guidedState.trendHistory = [];
+  guidedState.feedbackDisplay = null;
   document.getElementById('btn-start-guided').style.display = 'none';
   document.getElementById('guided-active').style.display = '';
   document.getElementById('guided-finished').style.display = 'none';
   renderGuidedStep();
-  renderGuidedFeedback({ direction: 'none', trend: 'none', arrowColor: null, warning: false });
+  renderGuidedFeedback(null);
 }
 
 function nextGuidedStep() {
   guidedState.stepIndex += 1;
   guidedState.trendHistory = [];
+  guidedState.feedbackDisplay = null;
   if (guidedState.stepIndex >= GUIDED_TUNING_STEPS.length) {
     guidedState.active = false;
     document.getElementById('guided-active').style.display = 'none';
     document.getElementById('guided-finished').style.display = '';
   } else {
     renderGuidedStep();
-    renderGuidedFeedback({ direction: 'none', trend: 'none', arrowColor: null, warning: false });
+    renderGuidedFeedback(null);
   }
 }
 
@@ -223,10 +229,11 @@ function stopGuidedMode() {
   guidedState.active = false;
   guidedState.stepIndex = 0;
   guidedState.trendHistory = [];
+  guidedState.feedbackDisplay = null;
   document.getElementById('btn-start-guided').style.display = '';
   document.getElementById('guided-active').style.display = 'none';
   document.getElementById('guided-finished').style.display = 'none';
-  renderGuidedFeedback({ direction: 'none', trend: 'none', arrowColor: null, warning: false });
+  renderGuidedFeedback(null);
 }
 
 function renderGuidedStep() {
@@ -248,14 +255,27 @@ function renderGuidedStep() {
   }
 }
 
-function renderGuidedFeedback({ direction, arrowColor, warning }) {
+function renderGuidedFeedback(display) {
   const container = document.getElementById('guided-feedback');
   if (!container) return;
   container.innerHTML = '';
 
-  if (direction === 'none' || arrowColor === null) return;
+  if (!display || display.type === null) return;
 
-  if (warning) {
+  if (display.type === 'green') {
+    const okEl = document.createElement('div');
+    okEl.className = 'guided-ok';
+    okEl.textContent = '●';
+    container.appendChild(okEl);
+
+    const textEl = document.createElement('div');
+    textEl.className = 'guided-hint guided-hint--ok';
+    textEl.textContent = 'Perfekt';
+    container.appendChild(textEl);
+    return;
+  }
+
+  if (display.warning) {
     const warnEl = document.createElement('div');
     warnEl.className = 'guided-warning';
     warnEl.textContent = '⚠ Falsche Richtung!';
@@ -263,13 +283,13 @@ function renderGuidedFeedback({ direction, arrowColor, warning }) {
   }
 
   const arrowEl = document.createElement('div');
-  arrowEl.className = `guided-arrow ${arrowColor}`;
-  arrowEl.textContent = direction === 'up' ? '↑' : '↓';
+  arrowEl.className = `guided-arrow ${display.arrowColor}`;
+  arrowEl.textContent = display.direction === 'up' ? '↑' : '↓';
   container.appendChild(arrowEl);
 
   const hintEl = document.createElement('div');
   hintEl.className = 'guided-hint';
-  hintEl.textContent = direction === 'up'
+  hintEl.textContent = display.direction === 'up'
     ? 'Ton zu tief – höher stimmen'
     : 'Ton zu hoch – tiefer stimmen';
   container.appendChild(hintEl);

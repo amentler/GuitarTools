@@ -132,6 +132,9 @@ export const TREND_MIN_SAMPLES = 4;
 /** Maximum size of the guided trend history buffer. */
 export const TREND_HISTORY_SIZE = 6;
 
+/** Minimum milliseconds a feedback hint stays visible before auto-clearing on null feedback. */
+export const FEEDBACK_DISPLAY_DURATION_MS = 3000;
+
 /**
  * Converts a note name and octave to frequency in Hz.
  * @param {string} note   e.g. 'E', 'A', 'D#'
@@ -205,25 +208,67 @@ export function evaluateTrend(history) {
 
 /**
  * Combines the current deviation and trend history into a full guided feedback state.
+ * The returned `type` field drives the 3-second display rule in updateFeedbackDisplay:
+ *   'green'  – in-tune (deviation within ±QUARTER_TONE_CENTS)
+ *   'orange' – approaching the target (good direction)
+ *   'red'    – moving away from the target (wrong direction)
+ *   null     – insufficient/unstable data; no new hint to show
  * @param {number}   centsToTarget  cents offset (positive = too high, negative = too low)
  * @param {number[]} trendHistory   recent centsToTarget values
- * @returns {{ direction: string, trend: string, arrowColor: string|null, warning: boolean }}
+ * @returns {{ type: string|null, direction: string, trend: string, arrowColor: string|null, warning: boolean }}
  */
 export function getGuidedFeedback(centsToTarget, trendHistory) {
   const direction = getPitchDirection(centsToTarget);
   if (direction === 'none') {
-    return { direction: 'none', trend: 'none', arrowColor: null, warning: false };
+    return { type: 'green', direction: 'none', trend: 'none', arrowColor: null, warning: false };
   }
   const trend = evaluateTrend(trendHistory);
   if (trend === 'unstable') {
-    return { direction, trend: 'unstable', arrowColor: null, warning: false };
+    return { type: null, direction, trend: 'unstable', arrowColor: null, warning: false };
   }
+  const type = trend === 'approaching' ? 'orange' : 'red';
   return {
+    type,
     direction,
     trend,
-    arrowColor: trend === 'approaching' ? 'orange' : 'red',
+    arrowColor: type,
     warning: trend === 'moving-away',
   };
+}
+
+/**
+ * Applies the 3-second display rule for guided feedback hints.
+ *
+ * Rules:
+ *   - A specific hint (green/orange/red) always immediately replaces a different type.
+ *   - When no new specific hint is available (type === null), the current hint stays
+ *     visible for up to FEEDBACK_DISPLAY_DURATION_MS, then auto-clears.
+ *   - State changes always take priority over remaining display time.
+ *
+ * @param {object|null} currentDisplay  The currently displayed hint or null.
+ *                                      Must include a `shownAt` timestamp when non-null.
+ * @param {object|null}      newFeedback     The latest result from getGuidedFeedback.
+ * @param {number}      nowMs           Current time in milliseconds (e.g. Date.now()).
+ * @returns {object|null} The display state to render next.
+ */
+export function updateFeedbackDisplay(currentDisplay, newFeedback, nowMs) {
+  const newType = newFeedback?.type ?? null;
+  const currentType = currentDisplay?.type ?? null;
+
+  if (newType !== null) {
+    // A specific feedback state is active. Override immediately if type changed.
+    if (newType !== currentType) {
+      return { ...newFeedback, shownAt: nowMs };
+    }
+    // Same type – keep current (preserves original shownAt).
+    return currentDisplay;
+  }
+
+  // No specific feedback (unstable / no data). Keep current hint within 3 s.
+  if (currentDisplay !== null && nowMs - currentDisplay.shownAt < FEEDBACK_DISPLAY_DURATION_MS) {
+    return currentDisplay;
+  }
+  return null;
 }
 
 // ── Rolling median ────────────────────────────────────────────────────────────

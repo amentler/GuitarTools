@@ -6,12 +6,14 @@ import {
   STANDARD_TUNING,
   GUIDED_TUNING_STEPS,
   QUARTER_TONE_CENTS,
+  FEEDBACK_DISPLAY_DURATION_MS,
   noteToFrequency,
   getCentsToTarget,
   getPitchDirection,
   pushGuidedHistory,
   evaluateTrend,
   getGuidedFeedback,
+  updateFeedbackDisplay,
 } from '../../js/tools/guitarTuner/tunerLogic.js';
 
 describe('frequencyToNote', () => {
@@ -215,48 +217,138 @@ describe('evaluateTrend', () => {
 });
 
 describe('getGuidedFeedback', () => {
-  it('returns no arrow when deviation is within the quarter-tone threshold', () => {
+  it('returns type "green" and no arrow when deviation is within the quarter-tone threshold', () => {
     const fb = getGuidedFeedback(30, [100, 80, 60, 40]);
+    expect(fb.type).toBe('green');
     expect(fb.direction).toBe('none');
     expect(fb.arrowColor).toBeNull();
     expect(fb.warning).toBe(false);
   });
 
-  it('returns no arrow when trend is unstable (too few samples)', () => {
+  it('returns type null and no arrow when trend is unstable (too few samples)', () => {
     const fb = getGuidedFeedback(100, [100, 80]);
+    expect(fb.type).toBeNull();
     expect(fb.arrowColor).toBeNull();
     expect(fb.warning).toBe(false);
   });
 
-  it('returns orange arrow (direction "up") when approaching from below', () => {
-    // Consistently approaching: distances 100, 80, 70, 60 (all negative = too low, all > threshold)
+  it('returns type "orange" and orange arrow (direction "up") when approaching from below', () => {
     const fb = getGuidedFeedback(-60, [-100, -80, -70, -60]);
+    expect(fb.type).toBe('orange');
     expect(fb.direction).toBe('up');
     expect(fb.arrowColor).toBe('orange');
     expect(fb.warning).toBe(false);
   });
 
-  it('returns orange arrow (direction "down") when approaching from above', () => {
-    // Consistently approaching from above: distances decrease (all > threshold)
+  it('returns type "orange" and orange arrow (direction "down") when approaching from above', () => {
     const fb = getGuidedFeedback(60, [200, 150, 100, 60]);
+    expect(fb.type).toBe('orange');
     expect(fb.direction).toBe('down');
     expect(fb.arrowColor).toBe('orange');
     expect(fb.warning).toBe(false);
   });
 
-  it('returns red arrow + warning when moving away from target', () => {
-    // Consistently moving away: distances 40, 60, 80, 100 (negative = too low)
+  it('returns type "red" and red arrow + warning when moving away from target', () => {
     const fb = getGuidedFeedback(-100, [-40, -60, -80, -100]);
+    expect(fb.type).toBe('red');
     expect(fb.direction).toBe('up');
     expect(fb.arrowColor).toBe('red');
     expect(fb.warning).toBe(true);
   });
 
   it('warning requires stable trend – not triggered by jitter', () => {
-    // Jittery history: should stay unstable
     const fb = getGuidedFeedback(-100, [-40, -80, -60, -100]);
+    expect(fb.type).toBeNull();
     expect(fb.arrowColor).toBeNull();
     expect(fb.warning).toBe(false);
+  });
+});
+
+describe('updateFeedbackDisplay – 3-second rule with immediate state-change override', () => {
+  const NOW = 1000;
+  const WITHIN_3S = NOW + FEEDBACK_DISPLAY_DURATION_MS - 1;
+  const AFTER_3S  = NOW + FEEDBACK_DISPLAY_DURATION_MS;
+
+  const redFeedback    = { type: 'red',    direction: 'up',   arrowColor: 'red',    warning: true  };
+  const orangeFeedback = { type: 'orange', direction: 'up',   arrowColor: 'orange', warning: false };
+  const greenFeedback  = { type: 'green',  direction: 'none', arrowColor: null,     warning: false };
+  const nullFeedback   = { type: null,     direction: 'up',   arrowColor: null,     warning: false };
+
+  it('shows the first hint immediately when display is empty', () => {
+    const result = updateFeedbackDisplay(null, orangeFeedback, NOW);
+    expect(result.type).toBe('orange');
+    expect(result.shownAt).toBe(NOW);
+  });
+
+  it('red → orange: overrides immediately when direction is corrected (state change takes priority)', () => {
+    const current = { ...redFeedback, shownAt: NOW };
+    const result = updateFeedbackDisplay(current, orangeFeedback, NOW + 500);
+    expect(result.type).toBe('orange');
+    expect(result.shownAt).toBe(NOW + 500);
+  });
+
+  it('orange → green: overrides immediately when target is reached', () => {
+    const current = { ...orangeFeedback, shownAt: NOW };
+    const result = updateFeedbackDisplay(current, greenFeedback, NOW + 500);
+    expect(result.type).toBe('green');
+    expect(result.shownAt).toBe(NOW + 500);
+  });
+
+  it('green → orange: overrides immediately when pitch drifts out of tune', () => {
+    const current = { ...greenFeedback, shownAt: NOW };
+    const result = updateFeedbackDisplay(current, orangeFeedback, NOW + 500);
+    expect(result.type).toBe('orange');
+    expect(result.shownAt).toBe(NOW + 500);
+  });
+
+  it('orange → red: overrides immediately when direction worsens', () => {
+    const current = { ...orangeFeedback, shownAt: NOW };
+    const result = updateFeedbackDisplay(current, redFeedback, NOW + 500);
+    expect(result.type).toBe('red');
+    expect(result.shownAt).toBe(NOW + 500);
+  });
+
+  it('keeps same-type hint unchanged (preserves shownAt)', () => {
+    const current = { ...orangeFeedback, shownAt: NOW };
+    const result = updateFeedbackDisplay(current, orangeFeedback, NOW + 1000);
+    expect(result).toBe(current);
+    expect(result.shownAt).toBe(NOW);
+  });
+
+  it('null feedback keeps current hint within 3 seconds', () => {
+    const current = { ...redFeedback, shownAt: NOW };
+    const result = updateFeedbackDisplay(current, nullFeedback, WITHIN_3S);
+    expect(result).toBe(current);
+    expect(result.type).toBe('red');
+  });
+
+  it('null feedback keeps green hint within 3 seconds', () => {
+    const current = { ...greenFeedback, shownAt: NOW };
+    const result = updateFeedbackDisplay(current, nullFeedback, WITHIN_3S);
+    expect(result).toBe(current);
+    expect(result.type).toBe('green');
+  });
+
+  it('null feedback clears hint after 3 seconds', () => {
+    const current = { ...orangeFeedback, shownAt: NOW };
+    const result = updateFeedbackDisplay(current, nullFeedback, AFTER_3S);
+    expect(result).toBeNull();
+  });
+
+  it('null feedback with no current display returns null', () => {
+    const result = updateFeedbackDisplay(null, nullFeedback, NOW);
+    expect(result).toBeNull();
+  });
+
+  it('state changes are never blocked by remaining display time', () => {
+    // Red hint shown 100ms ago – but orange replaces it immediately
+    const current = { ...redFeedback, shownAt: NOW };
+    const result = updateFeedbackDisplay(current, orangeFeedback, NOW + 100);
+    expect(result.type).toBe('orange');
+  });
+
+  it('FEEDBACK_DISPLAY_DURATION_MS is 3000 ms', () => {
+    expect(FEEDBACK_DISPLAY_DURATION_MS).toBe(3000);
   });
 });
 
