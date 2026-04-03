@@ -48,7 +48,11 @@ npx http-server -p 8000
 
 ## PWA & Offline-Funktion
 
-Die App nutzt einen **Service Worker** mit Cache-First-Strategie und cached:
+Die App nutzt einen **Service Worker** mit **Network-First-Strategie**:
+- Wenn das Netzwerk verfügbar ist, werden Ressourcen immer zuerst frisch vom Server geladen und dabei im Cache aktualisiert.
+- Wenn das Netzwerk nicht erreichbar ist (offline), wird automatisch auf den lokal gespeicherten Cache zurückgegriffen.
+
+Beim ersten Aufruf (oder nach einem Update-Knopf-Druck) werden folgende Ressourcen vorgeladen (Precache):
 - `index.html`, `style.css`, `manifest.json`
 - JavaScript-Module unter `js/`
 - Icons unter `icons/`
@@ -58,7 +62,8 @@ Die App nutzt einen **Service Worker** mit Cache-First-Strategie und cached:
 Im Browser öffnen und „Zum Startbildschirm hinzufügen" / „Installieren" wählen (je nach Browser und Betriebssystem).
 
 ### Update-Button
-Bei neuen Versionen gibt es in der UI einen Button **„Neu laden"**, der den Service Worker und den Cache zurücksetzt und die Seite hart aktualisiert.
+Bei neuen Versionen gibt es in der UI einen Button **„Neu laden"**, der den Service Worker und den Cache zurücksetzt und die Seite hart aktualisiert.  
+Dadurch werden Updates **sofort** sichtbar – auch auf Firefox für Android.
 
 ---
 

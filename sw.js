@@ -1,4 +1,4 @@
-// GuitarTools Service Worker – cache-first offline strategy
+// GuitarTools Service Worker – network-first offline strategy
 
 const CACHE_NAME = 'guitartools-v7';
 
@@ -62,12 +62,20 @@ self.addEventListener('activate', event => {
   self.clients.claim();
 });
 
-// Cache-first: serve from cache, fall back to network
+// Network-first: try the network, update the cache on success, fall back to cache when offline
 self.addEventListener('fetch', event => {
   // Only handle same-origin GET requests
   if (event.request.method !== 'GET') return;
+  if (!event.request.url.startsWith(self.location.origin)) return;
 
   event.respondWith(
-    caches.match(event.request).then(cached => cached || fetch(event.request))
+    fetch(event.request)
+      .then(response => {
+        // Clone before consuming: one copy for the cache, one to return
+        const toCache = response.clone();
+        caches.open(CACHE_NAME).then(cache => cache.put(event.request, toCache));
+        return response;
+      })
+      .catch(() => caches.match(event.request))
   );
 });

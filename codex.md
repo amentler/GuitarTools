@@ -30,6 +30,7 @@ Qualitätsmanagement (Ist):
 - Keine Linting-/Formatierungspipeline (Phase 2)
 - Kein TypeScript (Phase 3–4)
 - Service-Worker-Assetliste wird manuell versionsgeführt
+- Service Worker nutzt **Network-First-Strategie**: Netzwerk bevorzugt, Cache als Fallback bei Offline
 
 ## 3) Dokumentations- und Agentenstatus
 
