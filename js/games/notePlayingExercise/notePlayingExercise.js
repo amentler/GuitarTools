@@ -86,7 +86,7 @@ export async function startExercise() {
 
   try {
     stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
-  } catch (_) {
+  } catch {
     ui.permission.textContent = 'Mikrofon nicht verfügbar. Bitte Zugriff erlauben.';
     return;
   }
