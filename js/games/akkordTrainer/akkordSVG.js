@@ -57,8 +57,7 @@ export function renderChordDiagram(container, userPositions, referencePositions,
   const labels = ['e', 'B', 'G', 'D', 'A', 'E'];
   for (let s = 0; s < NUM_STRINGS; s++) {
     const y = MARGIN_TOP + s * STRING_SPACING;
-    const stringNum = s + 1; // 1 = high e, 6 = low E
-    
+
     svg.appendChild(el('line', {
       x1: MARGIN_LEFT,
       y1: y,

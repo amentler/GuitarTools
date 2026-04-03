@@ -143,7 +143,7 @@ export function renderScore(container, bars, showTab) {
     if (bi === 0) stave.addClef('treble').addTimeSignature('4/4');
     if (bi === bars.length - 1) {
       // End barline – wrap in try/catch since enum values differ across VF versions
-      try { stave.setEndBarType(3); } catch (_) {}
+      try { stave.setEndBarType(3); } catch { /* VexFlow version compatibility */ }
     }
 
     stave.setContext(ctx).draw();
@@ -158,7 +158,7 @@ export function renderScore(container, bars, showTab) {
     );
 
     const voice = new Voice({ num_beats: 4, beat_value: 4 });
-    try { voice.setMode(Voice.Mode.SOFT); } catch (_) {}
+    try { voice.setMode(Voice.Mode.SOFT); } catch { /* VexFlow version compatibility */ }
     voice.addTickables(notes);
 
     const w = bi === 0 ? FIRST_BAR_W : REST_BAR_W;
