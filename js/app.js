@@ -1,7 +1,6 @@
 // App navigation – controls which view is visible
 
 import './components/index.js';
-import { APP_VERSION } from './version.js';
 import { startExercise as startFretboard,   stopExercise as stopFretboard   } from './games/fretboardToneRecognition/fretboardExercise.js';
 import { startExercise as startTuner,       stopExercise as stopTuner       } from './tools/guitarTuner/guitarTuner.js';
 import { startExercise as startSheetMusic,  stopExercise as stopSheetMusic  } from './games/sheetMusicReading/sheetMusicReading.js';
@@ -68,5 +67,17 @@ document.getElementById('btn-start-ton-finder').addEventListener('click', () => 
 document.getElementById('btn-back-ton-finder').addEventListener('click',  () => navigateTo('menu'));
 
 // ── Initial view ─────────────────────────────────────────────────────────────
-document.getElementById('app-version').textContent = `Version ${APP_VERSION}`;
+async function loadVersionInfo() {
+  const versionEl = document.getElementById('app-version');
+  try {
+    const versionUrl = new URL('../version.txt', import.meta.url);
+    const response = await fetch(versionUrl, { cache: 'no-store' });
+    if (!response.ok) throw new Error('Version file not available');
+    versionEl.textContent = (await response.text()).trim();
+  } catch {
+    versionEl.textContent = 'Version unbekannt';
+  }
+}
+
+loadVersionInfo();
 showView('menu');

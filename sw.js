@@ -12,7 +12,7 @@ const ASSETS = [
   BASE + 'manifest.json',
   BASE + 'icons/icon.svg',
   BASE + 'js/app.js',
-  BASE + 'js/version.js',
+  BASE + 'version.txt',
   BASE + 'js/games/fretboardToneRecognition/fretboardExercise.js',
   BASE + 'js/games/fretboardToneRecognition/fretboardLogic.js',
   BASE + 'js/games/fretboardToneRecognition/fretboardSVG.js',
