@@ -1,6 +1,6 @@
 # Codex – Ist-Zustand GuitarTools
 
-Stand: 2026-04-02 (Phase 1 abgeschlossen)
+Stand: 2026-04-03 (Phase 1 erweitert)
 
 ## 1) Projektüberblick
 
@@ -22,10 +22,10 @@ Status:
 
 Qualitätsmanagement (Ist):
 - **Phase 0 abgeschlossen:** Roadmap und Scope-Abgrenzung dokumentiert in `docs/ci-quality-roadmap.md`
-- **Phase 1 abgeschlossen:** CI-Pipeline eingerichtet
+- **Phase 1 abgeschlossen/erweitert:** CI-Pipeline eingerichtet und Unit-Testabdeckung ausgebaut
   - `package.json` + Vitest als Dev-Dependency
   - `vitest.config.js`
-  - 16 Unit-Tests für `fretboardLogic.js` und `tunerLogic.js` unter `tests/unit/`
+  - 36 Unit-Tests für `fretboardLogic.js`, `tunerLogic.js`, `tonFinderLogic.js`, `akkordLogic.js`, `sheetMusicLogic.js` unter `tests/unit/`
   - GitHub Actions Workflow (`.github/workflows/ci.yml`) bei `push` und `pull_request`
 - Keine Linting-/Formatierungspipeline (Phase 2)
 - Kein TypeScript (Phase 3–4)
