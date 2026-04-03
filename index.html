@@ -61,6 +61,16 @@
           </p>
           <button id="btn-start-ton-finder" class="btn-start">Starten</button>
         </article>
+
+        <article class="exercise-card">
+          <div class="card-icon">🎤</div>
+          <h2 class="card-title">Ton spielen</h2>
+          <p class="card-desc">
+            Ein Ton wird angezeigt – spiele ihn auf der Gitarre. Das Mikrofon
+            prüft, ob du den richtigen Ton gespielt hast.
+          </p>
+          <button id="btn-start-note-play" class="btn-start">Starten</button>
+        </article>
       </div>
     </div>
 
@@ -276,6 +286,49 @@
     <div id="score-container" class="score-container"></div>
 
     <button id="btn-new-bars" class="btn-new-bars">Neue Takte</button>
+
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <!-- TON SPIELEN                                                             -->
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <section id="view-note-play" class="view">
+
+    <div class="exercise-header">
+      <button id="btn-back-note-play" class="btn-back">← Zurück zum Menü</button>
+      <div class="score-display">
+        Erkannt: <span id="note-play-score">0</span>
+      </div>
+    </div>
+
+    <p id="note-play-permission" class="tuner-permission" style="display:none"></p>
+
+    <div class="note-play-display">
+      <p class="question-prompt">Spiele diesen Ton:</p>
+      <p id="note-play-target" class="note-play-target-note">–</p>
+      <p id="note-play-detected" class="note-play-detected-note">–</p>
+      <p id="note-play-feedback" class="feedback-text"></p>
+    </div>
+
+    <div class="settings-panel">
+      <div class="settings-row">
+        <label for="note-play-fret-slider" class="settings-label">
+          Bünde: <span id="note-play-fret-label">0 – 5</span>
+        </label>
+        <input type="range" id="note-play-fret-slider" min="0" max="15" value="5" />
+      </div>
+      <div class="settings-row">
+        <span class="settings-label">Saiten:</span>
+        <div id="note-play-string-toggles" class="string-toggles">
+          <button class="btn-string active" data-string="0">E2</button>
+          <button class="btn-string active" data-string="1">A2</button>
+          <button class="btn-string active" data-string="2">D3</button>
+          <button class="btn-string active" data-string="3">G3</button>
+          <button class="btn-string active" data-string="4">B3</button>
+          <button class="btn-string active" data-string="5">E4</button>
+        </div>
+      </div>
+    </div>
 
   </section>
 

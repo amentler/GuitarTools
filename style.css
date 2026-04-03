@@ -726,6 +726,47 @@ input[type="range"] {
   color: var(--color-wrong);
 }
 
+/* === Note Playing Exercise === */
+#view-note-play {
+  padding: 1rem;
+  gap: 1.25rem;
+  max-width: 460px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.note-play-display {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  width: 100%;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 2rem 1rem;
+}
+
+.note-play-target-note {
+  font-size: 5rem;
+  font-weight: 800;
+  color: var(--color-accent-alt);
+  line-height: 1;
+  text-align: center;
+  min-height: 6rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.note-play-detected-note {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  text-align: center;
+  min-height: 2rem;
+}
+
 /* === Responsive === */
 @media (max-width: 400px) {
   .note-buttons {
