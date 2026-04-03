@@ -98,6 +98,7 @@ board.addEventListener('fret-select', e => {
 - **Frets:** Slider 0–12 (default: up to fret 4)
 - **Strings:** Toggle buttons E2–E4, at least 1 must remain active
 - **Attempts:** 3 chances per note
+- **Menu Footer:** "Neu laden" button and app version are shown in the menu footer above the Impressum block
 
 ## GitHub Pages
 
