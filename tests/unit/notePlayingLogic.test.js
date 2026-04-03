@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { getAvailableNotes, getRandomNote } from '../../js/games/notePlayingExercise/notePlayingLogic.js';
+import { getAvailableNotes, getRandomNote, getPositionsForNote } from '../../js/games/notePlayingExercise/notePlayingLogic.js';
 
 describe('getAvailableNotes', () => {
   it('returns only the open-string note when maxFret is 0 and one string is active', () => {
@@ -67,5 +67,33 @@ describe('getRandomNote', () => {
     // activeStrings = [] produces an empty pool
     const note = getRandomNote(null, 5, []);
     expect(note).toBe('E');
+  });
+});
+
+describe('getPositionsForNote', () => {
+  it('finds open-string position for E on string 0 with maxFret 0', () => {
+    const positions = getPositionsForNote('E', 0, [0]);
+    expect(positions).toEqual([{ stringIndex: 0, fret: 0 }]);
+  });
+
+  it('finds all E positions on string 0 up to fret 12', () => {
+    // E is at fret 0 and fret 12 on string 0 (low E)
+    const positions = getPositionsForNote('E', 12, [0]);
+    expect(positions).toContainEqual({ stringIndex: 0, fret: 0 });
+    expect(positions).toContainEqual({ stringIndex: 0, fret: 12 });
+  });
+
+  it('returns empty array when note is not reachable in settings', () => {
+    // Only string 0 (E), fret 0: only E is available; asking for C# returns []
+    const positions = getPositionsForNote('C#', 0, [0]);
+    expect(positions).toEqual([]);
+  });
+
+  it('finds positions across multiple strings', () => {
+    // A can be played on string 0 fret 5, string 1 fret 0, etc.
+    const positions = getPositionsForNote('A', 5, [0, 1]);
+    expect(positions.length).toBeGreaterThan(1);
+    expect(positions.every(p => p.fret >= 0 && p.fret <= 5)).toBe(true);
+    expect(positions.every(p => [0, 1].includes(p.stringIndex))).toBe(true);
   });
 });

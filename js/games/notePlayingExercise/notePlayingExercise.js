@@ -1,8 +1,10 @@
 // Note-Playing Exercise – main controller
-// Shows a target note; listens via microphone to verify the user plays it.
+// Shows a target note in treble-clef notation; listens via microphone to verify
+// the user plays it. Two progressive hints are available: note name, then tabs.
 
 import { detectPitch, frequencyToNote, pushAndMedian } from '../../tools/guitarTuner/tunerLogic.js';
-import { getRandomNote } from './notePlayingLogic.js';
+import { getRandomNote, getPositionsForNote } from './notePlayingLogic.js';
+import { renderSingleNote } from './notePlayingSVG.js';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 // Number of consecutive matching frames required to register a correct answer
@@ -17,11 +19,16 @@ let settingsWired = false;
 
 const freqHistory = [];
 
+// Tracks the last note rendered in the detected-notation staff to avoid
+// unnecessary VexFlow re-renders on every analysis frame.
+let lastDetectedNote = undefined;
+
 // ── State ─────────────────────────────────────────────────────────────────────
 let state = {
   targetNote:   null,
   matchStreak:  0,
   isLocked:     false,
+  hintLevel:    0,        // 0 = none, 1 = note name shown, 2 = tabs shown
   score:        { correct: 0 },
   advanceTimeout: null,
   settings: {
@@ -35,13 +42,17 @@ let ui = null;
 
 function resolveUI() {
   ui = {
-    permission:   document.getElementById('note-play-permission'),
-    targetNote:   document.getElementById('note-play-target'),
-    detectedNote: document.getElementById('note-play-detected'),
-    feedback:     document.getElementById('note-play-feedback'),
-    score:        document.getElementById('note-play-score'),
-    slider:       document.getElementById('note-play-fret-slider'),
-    sliderLabel:  document.getElementById('note-play-fret-label'),
+    permission:        document.getElementById('note-play-permission'),
+    notation:          document.getElementById('note-play-notation'),
+    targetNote:        document.getElementById('note-play-target'),
+    hintFretboard:     document.getElementById('note-play-hint-fretboard'),
+    hint1Btn:          document.getElementById('note-play-hint-1'),
+    hint2Btn:          document.getElementById('note-play-hint-2'),
+    detectedNotation:  document.getElementById('note-play-detected-notation'),
+    feedback:          document.getElementById('note-play-feedback'),
+    score:             document.getElementById('note-play-score'),
+    slider:            document.getElementById('note-play-fret-slider'),
+    sliderLabel:       document.getElementById('note-play-fret-label'),
   };
 }
 
@@ -60,12 +71,14 @@ export async function startExercise() {
     targetNote:     null,
     matchStreak:    0,
     isLocked:       false,
+    hintLevel:      0,
     score:          { correct: 0 },
     advanceTimeout: null,
     settings:       state.settings,
   };
 
   freqHistory.length = 0;
+  lastDetectedNote = undefined;
 
   if (!settingsWired) {
     wireSettings();
@@ -153,6 +166,9 @@ function wireSettings() {
       resetTargetNote();
     });
   });
+
+  ui.hint1Btn.addEventListener('click', showHint1);
+  ui.hint2Btn.addEventListener('click', showHint2);
 }
 
 function syncSettingsUI() {
@@ -175,12 +191,59 @@ function resetTargetNote() {
     clearTimeout(state.advanceTimeout);
     state.advanceTimeout = null;
   }
-  state.isLocked = false;
+  state.isLocked    = false;
   state.matchStreak = 0;
-  state.targetNote = getRandomNote(null, state.settings.maxFret, state.settings.activeStrings);
+  state.targetNote  = getRandomNote(null, state.settings.maxFret, state.settings.activeStrings);
+  hideHints();
   updateTargetDisplay();
   updateDetectedNote(null);
   updateFeedback(null);
+}
+
+// ── Hint system ───────────────────────────────────────────────────────────────
+
+function showHint1() {
+  state.hintLevel = Math.max(state.hintLevel, 1);
+  if (ui) {
+    ui.targetNote.textContent  = state.targetNote ?? '–';
+    ui.targetNote.style.display = '';
+  }
+}
+
+function showHint2() {
+  showHint1();
+  state.hintLevel = 2;
+  if (!ui) return;
+
+  const positions = getPositionsForNote(
+    state.targetNote,
+    state.settings.maxFret,
+    state.settings.activeStrings,
+  );
+  ui.hintFretboard.frets         = state.settings.maxFret;
+  ui.hintFretboard.activeStrings = [...state.settings.activeStrings];
+  ui.hintFretboard.positions     = positions.map(p => ({
+    stringIndex: p.stringIndex,
+    fret:        p.fret,
+    state:       'selected',
+  }));
+  ui.hintFretboard.style.display = '';
+}
+
+function hideHints() {
+  state.hintLevel = 0;
+  if (ui) {
+    ui.targetNote.style.display    = 'none';
+    ui.hintFretboard.style.display = 'none';
+  }
+}
+
+// Shows the note name without changing hintLevel (used on success).
+function showNoteName() {
+  if (ui) {
+    ui.targetNote.textContent  = state.targetNote ?? '–';
+    ui.targetNote.style.display = '';
+  }
 }
 
 // ── Pitch analysis frame ──────────────────────────────────────────────────────
@@ -200,7 +263,7 @@ function analyzeFrame() {
   }
 
   const medianHz = pushAndMedian(freqHistory, hz);
-  const { note }  = frequencyToNote(medianHz);
+  const { note } = frequencyToNote(medianHz);
 
   updateDetectedNote(note);
 
@@ -215,21 +278,23 @@ function analyzeFrame() {
 }
 
 function handleSuccess() {
-  state.isLocked   = true;
+  state.isLocked    = true;
   state.matchStreak = 0;
   state.score.correct++;
   updateScore();
+  showNoteName();
   updateFeedback('correct');
 
   state.advanceTimeout = setTimeout(() => {
     state.targetNote = getRandomNote(
       state.targetNote,
       state.settings.maxFret,
-      state.settings.activeStrings
+      state.settings.activeStrings,
     );
     state.matchStreak    = 0;
     state.isLocked       = false;
     state.advanceTimeout = null;
+    hideHints();
     updateTargetDisplay();
     updateDetectedNote(null);
     updateFeedback(null);
@@ -239,11 +304,16 @@ function handleSuccess() {
 // ── DOM update helpers ────────────────────────────────────────────────────────
 
 function updateTargetDisplay() {
-  if (ui) ui.targetNote.textContent = state.targetNote ?? '–';
+  if (!ui) return;
+  renderSingleNote(ui.notation, state.targetNote);
 }
 
 function updateDetectedNote(note) {
-  if (ui) ui.detectedNote.textContent = note ?? '–';
+  if (!ui) return;
+  // Skip re-render if the displayed note hasn't changed
+  if (note === lastDetectedNote) return;
+  lastDetectedNote = note;
+  renderSingleNote(ui.detectedNotation, note);
 }
 
 function updateFeedback(kind) {
@@ -260,3 +330,4 @@ function updateFeedback(kind) {
 function updateScore() {
   if (ui) ui.score.textContent = state.score.correct;
 }
+

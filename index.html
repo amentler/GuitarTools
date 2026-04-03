@@ -308,8 +308,28 @@
 
     <div class="note-play-display">
       <p class="question-prompt">Spiele diesen Ton:</p>
-      <p id="note-play-target" class="note-play-target-note">–</p>
-      <p id="note-play-detected" class="note-play-detected-note">–</p>
+
+      <!-- Target note in treble-clef notation -->
+      <div id="note-play-notation" class="note-play-notation"></div>
+
+      <!-- Note name – hidden until hint 1 or success -->
+      <p id="note-play-target" class="note-play-target-note" style="display:none">–</p>
+
+      <!-- Tab hint: fretboard – hidden until hint 2 -->
+      <gt-fretboard id="note-play-hint-fretboard" frets="5" style="display:none;width:100%"></gt-fretboard>
+
+      <!-- Hint buttons -->
+      <div class="note-play-hints">
+        <button id="note-play-hint-1" class="btn-hint">💡 Notenname</button>
+        <button id="note-play-hint-2" class="btn-hint">🎸 Tabs</button>
+      </div>
+
+      <!-- Detected / played note in treble-clef notation -->
+      <div class="note-play-detected-section">
+        <p class="question-prompt">Gespielt:</p>
+        <div id="note-play-detected-notation" class="note-play-notation note-play-notation-sm"></div>
+      </div>
+
       <p id="note-play-feedback" class="feedback-text"></p>
     </div>
 
