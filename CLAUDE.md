@@ -58,6 +58,7 @@ Branch `claude/guitar-learning-app-i9WM3`, root `/` — no build pipeline needed
 **IMPORTANT FOR ALL AGENTS (Claude, Gemini, Codex):**
 - **Update .md files:** After completing a task or implementing a feature, you MUST update all relevant `.md` files (this `CLAUDE.md`, `GEMINI.md`, and any plans in `plans/`).
 - **Keep Plans Current:** If a feature from `plans/` is implemented, update the file to reflect the new state and next steps.
+- **Ideen-Sammlung:** Weitere Tool- und Übungsideen werden in `plans/ideen.md` gepflegt.
 - **Architecture:** Maintain the project's "Vanilla JS" and SVG-focused architecture.
 - **Analysis document:** Repository-wide initial analyses can be documented in `/codex.md`.
 
