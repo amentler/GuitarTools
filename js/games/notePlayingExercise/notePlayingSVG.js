@@ -5,12 +5,9 @@ import { Renderer, Stave, StaveNote, Voice, Formatter, Accidental } from 'https:
 
 // ── Note → VexFlow key mapping ────────────────────────────────────────────────
 // Written pitch (guitar is transposing: sounds one octave lower than written).
-// All notes placed in treble clef 4th/5th octave range for comfortable reading.
+// Notes span one chromatic octave: E4 (bottom treble-clef line) through D#5
+// (4th line), so all 12 notes sit within the staff without ledger lines.
 const NOTE_DISPLAY = {
-  'C':  { vfKey: 'c/5',  acc: null },
-  'C#': { vfKey: 'c#/5', acc: '#'  },
-  'D':  { vfKey: 'd/5',  acc: null },
-  'D#': { vfKey: 'd#/5', acc: '#'  },
   'E':  { vfKey: 'e/4',  acc: null },
   'F':  { vfKey: 'f/4',  acc: null },
   'F#': { vfKey: 'f#/4', acc: '#'  },
@@ -19,6 +16,10 @@ const NOTE_DISPLAY = {
   'A':  { vfKey: 'a/4',  acc: null },
   'A#': { vfKey: 'a#/4', acc: '#'  },
   'B':  { vfKey: 'b/4',  acc: null },
+  'C':  { vfKey: 'c/5',  acc: null },
+  'C#': { vfKey: 'c#/5', acc: '#'  },
+  'D':  { vfKey: 'd/5',  acc: null },
+  'D#': { vfKey: 'd#/5', acc: '#'  },
 };
 
 const VW = 220;

@@ -264,21 +264,22 @@ function handleSuccess() {
 
 // ── DOM update helpers ────────────────────────────────────────────────────────
 
-// Tracks last rendered note to avoid unnecessary VexFlow re-renders
-let lastRenderedDetected = undefined;
+// Tracks last rendered note to avoid unnecessary VexFlow re-renders.
+// Initialized to null; reset to null when the target note changes.
+let lastRenderedDetected = null;
 
 function updateTargetDisplay() {
   if (!ui) return;
   renderNoteOnStaff(ui.notation, state.targetNote);
   // Reset hints
-  ui.targetNote.textContent   = state.targetNote ?? '–';
+  ui.targetNote.textContent      = state.targetNote ?? '–';
   ui.targetNote.style.visibility = 'hidden';
   ui.tabContainer.style.display  = 'none';
   ui.tabContainer.innerHTML      = '';
   // Disable hint 2 until hint 1 is shown
   ui.hint1Btn.disabled = false;
   ui.hint2Btn.disabled = true;
-  lastRenderedDetected = undefined;
+  lastRenderedDetected = null;
 }
 
 function updateHintDisplay() {
@@ -300,9 +301,10 @@ function updateHintDisplay() {
 
 function updateDetectedNote(note) {
   if (!ui) return;
-  if (note === lastRenderedDetected) return;
-  lastRenderedDetected = note;
-  renderNoteOnStaff(ui.detectedNote, note);
+  const norm = note ?? null;
+  if (norm === lastRenderedDetected) return;
+  lastRenderedDetected = norm;
+  renderNoteOnStaff(ui.detectedNote, norm);
 }
 
 function updateFeedback(kind) {
