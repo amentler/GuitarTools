@@ -175,6 +175,19 @@ describe('getAvailablePitches', () => {
     const pitches = getAvailablePitches(5, []);
     expect(pitches).toEqual([]);
   });
+
+  it('covers standard tuning open-string range E2 to E4 at fret 0', () => {
+    const pitches = getAvailablePitches(0, [0, 1, 2, 3, 4, 5]);
+    const octaves = pitches.map(p => parseInt(p.match(/\d+$/)[0], 10));
+    expect(Math.min(...octaves)).toBe(2);
+    expect(Math.max(...octaves)).toBe(4);
+  });
+
+  it('extends sounding range to G5 with all strings up to fret 15', () => {
+    const pitches = getAvailablePitches(15, [0, 1, 2, 3, 4, 5]);
+    expect(pitches).toContain('E2');
+    expect(pitches).toContain('G5');
+  });
 });
 
 describe('getRandomPitch', () => {

@@ -99,6 +99,7 @@ board.addEventListener('fret-select', e => {
 - **Strings:** Toggle buttons E2–E4, at least 1 must remain active
 - **Attempts:** 3 chances per note
 - **Menu Footer:** "Neu laden" button and app version are shown in the menu footer above the Impressum block
+- **Ton spielen (Notation):** Staff notation follows guitar convention (written one octave above sounding pitch); pitch matching remains based on the actual sounding octave
 
 ## GitHub Pages
 

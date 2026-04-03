@@ -20,6 +20,22 @@ function pitchToVfKey(pitch) {
   return { vfKey, acc };
 }
 
+/**
+ * Guitar notation is written one octave above sounding pitch.
+ * This converts a sounding pitch (e.g. E2) to written staff pitch (E3).
+ * @param {string|null} pitch
+ * @returns {string|null}
+ */
+function toGuitarWrittenPitch(pitch) {
+  if (!pitch) return null;
+  const match = pitch.match(/^([A-G]#?)(\d+)$/);
+  if (!match) return null;
+  const noteName = match[1];
+  const octave = parseInt(match[2], 10);
+  if (Number.isNaN(octave)) return null;
+  return `${noteName}${octave + 1}`;
+}
+
 const VW = 220;
 const VH = 185;
 const STAVE_Y = 50;
@@ -47,7 +63,8 @@ export function renderNoteOnStaff(container, pitch) {
   stave.setContext(ctx).draw();
 
   if (pitch) {
-    const parsed = pitchToVfKey(pitch);
+    const writtenPitch = toGuitarWrittenPitch(pitch);
+    const parsed = pitchToVfKey(writtenPitch);
     if (parsed) {
       const { vfKey, acc } = parsed;
 

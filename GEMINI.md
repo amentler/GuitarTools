@@ -56,6 +56,12 @@ Location: `js/components/fretboard/gt-fretboard.js`
 - UI components: `js/components/fretboard/` (`gt-fretboard.js`, `gt-fretboard-render.js`)
 - Logic modules with tests: `fretboardLogic`, `tunerLogic`, `tonFinderLogic`, `akkordLogic`, `sheetMusicLogic` (incl. `getFilteredNotes` for fret/string selection), `metronomeLogic`, `notePlayingLogic`
 
+## Note-Playing Exercise Status
+
+- Staff notation in `notePlayingExercise` now uses guitar notation transposition (written +1 octave vs sounding pitch).
+- Pitch detection/matching remains octave-accurate on the sounding pitch (`note+octave`).
+- Sounding range check is covered in unit tests: open strings span E2–E4; full default exercise range up to fret 15 reaches G5.
+
 ## Menu UI Status
 
 - Main menu footer now contains the "⟳ Neu laden" action and the app version text directly above the Impressum section.
