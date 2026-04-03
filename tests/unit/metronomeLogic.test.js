@@ -1,6 +1,18 @@
 import { describe, it, expect } from 'vitest';
 import { MetronomeLogic } from '../../js/tools/metronome/metronomeLogic.js';
 
+describe('MetronomeLogic initial state', () => {
+  it('starts with default BPM of 120 and 4 beats per measure', () => {
+    const metro = new MetronomeLogic();
+    expect(metro.bpm).toBe(120);
+    expect(metro.beatsPerMeasure).toBe(4);
+    expect(metro.currentBeat).toBe(0);
+    expect(metro.nextNoteTime).toBe(0.0);
+    expect(metro.isPlaying).toBe(false);
+  });
+});
+
+
 describe('MetronomeLogic.setBpm', () => {
   it('sets BPM within the allowed range', () => {
     const metro = new MetronomeLogic();

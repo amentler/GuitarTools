@@ -116,7 +116,7 @@ Folgendes erfolgt **nicht** in Phase 1 und wird explizit auf spätere Phasen ver
 - `lint`-Script in `package.json` hinzugefügt (`eslint .`)
 - CI-Workflow um `npm run lint` vor `npm test` erweitert
 - 8 vorhandene Linting-Fehler in bestehenden JS-Modulen korrigiert (keine Funktionsänderungen)
-- **Unit-Tests** für `metronomeLogic.js` hinzugefügt (9 neue Tests → gesamt: 45)
+- **Unit-Tests** für `metronomeLogic.js` hinzugefügt (10 neue Tests → gesamt: 46)
 
 ### Neue / geänderte Dateien
 

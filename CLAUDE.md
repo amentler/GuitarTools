@@ -120,7 +120,7 @@ Phase 1 CI pipeline is active. Tests run on every push and pull request.
 - **Test files:** `tests/unit/` — pure logic tests only, no DOM/audio
 - **CI workflow:** `.github/workflows/ci.yml`
 - **Current unit-test scope:** `fretboardLogic`, `tunerLogic`, `tonFinderLogic`, `akkordLogic`, `sheetMusicLogic`, `metronomeLogic`
-- **Current test count:** 45 passing Vitest tests (`tests/unit/**/*.test.js`)
+- **Current test count:** 46 passing Vitest tests (`tests/unit/**/*.test.js`)
 
 When adding logic to `*Logic.js` files, add corresponding tests in `tests/unit/`.
 

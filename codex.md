@@ -32,7 +32,7 @@ Qualitätsmanagement (Ist):
   - `npm run lint` Script in `package.json`
   - CI-Workflow führt jetzt Lint vor Tests aus
   - 8 vorhandene Linting-Fehler in JS-Modulen korrigiert
-  - 9 neue Unit-Tests für `metronomeLogic.js` hinzugefügt (gesamt: 45 Tests)
+  - 10 neue Unit-Tests für `metronomeLogic.js` hinzugefügt (gesamt: 46 Tests)
 - Kein TypeScript (Phase 3–4)
 - Service-Worker-Assetliste wird manuell versionsgeführt
 - Service Worker nutzt **Network-First-Strategie**: Netzwerk bevorzugt, Cache als Fallback bei Offline
