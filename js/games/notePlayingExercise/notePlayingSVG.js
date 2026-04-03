@@ -6,9 +6,13 @@ import {
 } from 'https://cdn.jsdelivr.net/npm/vexflow@4.2.2/+esm';
 
 // ── Note → VexFlow key mapping ────────────────────────────────────────────────
-// All 12 chromatic notes mapped to positions within the treble clef staff
-// (no ledger lines needed). Written pitch follows guitar transposition
-// convention (sounds one octave lower than written).
+// All 12 chromatic notes mapped to positions within the treble clef staff.
+// Standard treble clef lines (bottom→top): E4, G4, B4, D5, F5
+//   E4 = 1st line (lowest line on staff – not a ledger line)
+//   F4 = 1st space
+//   G4 = 2nd line, A4 = 2nd space, B4 = 3rd line
+//   C5 = 3rd space, D5 = 4th line
+// All 12 notes fit within the staff (no ledger lines needed).
 const NOTE_TO_VF = {
   'C':  'c/5',
   'C#': 'c#/5',

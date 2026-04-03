@@ -19,18 +19,15 @@ let settingsWired = false;
 
 const freqHistory = [];
 
-// Tracks the last note rendered in the detected-notation staff to avoid
-// unnecessary VexFlow re-renders on every analysis frame.
-let lastDetectedNote = undefined;
-
 // ── State ─────────────────────────────────────────────────────────────────────
 let state = {
-  targetNote:   null,
-  matchStreak:  0,
-  isLocked:     false,
-  hintLevel:    0,        // 0 = none, 1 = note name shown, 2 = tabs shown
-  score:        { correct: 0 },
-  advanceTimeout: null,
+  targetNote:       null,
+  matchStreak:      0,
+  isLocked:         false,
+  hintLevel:        0,        // 0 = none, 1 = note name shown, 2 = tabs shown
+  lastDetectedNote: undefined, // last note rendered in the detected-notation staff
+  score:            { correct: 0 },
+  advanceTimeout:   null,
   settings: {
     maxFret:       5,
     activeStrings: [0, 1, 2, 3, 4, 5],
@@ -68,17 +65,17 @@ export async function startExercise() {
 
   // Preserve settings across restarts; reset everything else
   state = {
-    targetNote:     null,
-    matchStreak:    0,
-    isLocked:       false,
-    hintLevel:      0,
-    score:          { correct: 0 },
-    advanceTimeout: null,
-    settings:       state.settings,
+    targetNote:       null,
+    matchStreak:      0,
+    isLocked:         false,
+    hintLevel:        0,
+    lastDetectedNote: undefined,
+    score:            { correct: 0 },
+    advanceTimeout:   null,
+    settings:         state.settings,
   };
 
   freqHistory.length = 0;
-  lastDetectedNote = undefined;
 
   if (!settingsWired) {
     wireSettings();
@@ -311,8 +308,8 @@ function updateTargetDisplay() {
 function updateDetectedNote(note) {
   if (!ui) return;
   // Skip re-render if the displayed note hasn't changed
-  if (note === lastDetectedNote) return;
-  lastDetectedNote = note;
+  if (note === state.lastDetectedNote) return;
+  state.lastDetectedNote = note;
   renderSingleNote(ui.detectedNotation, note);
 }
 
