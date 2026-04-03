@@ -1,6 +1,6 @@
 # CI- und Qualitätspipeline – Roadmap
 
-Stand: 2026-04-03 (Phase 1 erweitert)
+Stand: 2026-04-03 (Phase 2 abgeschlossen)
 
 ---
 
@@ -49,7 +49,7 @@ CI-Pipeline eingeführt wird.
 |-------|--------|---------------|
 | **Phase 0** | Dokumentation, Planung, Scope-Abgrenzung | – (abgeschlossen) |
 | **Phase 1** | Minimale CI-Pipeline: `package.json` + Vitest + erste Unit-Tests für Logikmodule | Phase 0 (abgeschlossen) |
-| **Phase 2** | Linting (ESLint) in der Pipeline | Phase 1 |
+| **Phase 2** | Linting (ESLint) in der Pipeline | Phase 1 (abgeschlossen) |
 | **Phase 3** | TypeScript-Prüfung (`tsc --noEmit`, `checkJs`) | Phase 2 |
 | **Phase 4** | Schrittweise TS-Migration der Logikmodule | Phase 3 |
 | **Phase 5** | Browsernahe Tests (Playwright Smoke Tests) | Phase 1 oder 3 |
@@ -107,7 +107,57 @@ Folgendes erfolgt **nicht** in Phase 1 und wird explizit auf spätere Phasen ver
 
 ---
 
-## 5. Aufgabenteilung: Agent vs. manuell
+## 4. Phase 2 – Umgesetzt
+
+### Umfang
+
+- **ESLint 9** (Flat Config) als Dev-Dependency hinzugefügt (`eslint`, `@eslint/js`, `globals`)
+- `eslint.config.js` mit minimalen Regeln für Browser-ES-Module und Test-Dateien
+- `lint`-Script in `package.json` hinzugefügt (`eslint .`)
+- CI-Workflow um `npm run lint` vor `npm test` erweitert
+- 8 vorhandene Linting-Fehler in bestehenden JS-Modulen korrigiert (keine Funktionsänderungen)
+- **Unit-Tests** für `metronomeLogic.js` hinzugefügt (9 neue Tests → gesamt: 45)
+
+### Neue / geänderte Dateien
+
+| Datei | Änderung |
+|-------|----------|
+| `eslint.config.js` | Neu: ESLint Flat Config mit `recommended`-Regeln |
+| `package.json` | `lint`-Script + neue Dev-Dependencies (`eslint`, `@eslint/js`, `globals`) |
+| `.github/workflows/ci.yml` | `npm run lint` vor `npm test` |
+| `tests/unit/metronomeLogic.test.js` | Neu: Unit-Tests für BPM-Clamping und Beat-Zählung |
+| `js/components/fretboard/gt-fretboard-render.js` | Fix: `let stroke` ohne initialisierten Wert |
+| `js/games/akkordTrainer/akkordSVG.js` | Fix: ungenutztes `stringNum` entfernt |
+| `js/games/sheetMusicReading/sheetMusicSVG.js` | Fix: leere `catch`-Blöcke mit Kommentar versehen |
+| `js/games/tonFinder/tonFinderSVG.js` | Fix: `let stroke` ohne initialisierten Wert |
+| `js/tools/guitarTuner/guitarTuner.js` | Fix: ungenutzten `err`-Parameter im `catch` entfernt |
+
+### Minimaler sichtbarer Nutzen
+
+- Jeder Push und jeder Pull Request prüft jetzt: Lint (ESLint) **und** Unit-Tests (Vitest)
+- Syntaxfehler, ungenutzte Variablen und offensichtliche JS-Fehler werden automatisch abgefangen
+- Keine Änderungen am Funktionsverhalten der App
+
+---
+
+## 5. Bewusste Abgrenzung
+
+Folgendes erfolgt **nicht** in Phase 1/2 und wird explizit auf spätere Phasen verschoben:
+
+| Thema | Begründung |
+|-------|------------|
+| Prettier / Code-Formatierung | Kein Muss für Phase 2; separater Scope |
+| TypeScript / `tsconfig.json` | Bewusst in Phase 3–4 verschoben |
+| TypeScript-Migration | Erst nach funktionierender Basis (Phase 4) |
+| Playwright / E2E-Tests | Schwergewichtiger, erst nach Phase 1 |
+| Coverage-Konfiguration | Kein Selbstzweck in Phase 1/2 |
+| Build-/Transpilationsschritt | Nicht nötig für Logik-Unit-Tests |
+| Deployment-Änderungen | GitHub Pages bleibt unverändert |
+| React / Vue / Angular | Nicht geplant |
+
+---
+
+## 6. Aufgabenteilung: Agent vs. manuell
 
 ### Was der Agent in Phase 1 umgesetzt hat
 
@@ -116,6 +166,14 @@ Folgendes erfolgt **nicht** in Phase 1 und wird explizit auf spätere Phasen ver
 - Testdateien erstellt: `tests/unit/fretboardLogic.test.js`, `tests/unit/tunerLogic.test.js`
 - `.github/workflows/ci.yml` erstellt (Trigger: `push`, `pull_request`)
 - `.gitignore` angelegt
+- Dokumentation aktualisiert
+
+### Was der Agent in Phase 2 umgesetzt hat
+
+- ESLint-Konfiguration (`eslint.config.js`) und `lint`-Script angelegt
+- Bestehende Linting-Fehler in JS-Modulen korrigiert
+- `npm run lint` im CI-Workflow ergänzt
+- Unit-Tests für `metronomeLogic.js` hinzugefügt
 - Dokumentation aktualisiert
 
 ### Was manuell in GitHub konfiguriert werden muss

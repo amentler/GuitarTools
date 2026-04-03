@@ -122,7 +122,7 @@ export function renderInteractiveFretboard(
       const isSelected = selectedKeys.has(key);
 
       let fill = 'transparent';
-      let stroke = 'transparent';
+      let stroke;
       if (result === 'correct') {
         fill = '#4caf50';
         stroke = '#4caf50';

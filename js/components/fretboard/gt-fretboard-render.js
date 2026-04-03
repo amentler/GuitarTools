@@ -156,7 +156,7 @@ export function renderFretboard(container, options = {}) {
       const state = posMap.get(key);
 
       let fill = 'transparent';
-      let stroke = 'transparent';
+      let stroke;
 
       if (state === 'correct') {
         fill = '#4caf50'; stroke = '#4caf50';

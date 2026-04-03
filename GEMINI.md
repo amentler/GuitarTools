@@ -15,8 +15,8 @@ As an AI agent working on this project, you MUST adhere to the following rules:
 - **SVG for UI:** Prefer SVG for interactive components (fretboard, tuner, etc.).
 - **Mobile First:** The UI must be responsive and touch-friendly.
 - **PWA Ready:** Keep the Service Worker (`sw.js`) and manifest updated if new assets are added.
-- **Testing:** Run `npm test` to execute unit tests. Add tests in `tests/unit/` for any logic in `*Logic.js` files.
-- **Unit-Test Scope (current):** `fretboardLogic`, `tunerLogic`, `tonFinderLogic`, `akkordLogic`, `sheetMusicLogic` (36 passing tests)
+- **Testing:** Run `npm test` to execute unit tests. Run `npm run lint` for ESLint checks. Add tests in `tests/unit/` for any logic in `*Logic.js` files.
+- **Unit-Test Scope (current):** `fretboardLogic`, `tunerLogic`, `tonFinderLogic`, `akkordLogic`, `sheetMusicLogic`, `metronomeLogic` (45 passing tests)
 
 ## 3. Workflow
 - **Research -> Strategy -> Execution -> Validation**
@@ -51,4 +51,4 @@ Location: `js/components/fretboard/gt-fretboard.js`
 - Game modules: `js/games/tonFinder/`, `js/games/fretboardToneRecognition/`, `js/games/akkordTrainer/`, `js/games/sheetMusicReading/`
 - Tool modules: `js/tools/guitarTuner/`, `js/tools/metronome/`
 - UI components: `js/components/fretboard/` (`gt-fretboard.js`, `gt-fretboard-render.js`)
-- Logic modules with tests: `fretboardLogic`, `tunerLogic`, `tonFinderLogic`, `akkordLogic`, `sheetMusicLogic`
+- Logic modules with tests: `fretboardLogic`, `tunerLogic`, `tonFinderLogic`, `akkordLogic`, `sheetMusicLogic`, `metronomeLogic`
