@@ -83,5 +83,6 @@ describe('evaluateRound', () => {
 describe('positionKey', () => {
   it('formats keys as "stringIndex:fret"', () => {
     expect(positionKey(3, 7)).toBe('3:7');
+    expect(positionKey(0, 0)).toBe('0:0');
   });
 });
