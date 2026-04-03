@@ -17,6 +17,7 @@ As an AI agent working on this project, you MUST adhere to the following rules:
 - **Mobile First:** The UI must be responsive and touch-friendly.
 - **PWA Ready:** Keep the Service Worker (`sw.js`) and manifest updated if new assets are added.
 - **Testing:** Run `npm test` to execute unit tests. Run `npm run lint` for ESLint checks. Add tests in `tests/unit/` for any logic in `*Logic.js` files.
+- **Pre-Commit Mandate:** You MUST run `npm test` and ensure all tests pass BEFORE committing any changes. Committing code with failing tests is strictly prohibited.
 - **Unit-Test Scope (current):** `fretboardLogic`, `tunerLogic`, `tonFinderLogic`, `akkordLogic`, `sheetMusicLogic`, `metronomeLogic`, `notePlayingLogic` (passing tests)
 
 ## 3. Workflow
