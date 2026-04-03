@@ -15,6 +15,7 @@ A static web app for learning guitar, running directly on GitHub Pages without a
 index.html          – Main HTML, contains all views (#view-menu, #view-fretboard, #view-tuner)
 style.css           – Global styles and CSS Custom Properties
 js/
+├── version.js      – Central version string (APP_VERSION = 'YYYY-MM-DD HH:MM'); update on each release
 ├── app.js          – View navigation (menu ↔ exercises/tools); imports components/index.js
 ├── components/     – Reusable Web Components (UI layer)
 │   ├── index.js    – Registers all custom elements (imported once from app.js)

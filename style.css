@@ -105,6 +105,13 @@ body {
   cursor: default;
 }
 
+.app-version {
+  font-size: 0.72rem;
+  color: var(--color-text-muted);
+  opacity: 0.6;
+  margin-top: 0.25rem;
+}
+
 .menu-cards {
   display: flex;
   flex-wrap: wrap;

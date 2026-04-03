@@ -1,6 +1,6 @@
 // GuitarTools Service Worker – network-first offline strategy
 
-const CACHE_NAME = 'guitartools-v7';
+const CACHE_NAME = 'guitartools-v8';
 
 // Derive base path from SW location so it works both at / and /GuitarTools/
 const BASE = self.location.pathname.replace('sw.js', '');
@@ -12,6 +12,7 @@ const ASSETS = [
   BASE + 'manifest.json',
   BASE + 'icons/icon.svg',
   BASE + 'js/app.js',
+  BASE + 'js/version.js',
   BASE + 'js/games/fretboardToneRecognition/fretboardExercise.js',
   BASE + 'js/games/fretboardToneRecognition/fretboardLogic.js',
   BASE + 'js/games/fretboardToneRecognition/fretboardSVG.js',
