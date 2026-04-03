@@ -7,6 +7,7 @@ import { startExercise as startSheetMusic,  stopExercise as stopSheetMusic  } fr
 import { startExercise as startMetronome,   stopExercise as stopMetronome   } from './tools/metronome/metronome.js';
 import { startExercise as startAkkord,      stopExercise as stopAkkord      } from './games/akkordTrainer/akkordTrainer.js';
 import { startExercise as startTonFinder,   stopExercise as stopTonFinder   } from './games/tonFinder/tonFinder.js';
+import { startExercise as startNotePlaying, stopExercise as stopNotePlaying } from './games/notePlayingExercise/notePlayingExercise.js';
 
 const views = {
   menu:        document.getElementById('view-menu'),
@@ -16,6 +17,7 @@ const views = {
   metronome:   document.getElementById('view-metronome'),
   akkord:      document.getElementById('view-akkord-trainer'),
   tonFinder:   document.getElementById('view-ton-finder'),
+  notePlaying: document.getElementById('view-note-play'),
 };
 
 let currentView = 'menu';
@@ -28,22 +30,24 @@ function showView(name) {
 
 function navigateTo(name) {
   // Stop whatever is running
-  if (currentView === 'fretboard')  stopFretboard();
-  if (currentView === 'tuner')      stopTuner();
-  if (currentView === 'sheetMusic') stopSheetMusic();
-  if (currentView === 'metronome')  stopMetronome();
-  if (currentView === 'akkord')     stopAkkord();
-  if (currentView === 'tonFinder')  stopTonFinder();
+  if (currentView === 'fretboard')   stopFretboard();
+  if (currentView === 'tuner')       stopTuner();
+  if (currentView === 'sheetMusic')  stopSheetMusic();
+  if (currentView === 'metronome')   stopMetronome();
+  if (currentView === 'akkord')      stopAkkord();
+  if (currentView === 'tonFinder')   stopTonFinder();
+  if (currentView === 'notePlaying') stopNotePlaying();
 
   currentView = name;
   showView(name);
 
-  if (name === 'fretboard')  startFretboard();
-  if (name === 'tuner')      startTuner();
-  if (name === 'sheetMusic') startSheetMusic();
-  if (name === 'metronome')  startMetronome();
-  if (name === 'akkord')     startAkkord();
-  if (name === 'tonFinder')  startTonFinder();
+  if (name === 'fretboard')   startFretboard();
+  if (name === 'tuner')       startTuner();
+  if (name === 'sheetMusic')  startSheetMusic();
+  if (name === 'metronome')   startMetronome();
+  if (name === 'akkord')      startAkkord();
+  if (name === 'tonFinder')   startTonFinder();
+  if (name === 'notePlaying') startNotePlaying();
 }
 
 // ── Wire up buttons ──────────────────────────────────────────────────────────
@@ -65,6 +69,9 @@ document.getElementById('btn-back-akkord-trainer').addEventListener('click',  ()
 
 document.getElementById('btn-start-ton-finder').addEventListener('click', () => navigateTo('tonFinder'));
 document.getElementById('btn-back-ton-finder').addEventListener('click',  () => navigateTo('menu'));
+
+document.getElementById('btn-start-note-play').addEventListener('click', () => navigateTo('notePlaying'));
+document.getElementById('btn-back-note-play').addEventListener('click',  () => navigateTo('menu'));
 
 // ── Initial view ─────────────────────────────────────────────────────────────
 async function loadVersionInfo() {
