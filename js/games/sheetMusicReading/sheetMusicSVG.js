@@ -3,14 +3,14 @@
 import { Renderer, Stave, StaveNote, Voice, Formatter } from 'https://cdn.jsdelivr.net/npm/vexflow@4.2.2/+esm';
 
 // Fixed virtual canvas – CSS scales this to the actual container width.
-// Using a wider-than-screen virtual width makes notes appear smaller on screen
-// while keeping VexFlow's default coordinate system intact.
-const VW      = 1200;  // wider virtual canvas → CSS scales notes down to ~70% on desktop
-const VH      = 200;   // tall enough for treble clef top + 3 ledger lines below
-const STAVE_Y = 80;    // y of top staff line (leaves ~60 px for clef curl above)
+// A narrower virtual canvas means CSS scales up the notes, making them appear
+// larger on screen while the 4-bar layout still fits within the container.
+const VW      = 750;   // narrower virtual canvas → CSS scales notes to ~112% on desktop
+const VH      = 160;   // trimmed height removes excess whitespace around stave
+const STAVE_Y = 50;    // y of top staff line (leaves ~50 px for clef curl above)
 
 // First bar is wider to accommodate clef + time signature glyphs.
-const FIRST_BAR_RATIO = 0.27;
+const FIRST_BAR_RATIO = 0.30;
 const FIRST_BAR_W     = Math.round(VW * FIRST_BAR_RATIO);
 const REST_BAR_W      = Math.round((VW - FIRST_BAR_W) / 3);
 
@@ -162,8 +162,8 @@ export function renderScore(container, bars, showTab) {
     voice.addTickables(notes);
 
     const w = bi === 0 ? FIRST_BAR_W : REST_BAR_W;
-    // Use w*0.7 as formatter width → notes cluster more tightly within each bar
-    new Formatter().joinVoices([voice]).format([voice], w * 0.7);
+    // Use w*0.80 as formatter width → notes sit closer together within each bar
+    new Formatter().joinVoices([voice]).format([voice], w * 0.80);
     voice.draw(ctx, staves[bi]);
   }
 
