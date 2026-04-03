@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { getAvailableNotes, getRandomNote } from '../../js/games/notePlayingExercise/notePlayingLogic.js';
+import { getAvailableNotes, getRandomNote, getPositionsForNote } from '../../js/games/notePlayingExercise/notePlayingLogic.js';
 
 describe('getAvailableNotes', () => {
   it('returns only the open-string note when maxFret is 0 and one string is active', () => {
@@ -67,5 +67,38 @@ describe('getRandomNote', () => {
     // activeStrings = [] produces an empty pool
     const note = getRandomNote(null, 5, []);
     expect(note).toBe('E');
+  });
+});
+
+describe('getPositionsForNote', () => {
+  it('returns the open string position for E on string 0 at fret 0', () => {
+    const positions = getPositionsForNote('E', 0, [0]);
+    expect(positions).toEqual([{ string: 0, fret: 0 }]);
+  });
+
+  it('returns empty array when no active strings', () => {
+    const positions = getPositionsForNote('E', 5, []);
+    expect(positions).toEqual([]);
+  });
+
+  it('returns all fret positions for a note across active strings', () => {
+    // String 0 (E): fret 0 = E, fret 12 = E
+    const positions = getPositionsForNote('E', 12, [0]);
+    expect(positions).toContainEqual({ string: 0, fret: 0 });
+    expect(positions).toContainEqual({ string: 0, fret: 12 });
+    expect(positions.length).toBe(2);
+  });
+
+  it('returns positions across multiple strings', () => {
+    // E appears on string 0 (fret 0) and string 5 (fret 0) within maxFret=0
+    const positions = getPositionsForNote('E', 0, [0, 1, 2, 3, 4, 5]);
+    expect(positions).toContainEqual({ string: 0, fret: 0 });
+    expect(positions).toContainEqual({ string: 5, fret: 0 });
+    expect(positions.every(p => p.fret === 0)).toBe(true);
+  });
+
+  it('only includes frets up to maxFret', () => {
+    const positions = getPositionsForNote('E', 5, [0]);
+    expect(positions.every(p => p.fret <= 5)).toBe(true);
   });
 });
