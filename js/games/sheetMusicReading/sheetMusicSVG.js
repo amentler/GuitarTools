@@ -5,14 +5,14 @@ import { Renderer, Stave, StaveNote, Voice, Formatter } from 'https://cdn.jsdeli
 // Fixed virtual canvas – CSS scales this to the actual container width.
 // A narrower virtual canvas means CSS scales up the notes, making them appear
 // larger on screen while the 4-bar layout still fits within the container.
-const VW      = 700;   // narrower virtual canvas → CSS scales notes to ~129% on 900px container
-const VH      = 210;   // enough height for low ledger lines (E3) and clef curl above
-const STAVE_Y = 70;    // y of top staff line (leaves ~70 px for clef curl; low notes at ~145 px)
+const VW      = 640;   // narrower virtual canvas → CSS scales notes to ~141% on 900px container
+const VH      = 240;   // extra height prevents clef-curl clipping above and ledger-line clipping below
+const STAVE_Y = 80;    // y of top staff line (leaves 80 px for clef curl; low notes at ~155 px)
 
 // First bar is wider to accommodate clef + time signature glyphs.
-const FIRST_BAR_RATIO = 0.35;
+const FIRST_BAR_RATIO = 0.40;
 const FIRST_BAR_W     = Math.round(VW * FIRST_BAR_RATIO);
-const REST_BAR_W      = Math.round((VW - FIRST_BAR_W) / 3);
+const REST_BAR_W      = Math.floor((VW - FIRST_BAR_W) / 3);
 
 // Tab constants (custom SVG below VexFlow notation)
 const TAB_VB_W    = 900;
@@ -45,7 +45,7 @@ function renderTab(tabDiv, bars) {
 
   for (const [char, i] of [['T', 0], ['A', 1], ['B', 2]]) {
     svg.appendChild(tabEl('text', {
-      x: 10, y: 4 + i * STR_SP,
+      x: 10, y: 8 + i * STR_SP,
       fill: 'var(--color-text-muted)', 'font-size': 11, 'font-weight': 700,
       'text-anchor': 'middle', 'dominant-baseline': 'middle',
     }, char));
@@ -53,8 +53,8 @@ function renderTab(tabDiv, bars) {
 
   for (let s = 0; s < STR_COUNT; s++) {
     svg.appendChild(tabEl('line', {
-      x1: TAB_STAFF_L, y1: 4 + s * STR_SP,
-      x2: TAB_STAFF_R, y2: 4 + s * STR_SP,
+      x1: TAB_STAFF_L, y1: 8 + s * STR_SP,
+      x2: TAB_STAFF_R, y2: 8 + s * STR_SP,
       stroke: 'var(--color-border)', 'stroke-width': 1,
     }));
   }
@@ -63,7 +63,7 @@ function renderTab(tabDiv, bars) {
   for (let i = 0; i <= 4; i++) {
     const x = TAB_STAFF_L + i * barW;
     svg.appendChild(tabEl('line', {
-      x1: x, y1: 0, x2: x, y2: (STR_COUNT - 1) * STR_SP + 8,
+      x1: x, y1: 0, x2: x, y2: (STR_COUNT - 1) * STR_SP + 12,
       stroke: 'var(--color-border)', 'stroke-width': i === 0 || i === 4 ? 2 : 1,
     }));
   }
@@ -73,7 +73,7 @@ function renderTab(tabDiv, bars) {
     for (let ni = 0; ni < bars[bi].length; ni++) {
       const note = bars[bi][ni];
       const x    = TAB_STAFF_L + bi * barW + beatSpacing * (ni + 1);
-      const sy   = 4 + (note.string - 1) * STR_SP;
+      const sy   = 8 + (note.string - 1) * STR_SP;
       const txt  = String(note.fret);
       const bgW  = txt.length > 1 ? 16 : 12;
 
