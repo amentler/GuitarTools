@@ -40,6 +40,13 @@ if (pitch === state.targetNote) { /* correct */ }
 Playing the same pitch class in the wrong octave (e.g. E3 when E2 is targeted)
 will **not** count as correct.
 
+### Important: Guitar Notation vs. Sounding Pitch
+
+For the staff display, this exercise now applies standard guitar notation
+transposition: written notes are rendered **one octave above** sounding pitch.
+Detection and matching still use the real sounding pitch (`note + octave`), so
+the required played tone remains physically correct.
+
 ## Logic API
 
 ### Octave-aware (primary)
@@ -74,6 +81,8 @@ for **3 consecutive frames** (~300 ms), preventing accidental brief matches.
 
 Fret 0 means open string (no fretting required). The note pool is derived from
 all positions reachable within the configured frets and strings, including octave.
+With all strings enabled, the sounding open-string range is E2–E4 at fret 0 and
+extends to G5 at fret 15.
 
 ## Navigation
 
