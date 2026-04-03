@@ -648,6 +648,14 @@ input[type="range"] {
   max-width: 800px;
 }
 
+.menu-footer-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0.9rem;
+}
+
 .impressum-title {
   font-size: 0.9rem;
   font-weight: 600;

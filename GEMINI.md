@@ -52,3 +52,7 @@ Location: `js/components/fretboard/gt-fretboard.js`
 - Tool modules: `js/tools/guitarTuner/`, `js/tools/metronome/`
 - UI components: `js/components/fretboard/` (`gt-fretboard.js`, `gt-fretboard-render.js`)
 - Logic modules with tests: `fretboardLogic`, `tunerLogic`, `tonFinderLogic`, `akkordLogic`, `sheetMusicLogic`
+
+## Menu UI Status
+
+- Main menu footer now contains the "⟳ Neu laden" action and the app version text directly above the Impressum section.
