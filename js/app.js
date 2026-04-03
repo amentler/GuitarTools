@@ -1,6 +1,7 @@
 // App navigation – controls which view is visible
 
 import './components/index.js';
+import { APP_VERSION } from './version.js';
 import { startExercise as startFretboard,   stopExercise as stopFretboard   } from './games/fretboardToneRecognition/fretboardExercise.js';
 import { startExercise as startTuner,       stopExercise as stopTuner       } from './tools/guitarTuner/guitarTuner.js';
 import { startExercise as startSheetMusic,  stopExercise as stopSheetMusic  } from './games/sheetMusicReading/sheetMusicReading.js';
@@ -67,4 +68,5 @@ document.getElementById('btn-start-ton-finder').addEventListener('click', () => 
 document.getElementById('btn-back-ton-finder').addEventListener('click',  () => navigateTo('menu'));
 
 // ── Initial view ─────────────────────────────────────────────────────────────
+document.getElementById('app-version').textContent = `Version ${APP_VERSION}`;
 showView('menu');
