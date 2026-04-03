@@ -5,12 +5,12 @@ import { Renderer, Stave, StaveNote, Voice, Formatter } from 'https://cdn.jsdeli
 // Fixed virtual canvas – CSS scales this to the actual container width.
 // A narrower virtual canvas means CSS scales up the notes, making them appear
 // larger on screen while the 4-bar layout still fits within the container.
-const VW      = 750;   // narrower virtual canvas → CSS scales notes to ~120% on 900px container
-const VH      = 160;   // trimmed height removes excess whitespace around stave
-const STAVE_Y = 50;    // y of top staff line (leaves ~50 px for clef curl above)
+const VW      = 700;   // narrower virtual canvas → CSS scales notes to ~129% on 900px container
+const VH      = 210;   // enough height for low ledger lines (E3) and clef curl above
+const STAVE_Y = 70;    // y of top staff line (leaves ~70 px for clef curl; low notes at ~145 px)
 
 // First bar is wider to accommodate clef + time signature glyphs.
-const FIRST_BAR_RATIO = 0.30;
+const FIRST_BAR_RATIO = 0.35;
 const FIRST_BAR_W     = Math.round(VW * FIRST_BAR_RATIO);
 const REST_BAR_W      = Math.round((VW - FIRST_BAR_W) / 3);
 
@@ -153,6 +153,7 @@ export function renderScore(container, bars, showTab) {
 
   // ── Draw notes per bar ──────────────────────────────────────────────────
   for (let bi = 0; bi < bars.length; bi++) {
+    const stave = staves[bi];
     const notes = bars[bi].map(n =>
       new StaveNote({ clef: 'treble', keys: [n.vfKey], duration: 'q' })
     );
@@ -161,10 +162,12 @@ export function renderScore(container, bars, showTab) {
     try { voice.setMode(Voice.Mode.SOFT); } catch { /* VexFlow version compatibility */ }
     voice.addTickables(notes);
 
-    const w = bi === 0 ? FIRST_BAR_W : REST_BAR_W;
-    // Use w*0.80 as formatter width → notes sit closer together within each bar
-    new Formatter().joinVoices([voice]).format([voice], w * 0.80);
-    voice.draw(ctx, staves[bi]);
+    // Compute the actual note area: from getNoteStartX() to the right edge of the stave.
+    // This correctly accounts for clef + time-signature width in bar 0, so notes
+    // don't overflow into the next bar.
+    const noteAreaW = stave.getX() + stave.getWidth() - stave.getNoteStartX();
+    new Formatter().joinVoices([voice]).format([voice], noteAreaW * 0.90);
+    voice.draw(ctx, stave);
   }
 
   // Re-apply responsive attributes after VexFlow finishes drawing
