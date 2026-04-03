@@ -16,6 +16,7 @@ As an AI agent working on this project, you MUST adhere to the following rules:
 - **SVG for UI:** Prefer SVG for interactive components (fretboard, tuner, etc.).
 - **Mobile First:** The UI must be responsive and touch-friendly.
 - **PWA Ready:** Keep the Service Worker (`sw.js`) and manifest updated if new assets are added.
+- **Service-Worker Asset-Liste ist Pflicht:** Neue oder umbenannte lokale Assets/Module müssen immer in `sw.js` in `ASSETS` ergänzt werden, damit Reloads keinen veralteten Stand liefern.
 - **Testing:** Run `npm test` to execute unit tests. Run `npm run lint` for ESLint checks. Add tests in `tests/unit/` for any logic in `*Logic.js` files.
 - **Pre-Commit Mandate:** You MUST run `npm test` and ensure all tests pass BEFORE committing any changes. Committing code with failing tests is strictly prohibited.
 - **Unit-Test Scope (current):** `fretboardLogic`, `tunerLogic`, `tonFinderLogic`, `akkordLogic`, `sheetMusicLogic`, `metronomeLogic`, `notePlayingLogic` (67 passing tests)
