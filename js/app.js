@@ -77,7 +77,8 @@ document.getElementById('btn-back-note-play').addEventListener('click',  () => n
 async function loadVersionInfo() {
   const versionEl = document.getElementById('app-version');
   try {
-    const response = await fetch('./version.txt', { cache: 'no-store' });
+    const versionUrl = new URL('../version.txt', import.meta.url);
+    const response = await fetch(versionUrl, { cache: 'no-store' });
     if (!response.ok) throw new Error('Version file not available');
     versionEl.textContent = (await response.text()).trim();
   } catch {
