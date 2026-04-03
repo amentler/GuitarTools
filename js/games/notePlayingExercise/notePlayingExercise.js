@@ -2,7 +2,8 @@
 // Shows a target note; listens via microphone to verify the user plays it.
 
 import { detectPitch, frequencyToNote, pushAndMedian } from '../../tools/guitarTuner/tunerLogic.js';
-import { getRandomNote } from './notePlayingLogic.js';
+import { getRandomNote, getPositionsForNote } from './notePlayingLogic.js';
+import { renderNoteOnStaff, renderNotePositionsTab } from './notePlayingSVG.js';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 // Number of consecutive matching frames required to register a correct answer
@@ -22,6 +23,7 @@ let state = {
   targetNote:   null,
   matchStreak:  0,
   isLocked:     false,
+  hintLevel:    0,      // 0 = no hint, 1 = note name shown, 2 = tabs shown
   score:        { correct: 0 },
   advanceTimeout: null,
   settings: {
@@ -35,13 +37,17 @@ let ui = null;
 
 function resolveUI() {
   ui = {
-    permission:   document.getElementById('note-play-permission'),
-    targetNote:   document.getElementById('note-play-target'),
-    detectedNote: document.getElementById('note-play-detected'),
-    feedback:     document.getElementById('note-play-feedback'),
-    score:        document.getElementById('note-play-score'),
-    slider:       document.getElementById('note-play-fret-slider'),
-    sliderLabel:  document.getElementById('note-play-fret-label'),
+    permission:      document.getElementById('note-play-permission'),
+    notation:        document.getElementById('note-play-notation'),
+    targetNote:      document.getElementById('note-play-target'),
+    tabContainer:    document.getElementById('note-play-tab'),
+    hint1Btn:        document.getElementById('note-play-hint1'),
+    hint2Btn:        document.getElementById('note-play-hint2'),
+    detectedNote:    document.getElementById('note-play-detected'),
+    feedback:        document.getElementById('note-play-feedback'),
+    score:           document.getElementById('note-play-score'),
+    slider:          document.getElementById('note-play-fret-slider'),
+    sliderLabel:     document.getElementById('note-play-fret-label'),
   };
 }
 
@@ -60,6 +66,7 @@ export async function startExercise() {
     targetNote:     null,
     matchStreak:    0,
     isLocked:       false,
+    hintLevel:      0,
     score:          { correct: 0 },
     advanceTimeout: null,
     settings:       state.settings,
@@ -153,6 +160,20 @@ function wireSettings() {
       resetTargetNote();
     });
   });
+
+  ui.hint1Btn.addEventListener('click', () => {
+    if (state.hintLevel < 1) {
+      state.hintLevel = 1;
+      updateHintDisplay();
+    }
+  });
+
+  ui.hint2Btn.addEventListener('click', () => {
+    if (state.hintLevel < 2) {
+      state.hintLevel = 2;
+      updateHintDisplay();
+    }
+  });
 }
 
 function syncSettingsUI() {
@@ -177,6 +198,7 @@ function resetTargetNote() {
   }
   state.isLocked = false;
   state.matchStreak = 0;
+  state.hintLevel = 0;
   state.targetNote = getRandomNote(null, state.settings.maxFret, state.settings.activeStrings);
   updateTargetDisplay();
   updateDetectedNote(null);
@@ -219,6 +241,9 @@ function handleSuccess() {
   state.matchStreak = 0;
   state.score.correct++;
   updateScore();
+  // Always reveal the note name on success
+  state.hintLevel = Math.max(state.hintLevel, 1);
+  updateHintDisplay();
   updateFeedback('correct');
 
   state.advanceTimeout = setTimeout(() => {
@@ -229,6 +254,7 @@ function handleSuccess() {
     );
     state.matchStreak    = 0;
     state.isLocked       = false;
+    state.hintLevel      = 0;
     state.advanceTimeout = null;
     updateTargetDisplay();
     updateDetectedNote(null);
@@ -238,12 +264,45 @@ function handleSuccess() {
 
 // ── DOM update helpers ────────────────────────────────────────────────────────
 
+// Tracks last rendered note to avoid unnecessary VexFlow re-renders
+let lastRenderedDetected = undefined;
+
 function updateTargetDisplay() {
-  if (ui) ui.targetNote.textContent = state.targetNote ?? '–';
+  if (!ui) return;
+  renderNoteOnStaff(ui.notation, state.targetNote);
+  // Reset hints
+  ui.targetNote.textContent   = state.targetNote ?? '–';
+  ui.targetNote.style.visibility = 'hidden';
+  ui.tabContainer.style.display  = 'none';
+  ui.tabContainer.innerHTML      = '';
+  // Disable hint 2 until hint 1 is shown
+  ui.hint1Btn.disabled = false;
+  ui.hint2Btn.disabled = true;
+  lastRenderedDetected = undefined;
+}
+
+function updateHintDisplay() {
+  if (!ui) return;
+  if (state.hintLevel >= 1) {
+    ui.targetNote.style.visibility = 'visible';
+    ui.hint2Btn.disabled = false;
+  }
+  if (state.hintLevel >= 2) {
+    const positions = getPositionsForNote(
+      state.targetNote,
+      state.settings.maxFret,
+      state.settings.activeStrings,
+    );
+    renderNotePositionsTab(ui.tabContainer, positions);
+    ui.tabContainer.style.display = 'block';
+  }
 }
 
 function updateDetectedNote(note) {
-  if (ui) ui.detectedNote.textContent = note ?? '–';
+  if (!ui) return;
+  if (note === lastRenderedDetected) return;
+  lastRenderedDetected = note;
+  renderNoteOnStaff(ui.detectedNote, note);
 }
 
 function updateFeedback(kind) {

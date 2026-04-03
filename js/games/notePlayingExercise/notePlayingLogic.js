@@ -35,3 +35,23 @@ export function getRandomNote(previous, maxFret, activeStrings) {
   } while (note === previous);
   return note;
 }
+
+/**
+ * Returns all string/fret positions where the given note occurs within the
+ * current settings (active strings × 0…maxFret).
+ * @param {string}   noteName      - e.g. "C#"
+ * @param {number}   maxFret
+ * @param {number[]} activeStrings - string indices (0 = low E, 5 = high E)
+ * @returns {Array<{string: number, fret: number}>}
+ */
+export function getPositionsForNote(noteName, maxFret, activeStrings) {
+  const positions = [];
+  for (const s of activeStrings) {
+    for (let f = 0; f <= maxFret; f++) {
+      if (getNoteAtPosition(s, f) === noteName) {
+        positions.push({ string: s, fret: f });
+      }
+    }
+  }
+  return positions;
+}
