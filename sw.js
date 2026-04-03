@@ -1,6 +1,6 @@
 // GuitarTools Service Worker – network-first offline strategy
 
-const CACHE_NAME = 'guitartools-v8';
+const CACHE_NAME = 'guitartools-v9';
 
 // Derive base path from SW location so it works both at / and /GuitarTools/
 const BASE = self.location.pathname.replace('sw.js', '');
@@ -13,6 +13,9 @@ const ASSETS = [
   BASE + 'icons/icon.svg',
   BASE + 'js/app.js',
   BASE + 'version.txt',
+  BASE + 'js/components/index.js',
+  BASE + 'js/components/fretboard/gt-fretboard.js',
+  BASE + 'js/components/fretboard/gt-fretboard-render.js',
   BASE + 'js/games/fretboardToneRecognition/fretboardExercise.js',
   BASE + 'js/games/fretboardToneRecognition/fretboardLogic.js',
   BASE + 'js/games/fretboardToneRecognition/fretboardSVG.js',
@@ -28,6 +31,12 @@ const ASSETS = [
   BASE + 'js/tools/metronome/metronome.js',
   BASE + 'js/tools/metronome/metronomeLogic.js',
   BASE + 'js/tools/metronome/metronomeSVG.js',
+  BASE + 'js/games/akkordTrainer/akkordTrainer.js',
+  BASE + 'js/games/akkordTrainer/akkordLogic.js',
+  BASE + 'js/games/akkordTrainer/akkordSVG.js',
+  BASE + 'js/games/notePlayingExercise/notePlayingExercise.js',
+  BASE + 'js/games/notePlayingExercise/notePlayingLogic.js',
+  BASE + 'js/games/notePlayingExercise/notePlayingSVG.js',
 ];
 
 // CDN assets cached opportunistically – install won't fail if unreachable
@@ -63,14 +72,19 @@ self.addEventListener('activate', event => {
   self.clients.claim();
 });
 
-// Network-first: try the network, update the cache on success, fall back to cache when offline
+// Network-first: try the network, update the cache on success, fall back to cache when offline.
+// Use cache:'no-cache' so the network fetch always revalidates with the server instead of
+// returning a stale response from the browser's own HTTP cache.
 self.addEventListener('fetch', event => {
   // Only handle same-origin GET requests
   if (event.request.method !== 'GET') return;
   if (!event.request.url.startsWith(self.location.origin)) return;
 
+  // Build a revalidating request that bypasses the browser HTTP cache
+  const networkRequest = new Request(event.request.url, { cache: 'no-cache' });
+
   event.respondWith(
-    fetch(event.request)
+    fetch(networkRequest)
       .then(response => {
         // Clone before consuming: one copy for the cache, one to return
         const toCache = response.clone();
