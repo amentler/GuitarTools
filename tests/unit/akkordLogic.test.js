@@ -52,6 +52,23 @@ describe('validateChord', () => {
     expect(validateChord('C-Dur', missingString)).toBe(false);
   });
 
+  it('treats missing user strings as open strings', () => {
+    const cDurWithoutOpenStrings = CHORDS['C-Dur']
+      .filter(position => position.muted || position.fret > 0)
+      .map(position => ({ ...position }));
+
+    expect(validateChord('C-Dur', cDurWithoutOpenStrings)).toBe(true);
+  });
+
+  it('returns false when a required open string is set to muted', () => {
+    const mutedOpenString = CHORDS['C-Dur'].map(position => ({ ...position }));
+    const openString = mutedOpenString.find(position => position.string === 1);
+    openString.muted = true;
+    delete openString.fret;
+
+    expect(validateChord('C-Dur', mutedOpenString)).toBe(false);
+  });
+
   it('returns false when a fret is wrong', () => {
     const wrongFret = CHORDS['G-Dur'].map(position => ({ ...position }));
     wrongFret.find(position => position.string === 6).fret = 2;

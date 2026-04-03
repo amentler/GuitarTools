@@ -29,6 +29,9 @@ Der Nutzer sieht einen zufälligen Akkordnamen und legt die richtigen Finger­po
 - Nutzer tippt auf Saite + Bund → Punkt erscheint auf dem Diagramm
 - „Prüfen"-Button vergleicht gesetzte Punkte mit Referenz-Akkord
 - Richtige Töne werden grün markiert, falsche rot, fehlende grau
+- Startzustand pro Aufgabe: alle 6 Saiten sind automatisch als „zu spielen“ (offen) gesetzt
+- Für Saiten, die nicht gespielt werden sollen, wird per Klick auf den Saitenanfang auf „nicht zu spielen“ (X) umgeschaltet
+- Fehlklick-Korrektur ohne leeren Zwischenzustand: erneuter Klick auf Bund setzt die Saite zurück auf „offen“
 
 ### Progression
 - **Level 1:** Offene Akkorde (C, G, D, Em, Am)

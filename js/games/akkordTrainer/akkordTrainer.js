@@ -13,6 +13,14 @@ let feedback = null;
 let score = { correct: 0, total: 0 };
 let level = 1;
 
+function getDefaultStringPositions() {
+  return Array.from({ length: 6 }, (_, idx) => ({
+    string: idx + 1,
+    fret: 0,
+    muted: false
+  }));
+}
+
 // ── DOM Elements ────────────────────────────────────────────────────────────
 const view = document.getElementById('view-akkord-trainer');
 const chordNameDisplay = document.getElementById('chord-name-display');
@@ -42,7 +50,7 @@ export function stopExercise() {
 
 function nextRound() {
   currentChord = getRandomChord(level);
-  userPositions = [];
+  userPositions = getDefaultStringPositions();
   feedback = null;
   
   // UI Update
@@ -71,38 +79,26 @@ function handleTogglePosition(string, fret, isMuteToggle) {
   if (feedback) return; // Disable interaction during feedback phase
 
   const existingIdx = userPositions.findIndex(p => p.string === string);
+  if (existingIdx < 0) return;
   
   if (isMuteToggle) {
-    if (existingIdx >= 0) {
-      const pos = userPositions[existingIdx];
-      if (pos.muted) {
-        // Switch from Muted to Open
-        userPositions[existingIdx] = { string, fret: 0, muted: false };
-      } else if (pos.fret === 0) {
-        // Switch from Open to None
-        userPositions.splice(existingIdx, 1);
-      } else {
-        // Switch from Fretted to Muted
-        userPositions[existingIdx] = { string, muted: true };
-      }
+    const pos = userPositions[existingIdx];
+    if (pos.muted) {
+      // Switch from Muted to Open
+      userPositions[existingIdx] = { string, fret: 0, muted: false };
     } else {
-      // New: Muted
-      userPositions.push({ string, muted: true });
+      // Switch from Open/Fretted to Muted
+      userPositions[existingIdx] = { string, muted: true };
     }
   } else {
     // Fret click (1-5)
-    if (existingIdx >= 0) {
-      const pos = userPositions[existingIdx];
-      if (!pos.muted && pos.fret === fret) {
-        // Remove if same fret clicked
-        userPositions.splice(existingIdx, 1);
-      } else {
-        // Set to new fret
-        userPositions[existingIdx] = { string, fret, muted: false };
-      }
+    const pos = userPositions[existingIdx];
+    if (!pos.muted && pos.fret === fret) {
+      // Switch from fretted back to open
+      userPositions[existingIdx] = { string, fret: 0, muted: false };
     } else {
-      // Add new fret marker
-      userPositions.push({ string, fret, muted: false });
+      // Set to new fret
+      userPositions[existingIdx] = { string, fret, muted: false };
     }
   }
   

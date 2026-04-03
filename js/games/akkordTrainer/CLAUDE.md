@@ -13,18 +13,21 @@ Manages game state, round management, and DOM interactions. Exports `startExerci
 | Field | Type | Description |
 |---|---|---|
 | `currentChord` | `string` | Name of the chord to be found (e.g., "C") |
-| `userPositions` | `Array<{string, fret}>` | Positions currently marked by the user |
+| `userPositions` | `Array<{string, fret, muted}>` | Current state per string (default each round: all strings open/played) |
 | `feedback` | `null | 'correct' | 'wrong'` | Current feedback state after clicking "Check" |
 | `score` | `{ correct, total }` | Running score |
 | `level` | `1 | 2 | 3` | Current difficulty level |
 
 **Flow per question:**
 1. Pick a random chord from the current level's pool.
-2. User taps/clicks on the fretboard SVG to place/remove markers.
-3. User clicks "Prüfen" (Check):
+2. Every round starts with all 6 strings set to open/played.
+3. User taps/clicks to set fretted notes or mute strings.
+4. Clicking an already selected fret resets that string to open.
+5. Clicking the nut toggle switches between open and muted for that string.
+6. User clicks "Prüfen" (Check):
    - Correct → markers turn green, score++, advance after 1500ms.
    - Wrong → markers turn red, correct positions shown in gray/ghosted, advance after 2000ms.
-4. `nextRound()` resets `userPositions = []` and `feedback = null`.
+7. `nextRound()` resets `userPositions` to all open strings and `feedback = null`.
 
 ---
 

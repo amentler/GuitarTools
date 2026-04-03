@@ -97,7 +97,7 @@ export function validateChord(chordName, userPositions) {
 
   for (let s = 1; s <= 6; s++) {
     const refPos = reference.find(p => p.string === s);
-    const userPos = userPositions.find(p => p.string === s);
+    const userPos = userPositions.find(p => p.string === s) || { string: s, fret: 0, muted: false };
 
     if (refPos.muted) {
       if (!userPos || !userPos.muted) return false;
