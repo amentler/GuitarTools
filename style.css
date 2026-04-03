@@ -609,9 +609,20 @@ input[type="range"] {
   color: var(--color-wrong);
 }
 
+.guided-ok {
+  font-size: 3.5rem;
+  line-height: 1;
+  color: var(--color-correct);
+}
+
 .guided-hint {
   font-size: 0.9rem;
   color: var(--color-text-muted);
+}
+
+.guided-hint--ok {
+  color: var(--color-correct);
+  font-weight: 600;
 }
 
 .guided-actions {
