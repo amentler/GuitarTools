@@ -51,10 +51,18 @@ Location: `js/components/fretboard/gt-fretboard.js`
 
 ## Current Modules
 
-- Game modules: `js/games/tonFinder/`, `js/games/fretboardToneRecognition/`, `js/games/akkordTrainer/`, `js/games/sheetMusicReading/`, `js/games/notePlayingExercise/`
+- Game modules: `js/games/tonFinder/`, `js/games/fretboardToneRecognition/`, `js/games/akkordTrainer/`, `js/games/sheetMusicReading/`, `js/games/notePlayingExercise/`, `js/games/sheetMusicMic/`
 - Tool modules: `js/tools/guitarTuner/`, `js/tools/metronome/`
 - UI components: `js/components/fretboard/` (`gt-fretboard.js`, `gt-fretboard-render.js`)
 - Logic modules with tests: `fretboardLogic`, `tunerLogic`, `tonFinderLogic`, `akkordLogic`, `sheetMusicLogic` (incl. `getFilteredNotes` for fret/string selection), `metronomeLogic`, `notePlayingLogic`
+
+## Noten spielen – sheetMusicMic
+
+- New exercise at `js/games/sheetMusicMic/` combining sheet-music display with microphone-based pitch recognition.
+- **Easy mode:** wrong notes do not restart; user keeps playing until hitting correct note.
+- **Hard mode:** 3 consecutive wrong-note frames restart the sequence from the beginning.
+- **Correct notes turn green** via VexFlow `setStyle()` on `StaveNote`.
+- Reuses `detectPitch`, `frequencyToNote`, `pushAndMedian` from `tunerLogic.js`; match streak = 3 frames.
 
 ## Note-Playing Exercise Status
 

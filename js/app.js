@@ -8,6 +8,7 @@ import { startExercise as startMetronome,   stopExercise as stopMetronome   } fr
 import { startExercise as startAkkord,      stopExercise as stopAkkord      } from './games/akkordTrainer/akkordTrainer.js';
 import { startExercise as startTonFinder,   stopExercise as stopTonFinder   } from './games/tonFinder/tonFinder.js';
 import { startExercise as startNotePlaying, stopExercise as stopNotePlaying } from './games/notePlayingExercise/notePlayingExercise.js';
+import { startExercise as startSheetMic,   stopExercise as stopSheetMic   } from './games/sheetMusicMic/sheetMusicMicExercise.js';
 
 const views = {
   menu:        document.getElementById('view-menu'),
@@ -18,6 +19,7 @@ const views = {
   akkord:      document.getElementById('view-akkord-trainer'),
   tonFinder:   document.getElementById('view-ton-finder'),
   notePlaying: document.getElementById('view-note-play'),
+  sheetMic:    document.getElementById('view-sheet-mic'),
 };
 
 let currentView = 'menu';
@@ -37,6 +39,7 @@ function navigateTo(name) {
   if (currentView === 'akkord')      stopAkkord();
   if (currentView === 'tonFinder')   stopTonFinder();
   if (currentView === 'notePlaying') stopNotePlaying();
+  if (currentView === 'sheetMic')    stopSheetMic();
 
   currentView = name;
   showView(name);
@@ -48,6 +51,7 @@ function navigateTo(name) {
   if (name === 'akkord')      startAkkord();
   if (name === 'tonFinder')   startTonFinder();
   if (name === 'notePlaying') startNotePlaying();
+  if (name === 'sheetMic')    startSheetMic();
 }
 
 // ── Wire up buttons ──────────────────────────────────────────────────────────
@@ -72,6 +76,9 @@ document.getElementById('btn-back-ton-finder').addEventListener('click',  () => 
 
 document.getElementById('btn-start-note-play').addEventListener('click', () => navigateTo('notePlaying'));
 document.getElementById('btn-back-note-play').addEventListener('click',  () => navigateTo('menu'));
+
+document.getElementById('btn-start-sheet-mic').addEventListener('click', () => navigateTo('sheetMic'));
+document.getElementById('btn-back-sheet-mic').addEventListener('click',  () => navigateTo('menu'));
 
 // ── Initial view ─────────────────────────────────────────────────────────────
 async function loadVersionInfo() {
