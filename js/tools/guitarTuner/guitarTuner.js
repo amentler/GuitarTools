@@ -5,6 +5,7 @@ import {
   detectPitch, frequencyToNote, isStandardTuningNote, pushAndMedian,
   GUIDED_TUNING_STEPS, noteToFrequency, getCentsToTarget, PERFECT_TOLERANCE_CENTS,
   pushGuidedHistory, getGuidedFeedback, updateFeedbackDisplay,
+  ANALYZE_INTERVAL_MS,
 } from './tunerLogic.js';
 import { initTunerSVG, updateTunerDisplay } from './tunerSVG.js';
 
@@ -123,7 +124,7 @@ export async function startExercise() {
   audioCtx.createMediaStreamSource(stream).connect(analyser);
 
   state.isActive = true;
-  intervalId = setInterval(analyzeFrame, 100);
+  intervalId = setInterval(analyzeFrame, ANALYZE_INTERVAL_MS);
 }
 
 export function stopExercise() {
@@ -171,8 +172,13 @@ function analyzeFrame() {
   const hz = detectPitch(buffer, audioCtx.sampleRate);
 
   if (hz === null) {
-    // Silence: clear display but keep needle centred; leave guided feedback as-is
+    // Silence: clear display but keep needle centred
     updateTunerDisplay({ cents: 0, note: null, octave: null, isActive: true, isInTune: false, isStandardNote: false });
+    // Apply 3-second hold rule during silence so "Perfekt" doesn't persist indefinitely
+    if (guidedState.active) {
+      guidedState.feedbackDisplay = updateFeedbackDisplay(guidedState.feedbackDisplay, { type: null }, Date.now());
+      renderGuidedFeedback(guidedState.feedbackDisplay);
+    }
     return;
   }
 
@@ -208,6 +214,7 @@ function startGuidedMode() {
   guidedState.stepIndex = 0;
   guidedState.trendHistory = [];
   guidedState.feedbackDisplay = null;
+  freqHistory.length = 0; // clear stale pitch samples so first readings aren't biased
   document.getElementById('btn-start-guided').style.display = 'none';
   document.getElementById('guided-active').style.display = '';
   document.getElementById('guided-finished').style.display = 'none';
@@ -219,6 +226,7 @@ function nextGuidedStep() {
   guidedState.stepIndex += 1;
   guidedState.trendHistory = [];
   guidedState.feedbackDisplay = null;
+  freqHistory.length = 0; // clear stale samples from previous string
   if (guidedState.stepIndex >= GUIDED_TUNING_STEPS.length) {
     guidedState.active = false;
     document.getElementById('guided-active').style.display = 'none';

@@ -135,6 +135,14 @@ export const TREND_HISTORY_SIZE = 6;
 /** Minimum milliseconds a feedback hint stays visible before auto-clearing on null feedback. */
 export const FEEDBACK_DISPLAY_DURATION_MS = 3000;
 
+/**
+ * Interval in milliseconds between audio analysis frames.
+ * The tuner reads a new buffer from the Web Audio API analyser every
+ * ANALYZE_INTERVAL_MS milliseconds.  Combined with HISTORY_SIZE (= 5),
+ * the rolling-median smoothing window covers ~500 ms.
+ */
+export const ANALYZE_INTERVAL_MS = 100;
+
 /** Cents window in which the pitch is considered "perfect" for guided feedback. */
 export const PERFECT_TOLERANCE_CENTS = 8;
 
