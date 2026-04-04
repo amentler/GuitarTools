@@ -10,36 +10,29 @@ Stand: 2026-04-03 (Phase 3 abgeschlossen)
 
 GuitarTools wird als statische App direkt aus dem Repository auf GitHub Pages veröffentlicht.
 Es gibt keinen Build-Step: der Browser lädt `index.html` und die JS-Module unmittelbar.
-Deployment und Hosting sind dadurch sehr einfach, aber auch ohne CI-Schutz – es gibt keine automatische
-Prüfung vor einer Veröffentlichung.
+Deployment und Hosting sind dadurch sehr einfach. Die CI-Pipeline schützt den Branch durch
+automatische Lint- und Testläufe vor jeder Veröffentlichung.
 
 ### Vanilla JavaScript im Browser
 
 Die gesamte Anwendungslogik ist in reinem JavaScript (ES Modules) geschrieben, ohne Framework und ohne
 Transpilation. Logik und UI sind in den meisten Modulen bereits getrennt:
 
-- **Reine Logikmodule** (gut testbar): `fretboardLogic.js`, `tunerLogic.js`
+- **Reine Logikmodule** (gut testbar): `fretboardLogic.js`, `tunerLogic.js`, `tonFinderLogic.js`, `akkordLogic.js`, `sheetMusicLogic.js`, `metronomeLogic.js`, `notePlayingLogic.js`
 - **DOM-/SVG-nahe Module** (aufwändiger zu testen): `fretboardSVG.js`, `tunerSVG.js`, `fretboardExercise.js`, `guitarTuner.js`
 - **Navigation/Routing**: `app.js`
 
-Es gibt aktuell keine `package.json`, kein Build-Tooling und keine Testinfrastruktur.
+Es gibt eine `package.json` mit Vitest (Test-Runner) und ESLint (Linter). Die Testinfrastruktur ist
+vollständig eingerichtet und aktiv. Aktuell: **130 Unit-Tests** über 7 Testdateien in `tests/unit/`.
 
-### Spätere Testbarkeit
+### Getestete Module
 
-Die Logikmodule sind bereits weitgehend als reine Funktionen aufgebaut und bieten eine gute Basis
-für Unit-Tests. Für CI-Ausführung würde ein minimales Node.js-Tooling (z. B. `package.json` + Test-Runner)
-genügen, ohne die App selbst oder den Deployment-Prozess zu verändern.
+Alle reinen Logikmodule sind durch Unit-Tests abgedeckt. Audio- und Mikrofon-abhängige Pfade
+(z. B. `guitarTuner.js`) werden bewusst nicht in Unit-Tests einbezogen.
 
-Audio- und Mikrofon-abhängige Pfade (z. B. `guitarTuner.js`) sind in CI schwieriger abzudecken
-und sollten zunächst durch Logik-/Mock-Tests behandelt werden.
+### TypeScript
 
-### Spätere TypeScript-Einführung
-
-TypeScript ist mittelfristig erwünscht, aber noch nicht eingeführt. Die aktuelle Modularisierung
-ist ein guter Ausgangspunkt: Logikmodule können schrittweise migriert werden (`fretboardLogic.js` →
-`fretboardLogic.ts`), ohne dass das Deployment oder die Browserausführung sofort angepasst werden muss.
-Ein Transpilationsschritt wäre dafür notwendig, der sinnvollerweise erst nach einer funktionierenden
-CI-Pipeline eingeführt wird.
+TypeScript ist bewusst nicht eingeführt. Die Vanilla-JS-Ausrichtung bleibt erhalten.
 
 ---
 
@@ -50,7 +43,7 @@ CI-Pipeline eingeführt wird.
 | **Phase 0** | Dokumentation, Planung, Scope-Abgrenzung | – (abgeschlossen) |
 | **Phase 1** | Minimale CI-Pipeline: `package.json` + Vitest + erste Unit-Tests für Logikmodule | Phase 0 (abgeschlossen) |
 | **Phase 2** | Linting (ESLint) in der Pipeline | Phase 1 (abgeschlossen) |
-| **Phase 3** | Unit-Test-Abdeckung ausgebaut: `notePlayingLogic`, Edge Cases, 67 Tests gesamt | Phase 2 (abgeschlossen) |
+| **Phase 3** | Unit-Test-Abdeckung ausgebaut: `notePlayingLogic`, Edge Cases, 130 Tests gesamt | Phase 2 (abgeschlossen) |
 | **Phase 4** | TypeScript-Prüfung (`tsc --noEmit`, `checkJs`) | Phase 3 |
 | **Phase 5** | Schrittweise TS-Migration der Logikmodule | Phase 4 |
 | **Phase 6** | Browsernahe Tests (Playwright Smoke Tests) | Phase 1 oder 4 |
@@ -173,7 +166,7 @@ Folgendes erfolgt **nicht** in Phase 1/2 und wird explizit auf spätere Phasen v
 
 - Unit-Tests für `notePlayingLogic.js` hinzugefügt (`tests/unit/notePlayingLogic.test.js`, 14 Tests)
 - Edge-Case-Abdeckung in `tonFinderLogic.test.js` ergänzt (`positionKey` mit Nullwerten, `evaluateRound` für leer/korrekt/falsch)
-- Testabdeckung gesamt: **67 Tests** über 7 Testdateien
+- Testabdeckung gesamt: **67 Tests** über 7 Testdateien (inzwischen auf 130 Tests ausgebaut durch geführtes Stimmen und weitere Edge Cases)
 - Abgedeckte Module: `fretboardLogic`, `tunerLogic`, `tonFinderLogic`, `akkordLogic`, `sheetMusicLogic`, `metronomeLogic`, `notePlayingLogic`
 - Dokumentation aktualisiert
 
