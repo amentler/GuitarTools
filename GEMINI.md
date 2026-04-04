@@ -19,7 +19,7 @@ As an AI agent working on this project, you MUST adhere to the following rules:
 - **Service-Worker Asset-Liste ist Pflicht:** Neue oder umbenannte lokale Assets/Module müssen immer in `sw.js` in `ASSETS` ergänzt werden, damit Reloads keinen veralteten Stand liefern.
 - **Testing:** Run `npm test` to execute unit tests. Run `npm run lint` for ESLint checks. Add tests in `tests/unit/` for any logic in `*Logic.js` files.
 - **Pre-Commit Mandate:** You MUST run `npm test` and ensure all tests pass BEFORE committing any changes. Committing code with failing tests is strictly prohibited.
-- **Unit-Test Scope (current):** `fretboardLogic`, `tunerLogic`, `tonFinderLogic`, `akkordLogic`, `sheetMusicLogic`, `metronomeLogic`, `notePlayingLogic` (67 passing tests)
+- **Unit-Test Scope (current):** `fretboardLogic`, `tunerLogic`, `tonFinderLogic`, `akkordLogic`, `sheetMusicLogic`, `metronomeLogic`, `notePlayingLogic` (139 passing tests)
 
 ## 3. Workflow
 - **Research -> Strategy -> Execution -> Validation**
@@ -51,10 +51,18 @@ Location: `js/components/fretboard/gt-fretboard.js`
 
 ## Current Modules
 
-- Game modules: `js/games/tonFinder/`, `js/games/fretboardToneRecognition/`, `js/games/akkordTrainer/`, `js/games/sheetMusicReading/`, `js/games/notePlayingExercise/`
+- Game modules: `js/games/tonFinder/`, `js/games/fretboardToneRecognition/`, `js/games/akkordTrainer/`, `js/games/sheetMusicReading/`, `js/games/notePlayingExercise/`, `js/games/sheetMusicMic/`
 - Tool modules: `js/tools/guitarTuner/`, `js/tools/metronome/`
 - UI components: `js/components/fretboard/` (`gt-fretboard.js`, `gt-fretboard-render.js`)
 - Logic modules with tests: `fretboardLogic`, `tunerLogic`, `tonFinderLogic`, `akkordLogic`, `sheetMusicLogic` (incl. `getFilteredNotes` for fret/string selection), `metronomeLogic`, `notePlayingLogic`
+
+## Noten spielen – sheetMusicMic
+
+- New exercise at `js/games/sheetMusicMic/` combining sheet-music display with microphone-based pitch recognition.
+- **Easy mode:** wrong notes do not restart; user keeps playing until hitting correct note.
+- **Hard mode:** 3 consecutive wrong-note frames restart the sequence from the beginning.
+- **Correct notes turn green** via VexFlow `setStyle()` on `StaveNote`.
+- Reuses `detectPitch`, `frequencyToNote`, `pushAndMedian` from `tunerLogic.js`; match streak = 3 frames.
 
 ## Note-Playing Exercise Status
 
