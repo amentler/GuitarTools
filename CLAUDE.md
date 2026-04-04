@@ -125,7 +125,7 @@ Phase 1 CI pipeline is active. Tests run on every push and pull request.
 - **Test files:** `tests/unit/` — pure logic tests only, no DOM/audio
 - **CI workflow:** `.github/workflows/ci.yml`
 - **Current unit-test scope:** `fretboardLogic`, `tunerLogic`, `tonFinderLogic`, `akkordLogic`, `sheetMusicLogic`, `metronomeLogic`, `notePlayingLogic`
-- **Current test count:** 130 passing Vitest tests (`tests/unit/**/*.test.js`)
+- **Current test count:** 150 passing Vitest tests (`tests/unit/**/*.test.js`)
 
 When adding logic to `*Logic.js` files, add corresponding tests in `tests/unit/`.
 
@@ -145,7 +145,7 @@ New exercise combining "Noten lesen" (sheet music) with microphone-based note re
 - **Mode: Einfach (easy)** — wrong notes do not penalise; keep playing until correct note lands
 - **Mode: Schwer (hard)** — 3 consecutive wrong-note frames restart the sequence from the beginning
 - **Note colours:** `current` → orange, `correct` → green, `pending` → default theme colour
-- **Pitch detection:** reuses `detectPitch`, `frequencyToNote`, `pushAndMedian` from `tunerLogic.js`; MATCH_STREAK_REQUIRED = 3 frames
+- **Pitch detection:** reuses `detectPitch` (YIN + HPS + Vorfilterung), `frequencyToNote`, and median/stability helpers from `tunerLogic.js`; MATCH_STREAK_REQUIRED = 3 frames
 
 ## Adding a New Game
 

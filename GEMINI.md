@@ -19,7 +19,7 @@ As an AI agent working on this project, you MUST adhere to the following rules:
 - **Service-Worker Asset-Liste ist Pflicht:** Neue oder umbenannte lokale Assets/Module müssen immer in `sw.js` in `ASSETS` ergänzt werden, damit Reloads keinen veralteten Stand liefern.
 - **Testing:** Run `npm test` to execute unit tests. Run `npm run lint` for ESLint checks. Add tests in `tests/unit/` for any logic in `*Logic.js` files.
 - **Pre-Commit Mandate:** You MUST run `npm test` and ensure all tests pass BEFORE committing any changes. Committing code with failing tests is strictly prohibited.
-- **Unit-Test Scope (current):** `fretboardLogic`, `tunerLogic`, `tonFinderLogic`, `akkordLogic`, `sheetMusicLogic`, `metronomeLogic`, `notePlayingLogic` (130 passing tests)
+- **Unit-Test Scope (current):** `fretboardLogic`, `tunerLogic`, `tonFinderLogic`, `akkordLogic`, `sheetMusicLogic`, `metronomeLogic`, `notePlayingLogic` (150 passing tests)
 
 ## 3. Workflow
 - **Research -> Strategy -> Execution -> Validation**
@@ -55,6 +55,13 @@ Location: `js/components/fretboard/gt-fretboard.js`
 - Tool modules: `js/tools/guitarTuner/`, `js/tools/metronome/`
 - UI components: `js/components/fretboard/` (`gt-fretboard.js`, `gt-fretboard-render.js`)
 - Logic modules with tests: `fretboardLogic`, `tunerLogic`, `tonFinderLogic`, `akkordLogic`, `sheetMusicLogic` (incl. `getFilteredNotes` for fret/string selection), `metronomeLogic`, `notePlayingLogic`
+
+## Guitar Tuner Detection Status
+
+- `tunerLogic.detectPitch()` kombiniert YIN mit spektraler HPS-Prüfung für robustere Grundton-Erkennung.
+- Tiefe Saiten profitieren von adaptiver Fenstergröße (`getAdaptiveFftSize`) und längerer Periodenabdeckung.
+- Vorverarbeitung enthält Bandbegrenzung (Gitarrenbereich) und Attack-Dämpfung direkt nach Anschlag.
+- Stabilisierung erfolgt mehrstufig: rolling median + Stabilitätsprüfung + Notenwechsel-Hysterese im Controller.
 
 ## Noten spielen – sheetMusicMic
 

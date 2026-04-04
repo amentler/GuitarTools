@@ -9,14 +9,19 @@ Pure functions, no DOM dependencies.
 
 - **`STANDARD_TUNING`** – array of `{ note, octave }` for the 6 open strings (E2 A2 D3 G3 B3 E4)
 - **`detectPitch(buffer, sampleRate)`** → Hz or `null`
-  - Autocorrelation on `Float32Array`, search range 70–1400 Hz
-  - Parabolic interpolation for sub-sample accuracy
-  - Returns `null` if RMS < 0.01 (silence)
+  - Kombiniert YIN + spektrale HPS-Prüfung im Gitarrenbereich (ca. 70–420 Hz)
+  - Adaptive Suchfenster (tiefe Töne stabiler mit größerem Fenster)
+  - Vorverarbeitung mit Attack-Dämpfung und Bandbegrenzung
+  - Subharmonic-/Octave-Checks für weniger Oberton-Fehler
+  - Pegelprüfung (`analyzeInputLevel`) mit RMS- und Clipping-Grenzen
 - **`frequencyToNote(freq)`** → `{ note, octave, cents }`
   - `midiNum = 12 * log2(freq / 440) + 69`
   - `cents = (midiNum - round(midiNum)) * 100`
 - **`isStandardTuningNote(note, octave)`** → boolean
 - **`pushAndMedian(history, freq)`** → median of last 5 readings (mutates array)
+- **`pushMedianAndStabilize(history, freq, lastStable)`** → median + stabiler Ausgabewert (Anti-Sprung)
+- **`applyNoteSwitchHysteresis(current, candidate, streak)`** → Notenwechsel erst nach mehreren konsistenten Frames
+- **`getAdaptiveFftSize(referenceHz)`** → adaptive `AnalyserNode.fftSize` (tief groß, hoch klein)
 
 #### Guided Tuning Logic
 - **`GUIDED_TUNING_STEPS`** – 6-step sequence `{ stringNumber, note, octave }` E2→E4
@@ -54,8 +59,8 @@ guidedState: { active, stepIndex, trendHistory }
 
 **Flow:**
 1. `startExercise()` — init SVG, show permission overlay, call `getUserMedia`
-2. On success — create `AudioContext` + `AnalyserNode` (fftSize 2048), start 100 ms interval
-3. Each frame — `getFloatTimeDomainData` → `detectPitch` → rolling median → `frequencyToNote` → `updateTunerDisplay`; if guided mode active, also compute `getCentsToTarget` → `pushGuidedHistory` → `getGuidedFeedback` → `renderGuidedFeedback`
+2. On success — create `AudioContext` + `AnalyserNode`, start 100 ms interval
+3. Each frame — adaptive `fftSize` → `getFloatTimeDomainData` → `detectPitch` (YIN + HPS) → median+stabilize+hysteresis → `frequencyToNote` → `updateTunerDisplay`; if guided mode active, also compute `getCentsToTarget` → `pushGuidedHistory` → `getGuidedFeedback` → `renderGuidedFeedback`
 4. `stopExercise()` — clear interval, stop mic tracks, close AudioContext, reset guided state
 
 **Mode logic:**
