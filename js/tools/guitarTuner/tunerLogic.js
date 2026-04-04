@@ -11,6 +11,15 @@ export const STANDARD_TUNING = [
 
 const NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
 
+export const GUITAR_MIN_FREQUENCY = 70;
+export const GUITAR_MAX_FREQUENCY = 420;
+export const GUITAR_MIN_RMS = 0.008;
+export const GUITAR_MAX_CLIPPING_RATIO = 0.02;
+export const ATTACK_DAMPING_RATIO = 0.2;
+export const HPS_AGREEMENT_CENTS = 35;
+export const STABILITY_MAX_CENTS_DELTA = 25;
+export const NOTE_SWITCH_CONFIRM_FRAMES = 3;
+
 /**
  * Detects the fundamental frequency using the YIN algorithm.
  * More reliable than naive autocorrelation – correctly identifies the
@@ -19,19 +28,84 @@ const NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 
  * @param {number} sampleRate
  * @returns {number|null} Hz, or null if silence / no clear pitch
  */
-export function detectPitch(buffer, sampleRate) {
-  // Silence check
-  let rms = 0;
-  for (let i = 0; i < buffer.length; i++) rms += buffer[i] * buffer[i];
-  rms = Math.sqrt(rms / buffer.length);
-  if (rms < 0.01) return null;
+export function getAdaptiveFftSize(referenceHz = null) {
+  if (referenceHz !== null && referenceHz <= 120) return 4096;
+  if (referenceHz !== null && referenceHz >= 250) return 1024;
+  return 2048;
+}
 
-  const minPeriod = Math.floor(sampleRate / 1400);
-  const maxPeriod = Math.floor(sampleRate / 70);
+export function analyzeInputLevel(buffer) {
+  let sumSquares = 0;
+  let clipping = 0;
+  for (let i = 0; i < buffer.length; i++) {
+    const v = buffer[i];
+    sumSquares += v * v;
+    if (Math.abs(v) >= 0.98) clipping++;
+  }
+  const rms = Math.sqrt(sumSquares / buffer.length);
+  const clippingRatio = clipping / buffer.length;
+  return {
+    rms,
+    clippingRatio,
+    isValid: rms >= GUITAR_MIN_RMS && clippingRatio <= GUITAR_MAX_CLIPPING_RATIO,
+  };
+}
+
+function onePoleLowpass(input, sampleRate, cutoffHz) {
+  const out = new Float32Array(input.length);
+  const rc = 1 / (2 * Math.PI * cutoffHz);
+  const dt = 1 / sampleRate;
+  const alpha = dt / (rc + dt);
+  let prev = input[0] ?? 0;
+  out[0] = prev;
+  for (let i = 1; i < input.length; i++) {
+    prev = prev + alpha * (input[i] - prev);
+    out[i] = prev;
+  }
+  return out;
+}
+
+function onePoleHighpass(input, sampleRate, cutoffHz) {
+  const out = new Float32Array(input.length);
+  const rc = 1 / (2 * Math.PI * cutoffHz);
+  const dt = 1 / sampleRate;
+  const alpha = rc / (rc + dt);
+  let prevY = 0;
+  let prevX = input[0] ?? 0;
+  out[0] = 0;
+  for (let i = 1; i < input.length; i++) {
+    const x = input[i];
+    const y = alpha * (prevY + x - prevX);
+    out[i] = y;
+    prevY = y;
+    prevX = x;
+  }
+  return out;
+}
+
+export function applyGuitarBandpass(buffer, sampleRate, lowHz = GUITAR_MIN_FREQUENCY, highHz = GUITAR_MAX_FREQUENCY) {
+  const highpassed = onePoleHighpass(buffer, sampleRate, lowHz);
+  return onePoleLowpass(highpassed, sampleRate, highHz);
+}
+
+export function dampAttack(buffer, dampingRatio = ATTACK_DAMPING_RATIO) {
+  const out = new Float32Array(buffer.length);
+  const attackSamples = Math.max(1, Math.floor(buffer.length * dampingRatio));
+  for (let i = 0; i < buffer.length; i++) {
+    const t = i < attackSamples ? i / attackSamples : 1;
+    const gain = 0.35 + 0.65 * t;
+    out[i] = buffer[i] * gain;
+  }
+  return out;
+}
+
+function detectPitchYin(buffer, sampleRate, minFreq, maxFreq, minPeriods = 3) {
+  const minPeriod = Math.floor(sampleRate / maxFreq);
+  const maxPeriod = Math.floor(sampleRate / minFreq);
   const halfN = Math.floor(buffer.length / 2);
+  if (maxPeriod >= buffer.length - 2 || halfN < maxPeriod) return null;
+  if (buffer.length < Math.floor((sampleRate / minFreq) * minPeriods)) return null;
 
-  // Step 1: squared difference function
-  // d[tau] = sum_i (x[i] - x[i+tau])^2
   const diff = new Float32Array(maxPeriod + 1);
   for (let tau = 1; tau <= maxPeriod; tau++) {
     let sum = 0;
@@ -42,8 +116,6 @@ export function detectPitch(buffer, sampleRate) {
     diff[tau] = sum;
   }
 
-  // Step 2: cumulative mean normalized difference function
-  // d'[0] = 1, d'[tau] = d[tau] / ((1/tau) * sum_{j=1}^{tau} d[j])
   const cmnd = new Float32Array(maxPeriod + 1);
   cmnd[0] = 1;
   let runningSum = 0;
@@ -52,8 +124,6 @@ export function detectPitch(buffer, sampleRate) {
     cmnd[tau] = runningSum === 0 ? 0 : (diff[tau] * tau) / runningSum;
   }
 
-  // Step 3: find first tau >= minPeriod where cmnd dips below threshold,
-  // then walk to the local minimum of that dip
   const THRESHOLD = 0.15;
   let bestTau = -1;
 
@@ -65,17 +135,24 @@ export function detectPitch(buffer, sampleRate) {
     }
   }
 
-  // Fallback: no dip below threshold – pick absolute minimum in range
   if (bestTau === -1) {
     let minVal = Infinity;
     for (let tau = minPeriod; tau <= maxPeriod; tau++) {
       if (cmnd[tau] < minVal) { minVal = cmnd[tau]; bestTau = tau; }
     }
-    // Only accept if reasonably confident
     if (minVal > 0.5) return null;
   }
 
-  // Step 4: parabolic interpolation for sub-sample accuracy
+  // Subharmonic check: prefer lower fundamental if quality is close.
+  for (const factor of [2, 3]) {
+    const candidateTau = bestTau * factor;
+    const candidateIdx = Math.round(candidateTau);
+    if (candidateIdx <= maxPeriod && cmnd[candidateIdx] <= cmnd[Math.round(bestTau)] * 1.08) {
+      bestTau = candidateTau;
+      break;
+    }
+  }
+
   if (bestTau > 1 && bestTau < maxPeriod) {
     const y1 = cmnd[bestTau - 1];
     const y2 = cmnd[bestTau];
@@ -84,7 +161,77 @@ export function detectPitch(buffer, sampleRate) {
     if (denom !== 0) bestTau = bestTau + (y1 - y3) / denom;
   }
 
-  return sampleRate / bestTau;
+  const hz = sampleRate / bestTau;
+  return hz >= minFreq && hz <= maxFreq ? hz : null;
+}
+
+function detectPitchHps(buffer, sampleRate, minFreq, maxFreq) {
+  const n = buffer.length;
+  let bestFreq = null;
+  let bestScore = 0;
+  const minBin = Math.max(1, Math.floor((minFreq * n) / sampleRate));
+  const maxBin = Math.min(Math.floor(n / 3) - 1, Math.ceil((maxFreq * n) / sampleRate));
+
+  for (let k = minBin; k <= maxBin; k++) {
+    let re = 0;
+    let im = 0;
+    for (let i = 0; i < n; i++) {
+      const phase = (2 * Math.PI * k * i) / n;
+      re += buffer[i] * Math.cos(phase);
+      im -= buffer[i] * Math.sin(phase);
+    }
+    const m1 = Math.hypot(re, im);
+
+    const k2 = k * 2;
+    const k3 = k * 3;
+    if (k3 >= n / 2) continue;
+    let re2 = 0; let im2 = 0;
+    let re3 = 0; let im3 = 0;
+    for (let i = 0; i < n; i++) {
+      const phase2 = (2 * Math.PI * k2 * i) / n;
+      re2 += buffer[i] * Math.cos(phase2);
+      im2 -= buffer[i] * Math.sin(phase2);
+      const phase3 = (2 * Math.PI * k3 * i) / n;
+      re3 += buffer[i] * Math.cos(phase3);
+      im3 -= buffer[i] * Math.sin(phase3);
+    }
+    const score = m1 * Math.max(1e-8, Math.hypot(re2, im2)) * Math.max(1e-8, Math.hypot(re3, im3));
+    if (score > bestScore) {
+      bestScore = score;
+      bestFreq = (k * sampleRate) / n;
+    }
+  }
+  return bestFreq;
+}
+
+function centsDistance(a, b) {
+  return Math.abs(1200 * Math.log2(a / b));
+}
+
+function selectCombinedPitch(yinHz, hpsHz, lastStableHz = null) {
+  if (yinHz === null && hpsHz === null) return null;
+  if (yinHz !== null && hpsHz !== null) {
+    if (centsDistance(yinHz, hpsHz) <= HPS_AGREEMENT_CENTS) return (yinHz + hpsHz) / 2;
+    if (lastStableHz !== null) {
+      return centsDistance(yinHz, lastStableHz) <= centsDistance(hpsHz, lastStableHz) ? yinHz : hpsHz;
+    }
+    return yinHz;
+  }
+  return yinHz ?? hpsHz;
+}
+
+export function detectPitch(buffer, sampleRate, options = {}) {
+  const level = analyzeInputLevel(buffer);
+  if (!level.isValid) return null;
+
+  const referenceHz = options.referenceHz ?? null;
+  const minFreq = referenceHz !== null ? Math.max(GUITAR_MIN_FREQUENCY, referenceHz * 0.55) : GUITAR_MIN_FREQUENCY;
+  const maxFreq = referenceHz !== null ? Math.min(GUITAR_MAX_FREQUENCY, referenceHz * 1.8) : GUITAR_MAX_FREQUENCY;
+  const minPeriods = minFreq < 120 ? 4 : 3;
+  const prepared = dampAttack(applyGuitarBandpass(buffer, sampleRate));
+  const yinHz = detectPitchYin(prepared, sampleRate, minFreq, maxFreq, minPeriods);
+  const hpsHz = detectPitchHps(prepared, sampleRate, minFreq, maxFreq);
+  return selectCombinedPitch(yinHz, hpsHz, options.lastStableHz ?? null);
 }
 
 /**
@@ -340,4 +487,25 @@ export function pushAndMedian(history, freq) {
   return sorted.length % 2 !== 0
     ? sorted[mid]
     : (sorted[mid - 1] + sorted[mid]) / 2;
+}
+
+export function pushMedianAndStabilize(history, freq, lastStable = null) {
+  const median = pushAndMedian(history, freq);
+  if (lastStable === null) return { median, stable: median, changed: true };
+  const centsDelta = Math.abs(getCentsToTarget(median, lastStable));
+  if (centsDelta <= STABILITY_MAX_CENTS_DELTA) {
+    return { median, stable: median, changed: true };
+  }
+  return { median, stable: lastStable, changed: false };
+}
+
+export function applyNoteSwitchHysteresis(currentNoteKey, candidateNoteKey, streak) {
+  if (currentNoteKey === null || currentNoteKey === candidateNoteKey) {
+    return { acceptedNoteKey: candidateNoteKey, nextStreak: 0, switched: currentNoteKey !== candidateNoteKey };
+  }
+  const nextStreak = streak + 1;
+  if (nextStreak >= NOTE_SWITCH_CONFIRM_FRAMES) {
+    return { acceptedNoteKey: candidateNoteKey, nextStreak: 0, switched: true };
+  }
+  return { acceptedNoteKey: currentNoteKey, nextStreak, switched: false };
 }

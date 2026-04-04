@@ -2,10 +2,10 @@
 // Exports startExercise() and stopExercise() to match the app navigation contract.
 
 import {
-  detectPitch, frequencyToNote, isStandardTuningNote, pushAndMedian,
+  detectPitch, frequencyToNote, isStandardTuningNote,
   GUIDED_TUNING_STEPS, noteToFrequency, getCentsToTarget, PERFECT_TOLERANCE_CENTS,
   pushGuidedHistory, getGuidedFeedback, updateFeedbackDisplay,
-  ANALYZE_INTERVAL_MS,
+  ANALYZE_INTERVAL_MS, getAdaptiveFftSize, pushMedianAndStabilize, applyNoteSwitchHysteresis,
 } from './tunerLogic.js';
 import { initTunerSVG, updateTunerDisplay } from './tunerSVG.js';
 
@@ -18,6 +18,9 @@ let modeWired = false;
 let guidedWired = false;
 
 const freqHistory = [];
+let noteSwitchStreak = 0;
+let acceptedNoteKey = null;
+let stableFrequency = null;
 
 let state = {
   mode:    'standard', // 'standard' | 'chromatic'
@@ -46,6 +49,9 @@ export async function startExercise() {
 
   // Reset state (preserve mode)
   freqHistory.length = 0;
+  noteSwitchStreak = 0;
+  acceptedNoteKey = null;
+  stableFrequency = null;
   state.note    = null;
   state.octave  = null;
   state.cents   = 0;
@@ -120,7 +126,7 @@ export async function startExercise() {
 
   audioCtx = new AudioContext();
   analyser = audioCtx.createAnalyser();
-  analyser.fftSize = 2048;
+  analyser.fftSize = getAdaptiveFftSize();
   audioCtx.createMediaStreamSource(stream).connect(analyser);
 
   state.isActive = true;
@@ -144,6 +150,9 @@ export function stopExercise() {
 
   state.isActive = false;
   freqHistory.length = 0;
+  noteSwitchStreak = 0;
+  acceptedNoteKey = null;
+  stableFrequency = null;
 
   updateTunerDisplay({ cents: 0, note: null, octave: null, isActive: false, isInTune: false, isStandardNote: false });
 
@@ -166,10 +175,17 @@ export function stopExercise() {
 function analyzeFrame() {
   if (!analyser) return;
 
+  const guidedTargetHz = guidedState.active
+    ? noteToFrequency(GUIDED_TUNING_STEPS[guidedState.stepIndex].note, GUIDED_TUNING_STEPS[guidedState.stepIndex].octave)
+    : null;
+  const referenceHz = guidedTargetHz ?? stableFrequency;
+  const targetFftSize = getAdaptiveFftSize(referenceHz);
+  if (analyser.fftSize !== targetFftSize) analyser.fftSize = targetFftSize;
+
   const buffer = new Float32Array(analyser.fftSize);
   analyser.getFloatTimeDomainData(buffer);
 
-  const hz = detectPitch(buffer, audioCtx.sampleRate);
+  const hz = detectPitch(buffer, audioCtx.sampleRate, { referenceHz, lastStableHz: stableFrequency });
 
   if (hz === null) {
     // Silence: clear display but keep needle centred
@@ -182,8 +198,28 @@ function analyzeFrame() {
     return;
   }
 
-  const medianHz = pushAndMedian(freqHistory, hz);
-  const { note, octave, cents } = frequencyToNote(medianHz);
+  const stabilized = pushMedianAndStabilize(freqHistory, hz, stableFrequency);
+  stableFrequency = stabilized.stable;
+  const candidate = frequencyToNote(stableFrequency);
+  const candidateKey = `${candidate.note}${candidate.octave}`;
+
+  const switched = applyNoteSwitchHysteresis(acceptedNoteKey, candidateKey, noteSwitchStreak);
+  noteSwitchStreak = switched.nextStreak;
+  acceptedNoteKey = switched.acceptedNoteKey;
+
+  let note = candidate.note;
+  let octave = candidate.octave;
+  let cents = candidate.cents;
+
+  if (acceptedNoteKey !== candidateKey && acceptedNoteKey) {
+    const match = acceptedNoteKey.match(/^([A-G]#?)(-?\d+)$/);
+    if (match) {
+      note = match[1];
+      octave = Number(match[2]);
+      const refHz = noteToFrequency(note, octave);
+      cents = getCentsToTarget(stableFrequency, refHz);
+    }
+  }
 
   const isStdNote   = isStandardTuningNote(note, octave);
   const isStandardNote = state.mode === 'standard' ? isStdNote : true;
@@ -215,6 +251,9 @@ function startGuidedMode() {
   guidedState.trendHistory = [];
   guidedState.feedbackDisplay = null;
   freqHistory.length = 0; // clear stale pitch samples so first readings aren't biased
+  noteSwitchStreak = 0;
+  acceptedNoteKey = null;
+  stableFrequency = null;
   document.getElementById('btn-start-guided').style.display = 'none';
   document.getElementById('guided-active').style.display = '';
   document.getElementById('guided-finished').style.display = 'none';
@@ -227,6 +266,9 @@ function nextGuidedStep() {
   guidedState.trendHistory = [];
   guidedState.feedbackDisplay = null;
   freqHistory.length = 0; // clear stale samples from previous string
+  noteSwitchStreak = 0;
+  acceptedNoteKey = null;
+  stableFrequency = null;
   if (guidedState.stepIndex >= GUIDED_TUNING_STEPS.length) {
     guidedState.active = false;
     document.getElementById('guided-active').style.display = 'none';
@@ -242,6 +284,9 @@ function stopGuidedMode() {
   guidedState.stepIndex = 0;
   guidedState.trendHistory = [];
   guidedState.feedbackDisplay = null;
+  noteSwitchStreak = 0;
+  acceptedNoteKey = null;
+  stableFrequency = null;
   document.getElementById('btn-start-guided').style.display = '';
   document.getElementById('guided-active').style.display = 'none';
   document.getElementById('guided-finished').style.display = 'none';

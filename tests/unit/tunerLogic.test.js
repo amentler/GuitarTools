@@ -3,6 +3,11 @@ import {
   frequencyToNote,
   isStandardTuningNote,
   pushAndMedian,
+  getAdaptiveFftSize,
+  analyzeInputLevel,
+  pushMedianAndStabilize,
+  applyNoteSwitchHysteresis,
+  NOTE_SWITCH_CONFIRM_FRAMES,
   STANDARD_TUNING,
   GUIDED_TUNING_STEPS,
   QUARTER_TONE_CENTS,
@@ -485,5 +490,73 @@ describe('constants', () => {
 
   it('ANALYZE_INTERVAL_MS is 100 – audio analysis runs 10 times per second', () => {
     expect(ANALYZE_INTERVAL_MS).toBe(100);
+  });
+});
+
+describe('getAdaptiveFftSize', () => {
+  it('uses larger window for low frequencies', () => {
+    expect(getAdaptiveFftSize(82)).toBe(4096);
+  });
+
+  it('uses medium window in mid range and default for null reference', () => {
+    expect(getAdaptiveFftSize(180)).toBe(2048);
+    expect(getAdaptiveFftSize()).toBe(2048);
+  });
+
+  it('uses smaller window for high frequencies', () => {
+    expect(getAdaptiveFftSize(330)).toBe(1024);
+  });
+});
+
+describe('analyzeInputLevel', () => {
+  it('rejects near-silence input', () => {
+    const buffer = new Float32Array(256);
+    const level = analyzeInputLevel(buffer);
+    expect(level.isValid).toBe(false);
+  });
+
+  it('accepts normal signal levels without clipping', () => {
+    const buffer = new Float32Array(256);
+    for (let i = 0; i < buffer.length; i++) buffer[i] = Math.sin((2 * Math.PI * i) / 32) * 0.25;
+    const level = analyzeInputLevel(buffer);
+    expect(level.isValid).toBe(true);
+  });
+});
+
+describe('pushMedianAndStabilize', () => {
+  it('accepts close median changes as stable updates', () => {
+    const history = [];
+    const base = pushMedianAndStabilize(history, 110, null);
+    expect(base.stable).toBe(110);
+    const next = pushMedianAndStabilize(history, 111, base.stable);
+    expect(next.stable).toBeGreaterThan(110);
+  });
+
+  it('holds previous stable value when jump is too large', () => {
+    const history = [82, 82.5, 83, 82.8];
+    const result = pushMedianAndStabilize(history, 165, 82.8);
+    expect(result.stable).toBe(82.8);
+    expect(result.changed).toBe(false);
+  });
+});
+
+describe('applyNoteSwitchHysteresis', () => {
+  it('switches immediately when no previous accepted note exists', () => {
+    const r = applyNoteSwitchHysteresis(null, 'E2', 0);
+    expect(r.acceptedNoteKey).toBe('E2');
+  });
+
+  it('requires confirmation frames before changing to a different note', () => {
+    let accepted = 'E2';
+    let streak = 0;
+    for (let i = 0; i < NOTE_SWITCH_CONFIRM_FRAMES - 1; i++) {
+      const r = applyNoteSwitchHysteresis(accepted, 'B3', streak);
+      accepted = r.acceptedNoteKey;
+      streak = r.nextStreak;
+    }
+    expect(accepted).toBe('E2');
+    const last = applyNoteSwitchHysteresis(accepted, 'B3', streak);
+    expect(last.acceptedNoteKey).toBe('B3');
+    expect(last.switched).toBe(true);
   });
 });
