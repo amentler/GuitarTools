@@ -3,7 +3,7 @@
 
 import {
   detectPitch, frequencyToNote, isStandardTuningNote, pushAndMedian,
-  GUIDED_TUNING_STEPS, noteToFrequency, getCentsToTarget,
+  GUIDED_TUNING_STEPS, noteToFrequency, getCentsToTarget, PERFECT_TOLERANCE_CENTS,
   pushGuidedHistory, getGuidedFeedback, updateFeedbackDisplay,
 } from './tunerLogic.js';
 import { initTunerSVG, updateTunerDisplay } from './tunerSVG.js';
@@ -179,22 +179,26 @@ function analyzeFrame() {
   const medianHz = pushAndMedian(freqHistory, hz);
   const { note, octave, cents } = frequencyToNote(medianHz);
 
-  const isInTune    = Math.abs(cents) <= 8;
   const isStdNote   = isStandardTuningNote(note, octave);
   const isStandardNote = state.mode === 'standard' ? isStdNote : true;
 
-  updateTunerDisplay({ cents, note, octave, isActive: true, isInTune, isStandardNote });
+  // Default: in-tune relative to the nearest chromatic note
+  let isInTune = Math.abs(cents) <= PERFECT_TOLERANCE_CENTS;
 
   // Guided mode feedback
   if (guidedState.active) {
     const step = GUIDED_TUNING_STEPS[guidedState.stepIndex];
     const targetFreq  = noteToFrequency(step.note, step.octave);
     const centsToTarget = getCentsToTarget(medianHz, targetFreq);
+    // In guided mode the green dot only lights up for the current target note
+    isInTune = Math.abs(centsToTarget) <= PERFECT_TOLERANCE_CENTS;
     pushGuidedHistory(guidedState.trendHistory, centsToTarget);
     const feedback = getGuidedFeedback(centsToTarget, guidedState.trendHistory);
     guidedState.feedbackDisplay = updateFeedbackDisplay(guidedState.feedbackDisplay, feedback, Date.now());
     renderGuidedFeedback(guidedState.feedbackDisplay);
   }
+
+  updateTunerDisplay({ cents, note, octave, isActive: true, isInTune, isStandardNote });
 }
 
 // ── Guided mode ───────────────────────────────────────────────────────────────
