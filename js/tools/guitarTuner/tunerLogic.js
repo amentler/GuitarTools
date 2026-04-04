@@ -135,6 +135,9 @@ export const TREND_HISTORY_SIZE = 6;
 /** Minimum milliseconds a feedback hint stays visible before auto-clearing on null feedback. */
 export const FEEDBACK_DISPLAY_DURATION_MS = 3000;
 
+/** Cents window in which the pitch is considered "perfect" for guided feedback. */
+export const PERFECT_TOLERANCE_CENTS = 8;
+
 /**
  * Converts a note name and octave to frequency in Hz.
  * @param {string} note   e.g. 'E', 'A', 'D#'
@@ -161,13 +164,37 @@ export function getCentsToTarget(detectedFreq, targetFreq) {
 
 /**
  * Returns the required pitch-correction direction based on the cents offset.
- * Returns 'none' when within the quarter-tone quiet zone.
+ * Uses the legacy ±QUARTER_TONE_CENTS (±50 cent) threshold; kept for backward compatibility.
+ * For guided feedback, prefer getTuningState() which uses the stricter ±PERFECT_TOLERANCE_CENTS (±8 cent) window.
  * @param {number} centsToTarget  positive = too high, negative = too low
  * @returns {'up'|'down'|'none'}
  */
 export function getPitchDirection(centsToTarget) {
   if (centsToTarget < -QUARTER_TONE_CENTS) return 'up';
   if (centsToTarget > QUARTER_TONE_CENTS) return 'down';
+  return 'none';
+}
+
+/**
+ * Returns the absolute tuning state relative to the target note,
+ * using the tight PERFECT_TOLERANCE_CENTS (±8 cents) window.
+ * @param {number} centsToTarget  positive = too high, negative = too low
+ * @returns {'too-low'|'perfect'|'too-high'}
+ */
+export function getTuningState(centsToTarget) {
+  if (centsToTarget < -PERFECT_TOLERANCE_CENTS) return 'too-low';
+  if (centsToTarget > PERFECT_TOLERANCE_CENTS) return 'too-high';
+  return 'perfect';
+}
+
+/**
+ * Returns the required correction direction from an absolute tuning state.
+ * @param {'too-low'|'perfect'|'too-high'} tuningState
+ * @returns {'up'|'down'|'none'}
+ */
+export function tuningStateToDirection(tuningState) {
+  if (tuningState === 'too-low') return 'up';
+  if (tuningState === 'too-high') return 'down';
   return 'none';
 }
 
@@ -207,33 +234,48 @@ export function evaluateTrend(history) {
 }
 
 /**
+ * Derives UI display state from the absolute tuning state and trend.
+ *
+ * Rules:
+ *   - `perfect`        → green, no arrow
+ *   - non-perfect + `moving-away`  → red + warning (wrong direction)
+ *   - non-perfect + `approaching`  → orange (correct direction)
+ *   - non-perfect + `unstable`     → orange, no warning (arrow still shown)
+ *
+ * @param {'too-low'|'perfect'|'too-high'} tuningState
+ * @param {'approaching'|'moving-away'|'unstable'} trend
+ * @returns {{ type: 'green'|'orange'|'red', direction: 'up'|'down'|'none', trend: string, arrowColor: string|null, warning: boolean }}
+ */
+export function buildGuidedDisplay(tuningState, trend) {
+  if (tuningState === 'perfect') {
+    return { type: 'green', direction: 'none', trend: 'none', arrowColor: null, warning: false };
+  }
+  const direction = tuningStateToDirection(tuningState);
+  if (trend === 'moving-away') {
+    return { type: 'red', direction, trend, arrowColor: 'red', warning: true };
+  }
+  // approaching or unstable: show directional arrow in orange (no warning)
+  return { type: 'orange', direction, trend, arrowColor: 'orange', warning: false };
+}
+
+/**
  * Combines the current deviation and trend history into a full guided feedback state.
  * The returned `type` field drives the 3-second display rule in updateFeedbackDisplay:
- *   'green'  – in-tune (deviation within ±QUARTER_TONE_CENTS)
- *   'orange' – approaching the target (good direction)
+ *   'green'  – in-tune (deviation within ±PERFECT_TOLERANCE_CENTS)
+ *   'orange' – approaching the target, or unstable (directional arrow always shown)
  *   'red'    – moving away from the target (wrong direction)
- *   null     – insufficient/unstable data; no new hint to show
+ * Note: a non-perfect state always yields a non-null type so the UI updates immediately.
  * @param {number}   centsToTarget  cents offset (positive = too high, negative = too low)
  * @param {number[]} trendHistory   recent centsToTarget values
- * @returns {{ type: string|null, direction: string, trend: string, arrowColor: string|null, warning: boolean }}
+ * @returns {{ type: string, direction: string, trend: string, arrowColor: string|null, warning: boolean }}
  */
 export function getGuidedFeedback(centsToTarget, trendHistory) {
-  const direction = getPitchDirection(centsToTarget);
-  if (direction === 'none') {
+  const tuningState = getTuningState(centsToTarget);
+  if (tuningState === 'perfect') {
     return { type: 'green', direction: 'none', trend: 'none', arrowColor: null, warning: false };
   }
   const trend = evaluateTrend(trendHistory);
-  if (trend === 'unstable') {
-    return { type: null, direction, trend: 'unstable', arrowColor: null, warning: false };
-  }
-  const type = trend === 'approaching' ? 'orange' : 'red';
-  return {
-    type,
-    direction,
-    trend,
-    arrowColor: type,
-    warning: trend === 'moving-away',
-  };
+  return buildGuidedDisplay(tuningState, trend);
 }
 
 /**

@@ -6,10 +6,14 @@ import {
   STANDARD_TUNING,
   GUIDED_TUNING_STEPS,
   QUARTER_TONE_CENTS,
+  PERFECT_TOLERANCE_CENTS,
   FEEDBACK_DISPLAY_DURATION_MS,
   noteToFrequency,
   getCentsToTarget,
   getPitchDirection,
+  getTuningState,
+  tuningStateToDirection,
+  buildGuidedDisplay,
   pushGuidedHistory,
   evaluateTrend,
   getGuidedFeedback,
@@ -172,6 +176,85 @@ describe('getPitchDirection – threshold behaviour', () => {
   });
 });
 
+// ── New architecture: getTuningState / tuningStateToDirection / buildGuidedDisplay ──
+
+describe('getTuningState – ±8 cent boundary', () => {
+  it('returns "too-low" below -8 cents', () => {
+    expect(getTuningState(-9)).toBe('too-low');
+    expect(getTuningState(-100)).toBe('too-low');
+  });
+
+  it('returns "perfect" at exactly -8 cents (lower boundary inclusive)', () => {
+    expect(getTuningState(-PERFECT_TOLERANCE_CENTS)).toBe('perfect');
+  });
+
+  it('returns "perfect" at zero', () => {
+    expect(getTuningState(0)).toBe('perfect');
+  });
+
+  it('returns "perfect" at exactly +8 cents (upper boundary inclusive)', () => {
+    expect(getTuningState(PERFECT_TOLERANCE_CENTS)).toBe('perfect');
+  });
+
+  it('returns "too-high" above +8 cents', () => {
+    expect(getTuningState(9)).toBe('too-high');
+    expect(getTuningState(100)).toBe('too-high');
+  });
+});
+
+describe('tuningStateToDirection', () => {
+  it('returns "up" for too-low', () => {
+    expect(tuningStateToDirection('too-low')).toBe('up');
+  });
+
+  it('returns "down" for too-high', () => {
+    expect(tuningStateToDirection('too-high')).toBe('down');
+  });
+
+  it('returns "none" for perfect', () => {
+    expect(tuningStateToDirection('perfect')).toBe('none');
+  });
+});
+
+describe('buildGuidedDisplay', () => {
+  it('prioritises green for perfect, regardless of trend', () => {
+    const d = buildGuidedDisplay('perfect', 'moving-away');
+    expect(d.type).toBe('green');
+    expect(d.direction).toBe('none');
+    expect(d.warning).toBe(false);
+    expect(d.arrowColor).toBeNull();
+  });
+
+  it('maps too-low + approaching to orange/up/no-warning', () => {
+    const d = buildGuidedDisplay('too-low', 'approaching');
+    expect(d.type).toBe('orange');
+    expect(d.direction).toBe('up');
+    expect(d.warning).toBe(false);
+  });
+
+  it('maps too-high + moving-away to red/down + warning', () => {
+    const d = buildGuidedDisplay('too-high', 'moving-away');
+    expect(d.type).toBe('red');
+    expect(d.direction).toBe('down');
+    expect(d.warning).toBe(true);
+    expect(d.arrowColor).toBe('red');
+  });
+
+  it('maps too-low + unstable to visible directional display (orange/up/no-warning)', () => {
+    const d = buildGuidedDisplay('too-low', 'unstable');
+    expect(d.type).toBe('orange');
+    expect(d.direction).toBe('up');
+    expect(d.warning).toBe(false);
+  });
+
+  it('maps too-high + unstable to visible directional display (orange/down/no-warning)', () => {
+    const d = buildGuidedDisplay('too-high', 'unstable');
+    expect(d.type).toBe('orange');
+    expect(d.direction).toBe('down');
+    expect(d.warning).toBe(false);
+  });
+});
+
 describe('pushGuidedHistory', () => {
   it('appends values to the history array', () => {
     const h = [];
@@ -217,18 +300,19 @@ describe('evaluateTrend', () => {
 });
 
 describe('getGuidedFeedback', () => {
-  it('returns type "green" and no arrow when deviation is within the quarter-tone threshold', () => {
-    const fb = getGuidedFeedback(30, [100, 80, 60, 40]);
+  it('returns type "green" and no arrow when deviation is within ±8 cents', () => {
+    const fb = getGuidedFeedback(5, [100, 80, 60, 40]);
     expect(fb.type).toBe('green');
     expect(fb.direction).toBe('none');
     expect(fb.arrowColor).toBeNull();
     expect(fb.warning).toBe(false);
   });
 
-  it('returns type null and no arrow when trend is unstable (too few samples)', () => {
+  it('returns orange + down direction when trend is unstable (too few samples) but pitch is too high', () => {
     const fb = getGuidedFeedback(100, [100, 80]);
-    expect(fb.type).toBeNull();
-    expect(fb.arrowColor).toBeNull();
+    expect(fb.type).toBe('orange');
+    expect(fb.direction).toBe('down');
+    expect(fb.arrowColor).toBe('orange');
     expect(fb.warning).toBe(false);
   });
 
@@ -256,11 +340,22 @@ describe('getGuidedFeedback', () => {
     expect(fb.warning).toBe(true);
   });
 
-  it('warning requires stable trend – not triggered by jitter', () => {
+  it('unstable trend still shows directional arrow (no warning though)', () => {
     const fb = getGuidedFeedback(-100, [-40, -80, -60, -100]);
-    expect(fb.type).toBeNull();
-    expect(fb.arrowColor).toBeNull();
+    expect(fb.type).toBe('orange');
+    expect(fb.direction).toBe('up');
     expect(fb.warning).toBe(false);
+  });
+
+  it('returns non-green immediately when just outside ±8 cents (e.g. 9 cents)', () => {
+    const fb = getGuidedFeedback(9, [30, 25, 20, 12]);
+    expect(fb.type).not.toBe('green');
+    expect(fb.direction).toBe('down');
+  });
+
+  it('returns green for value exactly at +8 cents boundary', () => {
+    const fb = getGuidedFeedback(8, [30, 20, 10, 8]);
+    expect(fb.type).toBe('green');
   });
 });
 
@@ -349,5 +444,11 @@ describe('updateFeedbackDisplay – 3-second rule with immediate state-change ov
 
   it('FEEDBACK_DISPLAY_DURATION_MS is 3000 ms', () => {
     expect(FEEDBACK_DISPLAY_DURATION_MS).toBe(3000);
+  });
+});
+
+describe('constants', () => {
+  it('PERFECT_TOLERANCE_CENTS is 8', () => {
+    expect(PERFECT_TOLERANCE_CENTS).toBe(8);
   });
 });
