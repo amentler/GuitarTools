@@ -5,6 +5,7 @@ import {
   detectPitch, frequencyToNote, isStandardTuningNote, pushAndMedian,
   GUIDED_TUNING_STEPS, noteToFrequency, getCentsToTarget,
   pushGuidedHistory, getGuidedFeedback, updateFeedbackDisplay,
+  ANALYZE_INTERVAL_MS,
 } from './tunerLogic.js';
 import { initTunerSVG, updateTunerDisplay } from './tunerSVG.js';
 
@@ -123,7 +124,7 @@ export async function startExercise() {
   audioCtx.createMediaStreamSource(stream).connect(analyser);
 
   state.isActive = true;
-  intervalId = setInterval(analyzeFrame, 100);
+  intervalId = setInterval(analyzeFrame, ANALYZE_INTERVAL_MS);
 }
 
 export function stopExercise() {

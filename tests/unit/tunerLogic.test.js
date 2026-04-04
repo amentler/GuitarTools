@@ -8,6 +8,7 @@ import {
   QUARTER_TONE_CENTS,
   PERFECT_TOLERANCE_CENTS,
   FEEDBACK_DISPLAY_DURATION_MS,
+  ANALYZE_INTERVAL_MS,
   noteToFrequency,
   getCentsToTarget,
   getPitchDirection,
@@ -450,5 +451,9 @@ describe('updateFeedbackDisplay – 3-second rule with immediate state-change ov
 describe('constants', () => {
   it('PERFECT_TOLERANCE_CENTS is 8', () => {
     expect(PERFECT_TOLERANCE_CENTS).toBe(8);
+  });
+
+  it('ANALYZE_INTERVAL_MS is 100 – audio analysis runs 10 times per second', () => {
+    expect(ANALYZE_INTERVAL_MS).toBe(100);
   });
 });
