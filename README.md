@@ -48,9 +48,10 @@ npx http-server -p 8000
 
 ## PWA & Offline-Funktion
 
-Die App nutzt einen **Service Worker** mit **Network-First-Strategie**:
-- Wenn das Netzwerk verfügbar ist, werden Ressourcen immer zuerst frisch vom Server geladen und dabei im Cache aktualisiert.
-- Wenn das Netzwerk nicht erreichbar ist (offline), wird automatisch auf den lokal gespeicherten Cache zurückgegriffen.
+Die App nutzt einen **Service Worker** mit einer **Allowlist-Strategie**:
+- Ressourcen auf der Allowlist (lokale Assets, JS-Module, CSS, Icons) werden mit **Cache-First** bedient: der Cache wird sofort zurückgegeben; im Hintergrund wird der Cache nach einem Netzwerktreffer aktualisiert.
+- Ressourcen außerhalb der Allowlist (z. B. externe CDN-URLs) werden **Network-Only** geladen – kein Cache-Schreiben.
+- Wenn das Netzwerk nicht erreichbar ist (offline), werden gecachte Allowlist-Ressourcen automatisch zurückgegeben.
 
 Beim ersten Aufruf (oder nach einem Update-Knopf-Druck) werden folgende Ressourcen vorgeladen (Precache):
 - `index.html`, `style.css`, `manifest.json`

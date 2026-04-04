@@ -36,7 +36,7 @@ Qualitätsmanagement (Ist):
 - **Phase 3 abgeschlossen:** Unit-Testabdeckung weiter ausgebaut und gehärtet
   - `tests/unit/notePlayingLogic.test.js` (14 Tests für `notePlayingLogic.js`)
   - Edge-Case-Abdeckung für `tonFinderLogic.js` ergänzt (`positionKey`, `evaluateRound` mit leer/korrekt/falsch)
-  - Gesamt: 67 Unit-Tests über 7 Testdateien: `fretboardLogic`, `tunerLogic`, `tonFinderLogic`, `akkordLogic`, `sheetMusicLogic`, `metronomeLogic`, `notePlayingLogic`
+  - Gesamt: 130 Unit-Tests über 7 Testdateien: `fretboardLogic`, `tunerLogic`, `tonFinderLogic`, `akkordLogic`, `sheetMusicLogic`, `metronomeLogic`, `notePlayingLogic`
 - Kein TypeScript (Phase 4–5)
 - Service-Worker-Assetliste wird manuell versionsgeführt
 - Service Worker nutzt **Network-First-Strategie**: Netzwerk bevorzugt, Cache als Fallback bei Offline
