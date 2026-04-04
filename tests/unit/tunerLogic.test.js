@@ -358,6 +358,36 @@ describe('getGuidedFeedback', () => {
     const fb = getGuidedFeedback(8, [30, 20, 10, 8]);
     expect(fb.type).toBe('green');
   });
+
+  // Cross-note guard: playing a different standard string note must never show "green"
+  it('does not return "green" when playing D3 (4th string) while targeting E2 (6th string)', () => {
+    // D3 is ~1000 cents above E2 – far outside the ±8 cent perfect window
+    const e2Freq = noteToFrequency('E', 2);
+    const d3Freq = noteToFrequency('D', 3);
+    const cents = getCentsToTarget(d3Freq, e2Freq); // ≈ +1000
+    const fb = getGuidedFeedback(cents, [1000, 1000, 1000, 1000]);
+    expect(fb.type).not.toBe('green');
+    expect(fb.direction).toBe('down'); // too high – lower the pitch
+  });
+
+  it('does not return "green" when playing D2 (below E2) while targeting E2', () => {
+    // D2 is ~200 cents below E2
+    const e2Freq = noteToFrequency('E', 2);
+    const d2Freq = noteToFrequency('D', 2);
+    const cents = getCentsToTarget(d2Freq, e2Freq); // ≈ -200
+    const fb = getGuidedFeedback(cents, [-200, -200, -200, -200]);
+    expect(fb.type).not.toBe('green');
+    expect(fb.direction).toBe('up'); // too low – raise the pitch
+  });
+
+  it('does not return "green" when 20 cents below target (clearly off-pitch)', () => {
+    const e2Freq = noteToFrequency('E', 2);
+    const flatFreq = e2Freq * Math.pow(2, -20 / 1200); // 20 cents below E2
+    const cents = getCentsToTarget(flatFreq, e2Freq); // ≈ -20
+    const fb = getGuidedFeedback(cents, [-20, -20, -20, -20]);
+    expect(fb.type).not.toBe('green');
+    expect(fb.direction).toBe('up');
+  });
 });
 
 describe('updateFeedbackDisplay – 3-second rule with immediate state-change override', () => {
