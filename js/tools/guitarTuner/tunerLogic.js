@@ -29,9 +29,10 @@ export const NOTE_SWITCH_CONFIRM_FRAMES = 3;
  * @returns {number|null} Hz, or null if silence / no clear pitch
  */
 export function getAdaptiveFftSize(referenceHz = null) {
-  if (referenceHz !== null && referenceHz <= 120) return 4096;
-  if (referenceHz !== null && referenceHz >= 250) return 1024;
-  return 2048;
+  // Low-frequency strings (E2, A2) benefit from an even longer window for more periods.
+  if (referenceHz !== null && referenceHz <= 120) return 32768;
+  // Default: 16384 samples ≈ 371 ms at 44100 Hz / 341 ms at 48000 Hz (satisfies ≥ 300 ms).
+  return 16384;
 }
 
 export function analyzeInputLevel(buffer) {
@@ -285,10 +286,10 @@ export const FEEDBACK_DISPLAY_DURATION_MS = 3000;
 /**
  * Interval in milliseconds between audio analysis frames.
  * The tuner reads a new buffer from the Web Audio API analyser every
- * ANALYZE_INTERVAL_MS milliseconds.  Combined with HISTORY_SIZE (= 5),
- * the rolling-median smoothing window covers ~500 ms.
+ * ANALYZE_INTERVAL_MS milliseconds, limiting display updates to ≤ 3 per second.
+ * Combined with HISTORY_SIZE (= 3), the rolling-median smoothing window covers ~1 s.
  */
-export const ANALYZE_INTERVAL_MS = 100;
+export const ANALYZE_INTERVAL_MS = 333;
 
 /** Cents window in which the pitch is considered "perfect" for guided feedback. */
 export const PERFECT_TOLERANCE_CENTS = 8;
@@ -470,7 +471,7 @@ export function updateFeedbackDisplay(currentDisplay, newFeedback, nowMs) {
 
 // ── Rolling median ────────────────────────────────────────────────────────────
 
-const HISTORY_SIZE = 5;
+const HISTORY_SIZE = 3;
 
 /**
  * Appends freq to history (capped at HISTORY_SIZE) and returns the median.
