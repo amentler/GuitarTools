@@ -1,6 +1,6 @@
 # akkordTrainer –🎸 Chord Trainer
 
-The user sees a random chord name (e.g., "C-Dur", "G-Dur", "Am") and must place the correct finger positions on an interactive SVG chord diagram (first 5 frets).
+The user sees a random chord name (e.g., "C-Dur", "G-Dur", "A-Moll") and must place the correct finger positions on an interactive SVG chord diagram (first 5 frets).
 
 ## Files
 
@@ -12,7 +12,7 @@ Manages game state, round management, and DOM interactions. Exports `startExerci
 
 | Field | Type | Description |
 |---|---|---|
-| `currentChord` | `string` | Name of the chord to be found (e.g., "C") |
+| `currentChord` | `string` | Name of the chord to be found (e.g., "C-Dur") |
 | `userPositions` | `Array<{string, fret}>` | Positions currently marked by the user |
 | `feedback` | `null | 'correct' | 'wrong'` | Current feedback state after clicking "Check" |
 | `score` | `{ correct, total }` | Running score |
@@ -34,7 +34,7 @@ Contains the chord definitions and logic to compare user input with the correct 
 
 **Exports:**
 - `CHORDS` – Object mapping chord names to their finger positions:
-  `{ "C": [{ string: 2, fret: 1 }, { string: 4, fret: 2 }, { string: 5, fret: 3 }], ... }`
+  `{ "C-Dur": [{ string: 2, fret: 1 }, { string: 4, fret: 2 }, { string: 5, fret: 3 }], "A-Moll": [...], ... }`
 - `LEVELS` – Array of chord name groups for different difficulties.
 - `getRandomChord(level)` → returns a random chord object `{ name, positions }`.
 - `validateChord(chordName, userPositions)` → returns `true` if `userPositions` match the reference.
