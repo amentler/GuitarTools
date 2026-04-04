@@ -73,15 +73,15 @@ describe('pushAndMedian', () => {
   });
 
   it('returns the average of the two middle values for even-length history', () => {
-    const history = [300, 400, 500];
-    // After push: [300, 400, 500, 600] → sorted → median = (400+500)/2 = 450
-    expect(pushAndMedian(history, 600)).toBe(450);
+    const history = [300];
+    // After push: [300, 400] → sorted, length 2 (even) → median = (300+400)/2 = 350
+    expect(pushAndMedian(history, 400)).toBe(350);
   });
 
-  it('caps history at 5 entries', () => {
-    const history = [100, 200, 300, 400, 500];
+  it('caps history at 3 entries', () => {
+    const history = [100, 200, 300];
     pushAndMedian(history, 600);
-    expect(history).toHaveLength(5);
+    expect(history).toHaveLength(3);
   });
 });
 
@@ -488,23 +488,23 @@ describe('constants', () => {
     expect(PERFECT_TOLERANCE_CENTS).toBe(8);
   });
 
-  it('ANALYZE_INTERVAL_MS is 100 – audio analysis runs 10 times per second', () => {
-    expect(ANALYZE_INTERVAL_MS).toBe(100);
+  it('ANALYZE_INTERVAL_MS is 333 – audio analysis runs at most 3 times per second', () => {
+    expect(ANALYZE_INTERVAL_MS).toBe(333);
   });
 });
 
 describe('getAdaptiveFftSize', () => {
-  it('uses larger window for low frequencies', () => {
-    expect(getAdaptiveFftSize(82)).toBe(4096);
+  it('uses an extra-large window for very low frequencies (≤120 Hz)', () => {
+    expect(getAdaptiveFftSize(82)).toBe(32768);
   });
 
-  it('uses medium window in mid range and default for null reference', () => {
-    expect(getAdaptiveFftSize(180)).toBe(2048);
-    expect(getAdaptiveFftSize()).toBe(2048);
+  it('uses large window (≥300 ms) for mid range and default for null reference', () => {
+    expect(getAdaptiveFftSize(180)).toBe(16384);
+    expect(getAdaptiveFftSize()).toBe(16384);
   });
 
-  it('uses smaller window for high frequencies', () => {
-    expect(getAdaptiveFftSize(330)).toBe(1024);
+  it('uses large window (≥300 ms) for high frequencies', () => {
+    expect(getAdaptiveFftSize(330)).toBe(16384);
   });
 });
 
