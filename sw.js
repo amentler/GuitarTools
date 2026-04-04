@@ -30,6 +30,10 @@ self.addEventListener('activate', event => {
   );
 });
 
+self.addEventListener('message', event => {
+  if (event.data?.type === 'SKIP_WAITING') self.skipWaiting();
+});
+
 self.addEventListener('fetch', event => {
   const { request } = event;
 
@@ -44,8 +48,8 @@ self.addEventListener('fetch', event => {
     PRECACHE_URLS.includes(request.url) || PRECACHE_URLS.includes(normalizedPath);
 
   if (!isAllowlisted) {
-    // Not in allowlist: network-only, no cache write
-    event.respondWith(fetch(request));
+    // Not in allowlist: always bypass browser HTTP cache to guarantee fresh content
+    event.respondWith(fetch(request, { cache: 'no-cache' }));
     return;
   }
 
@@ -54,7 +58,7 @@ self.addEventListener('fetch', event => {
     caches.match(request).then(cached => {
       if (cached) return cached;
 
-      return fetch(request).then(networkResponse => {
+      return fetch(request, { cache: 'no-cache' }).then(networkResponse => {
         const clone = networkResponse.clone();
         caches.open(CACHE_NAME).then(cache => cache.put(request, clone));
         return networkResponse;

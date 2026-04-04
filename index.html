@@ -531,14 +531,37 @@
     }
 
     // Hard refresh: update SW, clear all caches, reload with cache-buster.
-    // Mirrors what "clear site data" does in Firefox, without leaving the app.
+    // The SW is intentionally NOT unregistered — it must stay active so that
+    // on reload it can intercept all asset requests and bypass the browser
+    // HTTP cache (via cache:'no-cache' in sw.js), guaranteeing fresh content.
     async function forceAppReload() {
       try {
         const registrations = await navigator.serviceWorker.getRegistrations();
         for (const reg of registrations) {
           try { await reg.update(); } catch (e) { console.warn('SW update failed:', e); }
-          if (reg.waiting) reg.waiting.postMessage({ type: 'SKIP_WAITING' });
-          try { await reg.unregister(); } catch (e) { console.warn('SW unregister failed:', e); }
+
+          if (reg.waiting) {
+            // New SW version is ready — activate it before reloading so the
+            // fresh SW controls the page from the very first request.
+            await new Promise(resolve => {
+              navigator.serviceWorker.addEventListener('controllerchange', resolve, { once: true });
+              setTimeout(resolve, 5000); // safety: don't block forever
+              reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+            });
+          } else if (reg.installing) {
+            // SW still installing — wait for it to activate (max 5 s).
+            await new Promise(resolve => {
+              const sw = reg.installing;
+              const timeout = setTimeout(resolve, 5000);
+              sw.addEventListener('statechange', function handler() {
+                if (this.state === 'activated') {
+                  clearTimeout(timeout);
+                  sw.removeEventListener('statechange', handler);
+                  resolve();
+                }
+              });
+            });
+          }
         }
       } catch (_) { /* SW not supported – continue to cache clearing */ }
 
@@ -547,7 +570,9 @@
         await Promise.all(cacheNames.map(name => caches.delete(name)));
       } catch (e) { console.warn('Cache clearing failed:', e); }
 
-      // Reload with a cache-busting parameter so the browser fetches a fresh page
+      // Reload with a cache-busting parameter so the browser fetches a fresh HTML document.
+      // The active SW then fetches all subresources (CSS, JS) with cache:'no-cache',
+      // bypassing the browser HTTP cache completely.
       const url = new URL(window.location.href);
       url.searchParams.set('refresh', Date.now());
       window.location.replace(url.toString());
