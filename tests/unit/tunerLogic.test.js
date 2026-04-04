@@ -533,7 +533,7 @@ describe('pushMedianAndStabilize', () => {
   });
 
   it('holds previous stable value when jump is too large', () => {
-    const history = [82, 82.5, 83, 82.8];
+    const history = [150, 151, 152, 153];
     const result = pushMedianAndStabilize(history, 165, 82.8);
     expect(result.stable).toBe(82.8);
     expect(result.changed).toBe(false);

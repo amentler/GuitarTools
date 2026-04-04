@@ -231,7 +231,7 @@ function analyzeFrame() {
   if (guidedState.active) {
     const step = GUIDED_TUNING_STEPS[guidedState.stepIndex];
     const targetFreq  = noteToFrequency(step.note, step.octave);
-    const centsToTarget = getCentsToTarget(medianHz, targetFreq);
+    const centsToTarget = getCentsToTarget(stableFrequency, targetFreq);
     // In guided mode the green dot only lights up for the current target note
     isInTune = Math.abs(centsToTarget) <= PERFECT_TOLERANCE_CENTS;
     pushGuidedHistory(guidedState.trendHistory, centsToTarget);
