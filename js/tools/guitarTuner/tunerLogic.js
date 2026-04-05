@@ -286,10 +286,10 @@ export const FEEDBACK_DISPLAY_DURATION_MS = 3000;
 /**
  * Interval in milliseconds between audio analysis frames.
  * The tuner reads a new buffer from the Web Audio API analyser every
- * ANALYZE_INTERVAL_MS milliseconds, limiting display updates to ≤ 3 per second.
- * Combined with HISTORY_SIZE (= 3), the rolling-median smoothing window covers ~1 s.
+ * ANALYZE_INTERVAL_MS milliseconds, yielding responsive updates at 10 Hz.
+ * Combined with HISTORY_SIZE (= 5), the rolling-median smoothing window covers ~500 ms.
  */
-export const ANALYZE_INTERVAL_MS = 333;
+export const ANALYZE_INTERVAL_MS = 100;
 
 /** Cents window in which the pitch is considered "perfect" for guided feedback. */
 export const PERFECT_TOLERANCE_CENTS = 8;
@@ -471,7 +471,7 @@ export function updateFeedbackDisplay(currentDisplay, newFeedback, nowMs) {
 
 // ── Rolling median ────────────────────────────────────────────────────────────
 
-const HISTORY_SIZE = 3;
+const HISTORY_SIZE = 5;
 
 /**
  * Appends freq to history (capped at HISTORY_SIZE) and returns the median.

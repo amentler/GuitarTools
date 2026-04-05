@@ -78,10 +78,10 @@ describe('pushAndMedian', () => {
     expect(pushAndMedian(history, 400)).toBe(350);
   });
 
-  it('caps history at 3 entries', () => {
-    const history = [100, 200, 300];
+  it('caps history at 5 entries', () => {
+    const history = [100, 200, 300, 400, 500];
     pushAndMedian(history, 600);
-    expect(history).toHaveLength(3);
+    expect(history).toHaveLength(5);
   });
 });
 
@@ -488,8 +488,8 @@ describe('constants', () => {
     expect(PERFECT_TOLERANCE_CENTS).toBe(8);
   });
 
-  it('ANALYZE_INTERVAL_MS is 333 – audio analysis runs at most 3 times per second', () => {
-    expect(ANALYZE_INTERVAL_MS).toBe(333);
+  it('ANALYZE_INTERVAL_MS is 100 – audio analysis runs 10 times per second', () => {
+    expect(ANALYZE_INTERVAL_MS).toBe(100);
   });
 });
 
