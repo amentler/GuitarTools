@@ -178,7 +178,7 @@ function analyzeFrame() {
   const guidedTargetHz = guidedState.active
     ? noteToFrequency(GUIDED_TUNING_STEPS[guidedState.stepIndex].note, GUIDED_TUNING_STEPS[guidedState.stepIndex].octave)
     : null;
-  const referenceHz = guidedTargetHz ?? stableFrequency;
+  const referenceHz = guidedTargetHz ?? null;
   const targetFftSize = getAdaptiveFftSize(referenceHz);
   if (analyser.fftSize !== targetFftSize) analyser.fftSize = targetFftSize;
 

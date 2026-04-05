@@ -492,12 +492,8 @@ export function pushAndMedian(history, freq) {
 
 export function pushMedianAndStabilize(history, freq, lastStable = null) {
   const median = pushAndMedian(history, freq);
-  if (lastStable === null) return { median, stable: median, changed: true };
-  const centsDelta = Math.abs(getCentsToTarget(median, lastStable));
-  if (centsDelta <= STABILITY_MAX_CENTS_DELTA) {
-    return { median, stable: median, changed: true };
-  }
-  return { median, stable: lastStable, changed: false };
+  const changed = lastStable === null || median !== lastStable;
+  return { median, stable: median, changed };
 }
 
 export function applyNoteSwitchHysteresis(currentNoteKey, candidateNoteKey, streak) {

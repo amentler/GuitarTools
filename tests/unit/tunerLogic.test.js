@@ -24,6 +24,7 @@ import {
   evaluateTrend,
   getGuidedFeedback,
   updateFeedbackDisplay,
+  detectPitch,
 } from '../../js/tools/guitarTuner/tunerLogic.js';
 
 describe('frequencyToNote', () => {
@@ -532,11 +533,12 @@ describe('pushMedianAndStabilize', () => {
     expect(next.stable).toBeGreaterThan(110);
   });
 
-  it('holds previous stable value when jump is too large', () => {
+  it('always accepts the new median as stable (no jump gate)', () => {
+    // Large jumps must pass through; the rolling median handles noise smoothing.
     const history = [150, 151, 152, 153];
-    const result = pushMedianAndStabilize(history, 165, 82.8);
-    expect(result.stable).toBe(82.8);
-    expect(result.changed).toBe(false);
+    const result = pushMedianAndStabilize(history, 330, 82.8);
+    expect(result.stable).not.toBe(82.8);
+    expect(result.changed).toBe(true);
   });
 });
 
@@ -558,5 +560,70 @@ describe('applyNoteSwitchHysteresis', () => {
     const last = applyNoteSwitchHysteresis(accepted, 'B3', streak);
     expect(last.acceptedNoteKey).toBe('B3');
     expect(last.switched).toBe(true);
+  });
+});
+
+// ── Note switching in free mode ───────────────────────────────────────────────
+
+describe('pushMedianAndStabilize – note switching', () => {
+  it('updates stable frequency after consistently detecting a new note (e.g. E2 → E4)', () => {
+    // Demonstrates Bug 2: stableFrequency freezes when user switches strings.
+    // After 5 consistent E4 frames, stable should switch from E2 to E4.
+    const history = [];
+    let stable = 82.41; // E2 baseline
+
+    for (let i = 0; i < 5; i++) {
+      const r = pushMedianAndStabilize(history, 329.63, stable);
+      stable = r.stable;
+    }
+
+    // RED before fix: stable stays 82.41 (blocked by 25-cent gate)
+    // GREEN after fix: stable ≈ 329.63
+    expect(stable).toBeGreaterThan(300);
+    expect(stable).toBeLessThan(360);
+  });
+});
+
+// ── detectPitch: search window & attack handling ──────────────────────────────
+
+describe('detectPitch – free-mode search window', () => {
+  it('E4 signal is undetectable when constrained by E2 referenceHz (bug 1 scenario)', () => {
+    const sampleRate = 44100;
+    const bufferSize = 16384;
+    const buffer = new Float32Array(bufferSize);
+    for (let i = 0; i < bufferSize; i++)
+      buffer[i] = Math.sin(2 * Math.PI * 329.63 * i / sampleRate) * 0.3;
+
+    // With E2 as referenceHz the search window is [70, 148 Hz].
+    // The fundamental E4 (330 Hz) is outside the window; at best a harmonic is detected.
+    const constrained = detectPitch(buffer, sampleRate, { referenceHz: 82.41 });
+    // null OR a wrong harmonic – never the correct E4 range
+    expect(constrained === null || constrained < 300 || constrained > 360).toBe(true);
+
+    // Without constraint (free mode after fix) E4 is detectable
+    const free = detectPitch(buffer, sampleRate, {});
+    expect(free).not.toBeNull();
+    expect(free).toBeGreaterThan(300);
+    expect(free).toBeLessThan(360);
+  });
+});
+
+describe('detectPitch – guitar attack transient', () => {
+  it('identifies pitch despite loud transient at the start of the buffer', () => {
+    const sampleRate = 44100;
+    const bufferSize = 16384;
+    const freq = 196.0; // G3
+    const buffer = new Float32Array(bufferSize);
+    const attackLen = Math.floor(bufferSize * 0.2);
+    for (let i = 0; i < bufferSize; i++) {
+      // Loud attack (0.85) for first 20 %, then normal amplitude (0.3)
+      const amp = i < attackLen ? 0.85 : 0.3;
+      buffer[i] = Math.sin(2 * Math.PI * freq * i / sampleRate) * amp;
+    }
+
+    const hz = detectPitch(buffer, sampleRate, {});
+    expect(hz).not.toBeNull();
+    expect(hz).toBeGreaterThan(freq * 0.95);
+    expect(hz).toBeLessThan(freq * 1.05);
   });
 });
