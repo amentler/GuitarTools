@@ -32,6 +32,9 @@ import {
   smoothCents,
   hpsFromMagnitudes,
   STABLE_CONFIRM_FRAMES,
+  pushAndMedianTimed,
+  HISTORY_MAX_AGE_MS,
+  SILENCE_RESET_THRESHOLD_MS,
 } from '../../js/tools/guitarTuner/tunerLogic.js';
 
 describe('frequencyToNote', () => {
@@ -502,6 +505,47 @@ describe('constants', () => {
 
   it('STABLE_CONFIRM_FRAMES is 3', () => {
     expect(STABLE_CONFIRM_FRAMES).toBe(3);
+  });
+
+  it('HISTORY_MAX_AGE_MS is 1000', () => {
+    expect(HISTORY_MAX_AGE_MS).toBe(1000);
+  });
+
+  it('SILENCE_RESET_THRESHOLD_MS is 300', () => {
+    expect(SILENCE_RESET_THRESHOLD_MS).toBe(300);
+  });
+});
+
+describe('pushAndMedianTimed', () => {
+  it('returns median of frequencies within time window', () => {
+    const history = [];
+    const now = 5000;
+    pushAndMedianTimed(history, 100, now);
+    pushAndMedianTimed(history, 110, now + 50);
+    const median = pushAndMedianTimed(history, 120, now + 100);
+    expect(median).toBe(110);
+  });
+
+  it('discards entries older than 1000ms', () => {
+    const history = [];
+    const now = 5000;
+    pushAndMedianTimed(history, 100, now); // older
+    pushAndMedianTimed(history, 110, now + 500);
+    const median = pushAndMedianTimed(history, 120, now + 1100);
+    // 100 should be removed (1100 > 1000 gap)
+    // history has [110, 120] -> median 115
+    expect(median).toBe(115);
+  });
+
+  it('still caps at 5 entries even if all are new', () => {
+    const history = [];
+    const now = 5000;
+    for (let i = 0; i < 10; i++) {
+      pushAndMedianTimed(history, 100 + i, now + i);
+    }
+    expect(history.length).toBe(5);
+    // [105, 106, 107, 108, 109] -> median 107
+    expect(history.map(h => h.freq)).toEqual([105, 106, 107, 108, 109]);
   });
 });
 

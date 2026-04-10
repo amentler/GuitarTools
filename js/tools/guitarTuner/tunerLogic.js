@@ -510,7 +510,14 @@ export function updateFeedbackDisplay(currentDisplay, newFeedback, nowMs) {
 
 // ── Rolling median ────────────────────────────────────────────────────────────
 
+/** Rolling median history size. */
 const HISTORY_SIZE = 5;
+
+/** Maximum age of a frequency sample in the history buffer before it is discarded. */
+export const HISTORY_MAX_AGE_MS = 1000;
+
+/** Minimum duration of silence (no valid pitch) before the tuner state is reset. */
+export const SILENCE_RESET_THRESHOLD_MS = 300;
 
 /**
  * Appends freq to history (capped at HISTORY_SIZE) and returns the median.
@@ -524,6 +531,36 @@ export function pushAndMedian(history, freq) {
   if (history.length > HISTORY_SIZE) history.shift();
   const sorted = history.slice().sort((a, b) => a - b);
   const mid = Math.floor(sorted.length / 2);
+  return sorted.length % 2 !== 0
+    ? sorted[mid]
+    : (sorted[mid - 1] + sorted[mid]) / 2;
+}
+
+/**
+ * Version of pushAndMedian that handles timestamps and age-based expiration.
+ * @param {Array<{freq:number, time:number}>} history
+ * @param {number} freq
+ * @param {number} now
+ * @returns {number} median frequency
+ */
+export function pushAndMedianTimed(history, freq, now) {
+  // 1. Remove expired entries
+  while (history.length > 0 && now - history[0].time > HISTORY_MAX_AGE_MS) {
+    history.shift();
+  }
+
+  // 2. Add new entry
+  history.push({ freq, time: now });
+
+  // 3. Enforce max size (keep newest)
+  if (history.length > HISTORY_SIZE) {
+    history.shift();
+  }
+
+  // 4. Calculate median
+  const sorted = history.map(h => h.freq).sort((a, b) => a - b);
+  const mid = Math.floor(sorted.length / 2);
+  if (sorted.length === 0) return freq;
   return sorted.length % 2 !== 0
     ? sorted[mid]
     : (sorted[mid - 1] + sorted[mid]) / 2;

@@ -9,6 +9,7 @@ import {
   shouldRejectOutlier, analyzeInputLevel,
   estimateNoiseFloorRms, buildAdaptiveThreshold,
   smoothCents, STABLE_CONFIRM_FRAMES,
+  pushAndMedianTimed, HISTORY_MAX_AGE_MS, SILENCE_RESET_THRESHOLD_MS,
 } from './tunerLogic.js';
 import { initTunerSVG, updateTunerDisplay } from './tunerSVG.js';
 
@@ -25,6 +26,7 @@ let noteSwitchStreak = 0;
 let acceptedNoteKey = null;
 let stableFrequency = null;
 let validFramesStreak = 0;
+let lastValidFrameTime = 0;
 
 // V3: Outlier rejection
 let outlierStreak = 0;
@@ -69,6 +71,7 @@ export async function startExercise() {
   acceptedNoteKey = null;
   stableFrequency = null;
   validFramesStreak = 0;
+  lastValidFrameTime = 0;
   outlierStreak = 0;
   noiseCalibrationFrames = 0;
   noiseCalibrationRms = [];
@@ -193,6 +196,7 @@ export function stopExercise() {
   acceptedNoteKey = null;
   stableFrequency = null;
   validFramesStreak = 0;
+  lastValidFrameTime = 0;
   outlierStreak = 0;
   noiseCalibrationFrames = 0;
   noiseCalibrationRms = [];
@@ -247,6 +251,8 @@ function analyzeFrame() {
   const freqData = new Float32Array(analyser.frequencyBinCount);
   analyser.getFloatFrequencyData(freqData);
 
+  const now = Date.now();
+
   // ── Pitch-Erkennung mit adaptiver Schwelle (V4) und FFT-HPS (V5) ─────────
   const hz = detectPitch(buffer, audioCtx.sampleRate, {
     referenceHz,
@@ -256,16 +262,30 @@ function analyzeFrame() {
   });
 
   if (hz === null) {
+    // ── V11: Automatischer Reset bei längerer Stille ────────────────────────
+    if (lastValidFrameTime > 0 && now - lastValidFrameTime > SILENCE_RESET_THRESHOLD_MS) {
+      freqHistory.length = 0;
+      stableFrequency = null;
+      acceptedNoteKey = null;
+      validFramesStreak = 0;
+      outlierStreak = 0;
+      smoothedCents = null;
+    }
+
     // Stille oder ungültiges Signal: Anzeige leeren, EMA zurücksetzen, Warm-up zurücksetzen
     validFramesStreak = 0;
-    smoothedCents = null;
+    // Note: wir setzen smoothedCents hier nicht auf null, damit die Nadel bei ganz kurzen
+    // Aussetzern nicht springt, sondern erst nach dem SILENCE_RESET_THRESHOLD_MS.
     updateTunerDisplay({ cents: 0, note: null, octave: null, isActive: true, isInTune: false, isStandardNote: false });
     if (guidedState.active) {
-      guidedState.feedbackDisplay = updateFeedbackDisplay(guidedState.feedbackDisplay, { type: null }, Date.now());
+      guidedState.feedbackDisplay = updateFeedbackDisplay(guidedState.feedbackDisplay, { type: null }, now);
       renderGuidedFeedback(guidedState.feedbackDisplay);
     }
     return;
   }
+
+  // Gültiger Pitch erkannt
+  lastValidFrameTime = now;
 
   // ── V10: Warm-up Streak ──────────────────────────────────────────────────
   validFramesStreak++;
@@ -280,8 +300,10 @@ function analyzeFrame() {
   outlierStreak = rejection.nextStreak;
   if (rejection.reject) return; // Frame überspringen, Anzeige bleibt stabil
 
-  const stabilized = pushMedianAndStabilize(freqHistory, hz, stableFrequency);
-  stableFrequency = stabilized.stable;
+  // ── V11: Zeitbasierte Historie & Median ──────────────────────────────────
+  const medianHz = pushAndMedianTimed(freqHistory, hz, now);
+  stableFrequency = medianHz;
+
   const candidate = frequencyToNote(stableFrequency);
   const candidateKey = `${candidate.note}${candidate.octave}`;
 
@@ -338,6 +360,7 @@ function startGuidedMode() {
   acceptedNoteKey = null;
   stableFrequency = null;
   validFramesStreak = 0;
+  lastValidFrameTime = 0;
   outlierStreak = 0;
   smoothedCents = null;
   document.getElementById('btn-start-guided').style.display = 'none';
@@ -356,6 +379,7 @@ function nextGuidedStep() {
   acceptedNoteKey = null;
   stableFrequency = null;
   validFramesStreak = 0;
+  lastValidFrameTime = 0;
   outlierStreak = 0;
   smoothedCents = null;
   if (guidedState.stepIndex >= GUIDED_TUNING_STEPS.length) {
