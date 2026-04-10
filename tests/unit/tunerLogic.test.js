@@ -857,4 +857,36 @@ describe('detectPitch – regression after V1/V3/V4 improvements', () => {
     const buf = synth(196, 44100, 8192, 0.001); // Amplitude viel zu leise
     expect(detectPitch(buf, 44100)).toBeNull();
   });
+
+  it('detects B3 correctly – no subharmonic demotion to B2 (8192 samples)', () => {
+    const buf = synth(246.94, 44100, 8192);
+    const hz = detectPitch(buf, 44100);
+    expect(hz).not.toBeNull();
+    const { note, octave } = frequencyToNote(hz);
+    expect(note).toBe('B');
+    expect(octave).toBe(3);
+  });
+
+  it('detects E4 correctly – no subharmonic demotion to E3 (8192 samples)', () => {
+    const buf = synth(329.63, 44100, 8192);
+    const hz = detectPitch(buf, 44100);
+    expect(hz).not.toBeNull();
+    const { note, octave } = frequencyToNote(hz);
+    expect(note).toBe('E');
+    expect(octave).toBe(4);
+  });
+
+  it('A2 detection has no HPS averaging bias (within 2 cents)', () => {
+    const buf = synth(110, 44100, 32768);
+    const hz = detectPitch(buf, 44100);
+    expect(hz).not.toBeNull();
+    expect(Math.abs(1200 * Math.log2(hz / 110))).toBeLessThan(2);
+  });
+
+  it('G3 detection has no HPS averaging bias (within 5 cents)', () => {
+    const buf = synth(196, 44100, 8192);
+    const hz = detectPitch(buf, 44100);
+    expect(hz).not.toBeNull();
+    expect(Math.abs(1200 * Math.log2(hz / 196))).toBeLessThan(5);
+  });
 });
