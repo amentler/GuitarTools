@@ -25,6 +25,12 @@ import {
   getGuidedFeedback,
   updateFeedbackDisplay,
   detectPitch,
+  shouldRejectOutlier,
+  OUTLIER_REJECTION_THRESHOLD_CENTS,
+  buildAdaptiveThreshold,
+  estimateNoiseFloorRms,
+  smoothCents,
+  hpsFromMagnitudes,
 } from '../../js/tools/guitarTuner/tunerLogic.js';
 
 describe('frequencyToNote', () => {
@@ -489,23 +495,39 @@ describe('constants', () => {
     expect(PERFECT_TOLERANCE_CENTS).toBe(8);
   });
 
-  it('ANALYZE_INTERVAL_MS is 100 – audio analysis runs 10 times per second', () => {
-    expect(ANALYZE_INTERVAL_MS).toBe(100);
+  it('ANALYZE_INTERVAL_MS is 50 – audio analysis runs 20 times per second', () => {
+    expect(ANALYZE_INTERVAL_MS).toBe(50);
   });
 });
 
-describe('getAdaptiveFftSize', () => {
-  it('uses an extra-large window for very low frequencies (≤120 Hz)', () => {
+describe('getAdaptiveFftSize – 3-tier adaptive window', () => {
+  it('returns 32768 for E2 range (≤90 Hz)', () => {
     expect(getAdaptiveFftSize(82)).toBe(32768);
   });
 
-  it('uses large window (≥300 ms) for mid range and default for null reference', () => {
-    expect(getAdaptiveFftSize(180)).toBe(16384);
-    expect(getAdaptiveFftSize()).toBe(16384);
+  it('returns 16384 for A2 range (90–160 Hz)', () => {
+    expect(getAdaptiveFftSize(110)).toBe(16384);
   });
 
-  it('uses large window (≥300 ms) for high frequencies', () => {
-    expect(getAdaptiveFftSize(330)).toBe(16384);
+  it('returns 16384 for D3 range (90–160 Hz)', () => {
+    expect(getAdaptiveFftSize(147)).toBe(16384);
+  });
+
+  it('returns 8192 for G3 range (>160 Hz)', () => {
+    expect(getAdaptiveFftSize(196)).toBe(8192);
+  });
+
+  it('returns 8192 for B3 range (>160 Hz)', () => {
+    expect(getAdaptiveFftSize(247)).toBe(8192);
+  });
+
+  it('returns 8192 for E4 range (>160 Hz)', () => {
+    expect(getAdaptiveFftSize(330)).toBe(8192);
+  });
+
+  it('returns 16384 with no reference (safe default for free mode)', () => {
+    expect(getAdaptiveFftSize(null)).toBe(16384);
+    expect(getAdaptiveFftSize()).toBe(16384);
   });
 });
 
@@ -625,5 +647,214 @@ describe('detectPitch – guitar attack transient', () => {
     expect(hz).not.toBeNull();
     expect(hz).toBeGreaterThan(freq * 0.95);
     expect(hz).toBeLessThan(freq * 1.05);
+  });
+});
+
+// ── V3: Ausreißer-Rejection ───────────────────────────────────────────────────
+
+describe('shouldRejectOutlier', () => {
+  it('does not reject when no stable frequency exists', () => {
+    const r = shouldRejectOutlier(null, 200, 0);
+    expect(r.reject).toBe(false);
+    expect(r.nextStreak).toBe(0);
+  });
+
+  it('does not reject candidate within threshold (close frequency)', () => {
+    // 120 Hz vs. 110 Hz ≈ 155 cents < OUTLIER_REJECTION_THRESHOLD_CENTS
+    const r = shouldRejectOutlier(120, 110, 0);
+    expect(r.reject).toBe(false);
+    expect(r.nextStreak).toBe(0);
+  });
+
+  it('rejects first outlier and increments streak (0 → 1)', () => {
+    // E4 (330 Hz) vs. stable E2 (82 Hz) ≈ 2400 cents – clear outlier
+    const r = shouldRejectOutlier(82, 330, 0);
+    expect(r.reject).toBe(true);
+    expect(r.nextStreak).toBe(1);
+  });
+
+  it('rejects second consecutive outlier (streak 1 → 2)', () => {
+    const r = shouldRejectOutlier(82, 330, 1);
+    expect(r.reject).toBe(true);
+    expect(r.nextStreak).toBe(2);
+  });
+
+  it('accepts on third consecutive outlier – true note change', () => {
+    const r = shouldRejectOutlier(82, 330, 2);
+    expect(r.reject).toBe(false);
+    expect(r.nextStreak).toBe(0);
+  });
+
+  it('resets streak when a close candidate follows a rejected outlier', () => {
+    const r = shouldRejectOutlier(196, 200, 1); // G3 vs. ~G3: very close
+    expect(r.reject).toBe(false);
+    expect(r.nextStreak).toBe(0);
+  });
+
+  it('does not permanently block G3→B3 string change (400 cents > threshold)', () => {
+    // G3 (196 Hz) → B3 (247 Hz) ≈ 400 cents > 350 → 2 rejections, then accepted
+    const r0 = shouldRejectOutlier(196, 247, 0);
+    const r1 = shouldRejectOutlier(196, 247, r0.nextStreak);
+    const r2 = shouldRejectOutlier(196, 247, r1.nextStreak);
+    expect(r0.reject).toBe(true);
+    expect(r1.reject).toBe(true);
+    expect(r2.reject).toBe(false); // 3. Frame: echter Saitenwechsel akzeptiert
+  });
+
+  it('OUTLIER_REJECTION_THRESHOLD_CENTS is 350', () => {
+    expect(OUTLIER_REJECTION_THRESHOLD_CENTS).toBe(350);
+  });
+});
+
+// ── V4: Adaptiver Noise Floor ────────────────────────────────────────────────
+
+describe('estimateNoiseFloorRms', () => {
+  it('returns 0 for an empty array', () => {
+    expect(estimateNoiseFloorRms([])).toBe(0);
+  });
+
+  it('returns the median of provided RMS values', () => {
+    expect(estimateNoiseFloorRms([0.01, 0.02, 0.015])).toBeCloseTo(0.015);
+  });
+
+  it('is robust against a single outlier spike (uses median)', () => {
+    // Median of [0.01, 0.01, 0.01, 0.5] = 0.01 (spike excluded)
+    expect(estimateNoiseFloorRms([0.01, 0.01, 0.01, 0.5])).toBeCloseTo(0.01);
+  });
+});
+
+describe('buildAdaptiveThreshold', () => {
+  it('uses GUITAR_MIN_RMS when noise floor is very low', () => {
+    // 0.001 * 4 = 0.004 < 0.008 → GUITAR_MIN_RMS wins
+    expect(buildAdaptiveThreshold(0.001)).toBeCloseTo(0.008);
+  });
+
+  it('scales up threshold when noise floor is loud', () => {
+    // 0.01 * 4 = 0.04 > 0.008 → scaled threshold used
+    expect(buildAdaptiveThreshold(0.01)).toBeCloseTo(0.04);
+  });
+
+  it('caps threshold to avoid locking out legitimate guitar signal', () => {
+    // 0.1 * 4 = 0.4 would be too high; must be capped at MAX_ADAPTIVE_THRESHOLD
+    expect(buildAdaptiveThreshold(0.1)).toBeLessThanOrEqual(0.15);
+  });
+});
+
+// ── V9: EMA Cents-Glättung ───────────────────────────────────────────────────
+
+describe('smoothCents', () => {
+  it('returns rawCents directly on first call (no previous value)', () => {
+    expect(smoothCents(null, 15)).toBeCloseTo(15);
+  });
+
+  it('applies EMA formula: alpha*new + (1-alpha)*old', () => {
+    // prev=0, raw=10, alpha=0.4 → 0.4*10 + 0.6*0 = 4
+    expect(smoothCents(0, 10, 0.4)).toBeCloseTo(4);
+  });
+
+  it('converges toward target over multiple frames', () => {
+    let v = 0;
+    for (let i = 0; i < 20; i++) v = smoothCents(v, 50, 0.4);
+    expect(v).toBeGreaterThan(45); // nähert sich 50 an
+  });
+
+  it('works correctly with negative cents values', () => {
+    // prev=0, raw=-20, alpha=0.4 → 0.4*(-20) + 0.6*0 = -8
+    expect(smoothCents(0, -20, 0.4)).toBeCloseTo(-8);
+  });
+
+  it('uses default alpha of 0.4 when not specified', () => {
+    expect(smoothCents(0, 10)).toBeCloseTo(4);
+  });
+});
+
+// ── V5: HPS auf FFT-Magnitude-Array ─────────────────────────────────────────
+
+describe('hpsFromMagnitudes', () => {
+  const SR = 44100;
+  const FFT_SIZE = 16384;
+  const BIN_HZ = SR / FFT_SIZE; // ≈ 2.69 Hz/Bin
+  const HALF_BINS = FFT_SIZE / 2;
+
+  /** Erzeugt Magnitude-Spektrum (dB) mit Grundton und Obertönen. */
+  function makeHarmonicSpectrum(fundamentalHz, harmonics = 3) {
+    const mags = new Float32Array(HALF_BINS).fill(-100);
+    for (let h = 1; h <= harmonics; h++) {
+      const bin = Math.round((fundamentalHz * h) / BIN_HZ);
+      if (bin < HALF_BINS) mags[bin] = h === 1 ? -10 : -20; // Grundton am stärksten
+    }
+    return mags;
+  }
+
+  it('detects E2 fundamental from harmonic spectrum', () => {
+    const mags = makeHarmonicSpectrum(82.4);
+    const hz = hpsFromMagnitudes(mags, BIN_HZ, 70, 420);
+    expect(hz).not.toBeNull();
+    // FFT-Auflösung ist ~2.7 Hz/Bin, Toleranz entsprechend
+    expect(hz).toBeGreaterThan(75);
+    expect(hz).toBeLessThan(92);
+  });
+
+  it('detects A2 fundamental from harmonic spectrum', () => {
+    const mags = makeHarmonicSpectrum(110);
+    const hz = hpsFromMagnitudes(mags, BIN_HZ, 70, 420);
+    expect(hz).not.toBeNull();
+    expect(hz).toBeGreaterThan(102);
+    expect(hz).toBeLessThan(118);
+  });
+
+  it('returns null for a flat noise spectrum (no harmonic structure)', () => {
+    const mags = new Float32Array(HALF_BINS).fill(-100);
+    expect(hpsFromMagnitudes(mags, BIN_HZ, 70, 420)).toBeNull();
+  });
+
+  it('prefers fundamental over overtone even when overtone has higher magnitude', () => {
+    // Spektrum: 2. Oberton stärker als Grundton, aber HPS maximiert an Grundton
+    const mags = new Float32Array(HALF_BINS).fill(-100);
+    const f0Bin  = Math.round(82.4 / BIN_HZ);  // E2 Grundton
+    const f1Bin  = Math.round(164.8 / BIN_HZ); // 2. Oberton (stärker)
+    const f2Bin  = Math.round(247.2 / BIN_HZ); // 3. Oberton
+    mags[f0Bin] = -25;  // Grundton schwächer
+    mags[f1Bin] = -15;  // 2. Oberton stärker
+    mags[f2Bin] = -20;
+    const hz = hpsFromMagnitudes(mags, BIN_HZ, 70, 420);
+    // HPS-Score für f0: mag[f0] + mag[2*f0] + mag[3*f0] = -25 + -15 + -20 = -60
+    // HPS-Score für f1: mag[f1] + mag[2*f1] + ... ≈ -15 + -100 + -100 = -215
+    // → Grundton gewinnt
+    expect(hz).not.toBeNull();
+    expect(hz).toBeGreaterThan(75);
+    expect(hz).toBeLessThan(92);
+  });
+});
+
+// ── Regressionstests detectPitch nach Verbesserungen ─────────────────────────
+
+describe('detectPitch – regression after V1/V3/V4 improvements', () => {
+  function synth(freq, sampleRate, samples, amp = 0.3) {
+    const buf = new Float32Array(samples);
+    for (let i = 0; i < samples; i++)
+      buf[i] = amp * Math.sin(2 * Math.PI * freq * i / sampleRate);
+    return buf;
+  }
+
+  it('detects E2 correctly with 32768-sample buffer', () => {
+    const buf = synth(82.4, 44100, 32768);
+    const hz = detectPitch(buf, 44100);
+    expect(hz).not.toBeNull();
+    expect(hz).toBeGreaterThan(78);
+    expect(hz).toBeLessThan(88);
+  });
+
+  it('detects G3 correctly with reduced 8192-sample buffer (V1)', () => {
+    const buf = synth(196, 44100, 8192);
+    const hz = detectPitch(buf, 44100);
+    expect(hz).not.toBeNull();
+    expect(hz).toBeGreaterThan(186);
+    expect(hz).toBeLessThan(206);
+  });
+
+  it('returns null for below-threshold signal (noise gate, V4)', () => {
+    const buf = synth(196, 44100, 8192, 0.001); // Amplitude viel zu leise
+    expect(detectPitch(buf, 44100)).toBeNull();
   });
 });

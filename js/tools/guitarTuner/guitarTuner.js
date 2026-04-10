@@ -6,6 +6,9 @@ import {
   GUIDED_TUNING_STEPS, noteToFrequency, getCentsToTarget, PERFECT_TOLERANCE_CENTS,
   pushGuidedHistory, getGuidedFeedback, updateFeedbackDisplay,
   ANALYZE_INTERVAL_MS, getAdaptiveFftSize, pushMedianAndStabilize, applyNoteSwitchHysteresis,
+  shouldRejectOutlier, analyzeInputLevel,
+  estimateNoiseFloorRms, buildAdaptiveThreshold,
+  smoothCents,
 } from './tunerLogic.js';
 import { initTunerSVG, updateTunerDisplay } from './tunerSVG.js';
 
@@ -21,6 +24,18 @@ const freqHistory = [];
 let noteSwitchStreak = 0;
 let acceptedNoteKey = null;
 let stableFrequency = null;
+
+// V3: Outlier rejection
+let outlierStreak = 0;
+
+// V4: Adaptive noise gate
+const NOISE_CALIBRATION_FRAMES = 10; // 10 × 50 ms = 500 ms
+let noiseCalibrationFrames = 0;
+let noiseCalibrationRms = [];
+let adaptiveMinRms = 0.008; // GUITAR_MIN_RMS default until calibrated
+
+// V9: EMA cents smoother
+let smoothedCents = null;
 
 let state = {
   mode:    'standard', // 'standard' | 'chromatic'
@@ -52,6 +67,11 @@ export async function startExercise() {
   noteSwitchStreak = 0;
   acceptedNoteKey = null;
   stableFrequency = null;
+  outlierStreak = 0;
+  noiseCalibrationFrames = 0;
+  noiseCalibrationRms = [];
+  adaptiveMinRms = 0.008;
+  smoothedCents = null;
   state.note    = null;
   state.octave  = null;
   state.cents   = 0;
@@ -127,7 +147,24 @@ export async function startExercise() {
   audioCtx = new AudioContext();
   analyser = audioCtx.createAnalyser();
   analyser.fftSize = getAdaptiveFftSize();
-  audioCtx.createMediaStreamSource(stream).connect(analyser);
+
+  // V6: Hardware bandpass via two BiquadFilter nodes (12 dB/oct each).
+  // Highpass at 60 Hz removes subsonic rumble; lowpass at 500 Hz removes
+  // high-frequency noise that can confuse the pitch detector.
+  const hpFilter = audioCtx.createBiquadFilter();
+  hpFilter.type = 'highpass';
+  hpFilter.frequency.value = 60;
+  hpFilter.Q.value = 0.7;
+
+  const lpFilter = audioCtx.createBiquadFilter();
+  lpFilter.type = 'lowpass';
+  lpFilter.frequency.value = 500;
+  lpFilter.Q.value = 0.7;
+
+  audioCtx.createMediaStreamSource(stream)
+    .connect(hpFilter)
+    .connect(lpFilter)
+    .connect(analyser);
 
   state.isActive = true;
   intervalId = setInterval(analyzeFrame, ANALYZE_INTERVAL_MS);
@@ -153,6 +190,11 @@ export function stopExercise() {
   noteSwitchStreak = 0;
   acceptedNoteKey = null;
   stableFrequency = null;
+  outlierStreak = 0;
+  noiseCalibrationFrames = 0;
+  noiseCalibrationRms = [];
+  adaptiveMinRms = 0.008;
+  smoothedCents = null;
 
   updateTunerDisplay({ cents: 0, note: null, octave: null, isActive: false, isInTune: false, isStandardNote: false });
 
@@ -175,6 +217,7 @@ export function stopExercise() {
 function analyzeFrame() {
   if (!analyser) return;
 
+  // ── V1: Adaptive FFT-Fenstergröße (3 Stufen) ─────────────────────────────
   const guidedTargetHz = guidedState.active
     ? noteToFrequency(GUIDED_TUNING_STEPS[guidedState.stepIndex].note, GUIDED_TUNING_STEPS[guidedState.stepIndex].octave)
     : null;
@@ -185,18 +228,45 @@ function analyzeFrame() {
   const buffer = new Float32Array(analyser.fftSize);
   analyser.getFloatTimeDomainData(buffer);
 
-  const hz = detectPitch(buffer, audioCtx.sampleRate, { referenceHz, lastStableHz: stableFrequency });
+  // ── V4: Noise-Kalibrierung (erste 10 Frames passiv im Hintergrund) ───────
+  if (noiseCalibrationFrames < NOISE_CALIBRATION_FRAMES) {
+    const lvl = analyzeInputLevel(buffer);
+    noiseCalibrationRms.push(lvl.rms);
+    noiseCalibrationFrames++;
+    if (noiseCalibrationFrames === NOISE_CALIBRATION_FRAMES) {
+      const noiseFloor = estimateNoiseFloorRms(noiseCalibrationRms);
+      adaptiveMinRms = buildAdaptiveThreshold(noiseFloor);
+    }
+    return;
+  }
+
+  // ── V5: FFT-Magnitude-Spektrum für HPS ────────────────────────────────────
+  const freqData = new Float32Array(analyser.frequencyBinCount);
+  analyser.getFloatFrequencyData(freqData);
+
+  // ── Pitch-Erkennung mit adaptiver Schwelle (V4) und FFT-HPS (V5) ─────────
+  const hz = detectPitch(buffer, audioCtx.sampleRate, {
+    referenceHz,
+    lastStableHz: stableFrequency,
+    minRms: adaptiveMinRms,
+    magnitudes: freqData,
+  });
 
   if (hz === null) {
-    // Silence: clear display but keep needle centred
+    // Stille oder ungültiges Signal: Anzeige leeren, EMA zurücksetzen
+    smoothedCents = null;
     updateTunerDisplay({ cents: 0, note: null, octave: null, isActive: true, isInTune: false, isStandardNote: false });
-    // Apply 3-second hold rule during silence so "Perfekt" doesn't persist indefinitely
     if (guidedState.active) {
       guidedState.feedbackDisplay = updateFeedbackDisplay(guidedState.feedbackDisplay, { type: null }, Date.now());
       renderGuidedFeedback(guidedState.feedbackDisplay);
     }
     return;
   }
+
+  // ── V3: Ausreißer-Rejection ───────────────────────────────────────────────
+  const rejection = shouldRejectOutlier(stableFrequency, hz, outlierStreak);
+  outlierStreak = rejection.nextStreak;
+  if (rejection.reject) return; // Frame überspringen, Anzeige bleibt stabil
 
   const stabilized = pushMedianAndStabilize(freqHistory, hz, stableFrequency);
   stableFrequency = stabilized.stable;
@@ -221,18 +291,16 @@ function analyzeFrame() {
     }
   }
 
-  const isStdNote   = isStandardTuningNote(note, octave);
+  const isStdNote = isStandardTuningNote(note, octave);
   const isStandardNote = state.mode === 'standard' ? isStdNote : true;
 
-  // Default: in-tune relative to the nearest chromatic note
   let isInTune = Math.abs(cents) <= PERFECT_TOLERANCE_CENTS;
 
   // Guided mode feedback
   if (guidedState.active) {
     const step = GUIDED_TUNING_STEPS[guidedState.stepIndex];
-    const targetFreq  = noteToFrequency(step.note, step.octave);
+    const targetFreq = noteToFrequency(step.note, step.octave);
     const centsToTarget = getCentsToTarget(stableFrequency, targetFreq);
-    // In guided mode the green dot only lights up for the current target note
     isInTune = Math.abs(centsToTarget) <= PERFECT_TOLERANCE_CENTS;
     pushGuidedHistory(guidedState.trendHistory, centsToTarget);
     const feedback = getGuidedFeedback(centsToTarget, guidedState.trendHistory);
@@ -240,7 +308,10 @@ function analyzeFrame() {
     renderGuidedFeedback(guidedState.feedbackDisplay);
   }
 
-  updateTunerDisplay({ cents, note, octave, isActive: true, isInTune, isStandardNote });
+  // ── V9: EMA-Glättung für flüssige Nadelanzeige ───────────────────────────
+  smoothedCents = smoothCents(smoothedCents, cents);
+
+  updateTunerDisplay({ cents: smoothedCents, note, octave, isActive: true, isInTune, isStandardNote });
 }
 
 // ── Guided mode ───────────────────────────────────────────────────────────────
@@ -250,10 +321,12 @@ function startGuidedMode() {
   guidedState.stepIndex = 0;
   guidedState.trendHistory = [];
   guidedState.feedbackDisplay = null;
-  freqHistory.length = 0; // clear stale pitch samples so first readings aren't biased
+  freqHistory.length = 0;
   noteSwitchStreak = 0;
   acceptedNoteKey = null;
   stableFrequency = null;
+  outlierStreak = 0;
+  smoothedCents = null;
   document.getElementById('btn-start-guided').style.display = 'none';
   document.getElementById('guided-active').style.display = '';
   document.getElementById('guided-finished').style.display = 'none';
@@ -265,10 +338,12 @@ function nextGuidedStep() {
   guidedState.stepIndex += 1;
   guidedState.trendHistory = [];
   guidedState.feedbackDisplay = null;
-  freqHistory.length = 0; // clear stale samples from previous string
+  freqHistory.length = 0;
   noteSwitchStreak = 0;
   acceptedNoteKey = null;
   stableFrequency = null;
+  outlierStreak = 0;
+  smoothedCents = null;
   if (guidedState.stepIndex >= GUIDED_TUNING_STEPS.length) {
     guidedState.active = false;
     document.getElementById('guided-active').style.display = 'none';

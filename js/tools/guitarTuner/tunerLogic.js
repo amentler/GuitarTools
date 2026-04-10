@@ -29,13 +29,15 @@ export const NOTE_SWITCH_CONFIRM_FRAMES = 3;
  * @returns {number|null} Hz, or null if silence / no clear pitch
  */
 export function getAdaptiveFftSize(referenceHz = null) {
-  // Low-frequency strings (E2, A2) benefit from an even longer window for more periods.
-  if (referenceHz !== null && referenceHz <= 120) return 32768;
-  // Default: 16384 samples ≈ 371 ms at 44100 Hz / 341 ms at 48000 Hz (satisfies ≥ 300 ms).
+  // E2 (≤90 Hz): extra-large window for enough periods at very low frequencies.
+  if (referenceHz !== null && referenceHz <= 90) return 32768;
+  // G3/B3/E4 (>160 Hz): smaller window sufficient – reduces latency by ~50 %.
+  if (referenceHz !== null && referenceHz > 160) return 8192;
+  // A2/D3 (90–160 Hz) and free mode (null): safe middle-ground.
   return 16384;
 }
 
-export function analyzeInputLevel(buffer) {
+export function analyzeInputLevel(buffer, minRms = GUITAR_MIN_RMS) {
   let sumSquares = 0;
   let clipping = 0;
   for (let i = 0; i < buffer.length; i++) {
@@ -48,7 +50,7 @@ export function analyzeInputLevel(buffer) {
   return {
     rms,
     clippingRatio,
-    isValid: rms >= GUITAR_MIN_RMS && clippingRatio <= GUITAR_MAX_CLIPPING_RATIO,
+    isValid: rms >= minRms && clippingRatio <= GUITAR_MAX_CLIPPING_RATIO,
   };
 }
 
@@ -222,7 +224,8 @@ function selectCombinedPitch(yinHz, hpsHz, lastStableHz = null) {
 }
 
 export function detectPitch(buffer, sampleRate, options = {}) {
-  const level = analyzeInputLevel(buffer);
+  const minRms = options.minRms ?? GUITAR_MIN_RMS;
+  const level = analyzeInputLevel(buffer, minRms);
   if (!level.isValid) return null;
 
   const referenceHz = options.referenceHz ?? null;
@@ -231,7 +234,14 @@ export function detectPitch(buffer, sampleRate, options = {}) {
   const minPeriods = minFreq < 120 ? 4 : 3;
   const prepared = dampAttack(applyGuitarBandpass(buffer, sampleRate));
   const yinHz = detectPitchYin(prepared, sampleRate, minFreq, maxFreq, minPeriods);
-  const hpsHz = detectPitchHps(prepared, sampleRate, minFreq, maxFreq);
+  // V5: FFT-based HPS if magnitude spectrum is provided (faster, avoids O(n²) DFT).
+  let hpsHz;
+  if (options.magnitudes) {
+    const binHz = sampleRate / (options.magnitudes.length * 2);
+    hpsHz = hpsFromMagnitudes(options.magnitudes, binHz, minFreq, maxFreq);
+  } else {
+    hpsHz = detectPitchHps(prepared, sampleRate, minFreq, maxFreq);
+  }
   return selectCombinedPitch(yinHz, hpsHz, options.lastStableHz ?? null);
 }
 
@@ -289,7 +299,7 @@ export const FEEDBACK_DISPLAY_DURATION_MS = 3000;
  * ANALYZE_INTERVAL_MS milliseconds, yielding responsive updates at 10 Hz.
  * Combined with HISTORY_SIZE (= 5), the rolling-median smoothing window covers ~500 ms.
  */
-export const ANALYZE_INTERVAL_MS = 100;
+export const ANALYZE_INTERVAL_MS = 50;
 
 /** Cents window in which the pitch is considered "perfect" for guided feedback. */
 export const PERFECT_TOLERANCE_CENTS = 8;
@@ -505,4 +515,146 @@ export function applyNoteSwitchHysteresis(currentNoteKey, candidateNoteKey, stre
     return { acceptedNoteKey: candidateNoteKey, nextStreak: 0, switched: true };
   }
   return { acceptedNoteKey: currentNoteKey, nextStreak, switched: false };
+}
+
+// ── V3: Ausreißer-Rejection ───────────────────────────────────────────────────
+
+/** Minimum cents gap triggering outlier rejection. */
+export const OUTLIER_REJECTION_THRESHOLD_CENTS = 350;
+
+/** Number of consecutive outlier frames before a true note change is accepted. */
+export const OUTLIER_REJECT_CONFIRM_FRAMES = 2;
+
+/**
+ * Decides whether a new candidate frequency should be rejected as an outlier.
+ * Protects the rolling median from single-frame glitches while still allowing
+ * genuine string changes to come through after OUTLIER_REJECT_CONFIRM_FRAMES
+ * consecutive outlier frames.
+ *
+ * @param {number|null} stableHz  Currently stable frequency, or null if none.
+ * @param {number}      candidateHz  Newly detected frequency.
+ * @param {number}      streak  Consecutive outlier count so far.
+ * @returns {{ reject: boolean, nextStreak: number }}
+ */
+export function shouldRejectOutlier(stableHz, candidateHz, streak) {
+  if (stableHz === null) return { reject: false, nextStreak: 0 };
+  const centsDiff = Math.abs(1200 * Math.log2(candidateHz / stableHz));
+  if (centsDiff <= OUTLIER_REJECTION_THRESHOLD_CENTS) {
+    return { reject: false, nextStreak: 0 };
+  }
+  if (streak >= OUTLIER_REJECT_CONFIRM_FRAMES) {
+    return { reject: false, nextStreak: 0 };
+  }
+  return { reject: true, nextStreak: streak + 1 };
+}
+
+// ── V4: Adaptiver Noise Floor ────────────────────────────────────────────────
+
+/** Multiplier applied to measured noise floor to derive the effective RMS gate. */
+export const NOISE_FLOOR_SCALE_FACTOR = 4;
+
+/** Hard cap on the adaptive threshold so legitimate guitar signals are never gated. */
+export const MAX_ADAPTIVE_THRESHOLD = 0.15;
+
+/**
+ * Returns the median RMS of the provided samples (robust noise floor estimate).
+ * @param {number[]} rmsValues
+ * @returns {number}
+ */
+export function estimateNoiseFloorRms(rmsValues) {
+  if (rmsValues.length === 0) return 0;
+  const sorted = rmsValues.slice().sort((a, b) => a - b);
+  const mid = Math.floor(sorted.length / 2);
+  return sorted.length % 2 !== 0
+    ? sorted[mid]
+    : (sorted[mid - 1] + sorted[mid]) / 2;
+}
+
+/**
+ * Derives the effective RMS gate from a measured noise floor.
+ * `effectiveMinRms = clamp(noiseFloorRms * NOISE_FLOOR_SCALE_FACTOR,
+ *                          GUITAR_MIN_RMS, MAX_ADAPTIVE_THRESHOLD)`
+ * @param {number} noiseFloorRms
+ * @returns {number}
+ */
+export function buildAdaptiveThreshold(noiseFloorRms) {
+  return Math.min(
+    MAX_ADAPTIVE_THRESHOLD,
+    Math.max(GUITAR_MIN_RMS, noiseFloorRms * NOISE_FLOOR_SCALE_FACTOR),
+  );
+}
+
+// ── V9: EMA Cents-Glättung ───────────────────────────────────────────────────
+
+/** Default EMA alpha for cents smoothing (40 % new value per frame). */
+export const EMA_ALPHA = 0.4;
+
+/**
+ * Exponential moving average for the cents display value.
+ * Returns `rawCents` directly when `previousSmoothed` is null (first call).
+ * @param {number|null} previousSmoothed
+ * @param {number}      rawCents
+ * @param {number}      [alpha=EMA_ALPHA]
+ * @returns {number}
+ */
+export function smoothCents(previousSmoothed, rawCents, alpha = EMA_ALPHA) {
+  if (previousSmoothed === null) return rawCents;
+  return alpha * rawCents + (1 - alpha) * previousSmoothed;
+}
+
+// ── V5: HPS auf FFT-Magnitude-Array ─────────────────────────────────────────
+
+/**
+ * Minimum HPS score (dB sum of three harmonics) to consider a pitch valid.
+ * A flat noise floor at –100 dBFS gives a score of –300; any genuine harmonic
+ * structure will score significantly higher.
+ */
+export const HPS_NULL_SCORE_THRESHOLD = -200;
+
+/**
+ * Returns the maximum dB value in a ±1 bin neighbourhood.
+ * Compensates for FFT bin-rounding when harmonics don't fall exactly on a bin.
+ * @param {Float32Array} mags
+ * @param {number}       bin
+ * @returns {number}
+ */
+function peakNear(mags, bin) {
+  const lo = Math.max(0, bin - 1);
+  const hi = Math.min(mags.length - 1, bin + 1);
+  return Math.max(mags[lo], mags[bin], mags[hi]);
+}
+
+/**
+ * Harmonic Product Spectrum on a pre-computed FFT magnitude array (dBFS values
+ * as returned by `AnalyserNode.getFloatFrequencyData`).
+ *
+ * In dB space the product of magnitudes becomes a sum:
+ *   HPS_score[k] = mag[k] + peakNear(mag, 2k) + peakNear(mag, 3k)
+ *
+ * @param {Float32Array} magnitudes  Half-spectrum dB magnitudes (length = fftSize / 2).
+ * @param {number}       binHz       Hz per bin (= sampleRate / fftSize).
+ * @param {number}       minFreq     Lower search limit in Hz.
+ * @param {number}       maxFreq     Upper search limit in Hz.
+ * @returns {number|null}            Detected fundamental in Hz, or null.
+ */
+export function hpsFromMagnitudes(magnitudes, binHz, minFreq, maxFreq) {
+  const minBin = Math.max(1, Math.round(minFreq / binHz));
+  const maxBin = Math.min(
+    Math.floor(magnitudes.length / 3) - 1,
+    Math.round(maxFreq / binHz),
+  );
+
+  let bestBin = -1;
+  let bestScore = -Infinity;
+
+  for (let k = minBin; k <= maxBin; k++) {
+    const score = magnitudes[k] + peakNear(magnitudes, k * 2) + peakNear(magnitudes, k * 3);
+    if (score > bestScore) {
+      bestScore = score;
+      bestBin = k;
+    }
+  }
+
+  if (bestBin === -1 || bestScore <= HPS_NULL_SCORE_THRESHOLD) return null;
+  return bestBin * binHz;
 }
