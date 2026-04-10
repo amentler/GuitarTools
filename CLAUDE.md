@@ -125,7 +125,28 @@ Phase 1 CI pipeline is active. Tests run on every push and pull request.
 - **Test files:** `tests/unit/` — pure logic tests only, no DOM/audio
 - **CI workflow:** `.github/workflows/ci.yml`
 - **Current unit-test scope:** `fretboardLogic`, `tunerLogic`, `tonFinderLogic`, `akkordLogic`, `sheetMusicLogic`, `metronomeLogic`, `notePlayingLogic`
-- **Current test count:** 150 passing Vitest tests (`tests/unit/**/*.test.js`)
+- **Current test count:** 202 passing Vitest tests (`tests/unit/**/*.test.js`)
+
+### Audio Fixture Tests (Tuner)
+
+Real guitar recordings can be placed in `tests/fixtures/audio/{Note}/` to test pitch detection against live audio.
+
+**Folder convention:** Folder name = Note + Octave (e.g. `E2`, `A2`, `D3`, `G3`, `B3`, `E4`).  
+**File format:** WAV, uncompressed PCM 16-bit or 32-bit float, 44100 or 48000 Hz, ≥ 1 second, mono or stereo.
+
+```
+tests/fixtures/audio/
+  E2/   my-recording.wav   ← detected as E2 (82.4 Hz)
+  A2/   my-recording.wav   ← detected as A2 (110 Hz)
+  ...
+```
+
+**Test helpers:**
+- `tests/helpers/wavDecoder.js` — `decodeWav(buffer)` / `readWavFile(path)`: WAV → Float32Array
+- `tests/helpers/audioFixtureRunner.js` — `getAudioFixtures(dir)` / `detectNoteFromSamples(samples, sr)`: multi-window pitch detection via `detectPitch`
+
+When no WAV files are present the integration test suite is skipped (no CI failure).  
+Each new `.wav` file dropped into a folder automatically becomes a test case on the next `npm test` run.
 
 When adding logic to `*Logic.js` files, add corresponding tests in `tests/unit/`.
 
