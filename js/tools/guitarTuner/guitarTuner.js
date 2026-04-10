@@ -8,7 +8,7 @@ import {
   ANALYZE_INTERVAL_MS, getAdaptiveFftSize, pushMedianAndStabilize, applyNoteSwitchHysteresis,
   shouldRejectOutlier, analyzeInputLevel,
   estimateNoiseFloorRms, buildAdaptiveThreshold,
-  smoothCents,
+  smoothCents, STABLE_CONFIRM_FRAMES,
 } from './tunerLogic.js';
 import { initTunerSVG, updateTunerDisplay } from './tunerSVG.js';
 
@@ -24,6 +24,7 @@ const freqHistory = [];
 let noteSwitchStreak = 0;
 let acceptedNoteKey = null;
 let stableFrequency = null;
+let validFramesStreak = 0;
 
 // V3: Outlier rejection
 let outlierStreak = 0;
@@ -67,6 +68,7 @@ export async function startExercise() {
   noteSwitchStreak = 0;
   acceptedNoteKey = null;
   stableFrequency = null;
+  validFramesStreak = 0;
   outlierStreak = 0;
   noiseCalibrationFrames = 0;
   noiseCalibrationRms = [];
@@ -190,6 +192,7 @@ export function stopExercise() {
   noteSwitchStreak = 0;
   acceptedNoteKey = null;
   stableFrequency = null;
+  validFramesStreak = 0;
   outlierStreak = 0;
   noiseCalibrationFrames = 0;
   noiseCalibrationRms = [];
@@ -253,13 +256,22 @@ function analyzeFrame() {
   });
 
   if (hz === null) {
-    // Stille oder ungültiges Signal: Anzeige leeren, EMA zurücksetzen
+    // Stille oder ungültiges Signal: Anzeige leeren, EMA zurücksetzen, Warm-up zurücksetzen
+    validFramesStreak = 0;
     smoothedCents = null;
     updateTunerDisplay({ cents: 0, note: null, octave: null, isActive: true, isInTune: false, isStandardNote: false });
     if (guidedState.active) {
       guidedState.feedbackDisplay = updateFeedbackDisplay(guidedState.feedbackDisplay, { type: null }, Date.now());
       renderGuidedFeedback(guidedState.feedbackDisplay);
     }
+    return;
+  }
+
+  // ── V10: Warm-up Streak ──────────────────────────────────────────────────
+  validFramesStreak++;
+  if (validFramesStreak < STABLE_CONFIRM_FRAMES) {
+    // Noch in der Warm-up Phase: Anzeige bleibt auf "–"
+    updateTunerDisplay({ cents: null, note: null, octave: null, isActive: true, isInTune: false, isStandardNote: false });
     return;
   }
 
@@ -325,6 +337,7 @@ function startGuidedMode() {
   noteSwitchStreak = 0;
   acceptedNoteKey = null;
   stableFrequency = null;
+  validFramesStreak = 0;
   outlierStreak = 0;
   smoothedCents = null;
   document.getElementById('btn-start-guided').style.display = 'none';
@@ -342,6 +355,7 @@ function nextGuidedStep() {
   noteSwitchStreak = 0;
   acceptedNoteKey = null;
   stableFrequency = null;
+  validFramesStreak = 0;
   outlierStreak = 0;
   smoothedCents = null;
   if (guidedState.stepIndex >= GUIDED_TUNING_STEPS.length) {

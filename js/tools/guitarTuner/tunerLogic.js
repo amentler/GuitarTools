@@ -20,6 +20,10 @@ export const HPS_AGREEMENT_CENTS = 35;
 export const STABILITY_MAX_CENTS_DELTA = 25;
 export const NOTE_SWITCH_CONFIRM_FRAMES = 3;
 
+/** Minimum consecutive valid frames before the tuner display starts updating after silence.
+ * Prevents initial pointer "jumping" caused by pick attack transients and incomplete median buffers. */
+export const STABLE_CONFIRM_FRAMES = 3;
+
 /**
  * Detects the fundamental frequency using the YIN algorithm.
  * More reliable than naive autocorrelation – correctly identifies the

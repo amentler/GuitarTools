@@ -31,6 +31,7 @@ import {
   estimateNoiseFloorRms,
   smoothCents,
   hpsFromMagnitudes,
+  STABLE_CONFIRM_FRAMES,
 } from '../../js/tools/guitarTuner/tunerLogic.js';
 
 describe('frequencyToNote', () => {
@@ -497,6 +498,10 @@ describe('constants', () => {
 
   it('ANALYZE_INTERVAL_MS is 50 – audio analysis runs 20 times per second', () => {
     expect(ANALYZE_INTERVAL_MS).toBe(50);
+  });
+
+  it('STABLE_CONFIRM_FRAMES is 3', () => {
+    expect(STABLE_CONFIRM_FRAMES).toBe(3);
   });
 });
 

@@ -62,7 +62,8 @@ Location: `js/components/fretboard/gt-fretboard.js`
 - Tiefe Saiten profitieren von adaptiver Fenstergröße (`getAdaptiveFftSize`) und längerer Periodenabdeckung.
 - Vorverarbeitung enthält Bandbegrenzung (Gitarrenbereich) und Attack-Dämpfung direkt nach Anschlag.
 - Stabilisierung erfolgt mehrstufig: rolling median + Stabilitätsprüfung + Notenwechsel-Hysterese im Controller.
-- Analyseintervall ist 100 ms (10 Hz) mit rolling median über 5 Samples (~500 ms), damit das Stimmgerät reaktiv bleibt.
+- **Warm-up Phase:** Anzeige wird erst nach 3 aufeinanderfolgenden gültigen Frames aktualisiert (`STABLE_CONFIRM_FRAMES`), um initiale Sprünge durch Transienten zu unterdrücken.
+- Analyseintervall ist 50 ms (20 Hz) mit rolling median über 5 Samples (~250 ms), damit das Stimmgerät reaktiv bleibt.
 
 ## Noten spielen – sheetMusicMic
 
