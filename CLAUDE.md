@@ -45,7 +45,7 @@ js/
 
 The app has four layers:
 
-1. **Navigation** (`js/app.js`): Controls which view is visible, calls `startExercise()` / `stopExercise()`.
+1. **Navigation** (`js/app.js`): Controls which view is visible, calls `startExercise()` / `stopExercise()`, and syncs browser history (`pushState`/`replaceState` + `popstate`) so browser-back returns to menu/exercise state.
 2. **Games/Tools** (`js/games/*`, `js/tools/*`): State + flow control. All game-specific code lives in its own subfolder.
 3. **UI Components** (`js/components/*`): Reusable Web Components (custom elements) for shared UI elements like the fretboard.
 4. **Logic** (`*Logic.js`): Pure functions with no DOM/audio dependencies; fully unit-tested.
@@ -125,7 +125,7 @@ Phase 1 CI pipeline is active. Tests run on every push and pull request.
 - **Test files:** `tests/unit/` — pure logic tests only, no DOM/audio
 - **CI workflow:** `.github/workflows/ci.yml`
 - **Current unit-test scope:** `fretboardLogic`, `tunerLogic`, `tonFinderLogic`, `akkordLogic`, `sheetMusicLogic`, `metronomeLogic`, `notePlayingLogic`
-- **Current test count:** 258 passing Vitest tests (`tests/unit/**/*.test.js`)
+- **Current test count:** 260 passing Vitest tests (`tests/unit/**/*.test.js`)
 
 ### Tuner Fixture Tests – Zwei Testansätze
 

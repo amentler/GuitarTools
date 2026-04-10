@@ -23,6 +23,7 @@ const views = {
 };
 
 let currentView = 'menu';
+const supportsHistory = typeof window !== 'undefined' && !!window.history;
 
 function showView(name) {
   for (const [key, el] of Object.entries(views)) {
@@ -30,7 +31,7 @@ function showView(name) {
   }
 }
 
-function navigateTo(name) {
+function navigateTo(name, { fromHistory = false } = {}) {
   // Stop whatever is running
   if (currentView === 'fretboard')   stopFretboard();
   if (currentView === 'tuner')       stopTuner();
@@ -52,6 +53,13 @@ function navigateTo(name) {
   if (name === 'tonFinder')   startTonFinder();
   if (name === 'notePlaying') startNotePlaying();
   if (name === 'sheetMic')    startSheetMic();
+
+  if (!fromHistory && supportsHistory) {
+    const hash = `#${name}`;
+    const state = { view: name };
+    if (name === 'menu') window.history.replaceState(state, '', hash);
+    else window.history.pushState(state, '', hash);
+  }
 }
 
 // ── Wire up buttons ──────────────────────────────────────────────────────────
@@ -94,4 +102,12 @@ async function loadVersionInfo() {
 }
 
 loadVersionInfo();
+if (supportsHistory) {
+  window.history.replaceState({ view: 'menu' }, '', '#menu');
+  window.addEventListener('popstate', (event) => {
+    const view = event?.state?.view;
+    if (view && views[view]) navigateTo(view, { fromHistory: true });
+    else navigateTo('menu', { fromHistory: true });
+  });
+}
 showView('menu');
