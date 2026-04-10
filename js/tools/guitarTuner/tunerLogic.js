@@ -146,11 +146,13 @@ function detectPitchYin(buffer, sampleRate, minFreq, maxFreq, minPeriods = 3) {
     if (minVal > 0.5) return null;
   }
 
-  // Subharmonic check: prefer lower fundamental if quality is close.
+  // Subharmonic check: prefer lower fundamental if quality is very close.
+  // Threshold tightened from 1.08 → 1.02 to avoid demoting correctly-detected
+  // fundamentals (B3, E4) to their subharmonics on real guitar recordings.
   for (const factor of [2, 3]) {
     const candidateTau = bestTau * factor;
     const candidateIdx = Math.round(candidateTau);
-    if (candidateIdx <= maxPeriod && cmnd[candidateIdx] <= cmnd[Math.round(bestTau)] * 1.08) {
+    if (candidateIdx <= maxPeriod && cmnd[candidateIdx] <= cmnd[Math.round(bestTau)] * 1.02) {
       bestTau = candidateTau;
       break;
     }
@@ -215,6 +217,9 @@ function selectCombinedPitch(yinHz, hpsHz, lastStableHz = null) {
   if (yinHz === null && hpsHz === null) return null;
   if (yinHz !== null && hpsHz !== null) {
     if (centsDistance(yinHz, hpsHz) <= HPS_AGREEMENT_CENTS) return (yinHz + hpsHz) / 2;
+    // Subharmonic correction: if YIN is ~1 octave below HPS (within 50 cents),
+    // YIN has a subharmonic error → trust HPS, which is inherently robust against this.
+    if (centsDistance(yinHz * 2, hpsHz) <= 50) return hpsHz;
     if (lastStableHz !== null) {
       return centsDistance(yinHz, lastStableHz) <= centsDistance(hpsHz, lastStableHz) ? yinHz : hpsHz;
     }
