@@ -122,6 +122,7 @@ Phase 1 CI pipeline is active. Tests run on every push and pull request.
 
 - **Run tests:** `npm test` (uses Vitest)
 - **Run linter:** `npm run lint` (uses ESLint)
+- **Pre-Commit Mandate:** Run `npm run lint` before every commit; if lint errors occur, fix them before committing.
 - **Test files:** `tests/unit/` — pure logic tests only, no DOM/audio
 - **CI workflow:** `.github/workflows/ci.yml`
 - **Current unit-test scope:** `fretboardLogic`, `tunerLogic`, `tonFinderLogic`, `akkordLogic`, `sheetMusicLogic`, `metronomeLogic`, `notePlayingLogic`
