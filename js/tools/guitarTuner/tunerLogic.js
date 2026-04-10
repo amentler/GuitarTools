@@ -216,10 +216,12 @@ function centsDistance(a, b) {
 function selectCombinedPitch(yinHz, hpsHz, lastStableHz = null) {
   if (yinHz === null && hpsHz === null) return null;
   if (yinHz !== null && hpsHz !== null) {
-    if (centsDistance(yinHz, hpsHz) <= HPS_AGREEMENT_CENTS) return (yinHz + hpsHz) / 2;
+    // YIN has sub-sample interpolation → more precise than HPS (integer bins).
+    // Use YIN as the sole frequency source when both agree.
+    if (centsDistance(yinHz, hpsHz) <= HPS_AGREEMENT_CENTS) return yinHz;
     // Subharmonic correction: if YIN is ~1 octave below HPS (within 50 cents),
-    // YIN has a subharmonic error → trust HPS, which is inherently robust against this.
-    if (centsDistance(yinHz * 2, hpsHz) <= 50) return hpsHz;
+    // YIN has a subharmonic error → return yinHz*2 to keep YIN's sub-sample precision.
+    if (centsDistance(yinHz * 2, hpsHz) <= 50) return yinHz * 2;
     if (lastStableHz !== null) {
       return centsDistance(yinHz, lastStableHz) <= centsDistance(hpsHz, lastStableHz) ? yinHz : hpsHz;
     }

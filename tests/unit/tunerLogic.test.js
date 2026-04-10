@@ -875,4 +875,18 @@ describe('detectPitch – regression after V1/V3/V4 improvements', () => {
     expect(note).toBe('E');
     expect(octave).toBe(4);
   });
+
+  it('A2 detection has no HPS averaging bias (within 2 cents)', () => {
+    const buf = synth(110, 44100, 32768);
+    const hz = detectPitch(buf, 44100);
+    expect(hz).not.toBeNull();
+    expect(Math.abs(1200 * Math.log2(hz / 110))).toBeLessThan(2);
+  });
+
+  it('G3 detection has no HPS averaging bias (within 5 cents)', () => {
+    const buf = synth(196, 44100, 8192);
+    const hz = detectPitch(buf, 44100);
+    expect(hz).not.toBeNull();
+    expect(Math.abs(1200 * Math.log2(hz / 196))).toBeLessThan(5);
+  });
 });
