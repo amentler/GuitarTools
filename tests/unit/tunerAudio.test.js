@@ -203,7 +203,8 @@ describe('Audio Fixture Integration Tests', () => {
         expect(result).not.toBeNull();
         expect(result.note).toBe(fixture.expectedNote);
         expect(result.octave).toBe(fixture.expectedOctave);
-      });
+      // E2 YIN-Analyse: ~800 ms/Fenster × 3 Fenster max → bis 10 s erlaubt
+      }, 10_000);
     }
   }
 });

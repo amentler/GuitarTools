@@ -11,8 +11,13 @@ const NOTE_FOLDER_RE = /^([A-G]#?)(\d)$/;
 /** detectPitch works best with large buffers; use the same size as the tuner. */
 const WINDOW_SIZE = 32768;
 
-/** Overlap stride: dense enough to collect many samples from a short recording. */
-const STRIDE = 4096;
+/**
+ * Maximum number of windows to analyse per file.
+ * E2 (82 Hz) requires a large YIN search window, so each detectPitch call
+ * takes ~800 ms. Capping at 3 non-overlapping windows keeps test time under
+ * 3 s even for the lowest note, while still giving a reliable median.
+ */
+const MAX_WINDOWS = 3;
 
 /**
  * Returns all WAV fixture files found under baseDir, with the expected note
@@ -63,7 +68,18 @@ export function getAudioFixtures(baseDir) {
 export function detectNoteFromSamples(samples, sampleRate) {
   const detectedFreqs = [];
 
-  for (let start = 0; start + WINDOW_SIZE <= samples.length; start += STRIDE) {
+  // How many non-overlapping windows fit?
+  const numPossible = Math.floor(samples.length / WINDOW_SIZE);
+  if (numPossible === 0) return null;
+
+  // Spread MAX_WINDOWS evenly across the audio (non-overlapping).
+  const count = Math.min(numPossible, MAX_WINDOWS);
+  const stride = Math.floor((samples.length - WINDOW_SIZE) / Math.max(count - 1, 1));
+
+  for (let i = 0; i < count; i++) {
+    const start = i === count - 1
+      ? samples.length - WINDOW_SIZE  // always include a window at the end
+      : i * stride;
     const window = samples.slice(start, start + WINDOW_SIZE);
     const hz = detectPitch(window, sampleRate);
     if (hz !== null) detectedFreqs.push(hz);
