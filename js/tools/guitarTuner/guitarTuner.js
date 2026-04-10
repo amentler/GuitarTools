@@ -5,11 +5,11 @@ import {
   detectPitch, frequencyToNote, isStandardTuningNote,
   GUIDED_TUNING_STEPS, noteToFrequency, getCentsToTarget, PERFECT_TOLERANCE_CENTS,
   pushGuidedHistory, getGuidedFeedback, updateFeedbackDisplay,
-  ANALYZE_INTERVAL_MS, getAdaptiveFftSize, pushMedianAndStabilize, applyNoteSwitchHysteresis,
+  ANALYZE_INTERVAL_MS, getAdaptiveFftSize, applyNoteSwitchHysteresis,
   shouldRejectOutlier, analyzeInputLevel,
   estimateNoiseFloorRms, buildAdaptiveThreshold,
   smoothCents, STABLE_CONFIRM_FRAMES,
-  pushAndMedianTimed, HISTORY_MAX_AGE_MS, SILENCE_RESET_THRESHOLD_MS,
+  pushAndMedianTimed, SILENCE_RESET_THRESHOLD_MS,
 } from './tunerLogic.js';
 import { initTunerSVG, updateTunerDisplay } from './tunerSVG.js';
 
