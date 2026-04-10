@@ -19,7 +19,7 @@ As an AI agent working on this project, you MUST adhere to the following rules:
 - **Service-Worker Asset-Liste ist Pflicht:** Neue oder umbenannte lokale Assets/Module müssen immer in `sw.js` in `ASSETS` ergänzt werden, damit Reloads keinen veralteten Stand liefern.
 - **Testing:** Run `npm test` to execute unit tests. Run `npm run lint` for ESLint checks. Add tests in `tests/unit/` for any logic in `*Logic.js` files.
 - **Pre-Commit Mandate:** You MUST run `npm test` and ensure all tests pass BEFORE committing any changes. Committing code with failing tests is strictly prohibited.
-- **Unit-Test Scope (current):** `fretboardLogic`, `tunerLogic`, `tonFinderLogic`, `akkordLogic`, `sheetMusicLogic`, `metronomeLogic`, `notePlayingLogic` (150 passing tests)
+- **Unit-Test Scope (current):** `fretboardLogic`, `tunerLogic`, `tonFinderLogic`, `akkordLogic`, `sheetMusicLogic`, `metronomeLogic`, `notePlayingLogic`, `appNavigationHistory` (260 passing tests)
 
 ## 3. Workflow
 - **Research -> Strategy -> Execution -> Validation**
@@ -29,7 +29,7 @@ As an AI agent working on this project, you MUST adhere to the following rules:
 ## Current Architecture (updated – Phase 1 Web Components)
 
 Four layers:
-1. **Navigation** (`js/app.js`) – imports `js/components/index.js`, then starts/stops games
+1. **Navigation** (`js/app.js`) – imports `js/components/index.js`, starts/stops games, and syncs browser history with `pushState`/`replaceState` plus `popstate`
 2. **Games/Tools** (`js/games/*`, `js/tools/*`) – State + flow control
 3. **UI Components** (`js/components/*`) – Reusable Web Components
 4. **Logic** (`*Logic.js`) – Pure functions, fully unit-tested
