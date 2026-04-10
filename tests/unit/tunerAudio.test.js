@@ -9,7 +9,9 @@ import { getAudioFixtures, detectNoteFromSamples } from '../helpers/audioFixture
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-const FIXTURES_DIR = join(__dirname, '../fixtures/audio');
+const FIXTURES_DIR           = join(__dirname, '../fixtures/audio');
+const IMPRECISE_FIXTURES_DIR = join(__dirname, '../fixtures/audio-imprecise');
+const SYNTH_FIXTURES_DIR     = join(__dirname, '../fixtures/synth');
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -184,10 +186,10 @@ describe('getAudioFixtures', () => {
 });
 
 // ---------------------------------------------------------------------------
-// Audio Fixture Integration Tests (dynamisch, nur wenn WAV-Dateien vorhanden)
+// Ansatz 1: Gitarren-Aufnahmen (gut gestimmt) – prüft Note + Oktave
 // ---------------------------------------------------------------------------
 
-describe('Audio Fixture Integration Tests', () => {
+describe('Audio Fixture Integration Tests – Gitarren-Aufnahmen', () => {
   const fixtures = getAudioFixtures(FIXTURES_DIR);
 
   if (fixtures.length === 0) {
@@ -204,6 +206,54 @@ describe('Audio Fixture Integration Tests', () => {
         expect(result.note).toBe(fixture.expectedNote);
         expect(result.octave).toBe(fixture.expectedOctave);
       // E2 YIN-Analyse: ~800 ms/Fenster × 3 Fenster max → bis 10 s erlaubt
+      }, 10_000);
+    }
+  }
+});
+
+// ---------------------------------------------------------------------------
+// Ansatz 1b: Gitarren-Aufnahmen (leicht verstimmt) – prüft nur Note + Oktave
+// ---------------------------------------------------------------------------
+
+describe('Audio Fixture Integration Tests – Gitarren-Aufnahmen (unpräzise)', () => {
+  const fixtures = getAudioFixtures(IMPRECISE_FIXTURES_DIR);
+
+  if (fixtures.length === 0) {
+    it.skip(
+      'keine WAV-Dateien vorhanden – leicht verstimmte Aufnahmen in tests/fixtures/audio-imprecise/{Note}/ ablegen',
+      () => {},
+    );
+  } else {
+    for (const fixture of fixtures) {
+      it(`[${fixture.folderName}] ${basename(fixture.filePath)} → erkennt Note ${fixture.folderName} (Präzision nicht getestet)`, () => {
+        const { samples, sampleRate } = readWavFile(fixture.filePath);
+        const result = detectNoteFromSamples(samples, sampleRate);
+        expect(result).not.toBeNull();
+        expect(result.note).toBe(fixture.expectedNote);
+        expect(result.octave).toBe(fixture.expectedOctave);
+      }, 10_000);
+    }
+  }
+});
+
+// ---------------------------------------------------------------------------
+// Ansatz 2: Synthetische Sinuswellen E2–C5 – prüft Note + Oktave + Präzision ≤ 5 Cent
+// ---------------------------------------------------------------------------
+
+describe('Synth Fixture Precision Tests – Sinuswellen E2–C5', () => {
+  const fixtures = getAudioFixtures(SYNTH_FIXTURES_DIR);
+
+  if (fixtures.length === 0) {
+    it.skip('keine Synth-WAV-Dateien vorhanden', () => {});
+  } else {
+    for (const fixture of fixtures) {
+      it(`[${fixture.folderName}] synth.wav → erkennt ${fixture.folderName} mit ≤ 5 Cent Abweichung`, () => {
+        const { samples, sampleRate } = readWavFile(fixture.filePath);
+        const result = detectNoteFromSamples(samples, sampleRate);
+        expect(result).not.toBeNull();
+        expect(result.note).toBe(fixture.expectedNote);
+        expect(result.octave).toBe(fixture.expectedOctave);
+        expect(Math.abs(result.cents)).toBeLessThan(5);
       }, 10_000);
     }
   }

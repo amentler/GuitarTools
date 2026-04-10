@@ -12,7 +12,7 @@ export const STANDARD_TUNING = [
 const NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
 
 export const GUITAR_MIN_FREQUENCY = 70;
-export const GUITAR_MAX_FREQUENCY = 420;
+export const GUITAR_MAX_FREQUENCY = 560;
 export const GUITAR_MIN_RMS = 0.008;
 export const GUITAR_MAX_CLIPPING_RATIO = 0.02;
 export const ATTACK_DAMPING_RATIO = 0.2;
@@ -158,7 +158,23 @@ function detectPitchYin(buffer, sampleRate, minFreq, maxFreq, minPeriods = 3) {
     }
   }
 
-  if (bestTau > 1 && bestTau < maxPeriod) {
+  // 5-point least-squares parabolic interpolation for sub-sample period refinement.
+  // Coefficients for equally-spaced points at x ∈ {-2,-1,0,1,2}:
+  //   a = (2ya - y1 - 2y2 - y3 + 2yb) / 14
+  //   b = (-2ya - y1 + y3 + 2yb) / 10
+  //   minimum at x* = -b / (2a)
+  // This is significantly more accurate than the 3-point formula when the true
+  // period falls near the midpoint between two integers (worst case for 3-point).
+  if (bestTau > 2 && bestTau < maxPeriod - 1) {
+    const ya = cmnd[bestTau - 2];
+    const y1 = cmnd[bestTau - 1];
+    const y2 = cmnd[bestTau];
+    const y3 = cmnd[bestTau + 1];
+    const yb = cmnd[bestTau + 2];
+    const a = (2 * ya - y1 - 2 * y2 - y3 + 2 * yb) / 14;
+    const b = (-2 * ya - y1 + y3 + 2 * yb) / 10;
+    if (a > 0) bestTau = bestTau - b / (2 * a);
+  } else if (bestTau > 1 && bestTau < maxPeriod) {
     const y1 = cmnd[bestTau - 1];
     const y2 = cmnd[bestTau];
     const y3 = cmnd[bestTau + 1];
@@ -219,9 +235,11 @@ function selectCombinedPitch(yinHz, hpsHz, lastStableHz = null) {
     // YIN has sub-sample interpolation → more precise than HPS (integer bins).
     // Use YIN as the sole frequency source when both agree.
     if (centsDistance(yinHz, hpsHz) <= HPS_AGREEMENT_CENTS) return yinHz;
-    // Subharmonic correction: if YIN is ~1 octave below HPS (within 50 cents),
-    // YIN has a subharmonic error → return yinHz*2 to keep YIN's sub-sample precision.
+    // Subharmonic correction: if YIN is ~1 or ~2 octaves below HPS, YIN has locked
+    // onto a subharmonic (period 2× or 3× too long). Return yinHz*2/3 to restore
+    // YIN's sub-sample precision at the correct octave.
     if (centsDistance(yinHz * 2, hpsHz) <= 50) return yinHz * 2;
+    if (centsDistance(yinHz * 3, hpsHz) <= 50) return yinHz * 3;
     if (lastStableHz !== null) {
       return centsDistance(yinHz, lastStableHz) <= centsDistance(hpsHz, lastStableHz) ? yinHz : hpsHz;
     }

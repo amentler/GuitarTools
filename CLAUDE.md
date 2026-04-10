@@ -125,28 +125,43 @@ Phase 1 CI pipeline is active. Tests run on every push and pull request.
 - **Test files:** `tests/unit/` — pure logic tests only, no DOM/audio
 - **CI workflow:** `.github/workflows/ci.yml`
 - **Current unit-test scope:** `fretboardLogic`, `tunerLogic`, `tonFinderLogic`, `akkordLogic`, `sheetMusicLogic`, `metronomeLogic`, `notePlayingLogic`
-- **Current test count:** 202 passing Vitest tests (`tests/unit/**/*.test.js`)
+- **Current test count:** 258 passing Vitest tests (`tests/unit/**/*.test.js`)
 
-### Audio Fixture Tests (Tuner)
+### Tuner Fixture Tests – Zwei Testansätze
 
-Real guitar recordings can be placed in `tests/fixtures/audio/{Note}/` to test pitch detection against live audio.
+Two complementary approaches test pitch detection quality in `tests/unit/tunerAudio.test.js`:
+
+#### Ansatz 1: Gitarren-Aufnahmen (Note + Oktave)
+
+Real guitar recordings placed in note-named subfolders. Each `.wav` file automatically becomes a test case. Two sub-pools:
+
+| Folder | Prüfung | Zweck |
+|---|---|---|
+| `tests/fixtures/audio/{Note}/` | Note + Oktave korrekt | Gut gestimmte Aufnahmen |
+| `tests/fixtures/audio-imprecise/{Note}/` | Note + Oktave korrekt (Präzision nicht getestet) | Leicht verstimmte Aufnahmen, die als Regressionstests für die Note-Erkennung dienen |
 
 **Folder convention:** Folder name = Note + Octave (e.g. `E2`, `A2`, `D3`, `G3`, `B3`, `E4`).  
 **File format:** WAV, uncompressed PCM 16-bit or 32-bit float, 44100 or 48000 Hz, ≥ 1 second, mono or stereo.
 
+#### Ansatz 2: Synthetische Sinuswellen (Note + Oktave + ≤ 5 Cent Präzision)
+
+Generated sine wave WAVs covering the full chromatic range E2–C5 (33 notes). These test algorithmic precision of the pitch detection pipeline.
+
 ```
-tests/fixtures/audio/
-  E2/   my-recording.wav   ← detected as E2 (82.4 Hz)
-  A2/   my-recording.wav   ← detected as A2 (110 Hz)
+tests/fixtures/synth/
+  E2/synth.wav   ← 82.41 Hz sine, 44100 Hz, 1 sec
+  F2/synth.wav   ← 87.31 Hz sine
   ...
+  C5/synth.wav   ← 523.25 Hz sine
 ```
+
+To regenerate: `node --input-type=module` with the generation script in the commit history, or re-run the pattern from `tests/unit/tunerAudio.test.js` setup comments.
 
 **Test helpers:**
 - `tests/helpers/wavDecoder.js` — `decodeWav(buffer)` / `readWavFile(path)`: WAV → Float32Array
-- `tests/helpers/audioFixtureRunner.js` — `getAudioFixtures(dir)` / `detectNoteFromSamples(samples, sr)`: multi-window pitch detection via `detectPitch`
+- `tests/helpers/audioFixtureRunner.js` — `getAudioFixtures(dir)` / `detectNoteFromSamples(samples, sr)`: multi-window pitch detection via `detectPitch`; returns `{ note, octave, cents, hz }`
 
-When no WAV files are present the integration test suite is skipped (no CI failure).  
-Each new `.wav` file dropped into a folder automatically becomes a test case on the next `npm test` run.
+When no WAV files are present in a folder, the corresponding test suite is skipped (no CI failure).
 
 When adding logic to `*Logic.js` files, add corresponding tests in `tests/unit/`.
 

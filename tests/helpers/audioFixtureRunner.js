@@ -90,6 +90,6 @@ export function detectNoteFromSamples(samples, sampleRate) {
   detectedFreqs.sort((a, b) => a - b);
   const medianHz = detectedFreqs[Math.floor(detectedFreqs.length / 2)];
 
-  const { note, octave } = frequencyToNote(medianHz);
-  return { note, octave };
+  const { note, octave, cents } = frequencyToNote(medianHz);
+  return { note, octave, cents, hz: medianHz };
 }
