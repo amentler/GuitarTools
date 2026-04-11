@@ -108,7 +108,7 @@ Branch `claude/guitar-learning-app-i9WM3`, root `/` — no build pipeline needed
 ## AI Collaboration & Documentation
 
 **IMPORTANT FOR ALL AGENTS (Claude, Gemini, Codex):**
-- **Update .md files:** After completing a task or implementing a feature, you MUST update all relevant `.md` files (this `CLAUDE.md`, `GEMINI.md`, and any plans in `plans/`).
+- **Update .md files:** After completing a task or implementing a feature, you MUST update all relevant `.md` files (this `CLAUDE.md`, `GEMINI.md`, and any plans in `plans/`). If a module subfolder (e.g. `js/games/myGame/`) does not yet have a `CLAUDE.md`, create one — this is explicitly permitted and encouraged.
 - **Update `version.txt`:** After every code/content change, you MUST update `/version.txt` so the main page shows the new version timestamp.
 - **Service-Worker Assets pflegen:** Wenn neue lokale Assets/Module (JS, CSS, JSON, Icons, etc.) hinzukommen oder umbenannt werden, müssen sie in `sw.js` in die `ASSETS`-Liste aufgenommen werden.
 - **Keep Plans Current:** If a feature from `plans/` is implemented, update the file to reflect the new state and next steps.
@@ -191,4 +191,4 @@ New exercise combining "Noten lesen" (sheet music) with microphone-based note re
 2. Add the view HTML to `index.html` (`<section id="view-my-game" class="view">`)
 3. Wire navigation in `js/app.js`
 4. Use `<gt-fretboard>` if a fretboard is needed (see API above)
-5. Add a `CLAUDE.md` in the new folder
+5. Add a `CLAUDE.md` in the new folder (always — create it even if it doesn't exist yet)
