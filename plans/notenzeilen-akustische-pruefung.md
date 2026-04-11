@@ -1,8 +1,8 @@
 # Plan: Akustische Prüfung von Notenzeilen beim Gitarrenspiel
 
-**Status:** In Überarbeitung – Fehleranalyse abgeschlossen ⏳  
+**Status:** In Umsetzung – Stufe 1 (Basis-Implementierung) läuft ⏳  
 **Typ:** Übung / Audio-Erkennung  
-**Stand:** 2026-04-11 (Fehleranalyse & Plan-Korrektur)  
+**Stand:** 2026-04-11 (zweistufige Implementierung aktiv)  
 **Betrifft Modul:** `js/games/sheetMusicMic/` (Menüeintrag „Noten spielen") und – nachgelagert – das verwandte `js/games/notePlayingExercise/` („Ton spielen"), das denselben Audio-Pfad nutzt.
 
 ---
@@ -728,6 +728,44 @@ Die Lösung ist fachlich geeignet, wenn sie folgende Ziele erfüllt:
 5. **Controller umstellen** (`sheetMusicMicExercise.js`, später `notePlayingExercise.js`) auf `fastNoteMatcher` + adaptive `fftSize`.
 6. **Ebene-C-Tests** auf die vorhandenen Fixtures ausrollen, neue Aufnahmen schrittweise ergänzen.
 7. **CLAUDE.md** aller betroffenen Module und `version.txt` aktualisieren.
+
+---
+
+## Zweistufige Implementierung
+
+Die Umsetzung erfolgt bewusst in zwei Stufen. Grund: Stufe 1 kann ausschließlich mit bereits im Repository vorhandenen Mitteln (Synthetik + gesammelte Einzelton-Fixtures) vollständig durchgeführt werden. Stufe 2 benötigt neue, vom Nutzer eingespielte Sequenzaufnahmen, die hinterher separat ergänzt werden.
+
+### Stufe 1 – Basis-Implementierung (ohne neue Aufnahmen)
+
+Ziel: Der aktuelle Kernbug („YIN liefert nie etwas, weil `fftSize = 2048` zu klein für E2 ist") wird durch einen Testsatz dokumentiert, der erst rot ist und nach dem Fix grün wird. Es werden **nur** bereits vorhandene Fixtures und synthetische Signale genutzt.
+
+Umfang Stufe 1:
+
+- `js/games/sheetMusicMic/fastNoteMatcher.js` neu anlegen mit `classifyFrame`, `updateMatchState`, `getMinSamplesFor`, `getRecommendedFftSize`, Konstanten `FAST_ACCEPT_STREAK = 2`, `FAST_REJECT_STREAK = 3`, `FAST_CENTS_TOLERANCE = 35`.
+- `tests/unit/fastNoteMatcher.test.js` neu anlegen, mit den Testgruppen A1 (classifyFrame Grundverhalten), A2 (Buffergrößen-Regression), A3 (updateMatchState Streak-Logik) und A4 (guitarähnliche Synthetik). Keine Sequenztests in dieser Stufe.
+- `tests/unit/fastNoteMatcherAudio.test.js` neu anlegen. Scannt `tests/fixtures/audio/{E2,A2,D3,G3,B3,E4}/`, `tests/fixtures/audio-imprecise/{B3,E4}/` und `tests/fixtures/synth/{33 Noten}/` und prüft für jede Datei `classifyFrame` mit einer passend großen Fenstergröße – erwartet Status `correct` und korrekte Note+Oktave.
+- `sheetMusicMicExercise.js` und `notePlayingExercise.js` umstellen auf `fastNoteMatcher` + `getRecommendedFftSize`. Die `fftSize` wird bei jedem Zielnotenwechsel nachgezogen (nur wenn sich der empfohlene Wert tatsächlich ändert, sonst klickt der AnalyserNode).
+- `version.txt`, `CLAUDE.md` (Root und `sheetMusicMic`, `notePlayingExercise`), `sw.js`-Assetliste aktualisieren.
+
+**Was in Stufe 1 ausdrücklich nicht enthalten ist:**
+
+- Ebene-B-Sequenztests (B6 inklusive der Nutzer-Sollfolge) werden noch nicht implementiert.
+- Keine neuen Aufnahmen in `tests/fixtures/sequences/**`.
+- Kein `sequenceSimulator.js`-Helper.
+
+Am Ende von Stufe 1 meldet die Implementierung „rote Tests zuerst, dann Fix, jetzt grün" zurück, inklusive einer Zusammenfassung der tatsächlichen Latenz- und Erkennungsergebnisse auf den vorhandenen Fixtures.
+
+### Stufe 2 – Sequenzaufnahmen und Latenzfeinschliff
+
+Diese Stufe beginnt, **sobald der Nutzer die in Abschnitt C5 beschriebenen Aufnahmen eingespielt hat.** Umfang Stufe 2:
+
+- `tests/helpers/sequenceSimulator.js` mit `runSequenceSimulation(samples, sampleRate, targetSequence, options)`.
+- `tests/unit/fastNoteMatcherLatency.test.js` mit den Gruppen B1 (Bestätigungslatenz je Zielnote), B2 (Notenwechsel-Latenz), B3 (gleicher Ton mehrfach), B4 (Oktavsprung), B5 (Rauschen) und B6 (Sequenz-Simulation inklusive der 16-Noten-Nutzer-Sollfolge synthetisch).
+- `tests/unit/fastNoteMatcherSequences.test.js`: läuft `runSequenceSimulation` über jede `.wav`/`.json`-Paarung unter `tests/fixtures/sequences/**` und vergleicht die entduplifizierte `acceptedSequence` Byte-für-Byte mit `notes`.
+- Falls dabei reale Fehler auftauchen: gezielte Nachbesserungen am Matcher (z. B. `FAST_CENTS_TOLERANCE`-Feinjustierung, Onset-Sperre, Ringing-Toleranz) – mit jeweils begleitendem synthetischen Regressionstest.
+- Die neuen Sequenz-Dateien werden nicht in `sw.js` aufgenommen (Testfixtures sind nicht Teil der installierten App).
+
+Erst nach Stufe 2 ist der ursprünglich skizzierte volle Testplan (Ebenen A, B, C) tatsächlich im Repo vertreten. Stufe 1 beweist „der Matcher als Baustein tut das Richtige", Stufe 2 beweist „er tut es auch auf echten ganzen Notenzeilen".
 
 ---
 
