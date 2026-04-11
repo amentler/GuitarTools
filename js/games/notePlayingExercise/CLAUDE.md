@@ -18,9 +18,10 @@ verify whether the correct note **and octave** was played.
 ## Architecture
 
 - **Controller** (`notePlayingExercise.js`): Requests microphone, runs a
-  100 ms pitch-detection loop (reusing `detectPitch`, `frequencyToNote`,
-  `pushAndMedian` from `js/tools/guitarTuner/tunerLogic.js`), and manages
-  DOM updates and score.
+  50 ms pitch-detection loop using `classifyFrame` + `updateMatchState`
+  from `js/games/sheetMusicMic/fastNoteMatcher.js` and adapts the
+  `AnalyserNode.fftSize` via `getRecommendedFftSize` so that low-string
+  targets get a big-enough buffer for YIN to produce a reliable reading.
 - **Logic** (`notePlayingLogic.js`): Pure functions with no side effects.
   Exports both octave-aware helpers and legacy note-name helpers.
 - **Rendering** (`notePlayingSVG.js`): Converts octave-aware pitch strings
@@ -68,9 +69,13 @@ Open-string MIDI values used: E2=40, A2=45, D3=50, G3=55, B3=59, E4=64.
 
 ## Detection Strategy
 
-A rolling median over the last 5 frequency readings is used (same as the
-Guitar Tuner). A note is accepted as correct only after it matches the target
-for **3 consecutive frames** (~300 ms), preventing accidental brief matches.
+The exercise delegates pitch decisions to the shared `fastNoteMatcher`
+module. Each 50 ms frame is classified as `correct`, `wrong`, or `unsure`
+via `classifyFrame`, and `updateMatchState` emits an `accept` event once
+two consecutive `correct` frames land. The analyser buffer size follows
+`getRecommendedFftSize`, so E2/A2 targets get ≥ 4096 samples (the YIN
+minimum at `GUITAR_MIN_FREQUENCY = 70`) instead of the legacy hard-coded
+2048 that silently broke low-string detection.
 
 ## Settings
 

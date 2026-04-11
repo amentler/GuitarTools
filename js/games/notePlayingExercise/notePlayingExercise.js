@@ -1,13 +1,17 @@
 // Note-Playing Exercise – main controller
 // Shows a target note; listens via microphone to verify the user plays it.
 
-import { detectPitch, frequencyToNote, pushAndMedian } from '../../tools/guitarTuner/tunerLogic.js';
+import {
+  classifyFrame,
+  createMatchState,
+  updateMatchState,
+  getRecommendedFftSize,
+} from '../sheetMusicMic/fastNoteMatcher.js';
 import { getRandomPitch, getPositionsForPitch } from './notePlayingLogic.js';
 import { renderNoteOnStaff, renderNotePositionsTab } from './notePlayingSVG.js';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
-// Number of consecutive matching frames required to register a correct answer
-const MATCH_STREAK_REQUIRED = 3;
+const ANALYZE_INTERVAL_MS = 50; // matching-loop cadence
 
 // ── Module-level audio resources ──────────────────────────────────────────────
 let audioCtx   = null;
@@ -15,13 +19,12 @@ let analyser   = null;
 let stream     = null;
 let intervalId = null;
 let settingsWired = false;
-
-const freqHistory = [];
+let currentFftSize = 0;
 
 // ── State ─────────────────────────────────────────────────────────────────────
 let state = {
   targetNote:   null,
-  matchStreak:  0,
+  matchState:   createMatchState(),
   isLocked:     false,
   hintLevel:    0,      // 0 = no hint, 1 = note name shown, 2 = tabs shown
   score:        { correct: 0 },
@@ -64,15 +67,13 @@ export async function startExercise() {
   // Preserve settings across restarts; reset everything else
   state = {
     targetNote:     null,
-    matchStreak:    0,
+    matchState:     createMatchState(),
     isLocked:       false,
     hintLevel:      0,
     score:          { correct: 0 },
     advanceTimeout: null,
     settings:       state.settings,
   };
-
-  freqHistory.length = 0;
 
   if (!settingsWired) {
     wireSettings();
@@ -102,10 +103,11 @@ export async function startExercise() {
 
   audioCtx = new AudioContext();
   analyser = audioCtx.createAnalyser();
-  analyser.fftSize = 2048;
+  currentFftSize = 0;
+  applyTargetFftSize();
   audioCtx.createMediaStreamSource(stream).connect(analyser);
 
-  intervalId = setInterval(analyzeFrame, 100);
+  intervalId = setInterval(analyzeFrame, ANALYZE_INTERVAL_MS);
 }
 
 export function stopExercise() {
@@ -128,8 +130,24 @@ export function stopExercise() {
     analyser = null;
   }
 
-  freqHistory.length = 0;
+  currentFftSize = 0;
   state.isLocked = false;
+}
+
+/**
+ * Keeps AnalyserNode.fftSize in step with the recommended window for the
+ * current target note. Called after the target changes so that low-string
+ * targets get a big-enough buffer for YIN and high-string targets stay
+ * responsive.
+ */
+function applyTargetFftSize() {
+  if (!analyser) return;
+  if (!state.targetNote) return;
+  const recommended = getRecommendedFftSize(state.targetNote, audioCtx?.sampleRate ?? 44100);
+  if (recommended !== currentFftSize) {
+    analyser.fftSize = recommended;
+    currentFftSize = recommended;
+  }
 }
 
 // ── Settings wiring ───────────────────────────────────────────────────────────
@@ -197,9 +215,10 @@ function resetTargetNote() {
     state.advanceTimeout = null;
   }
   state.isLocked = false;
-  state.matchStreak = 0;
+  state.matchState = createMatchState();
   state.hintLevel = 0;
   state.targetNote = getRandomPitch(null, state.settings.maxFret, state.settings.activeStrings);
+  applyTargetFftSize();
   updateTargetDisplay();
   updateDetectedNote(null);
   updateFeedback(null);
@@ -209,37 +228,26 @@ function resetTargetNote() {
 
 function analyzeFrame() {
   if (!analyser || state.isLocked) return;
+  if (!state.targetNote) return;
 
   const buffer = new Float32Array(analyser.fftSize);
   analyser.getFloatTimeDomainData(buffer);
 
-  const hz = detectPitch(buffer, audioCtx.sampleRate);
+  const frameResult = classifyFrame(buffer, audioCtx.sampleRate, state.targetNote);
 
-  if (hz === null) {
-    state.matchStreak = 0;
-    updateDetectedNote(null);
-    return;
-  }
+  updateDetectedNote(frameResult.detectedPitch);
 
-  const medianHz = pushAndMedian(freqHistory, hz);
-  const { note, octave } = frequencyToNote(medianHz);
-  const pitch = `${note}${octave}`;
+  const { nextState, event } = updateMatchState(state.matchState, frameResult);
+  state.matchState = nextState;
 
-  updateDetectedNote(pitch);
-
-  if (pitch === state.targetNote) {
-    state.matchStreak++;
-    if (state.matchStreak >= MATCH_STREAK_REQUIRED) {
-      handleSuccess();
-    }
-  } else {
-    state.matchStreak = 0;
+  if (event === 'accept') {
+    handleSuccess();
   }
 }
 
 function handleSuccess() {
   state.isLocked   = true;
-  state.matchStreak = 0;
+  state.matchState = createMatchState();
   state.score.correct++;
   updateScore();
   // Always reveal the note name on success
@@ -253,10 +261,11 @@ function handleSuccess() {
       state.settings.maxFret,
       state.settings.activeStrings
     );
-    state.matchStreak    = 0;
+    state.matchState     = createMatchState();
     state.isLocked       = false;
     state.hintLevel      = 0;
     state.advanceTimeout = null;
+    applyTargetFftSize();
     updateTargetDisplay();
     updateDetectedNote(null);
     updateFeedback(null);

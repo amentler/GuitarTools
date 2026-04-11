@@ -108,7 +108,7 @@ Branch `claude/guitar-learning-app-i9WM3`, root `/` — no build pipeline needed
 ## AI Collaboration & Documentation
 
 **IMPORTANT FOR ALL AGENTS (Claude, Gemini, Codex):**
-- **Update .md files:** After completing a task or implementing a feature, you MUST update all relevant `.md` files (this `CLAUDE.md`, `GEMINI.md`, and any plans in `plans/`).
+- **Update .md files:** After completing a task or implementing a feature, you MUST update all relevant `.md` files (this `CLAUDE.md`, `GEMINI.md`, and any plans in `plans/`). If a module subfolder (e.g. `js/games/myGame/`) does not yet have a `CLAUDE.md`, create one — this is explicitly permitted and encouraged.
 - **Update `version.txt`:** After every code/content change, you MUST update `/version.txt` so the main page shows the new version timestamp.
 - **Service-Worker Assets pflegen:** Wenn neue lokale Assets/Module (JS, CSS, JSON, Icons, etc.) hinzukommen oder umbenannt werden, müssen sie in `sw.js` in die `ASSETS`-Liste aufgenommen werden.
 - **Keep Plans Current:** If a feature from `plans/` is implemented, update the file to reflect the new state and next steps.
@@ -125,8 +125,8 @@ Phase 1 CI pipeline is active. Tests run on every push and pull request.
 - **Pre-Commit Mandate:** Run `npm run lint` before every commit; if lint errors occur, fix them before committing.
 - **Test files:** `tests/unit/` — pure logic tests only, no DOM/audio
 - **CI workflow:** `.github/workflows/ci.yml`
-- **Current unit-test scope:** `fretboardLogic`, `tunerLogic`, `tonFinderLogic`, `akkordLogic`, `sheetMusicLogic`, `metronomeLogic`, `notePlayingLogic`
-- **Current test count:** 260 passing Vitest tests (`tests/unit/**/*.test.js`)
+- **Current unit-test scope:** `fretboardLogic`, `tunerLogic`, `tonFinderLogic`, `akkordLogic`, `sheetMusicLogic`, `metronomeLogic`, `notePlayingLogic`, `fastNoteMatcher`, `fastNoteMatcherAudio` (WAV fixtures)
+- **Current test count:** 382 passing Vitest tests (`tests/unit/**/*.test.js`, plus 1 skipped E4-octave case blocked by the tuner's max frequency)
 
 ### Tuner Fixture Tests – Zwei Testansätze
 
@@ -179,10 +179,11 @@ New exercise combining "Noten lesen" (sheet music) with microphone-based note re
 - **Location:** `js/games/sheetMusicMic/`
   - `sheetMusicMicExercise.js` — Main controller; start button, audio pipeline, mode logic
   - `sheetMusicMicSVG.js` — VexFlow rendering with per-note colour based on status
+  - `fastNoteMatcher.js` — Pure target-aware matcher (buffer-size guard, frame classification, streak state machine). Shared with `notePlayingExercise` to fix the legacy 2048-sample E2 bug.
 - **Mode: Einfach (easy)** — wrong notes do not penalise; keep playing until correct note lands
 - **Mode: Schwer (hard)** — 3 consecutive wrong-note frames restart the sequence from the beginning
 - **Note colours:** `current` → orange, `correct` → green, `pending` → default theme colour
-- **Pitch detection:** reuses `detectPitch` (YIN + HPS + Vorfilterung), `frequencyToNote`, and median/stability helpers from `tunerLogic.js`; MATCH_STREAK_REQUIRED = 3 frames
+- **Pitch detection:** delegated to `fastNoteMatcher.classifyFrame` (full-range `detectPitch` with `getMinSamplesFor` guard) and `updateMatchState` (FAST_ACCEPT_STREAK = 2, FAST_REJECT_STREAK = 3, ±35 cent). Controllers call `getRecommendedFftSize` whenever the target changes so low-string targets get a ≥ 4096-sample window instead of the broken 2048.
 
 ## Adding a New Game
 
@@ -190,4 +191,4 @@ New exercise combining "Noten lesen" (sheet music) with microphone-based note re
 2. Add the view HTML to `index.html` (`<section id="view-my-game" class="view">`)
 3. Wire navigation in `js/app.js`
 4. Use `<gt-fretboard>` if a fretboard is needed (see API above)
-5. Add a `CLAUDE.md` in the new folder
+5. Add a `CLAUDE.md` in the new folder (always — create it even if it doesn't exist yet)
