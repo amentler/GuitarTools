@@ -5,22 +5,25 @@
 //   hard – any wrong note restarts the current sequence from the beginning
 
 import { generateBars, getFilteredNotes } from '../sheetMusicReading/sheetMusicLogic.js';
-import { detectPitch, frequencyToNote, pushAndMedian } from '../../tools/guitarTuner/tunerLogic.js';
+import {
+  classifyFrame,
+  createMatchState,
+  updateMatchState,
+  getRecommendedFftSize,
+} from './fastNoteMatcher.js';
 import { renderScoreWithStatus } from './sheetMusicMicSVG.js';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
-const MATCH_STREAK_REQUIRED = 3;  // consecutive correct frames to accept a note
-const WRONG_STREAK_REQUIRED = 3;  // consecutive wrong frames to trigger hard-mode reset
 const SUCCESS_PAUSE_MS      = 600; // pause after correct note before advancing
 const WRONG_FEEDBACK_MS     = 900; // duration of wrong-note feedback in easy mode
+const ANALYZE_INTERVAL_MS   = 50;  // frame cadence for the matching loop
 
 // ── Module-level audio resources ──────────────────────────────────────────────
 let audioCtx   = null;
 let analyser   = null;
 let stream     = null;
 let intervalId = null;
-
-const freqHistory = [];
+let currentFftSize = 0;
 
 // ── Module-level state ────────────────────────────────────────────────────────
 let state = {
@@ -29,8 +32,7 @@ let state = {
   currentBeatIndex: 0,
   mode:             'easy',
   isListening:      false,
-  matchStreak:      0,
-  wrongStreak:      0,
+  matchState:       createMatchState(),
   isLocked:         false,
   score:            { correct: 0, total: 0 },
   settings: {
@@ -77,8 +79,7 @@ function generateNewBars() {
   state.currentBeatIndex = 0;
   state.score.correct    = 0;
   state.score.total      = state.bars.reduce((s, b) => s + b.length, 0);
-  state.matchStreak      = 0;
-  state.wrongStreak      = 0;
+  state.matchState       = createMatchState();
 
   markCurrentNote();
   renderCurrentState();
@@ -135,14 +136,32 @@ function restartSequence() {
   state.currentBarIndex  = 0;
   state.currentBeatIndex = 0;
   state.score.correct    = 0;
-  state.matchStreak      = 0;
-  state.wrongStreak      = 0;
+  state.matchState       = createMatchState();
   state.isLocked         = false;
   markCurrentNote();
   updateScore();
   renderCurrentState();
   updateCurrentNoteDisplay();
+  applyTargetFftSize();
   updateFeedback(null);
+}
+
+/**
+ * Ensures the AnalyserNode's fftSize matches the recommended window for
+ * the current target note. Called whenever the target changes. Skips the
+ * assignment when the size is already correct so the Web Audio node does
+ * not click.
+ */
+function applyTargetFftSize() {
+  if (!analyser) return;
+  const note = getCurrentNote();
+  if (!note) return;
+  const targetPitch = `${note.name}${note.octave}`;
+  const recommended = getRecommendedFftSize(targetPitch, audioCtx?.sampleRate ?? 44100);
+  if (recommended !== currentFftSize) {
+    analyser.fftSize = recommended;
+    currentFftSize = recommended;
+  }
 }
 
 // ── Rendering ─────────────────────────────────────────────────────────────────
@@ -186,10 +205,8 @@ function updateFeedback(kind) {
 async function startListening() {
   if (state.isListening) return;
 
-  freqHistory.length = 0;
-  state.matchStreak  = 0;
-  state.wrongStreak  = 0;
-  state.isLocked     = false;
+  state.matchState = createMatchState();
+  state.isLocked   = false;
 
   ui.permission.style.display = 'block';
   ui.permission.textContent   = 'Mikrofon-Zugriff wird benötigt…';
@@ -205,11 +222,12 @@ async function startListening() {
 
   audioCtx = new AudioContext();
   analyser = audioCtx.createAnalyser();
-  analyser.fftSize = 2048;
+  currentFftSize = 0;
+  applyTargetFftSize();
   audioCtx.createMediaStreamSource(stream).connect(analyser);
 
   state.isListening = true;
-  intervalId = setInterval(analyzeFrame, 100);
+  intervalId = setInterval(analyzeFrame, ANALYZE_INTERVAL_MS);
 
   ui.startBtn.style.display = 'none';
   ui.stopBtn.style.display  = 'inline-block';
@@ -231,53 +249,41 @@ function stopListening() {
     analyser = null;
   }
 
+  currentFftSize = 0;
   state.isListening = false;
-  freqHistory.length = 0;
 }
 
 // ── Pitch analysis ────────────────────────────────────────────────────────────
 function analyzeFrame() {
   if (!analyser || state.isLocked) return;
 
-  const buffer = new Float32Array(analyser.fftSize);
-  analyser.getFloatTimeDomainData(buffer);
-
-  const hz = detectPitch(buffer, audioCtx.sampleRate);
-
-  if (hz === null) {
-    state.matchStreak = 0;
-    state.wrongStreak = 0;
-    return;
-  }
-
-  const medianHz         = pushAndMedian(freqHistory, hz);
-  const { note, octave } = frequencyToNote(medianHz);
-
   const targetNote = getCurrentNote();
   if (!targetNote) return;
 
-  if (note === targetNote.name && octave === targetNote.octave) {
-    state.matchStreak++;
-    state.wrongStreak = 0;
-    if (state.matchStreak >= MATCH_STREAK_REQUIRED) {
-      handleCorrectNote();
-    }
-  } else {
-    state.matchStreak = 0;
-    if (state.mode === 'hard') {
-      state.wrongStreak++;
-      if (state.wrongStreak >= WRONG_STREAK_REQUIRED) {
-        state.wrongStreak = 0;
-        handleWrongNote();
-      }
-    }
+  const buffer = new Float32Array(analyser.fftSize);
+  analyser.getFloatTimeDomainData(buffer);
+
+  const targetPitch = `${targetNote.name}${targetNote.octave}`;
+  const frameResult = classifyFrame(buffer, audioCtx.sampleRate, targetPitch);
+
+  // In easy mode we discard wrong frames so they neither advance nor reject.
+  const effective = state.mode === 'easy' && frameResult.status === 'wrong'
+    ? { ...frameResult, status: 'unsure' }
+    : frameResult;
+
+  const { nextState, event } = updateMatchState(state.matchState, effective);
+  state.matchState = nextState;
+
+  if (event === 'accept') {
+    handleCorrectNote();
+  } else if (event === 'reject' && state.mode === 'hard') {
+    handleWrongNote();
   }
 }
 
 function handleCorrectNote() {
   state.isLocked = true;
-  state.matchStreak = 0;
-  state.wrongStreak = 0;
+  state.matchState = createMatchState();
 
   const note = getCurrentNote();
   if (note) note.status = 'correct';
@@ -291,6 +297,7 @@ function handleCorrectNote() {
     state.isLocked = false;
     advanceToNextNote();
     if (state.currentBarIndex !== -1) {
+      applyTargetFftSize();
       renderCurrentState();
       updateCurrentNoteDisplay();
       updateFeedback(null);
@@ -301,6 +308,7 @@ function handleCorrectNote() {
 function handleWrongNote() {
   // Hard mode only: restart the sequence after a brief delay
   state.isLocked = true;
+  state.matchState = createMatchState();
   updateFeedback('wrong');
   setTimeout(() => {
     state.isLocked = false;
@@ -389,8 +397,7 @@ export function startExercise() {
     currentBeatIndex: 0,
     mode:             state.mode,
     isListening:      false,
-    matchStreak:      0,
-    wrongStreak:      0,
+    matchState:       createMatchState(),
     isLocked:         false,
     score:            { correct: 0, total: 0 },
     settings:         state.settings,
