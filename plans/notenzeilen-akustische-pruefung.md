@@ -434,6 +434,43 @@ Zählung: ab dem Zeitpunkt, zu dem der vorherige Frame noch `unsure` war.
 - **B5b** Sinus knapp oberhalb `GUITAR_MIN_RMS` (Amplitude 0,02) → `accept` (Low-Level-Akzeptanz).
 - **B5c** Nur Rauschen ohne Zielton → **nie** `accept` über 2 s Simulation.
 
+#### B6. Sequenz-Simulation mit laufendem Zielzeiger
+
+Dies ist die synthetische Entsprechung der echten Übung: der Matcher hat eine **laufende** Zielnote, die nach jedem `accept`-Event auf die nächste Note der Sollfolge weiterschaltet. Das ist mehr als die Summe von B1–B4, weil
+
+- die `referenceHz`-Verengung nach jedem Wechsel neu greift,
+- Ringing der Vorgängernote gegen die **neue** Zielnote geprüft wird,
+- und Notenwechsel, Streak-Reset und ggf. `fftSize`-Wechsel im selben Schritt getestet werden.
+
+Neuer Helper (`tests/helpers/sequenceSimulator.js`):
+
+```js
+// Läuft frame-für-frame durch `samples`.
+// Nach jedem accept wird targetIndex++ gesetzt, die Pipeline neu parametrisiert
+// (referenceHz, fftSize) und der Matcher-State extern zurückgesetzt.
+export function runSequenceSimulation(samples, sampleRate, targetSequence, options = {}) {
+  // options: { fftSizeFor(pitch), hopSize, postAcceptGapFrames }
+  // returns: {
+  //   acceptedSequence: string[],   // tatsächlich akzeptierte Folge (entduplifiziert)
+  //   acceptTimesMs:    number[],   // ms seit Beginn des Puffers bei jedem Accept
+  //   finalTargetIndex: number,     // wie weit die Sollfolge abgearbeitet wurde
+  //   rejects:          Array<{ atMs, expected, detected }>
+  // }
+}
+```
+
+Testfälle (alle rein synthetisch, deterministisch):
+
+- **B6a** Synth-Sequenz E2 A2 D3 G3 B3 E4 (je 300 ms + 100 ms Stille), Sollfolge gleich → `acceptedSequence` exakt gleich der Sollfolge, `finalTargetIndex = 6`.
+- **B6b** Dieselbe Synth-Sequenz, Sollfolge E2 A2 D3 G3 B3 E4 B3 G3 D3 A2 E2 (also teilweise abwärts) → `acceptedSequence` endet bei `E4` (6 Events), `finalTargetIndex = 6`; die restlichen 5 Zielnoten bleiben übrig, weil das Signal aufhört.
+- **B6c** Die vollständige Nutzer-Sollfolge E2 A2 D3 G3 B3 E4 B3 G3 D3 A2 E2 A2 D3 G3 B3 E4 (16 Noten) mit passendem Synth-Signal, 400 ms pro Note, 100 ms Stille → `acceptedSequence` exakt gleich, `finalTargetIndex = 16`.
+- **B6d** Dieselbe 16-Noten-Sollfolge, aber dasselbe Signal mit 150 ms pro Note + 30 ms Stille (schnelles Tempo) → `acceptedSequence` exakt gleich.
+- **B6e** Sollfolge E2 E3 E4, Signal E2 E2 E4 (Position 2 ist ein Oktavfehler) → `finalTargetIndex = 1`, das E4 wird nicht akzeptiert, weil der Zielzeiger noch auf E3 steht. Stellt sicher, dass der Matcher keine Zielnoten „überspringt".
+- **B6f** Sollfolge 4×E4, Signal vier diskrete E4-Impulse mit 80 ms Stille zwischen ihnen → `acceptedSequence.length === 4`.
+- **B6g** Sollfolge E4 F4, Signal ohne Pause mit expo-Decay des E4 in den F4 hinein (Ringing-Simulation) → `acceptedSequence === ["E4","F4"]`, keine `rejects` zwischendurch.
+
+Die synthetischen Sequenzen in B6a, B6c, B6d sollten **dasselbe Muster** abbilden wie die echten Aufnahmen in C5 — so wird der Simulator einmalig synthetisch grün und gilt dann als stabiles Gerüst für die realen Aufnahmen.
+
 ---
 
 ### Ebene C – Echte Gitarrenaufnahmen
@@ -491,23 +528,145 @@ Neuer Ordner `tests/fixtures/audio-edge/`:
 - `quiet/E4-soft.wav` – sehr leise gespielt (knapp über Noise-Gate)
 - `loud/E2-strong.wav` – sehr kräftig angeschlagenes E2 (Attack-Impuls)
 
-#### C5. Sequenzen (Notenzeilen)
+#### C5. Sequenzen (Notenzeilen) – Ganzsequenz-Abgleich
 
-Neuer Ordner `tests/fixtures/sequences/`. Jede Aufnahme braucht eine Beschreibung der erwarteten Notenfolge. Einfachstes Format: eine `.json`-Datei neben der `.wav` oder der Dateiname trägt die Sequenz.
+Reale Aufnahmen einer ganzen Notenzeile. Der Test läuft jede Aufnahme einmal durch den `runSequenceSimulation`-Helper aus B6 und prüft, dass **die gesamte erkannte Folge** der Soll-Folge entspricht – nicht nur einzelne Töne.
 
-Vorgeschlagenes Schema für automatisches Einlesen:
+**Abgleichsregel:**
+1. Direkt aufeinanderfolgende gleiche `accept`-Events werden entduplifiziert (Ringing/Sustain kann gelegentlich doppelt auslösen).
+2. Die entduplifizierte Folge muss dann **exakt** der `notes`-Liste aus der JSON-Datei entsprechen – gleiche Länge, gleiche Reihenfolge, gleiche Oktaven.
+3. `finalTargetIndex` muss am Ende gleich `notes.length` sein, sonst gilt der Test als „Sequenz nicht komplett erkannt".
+
+**Datei- und Format-Schema**
+
+Jede Aufnahme wird als Paar `.wav` + `.json` im selben Ordner abgelegt:
 
 ```
-tests/fixtures/sequences/
-  slow/c-major-asc.wav      + c-major-asc.json  { "notes": ["C3","D3","E3","F3","G3","A3","B3","C4"] }
-  slow/leaps.wav            + leaps.json       { "notes": ["E2","E4","E3","E2"] }
-  medium/chromatic-up.wav   + chromatic-up.json
-  fast/scale-fast.wav       + scale-fast.json
-  repeat/e4-x4.wav          + e4-x4.json       { "notes": ["E4","E4","E4","E4"] }
-  legato/hammer-on.wav      + hammer-on.json   { "notes": ["E3","G3"], "note": "ein Anschlag, zwei Töne" }
+tests/fixtures/sequences/<kategorie>/<name>.wav
+tests/fixtures/sequences/<kategorie>/<name>.json
 ```
 
-Testerwartung: Für jede Sequenz wird der `fastNoteMatcher` frame-für-frame gefüttert; die Reihenfolge der `accept`-Events muss die Soll-Sequenz ergeben (ggf. mit Toleranz für Anzahl der Events, wenn Ringing vorkommt).
+Inhalt des JSON:
+
+```json
+{
+  "notes": ["E2","A2","D3","G3","B3","E4","B3","G3","D3","A2","E2","A2","D3","G3","B3","E4"],
+  "tempoBpm": 60,
+  "notesPerBeat": 1,
+  "description": "Offene Saiten auf/ab/auf, 1 Note pro Sekunde"
+}
+```
+
+Felder:
+- `notes` (Pflicht): Soll-Folge als Pitch-Strings mit Oktave.
+- `tempoBpm` (optional): Dokumentation für die Aufnahme, nicht Teil des Tests.
+- `notesPerBeat` (optional): 1 für Viertel, 2 für Achtel usw.
+- `description` (optional): Klartext.
+
+**Allgemeine Aufnahme-Regeln (gelten für alle Unterabschnitte)**
+
+- WAV, 44,1 kHz oder 48 kHz, mono oder stereo, 16-bit PCM oder 32-bit Float.
+- Mindestens **500 ms Stille** vor der ersten Note und nach der letzten Note.
+- Jede Note **einmal** klar anschlagen. Kein Legato, wenn nicht explizit gefordert. Keine Barré-Akkorde, nur Einzeltöne.
+- Standardstimmung **E2 A2 D3 G3 B3 E4** unmittelbar vor der Aufnahme einmal prüfen. Eine Abweichung von > 30 Cent kippt alle Sequenztests.
+- Nach dem Einspielen einmal selbst abhören und Nebengeräusche (Fußboden, Sprechen, Kleidung an der Gitarre) ausschließen.
+- Dateinamen **exakt** wie angegeben, damit das Testskript sie findet (Dateinamen sind case-sensitiv).
+- Wo ein Tempo angegeben ist: Metronom einstellen, ein paar Takte leer mitlaufen lassen, dann spielen. Tempo muss nicht perfekt eingehalten werden, aber die Reihenfolge der Töne ist entscheidend.
+
+##### C5.1 Hauptsequenz „Offene Saiten" – 16 Noten
+
+Das deckt mit einer einzigen Aufnahme pro Tempo die größten Schwachstellen des heutigen Code ab: alle sechs offenen Saiten in beiden Richtungen, ohne dass gegriffen werden muss.
+
+**Soll-Folge (identisch für alle drei Tempi):**
+
+```
+E2  A2  D3  G3  B3  E4  B3  G3  D3  A2  E2  A2  D3  G3  B3  E4
+```
+
+(Das ist die vom Nutzer vorgegebene Folge: alle Leersaiten aufwärts → wieder abwärts zurück zu E2 → noch einmal aufwärts.)
+
+In drei Tempi:
+
+| Variante | Metronom | Notendauer | Gesamtdauer | Zweck |
+|----------|---------:|-----------:|------------:|-------|
+| `slow.wav`   | 60 BPM, Viertel                | ~1 s pro Note   | ~17 s | Baseline: jede Note wird sauber getroffen, Latenz unkritisch |
+| `medium.wav` | 90 BPM, Viertel                | ~0,67 s pro Note| ~12 s | Realistisches Übetempo |
+| `fast.wav`   | 120 BPM, Achtel (2 Noten/Schlag) | ~0,25 s pro Note| ~5 s  | Stresstest für Übergangslatenz und Ringing |
+
+Dateistruktur:
+
+```
+tests/fixtures/sequences/open-strings/slow.wav    + slow.json
+tests/fixtures/sequences/open-strings/medium.wav  + medium.json
+tests/fixtures/sequences/open-strings/fast.wav    + fast.json
+```
+
+Alle drei JSONs tragen dieselbe `notes`-Liste, unterscheiden sich nur in `tempoBpm` und `notesPerBeat`.
+
+##### C5.2 Offene Saiten – nur aufwärts / nur abwärts
+
+Damit Fehler isoliert an einer Richtung gefunden werden können.
+
+```
+tests/fixtures/sequences/open-strings/ascending.wav   + ascending.json
+tests/fixtures/sequences/open-strings/descending.wav  + descending.json
+```
+
+- `ascending.json.notes`  = `["E2","A2","D3","G3","B3","E4"]`
+- `descending.json.notes` = `["E4","B3","G3","D3","A2","E2"]`
+
+Beide mit 80 BPM Viertel (= ~750 ms pro Note), keine Barré, jede Saite einmal einzeln anzupfen.
+
+##### C5.3 Gleiche Note mehrfach hintereinander
+
+Prüft, dass der Matcher nach jedem neuen Anschlag wieder akzeptiert (und nicht eine einzige gehaltene Note nur einmal zählt).
+
+```
+tests/fixtures/sequences/repeat/e2-x4.wav  + e2-x4.json    notes = ["E2","E2","E2","E2"]
+tests/fixtures/sequences/repeat/a2-x4.wav  + a2-x4.json    notes = ["A2","A2","A2","A2"]
+tests/fixtures/sequences/repeat/e4-x4.wav  + e4-x4.json    notes = ["E4","E4","E4","E4"]
+```
+
+60 BPM Viertel (= ~1 s pro Anschlag). Wichtig: jede der 4 Noten **deutlich getrennt** anschlagen, zwischen den Anschlägen kurz die Saite leicht mit der Anschlaghand abdämpfen, damit der vorherige Ton abreißt.
+
+##### C5.4 Chromatisch auf einer Saite
+
+Prüft Halbton-Unterscheidung im laufenden Betrieb.
+
+```
+tests/fixtures/sequences/chromatic/low-e-up.wav   + low-e-up.json
+  notes = ["E2","F2","F#2","G2","G#2","A2"]
+tests/fixtures/sequences/chromatic/high-e-up.wav  + high-e-up.json
+  notes = ["E4","F4","F#4","G4","G#4","A4"]
+```
+
+Beide auf der jeweiligen E-Saite (Bund 0 → 1 → 2 → 3 → 4 → 5). 80 BPM Viertel. Saubere Einzelanschläge, zwischen den Bundwechseln keine Schleifer oder Legato.
+
+##### C5.5 C-Dur-Tonleiter über mehrere Saiten
+
+Erster Sequenztest, bei dem Saitenwechsel mitten in der Folge vorkommen (prüft, dass die adaptive `fftSize` bei Saitenwechsel keine Frames verliert).
+
+```
+tests/fixtures/sequences/cmajor/one-octave.wav   + one-octave.json
+  notes = ["C3","D3","E3","F3","G3","A3","B3","C4"]
+tests/fixtures/sequences/cmajor/two-octaves.wav  + two-octaves.json
+  notes = ["C3","D3","E3","F3","G3","A3","B3","C4","D4","E4","F4","G4","A4","B4","C5"]
+```
+
+Jeweils 80 BPM Viertel. Typische Fingersatz-Position für eine C-Dur-Tonleiter reicht – hauptsache, am Ende ist die Note+Oktave korrekt.
+
+##### C5.6 Oktavsprünge
+
+Testet, dass der Matcher bei großen Sprüngen nicht auf dem vorherigen Ton hängen bleibt und die Oktave korrekt erkennt.
+
+```
+tests/fixtures/sequences/leaps/octaves-e.wav   + octaves-e.json
+  notes = ["E2","E3","E4","E3","E2"]
+tests/fixtures/sequences/leaps/wide.wav         + wide.json
+  notes = ["E2","E4","E2","E4","E2","E4"]
+```
+
+80 BPM Viertel, Einzelanschläge. E2 = Leersaite 6, E3 = Bund 2 auf D-Saite, E4 = Leersaite 1.
 
 #### C6. Umgebungsbedingungen
 
@@ -522,13 +681,28 @@ Gleiche Sequenz (z. B. `sequences/slow/c-major-asc.wav`) zusätzlich einmal aufn
 
 ### Schnell-Checkliste für den Nutzer
 
-Wenn du nur etwas Zeit zum Einspielen hast, bringen folgende Aufnahmen den **höchsten Testwert**:
+Wenn du nur wenig Aufnahmezeit hast, bringen diese Aufnahmen den höchsten Testwert. In dieser Reihenfolge einspielen:
 
-1. **Chromatische Leiter** auf einer Saite, langsam, klar getrennt (Datei `sequences/slow/chromatic-up.wav`) — deckt Latenz, Halbton-Unterscheidung und Sequenzfortschritt auf einen Schlag ab.
-2. **Einzeltöne C3, F3, B3, C4, F4, G4** — schließt die größten Lücken in `tests/fixtures/audio/`.
-3. **Ringing-Fall** `E4-then-F4-overlap.wav` — härtester Stress-Test für den Übergang.
-4. **Oktav-Falsch** `octave-off/E2-played-E3.wav` — deckt die häufigste Fehlklassifikation ab.
-5. **Ein leises E4 und ein kräftiges E2** — testet dynamischen Bereich.
+**Stufe 1 – Minimum (3 Dateien, deckt den Kernbug ab):**
+
+1. `sequences/open-strings/slow.wav` – die 16-Noten-Hauptsequenz C5.1 in 60 BPM. Deckt alle offenen Saiten in beiden Richtungen ab und ist die solideste Regressionsbasis (kein Fretting nötig).
+2. `sequences/open-strings/fast.wav` – dieselbe Sequenz in 120 BPM Achtel. Deckt Latenz + Übergangsverhalten ab.
+3. `sequences/repeat/e2-x4.wav` und `sequences/repeat/e4-x4.wav` – 4× dieselbe Note an den beiden Extrempunkten des Gitarrenbereichs.
+
+**Stufe 2 – ergänzend (Halbtöne und Sprünge):**
+
+4. `sequences/chromatic/low-e-up.wav` – Halbtonunterscheidung tief.
+5. `sequences/leaps/octaves-e.wav` – Oktav-Sprünge E2↔E3↔E4.
+6. `sequences/open-strings/medium.wav` – mittleres Tempo der Hauptsequenz.
+
+**Stufe 3 – Breite (wenn Zeit ist):**
+
+7. `sequences/cmajor/one-octave.wav` – erste saitenwechselnde Sequenz.
+8. `sequences/chromatic/high-e-up.wav` – Halbtonunterscheidung hoch.
+9. `sequences/open-strings/ascending.wav` + `descending.wav` – Richtung isoliert.
+10. `sequences/repeat/a2-x4.wav` – Mitte der tiefen Saiten.
+
+**Stufe 4 – Grenzfälle und Einzeltöne** (Einzelton-Ordner aus C1/C3/C4).
 
 ---
 
