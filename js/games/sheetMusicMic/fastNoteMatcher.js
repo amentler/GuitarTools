@@ -1,26 +1,38 @@
 // Fast Note Matcher – pure logic for "Noten spielen" and "Ton spielen"
 //
-// Target-aware, low-latency note classification against a known target pitch.
-// Uses the existing YIN + HPS pipeline from tunerLogic, but wires it through
-// detectPitch({ referenceHz }) so the search band is narrowed to the target
-// and YIN's minimum-periods requirement shrinks accordingly.
+// Target-aware note classification on top of the existing YIN + HPS pipeline
+// from tunerLogic. The matcher is intentionally conservative about octaves
+// and therefore does NOT use the `referenceHz` narrowing of detectPitch:
+// narrowing drops the real fundamental of an octave-up signal out of the
+// YIN search band, which in turn makes YIN lock onto the subharmonic and
+// mis-classify, e.g., a played E3 as E2. Running detectPitch over the full
+// guitar range prevents that collapse.
 //
-// This file is deliberately shipped first in a "broken" form that mirrors the
-// current behaviour of sheetMusicMicExercise.js / notePlayingExercise.js:
+// The cost of running the full-range detection is that every target needs
+// at least `ceil(sampleRate / 70) * 4 ≈ 2520` samples (the YIN minimum for
+// GUITAR_MIN_FREQUENCY = 70). `getRecommendedFftSize` therefore returns a
+// single safe value (4096 at 44.1 kHz) regardless of target pitch; the
+// latency of ~93 ms per window is still well within what the exercise needs.
 //
-//   * detectPitch is called WITHOUT referenceHz
-//   * no buffer-size guard against YIN's minimum-samples requirement
-//   * no adaptive fftSize recommendation
-//
-// The accompanying tests in tests/unit/fastNoteMatcher.test.js exercise this
-// broken default and go red, documenting the bug. The fix follows in the next
-// commit: wire referenceHz, add getMinSamplesFor + getRecommendedFftSize, and
-// guard too-small buffers so they return "unsure" explicitly.
+// Key concepts:
+//   * `getMinSamplesFor(sampleRate)` returns the exact YIN minimum so
+//     too-small buffers return `unsure` instead of producing garbage.
+//     This was the root cause of the broken "Noten spielen" exercise,
+//     which fed a 2048-sample buffer into the full 70 Hz – 560 Hz search
+//     range and therefore never produced a valid low-string reading.
+//   * `getRecommendedFftSize(sampleRate)` returns the smallest safe
+//     power-of-two for the given sample rate.
+//   * `classifyFrame` is pure: it does its own noise-gate via detectPitch,
+//     compares the detected pitch to the target, and returns a three-way
+//     verdict.
+//   * `updateMatchState` is a tiny state machine decoupled from timing so
+//     tests can drive it frame by frame.
 
 import {
   detectPitch,
   frequencyToNote,
   noteToFrequency,
+  GUITAR_MIN_FREQUENCY,
   GUITAR_MIN_RMS,
 } from '../../tools/guitarTuner/tunerLogic.js';
 
@@ -50,29 +62,51 @@ export function parsePitch(pitch) {
   return { name: m[1], octave: parseInt(m[2], 10) };
 }
 
-// ── Broken-by-design placeholder helpers (fixed in follow-up commit) ──────────
+// ── Buffer-size helpers ───────────────────────────────────────────────────────
 
-/**
- * Minimum-sample requirement for the YIN path given a target pitch.
- *
- * BROKEN: currently always returns 0 so that classifyFrame never rejects a
- * buffer on size grounds. That lets the matcher fall through to the same
- * too-small-buffer code path as the current exercises.
- * @returns {number}
- */
-export function getMinSamplesFor() {
-  return 0;
+/** YIN `minPeriods` rule from tunerLogic.detectPitch (in lock-step with it). */
+function yinMinPeriods(minFreq) {
+  return minFreq < 120 ? 4 : 3;
 }
 
 /**
- * Recommended AnalyserNode fftSize for the given target pitch.
- *
- * BROKEN: currently always returns 2048, matching the hardcoded value used by
- * sheetMusicMicExercise.js and notePlayingExercise.js today.
+ * Minimum number of samples YIN needs for a full-range guitar pitch search
+ * at the given sample rate. Derived from the formula used in detectPitchYin:
+ * `buffer.length >= (sampleRate / GUITAR_MIN_FREQUENCY) * minPeriods`.
+ * Targets are omitted on purpose: the matcher uses the full guitar range so
+ * the minimum is the same for every note.
+ * @param {string} [_targetPitch]  accepted for API symmetry; ignored
+ * @param {number} [sampleRate=44100]
  * @returns {number}
  */
-export function getRecommendedFftSize() {
-  return 2048;
+export function getMinSamplesFor(_targetPitch, sampleRate = 44100) {
+  const minFreq = GUITAR_MIN_FREQUENCY;
+  const minPeriods = yinMinPeriods(minFreq);
+  return Math.ceil((sampleRate / minFreq) * minPeriods);
+}
+
+const FFT_SIZE_OPTIONS = [1024, 2048, 4096, 8192, 16384, 32768];
+
+/**
+ * Recommended `AnalyserNode.fftSize` for the fast matcher. Returns the
+ * smallest power of two that is ≥ 1.25× `getMinSamplesFor(sampleRate)`,
+ * giving a small safety margin over the YIN minimum while keeping latency
+ * bounded to ~93 ms at 44.1 kHz.
+ *
+ * `targetPitch` is accepted so the controllers can recompute the size on
+ * each target change if the signature is ever extended; today it has no
+ * effect.
+ * @param {string} [_targetPitch]
+ * @param {number} [sampleRate=44100]
+ * @returns {number} power-of-two fftSize
+ */
+export function getRecommendedFftSize(_targetPitch, sampleRate = 44100) {
+  const minSamples = getMinSamplesFor(_targetPitch, sampleRate);
+  const needed = Math.ceil(minSamples * 1.25);
+  for (const size of FFT_SIZE_OPTIONS) {
+    if (size >= needed) return size;
+  }
+  return FFT_SIZE_OPTIONS[FFT_SIZE_OPTIONS.length - 1];
 }
 
 // ── Per-frame classification ──────────────────────────────────────────────────
@@ -83,13 +117,14 @@ export function getRecommendedFftSize() {
  * Returns one of three statuses:
  *   - 'correct' – detected pitch matches target note+octave within ±tolerateCents
  *   - 'wrong'   – detected pitch is a different note/octave
- *   - 'unsure'  – signal too weak or no reliable pitch
+ *   - 'unsure'  – signal too weak, buffer too small, or no reliable pitch
  *
- * BROKEN: detectPitch is called without referenceHz, so the full GUITAR_MIN
- * …GUITAR_MAX search range applies and YIN requires buffer ≥ 2520 samples for
- * low strings. With the 2048-sample buffer that sheetMusicMicExercise feeds in
- * today, YIN returns null for every frame and only HPS remains – whose bin
- * resolution of ~21 Hz cannot distinguish E2 from F2.
+ * The buffer-size guard is load-bearing: if the caller passes a buffer
+ * smaller than `getMinSamplesFor(targetPitch, sampleRate)`, YIN physically
+ * cannot produce a reliable reading and the function returns `unsure`
+ * rather than falling back to an HPS-only guess. This prevents the exact
+ * bug the "Noten spielen" exercise had with its hardcoded 2048-sample
+ * analyser on E2.
  *
  * @param {Float32Array} samples
  * @param {number} sampleRate
@@ -104,9 +139,17 @@ export function classifyFrame(samples, sampleRate, targetPitch, options = {}) {
   const { name: targetName, octave: targetOctave } = parsePitch(targetPitch);
   const targetHz = noteToFrequency(targetName, targetOctave);
 
-  // BROKEN: detectPitch is called without { referenceHz }, which keeps the
-  // internal minFreq at GUITAR_MIN_FREQUENCY and therefore inflates the YIN
-  // minimum-sample requirement unnecessarily.
+  // Guard: below YIN's minimum sample count, a decision cannot be made
+  // reliably. Report unsure and let the caller wait for a larger buffer
+  // instead of silently running on an HPS-only fallback.
+  const minSamples = getMinSamplesFor(targetPitch, sampleRate);
+  if (samples.length < minSamples) {
+    return { status: 'unsure', detectedPitch: null, hz: null, cents: null };
+  }
+
+  // Full guitar-range detection (no referenceHz narrowing) so octave-up
+  // errors are visible instead of collapsing to the target via YIN's
+  // subharmonic behaviour.
   const hz = detectPitch(samples, sampleRate, { minRms });
   if (hz === null || !Number.isFinite(hz)) {
     return { status: 'unsure', detectedPitch: null, hz: null, cents: null };
