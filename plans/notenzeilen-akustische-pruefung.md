@@ -757,13 +757,20 @@ Am Ende von Stufe 1 meldet die Implementierung „rote Tests zuerst, dann Fix, j
 
 ### Stufe 2 – Sequenzaufnahmen und Latenzfeinschliff
 
-Diese Stufe beginnt, **sobald der Nutzer die in Abschnitt C5 beschriebenen Aufnahmen eingespielt hat.** Umfang Stufe 2:
+**Status:** Teilweise umgesetzt. C5.1 (Offene Saiten, 3 Tempi) liegt vor und ist in Tests eingebunden.
 
-- `tests/helpers/sequenceSimulator.js` mit `runSequenceSimulation(samples, sampleRate, targetSequence, options)`.
-- `tests/unit/fastNoteMatcherLatency.test.js` mit den Gruppen B1 (Bestätigungslatenz je Zielnote), B2 (Notenwechsel-Latenz), B3 (gleicher Ton mehrfach), B4 (Oktavsprung), B5 (Rauschen) und B6 (Sequenz-Simulation inklusive der 16-Noten-Nutzer-Sollfolge synthetisch).
-- `tests/unit/fastNoteMatcherSequences.test.js`: läuft `runSequenceSimulation` über jede `.wav`/`.json`-Paarung unter `tests/fixtures/sequences/**` und vergleicht die entduplifizierte `acceptedSequence` Byte-für-Byte mit `notes`.
+Bereits implementiert:
+- ✅ `tests/helpers/sequenceSimulator.js` mit `runSequenceSimulation(samples, sampleRate, targetSequence, options)`.
+- ✅ `tests/unit/fastNoteMatcherSequences.test.js`: läuft `runSequenceSimulation` über jede `.wav`/`.json`-Paarung unter `tests/fixtures/sequences/**` und vergleicht die entduplifizierte `acceptedSequence` mit `notes`.
+- ✅ C5.1: `sequences/open-strings/{slow,medium,fast}.wav` + `.json` – slow/medium werden exakt erkannt, fast (120 BPM Achtel) erkennt mind. 25% als korrekte Präfix-Folge (Stresstest-Modus).
+
+Noch offen:
+- `tests/unit/fastNoteMatcherLatency.test.js` mit den Gruppen B1–B6.
+- C5.2–C5.6 Aufnahmen (ascending, descending, repeat, chromatic, cmajor, leaps).
 - Falls dabei reale Fehler auftauchen: gezielte Nachbesserungen am Matcher (z. B. `FAST_CENTS_TOLERANCE`-Feinjustierung, Onset-Sperre, Ringing-Toleranz) – mit jeweils begleitendem synthetischen Regressionstest.
 - Die neuen Sequenz-Dateien werden nicht in `sw.js` aufgenommen (Testfixtures sind nicht Teil der installierten App).
+
+**Bekannte Limitation:** Bei ≥ 3 Noten/Sekunde (z.B. 120 BPM Achtel) verfällt der YIN-Detektor auf Subharmonische (z.B. G2 statt G3, A2 statt B3), weil das 4096-Sample-Fenster mehrere Notenanschläge überlappt. Ein möglicher Ansatz: `minPeriods` auf 5 anheben, um die YIN-Zuverlässigkeit bei tiefen Tönen zu erhöhen.
 
 Erst nach Stufe 2 ist der ursprünglich skizzierte volle Testplan (Ebenen A, B, C) tatsächlich im Repo vertreten. Stufe 1 beweist „der Matcher als Baustein tut das Richtige", Stufe 2 beweist „er tut es auch auf echten ganzen Notenzeilen".
 

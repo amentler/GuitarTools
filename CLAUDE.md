@@ -125,8 +125,8 @@ Phase 1 CI pipeline is active. Tests run on every push and pull request.
 - **Pre-Commit Mandate:** Run `npm run lint` before every commit; if lint errors occur, fix them before committing.
 - **Test files:** `tests/unit/` — pure logic tests only, no DOM/audio
 - **CI workflow:** `.github/workflows/ci.yml`
-- **Current unit-test scope:** `fretboardLogic`, `tunerLogic`, `tonFinderLogic`, `akkordLogic`, `sheetMusicLogic`, `metronomeLogic`, `notePlayingLogic`, `fastNoteMatcher`, `fastNoteMatcherAudio` (WAV fixtures)
-- **Current test count:** 382 passing Vitest tests (`tests/unit/**/*.test.js`, plus 1 skipped E4-octave case blocked by the tuner's max frequency)
+- **Current unit-test scope:** `fretboardLogic`, `tunerLogic`, `tonFinderLogic`, `akkordLogic`, `sheetMusicLogic`, `metronomeLogic`, `notePlayingLogic`, `fastNoteMatcher`, `fastNoteMatcherAudio` (WAV fixtures), `fastNoteMatcherSequences` (sequence WAV+JSON fixtures)
+- **Current test count:** 385 passing Vitest tests (`tests/unit/**/*.test.js`, plus 1 skipped E4-octave case blocked by the tuner's max frequency)
 
 ### Tuner Fixture Tests – Zwei Testansätze
 
