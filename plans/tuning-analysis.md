@@ -36,5 +36,5 @@ Die Untersuchung mittels `tests/unit/e4_sensitivity.test.js` und Code-Review erg
 ## Status
 *   [x] Analyse abgeschlossen
 *   [x] Testfall zur Reproduktion erstellt
-*   [ ] Implementierung Phase 1
-*   [ ] Implementierung Phase 2
+*   [x] Implementierung Phase 1
+*   [x] Implementierung Phase 2

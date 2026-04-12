@@ -62,7 +62,7 @@ Location: `js/components/fretboard/gt-fretboard.js`
 - Tiefe Saiten profitieren von adaptiver Fenstergröße (`getAdaptiveFftSize`) und längerer Periodenabdeckung.
 - Vorverarbeitung enthält Bandbegrenzung (Gitarrenbereich) und Attack-Dämpfung direkt nach Anschlag.
 - Stabilisierung erfolgt mehrstufig: rolling median + Stabilitätsprüfung + Notenwechsel-Hysterese im Controller.
-- **Warm-up Phase:** Anzeige wird erst nach 3 aufeinanderfolgenden gültigen Frames aktualisiert (`STABLE_CONFIRM_FRAMES`), um initiale Sprünge durch Transienten zu unterdrücken.
+- **Warm-up Phase:** Anzeige wird erst nach 2 aufeinanderfolgenden gültigen Frames aktualisiert (`STABLE_CONFIRM_FRAMES`), um initiale Sprünge durch Transienten zu unterdrücken.
 - **Temporal Aging & Silence Reset:** Frequenz-Historie verwirft Werte älter als 1000ms. Bei Stille > 300ms erfolgt ein kompletter Reset des "Gedächtnisses" (Historie, stabile Frequenz, Warm-up), um saubere Saitenwechsel zu ermöglichen.
 - Analyseintervall ist 50 ms (20 Hz) mit rolling median über 5 Samples (~250 ms), damit das Stimmgerät reaktiv bleibt.
 

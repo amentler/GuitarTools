@@ -1,14 +1,6 @@
 // Tuner-specific heuristics, stability management and guided tuning
 // Imports core math from pitchLogic.js
 
-import {
-  frequencyToNote,
-  noteToFrequency,
-  getCentsToTarget,
-  STANDARD_TUNING,
-  NOTE_NAMES
-} from './pitchLogic.js';
-
 export {
   getAdaptiveFftSize,
   analyzeInputLevel,
@@ -41,7 +33,7 @@ export const NOTE_SWITCH_CONFIRM_FRAMES = 3;
 
 /** Minimum consecutive valid frames before the tuner display starts updating after silence.
  * Prevents initial pointer "jumping" caused by pick attack transients and incomplete median buffers. */
-export const STABLE_CONFIRM_FRAMES = 3;
+export const STABLE_CONFIRM_FRAMES = 2;
 
 // ── Guided tuning ─────────────────────────────────────────────────────────────
 
