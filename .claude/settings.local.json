@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls C:/Projekte/GuitarTools/plans/*.md)",
+      "Bash(npm test:*)",
+      "Bash(npx vitest:*)",
+      "Bash(npm install:*)",
+      "Bash(ls -la tests/fixtures/sequences/open-strings/*.wav)",
+      "Bash(node -e ':*)",
+      "Bash(node --input-type=module -e ':*)",
+      "Bash(npm run:*)"
+    ]
+  }
+}
