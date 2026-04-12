@@ -1,15 +1,10 @@
-// GuitarTools Service Worker – allowlist-only caching model
+// GuitarTools Service Worker – no caching, always fetch fresh
 
 const CACHE_VERSION = 'v2';
 const CACHE_NAME = `guitartools-static-${CACHE_VERSION}`;
 
-// Only URLs explicitly listed here will be cached.
-// By default, all other requests go directly to the network (no cache write).
-const PRECACHE_URLS = [
-  // Add paths here to enable caching for specific assets, e.g.:
-  // '/index.html',
-  // '/style.css',
-];
+// No URLs are pre-cached. Every request goes directly to the network.
+const PRECACHE_URLS = [];
 
 self.addEventListener('install', event => {
   self.skipWaiting();
@@ -40,29 +35,12 @@ self.addEventListener('fetch', event => {
   // Only handle GET requests
   if (request.method !== 'GET') return;
 
-  const reqUrl = new URL(request.url);
-  const normalizedPath = reqUrl.pathname + reqUrl.search;
-
-  // Check whether this URL is in the allowlist (absolute URL or path match)
-  const isAllowlisted =
-    PRECACHE_URLS.includes(request.url) || PRECACHE_URLS.includes(normalizedPath);
-
-  if (!isAllowlisted) {
-    // Not in allowlist: always bypass browser HTTP cache to guarantee fresh content
-    event.respondWith(fetch(request, { cache: 'no-cache' }));
-    return;
-  }
-
-  // Allowlisted: cache-first with network fallback and cache update
+  // Always bypass all caches: browser HTTP cache AND service worker cache.
+  // cache:'no-store' tells the browser not to use its HTTP cache at all.
   event.respondWith(
-    caches.match(request).then(cached => {
-      if (cached) return cached;
-
-      return fetch(request, { cache: 'no-cache' }).then(networkResponse => {
-        const clone = networkResponse.clone();
-        caches.open(CACHE_NAME).then(cache => cache.put(request, clone));
-        return networkResponse;
-      });
+    fetch(request, { cache: 'no-store' }).catch(() => {
+      // If network fails, try to serve from any existing cache as fallback
+      caches.match(request)
     })
   );
 });
