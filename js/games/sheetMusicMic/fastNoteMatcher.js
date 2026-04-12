@@ -150,7 +150,9 @@ export function classifyFrame(samples, sampleRate, targetPitch, options = {}) {
   // Full guitar-range detection (no referenceHz narrowing) so octave-up
   // errors are visible instead of collapsing to the target via YIN's
   // subharmonic behaviour.
-  const hz = detectPitch(samples, sampleRate, { minRms });
+  // applyFilters: true is mandatory since we raised maxFreq to 1000Hz,
+  // to avoid locking onto low-frequency noise as subharmonics.
+  const hz = detectPitch(samples, sampleRate, { minRms, applyFilters: true });
   if (hz === null || !Number.isFinite(hz)) {
     return { status: 'unsure', detectedPitch: null, hz: null, cents: null };
   }

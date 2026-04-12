@@ -259,6 +259,8 @@ function analyzeFrame() {
     lastStableHz: stableFrequency,
     minRms: adaptiveMinRms,
     magnitudes: freqData,
+    applyFilters: true,
+    dampingRatio: ATTACK_DAMPING_RATIO,
   });
 
   if (hz === null) {
