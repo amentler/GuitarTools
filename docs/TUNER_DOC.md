@@ -16,7 +16,7 @@ Bevor eine Frequenz erkannt wird, durchläuft das Signal mehrere Stufen:
 
 1.  **Hardware-Filter (BiquadFilter):**
     - Highpass (60 Hz): Entfernt Infraschall-Rumpeln.
-    - Lowpass (500 Hz): Entfernt Obertöne und Rauschen oberhalb des Gitarrenbereichs.
+    - Lowpass (1000 Hz): Entfernt Obertöne und Rauschen oberhalb des Gitarrenbereichs.
 2.  **Adaptive FFT-Größe:**
     - Tiefe Töne (E2): 32768 Samples für hohe Frequenzauflösung.
     - Hohe Töne (E4): 8192 Samples für geringe Latenz.
@@ -43,7 +43,7 @@ Der Tuner nutzt eine hybride Erkennung für maximale Robustheit:
 Um das "Zappeln" der Nadel zu verhindern, werden mehrere Filter kombiniert:
 
 ### Warm-up Phase (`STABLE_CONFIRM_FRAMES`)
-- Die Anzeige wird erst aktiviert, wenn 3 aufeinanderfolgende Frames einen gültigen Pitch liefern. Dies überspringt den chaotischen Moment direkt beim Saitenanschlag.
+- Die Anzeige wird erst aktiviert, wenn 2 aufeinanderfolgende Frames einen gültigen Pitch liefern. Dies überspringt den chaotischen Moment direkt beim Saitenanschlag.
 
 ### Zeitbasierte Historie & Median (Temporal Aging)
 - Ein gleitender Median über 5 Werte glättet Ausreißer.
@@ -61,7 +61,7 @@ Um das "Zappeln" der Nadel zu verhindern, werden mehrere Filter kombiniert:
 Der geführte Modus bietet aktives Feedback:
 - **Trend-Analyse:** Erkennt, ob sich der Nutzer dem Ziel nähert oder sich entfernt (`approaching` vs. `moving-away`).
 - **3-Sekunden-Regel:** Feedback-Hinweise (Pfeile) bleiben für mindestens 3 Sekunden sichtbar, um visuelle Unruhe bei kurzen Signalaussetzern zu vermeiden.
-- **Präzisions-Fenster:** "In Tune" wird bei ±8 Cents erreicht.
+- **Präzisions-Fenster:** "In Tune" wird bei ±5 Cents erreicht.
 
 ## 6. Adaptive Noise Gate
 

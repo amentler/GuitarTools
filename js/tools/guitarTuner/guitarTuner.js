@@ -10,6 +10,7 @@ import {
   estimateNoiseFloorRms, buildAdaptiveThreshold,
   smoothCents, STABLE_CONFIRM_FRAMES,
   pushAndMedianTimed, SILENCE_RESET_THRESHOLD_MS,
+  ATTACK_DAMPING_RATIO
 } from './tunerLogic.js';
 import { initTunerSVG, updateTunerDisplay } from './tunerSVG.js';
 
@@ -278,7 +279,7 @@ function analyzeFrame() {
     validFramesStreak = 0;
     // Note: wir setzen smoothedCents hier nicht auf null, damit die Nadel bei ganz kurzen
     // Aussetzern nicht springt, sondern erst nach dem SILENCE_RESET_THRESHOLD_MS.
-    updateTunerDisplay({ cents: 0, note: null, octave: null, isActive: true, isInTune: false, isStandardNote: false });
+    updateTunerDisplay({ cents: smoothedCents, note: null, octave: null, isActive: true, isInTune: false, isStandardNote: false });
     if (guidedState.active) {
       guidedState.feedbackDisplay = updateFeedbackDisplay(guidedState.feedbackDisplay, { type: null }, now);
       renderGuidedFeedback(guidedState.feedbackDisplay);

@@ -203,7 +203,7 @@ function detectPitchYin(buffer, sampleRate, minFreq, maxFreq, minPeriods = 3) {
     const y1 = cmnd[bestTau - 1];
     const y2 = cmnd[bestTau];
     const y3 = cmnd[bestTau + 1];
-    const denom = 2 * (2 * y2 - y1 - y3);
+    const denom = 2 * (y1 + y3 - 2 * y2);
     if (denom !== 0) bestTau = bestTau + (y1 - y3) / denom;
   }
 
