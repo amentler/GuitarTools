@@ -164,7 +164,7 @@ export async function startExercise() {
 
   const lpFilter = audioCtx.createBiquadFilter();
   lpFilter.type = 'lowpass';
-  lpFilter.frequency.value = 1000;
+  lpFilter.frequency.value = 500;
   lpFilter.Q.value = 0.7;
 
   audioCtx.createMediaStreamSource(stream)

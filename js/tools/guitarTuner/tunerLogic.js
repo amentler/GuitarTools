@@ -33,7 +33,7 @@ export const NOTE_SWITCH_CONFIRM_FRAMES = 3;
 
 /** Minimum consecutive valid frames before the tuner display starts updating after silence.
  * Prevents initial pointer "jumping" caused by pick attack transients and incomplete median buffers. */
-export const STABLE_CONFIRM_FRAMES = 2;
+export const STABLE_CONFIRM_FRAMES = 3;
 
 // ── Guided tuning ─────────────────────────────────────────────────────────────
 
