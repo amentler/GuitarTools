@@ -12,10 +12,10 @@ export const STANDARD_TUNING = [
 const NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
 
 export const GUITAR_MIN_FREQUENCY = 70;
-export const GUITAR_MAX_FREQUENCY = 560;
+export const GUITAR_MAX_FREQUENCY = 1000;
 export const GUITAR_MIN_RMS = 0.008;
 export const GUITAR_MAX_CLIPPING_RATIO = 0.02;
-export const ATTACK_DAMPING_RATIO = 0.2;
+export const ATTACK_DAMPING_RATIO = 0.1;
 export const HPS_AGREEMENT_CENTS = 35;
 export const STABILITY_MAX_CENTS_DELTA = 25;
 export const NOTE_SWITCH_CONFIRM_FRAMES = 3;
@@ -331,7 +331,7 @@ export const FEEDBACK_DISPLAY_DURATION_MS = 3000;
 export const ANALYZE_INTERVAL_MS = 50;
 
 /** Cents window in which the pitch is considered "perfect" for guided feedback. */
-export const PERFECT_TOLERANCE_CENTS = 8;
+export const PERFECT_TOLERANCE_CENTS = 5;
 
 /**
  * Converts a note name and octave to frequency in Hz.
@@ -617,7 +617,7 @@ export function shouldRejectOutlier(stableHz, candidateHz, streak) {
 // ── V4: Adaptiver Noise Floor ────────────────────────────────────────────────
 
 /** Multiplier applied to measured noise floor to derive the effective RMS gate. */
-export const NOISE_FLOOR_SCALE_FACTOR = 4;
+export const NOISE_FLOOR_SCALE_FACTOR = 2.5;
 
 /** Hard cap on the adaptive threshold so legitimate guitar signals are never gated. */
 export const MAX_ADAPTIVE_THRESHOLD = 0.15;

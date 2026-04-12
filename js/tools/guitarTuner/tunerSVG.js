@@ -62,6 +62,8 @@ export function initTunerSVG(container) {
   // ── Arc zones (outer r = RADIUS, inner r = RADIUS - 18) ──────────────────
   const ARC_OUTER = RADIUS;
   const ARC_INNER = RADIUS - 18;
+  const GREEN_ZONE_CENTS = 10;
+  const GREEN_DEG = (GREEN_ZONE_CENTS / 50) * MAX_DEG; // 10 cents tolerance = 12 degrees
 
   // Red left  (−60° to −30°)
   svg.appendChild(svgEl('path', {
@@ -69,21 +71,21 @@ export function initTunerSVG(container) {
     fill: 'var(--color-wrong)',
     opacity: '0.6',
   }));
-  // Yellow left (−30° to −15°)
+  // Yellow left (−30° to −GREEN_DEG)
   svg.appendChild(svgEl('path', {
-    d: arcPath(-MAX_DEG / 2, -MAX_DEG / 4, ARC_OUTER, ARC_INNER),
+    d: arcPath(-MAX_DEG / 2, -GREEN_DEG, ARC_OUTER, ARC_INNER),
     fill: 'var(--color-accent-alt)',
     opacity: '0.7',
   }));
-  // Green center (−15° to +15°)
+  // Green center (−GREEN_DEG to +GREEN_DEG)
   svg.appendChild(svgEl('path', {
-    d: arcPath(-MAX_DEG / 4, MAX_DEG / 4, ARC_OUTER, ARC_INNER),
+    d: arcPath(-GREEN_DEG, GREEN_DEG, ARC_OUTER, ARC_INNER),
     fill: 'var(--color-correct)',
     opacity: '0.7',
   }));
-  // Yellow right (+15° to +30°)
+  // Yellow right (+GREEN_DEG to +30°)
   svg.appendChild(svgEl('path', {
-    d: arcPath(MAX_DEG / 4, MAX_DEG / 2, ARC_OUTER, ARC_INNER),
+    d: arcPath(GREEN_DEG, MAX_DEG / 2, ARC_OUTER, ARC_INNER),
     fill: 'var(--color-accent-alt)',
     opacity: '0.7',
   }));
@@ -209,6 +211,6 @@ export function updateTunerDisplay({ cents, note, octave, isActive, isInTune, is
 
   noteTxt.textContent = note ? `${note}${octave}` : '–';
   centsTxt.textContent = cents !== null
-    ? (cents >= 0 ? `+${cents.toFixed(0)}` : `${cents.toFixed(0)}`) + ' ct'
+    ? (cents >= 0 ? `+${cents.toFixed(1)}` : `${cents.toFixed(1)}`) + ' ct'
     : '';
 }

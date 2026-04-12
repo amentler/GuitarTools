@@ -370,9 +370,14 @@ describe('getGuidedFeedback', () => {
     expect(fb.direction).toBe('down');
   });
 
-  it('returns green for value exactly at +8 cents boundary', () => {
-    const fb = getGuidedFeedback(8, [30, 20, 10, 8]);
+  it('returns green for value exactly at +5 cents boundary', () => {
+    const fb = getGuidedFeedback(5, [30, 20, 10, 5]);
     expect(fb.type).toBe('green');
+  });
+
+  it('returns orange for value at 8 cents (now outside perfect range)', () => {
+    const fb = getGuidedFeedback(8, [30, 20, 10, 8]);
+    expect(fb.type).toBe('orange');
   });
 
   // Cross-note guard: playing a different standard string note must never show "green"
@@ -495,8 +500,8 @@ describe('updateFeedbackDisplay – 3-second rule with immediate state-change ov
 });
 
 describe('constants', () => {
-  it('PERFECT_TOLERANCE_CENTS is 8', () => {
-    expect(PERFECT_TOLERANCE_CENTS).toBe(8);
+  it('PERFECT_TOLERANCE_CENTS is 5', () => {
+    expect(PERFECT_TOLERANCE_CENTS).toBe(5);
   });
 
   it('ANALYZE_INTERVAL_MS is 50 – audio analysis runs 20 times per second', () => {
@@ -774,13 +779,13 @@ describe('estimateNoiseFloorRms', () => {
 
 describe('buildAdaptiveThreshold', () => {
   it('uses GUITAR_MIN_RMS when noise floor is very low', () => {
-    // 0.001 * 4 = 0.004 < 0.008 → GUITAR_MIN_RMS wins
+    // 0.001 * 2.5 = 0.0025 < 0.008 → GUITAR_MIN_RMS wins
     expect(buildAdaptiveThreshold(0.001)).toBeCloseTo(0.008);
   });
 
   it('scales up threshold when noise floor is loud', () => {
-    // 0.01 * 4 = 0.04 > 0.008 → scaled threshold used
-    expect(buildAdaptiveThreshold(0.01)).toBeCloseTo(0.04);
+    // 0.01 * 2.5 = 0.025 > 0.008 → scaled threshold used
+    expect(buildAdaptiveThreshold(0.01)).toBeCloseTo(0.025);
   });
 
   it('caps threshold to avoid locking out legitimate guitar signal', () => {
