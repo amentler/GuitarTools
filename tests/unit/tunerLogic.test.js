@@ -1,14 +1,12 @@
 import { describe, it, expect } from 'vitest';
 import {
   pushAndMedian,
-  pushMedianAndStabilize,
   applyNoteSwitchHysteresis,
   NOTE_SWITCH_CONFIRM_FRAMES,
   GUIDED_TUNING_STEPS,
   QUARTER_TONE_CENTS,
   PERFECT_TOLERANCE_CENTS,
   FEEDBACK_DISPLAY_DURATION_MS,
-  ANALYZE_INTERVAL_MS,
   getPitchDirection,
   getTuningState,
   tuningStateToDirection,
@@ -18,14 +16,9 @@ import {
   getGuidedFeedback,
   updateFeedbackDisplay,
   shouldRejectOutlier,
-  OUTLIER_REJECTION_THRESHOLD_CENTS,
   smoothCents,
   STABLE_CONFIRM_FRAMES,
-  pushAndMedianTimed,
-  HISTORY_MAX_AGE_MS,
-  SILENCE_RESET_THRESHOLD_MS,
-  noteToFrequency,
-  getCentsToTarget
+  pushAndMedianTimed
 } from '../../js/tools/guitarTuner/tunerLogic.js';
 
 describe('pushAndMedian', () => {

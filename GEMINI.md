@@ -19,7 +19,7 @@ As an AI agent working on this project, you MUST adhere to the following rules:
 - **Service-Worker Asset-Liste ist Pflicht:** Neue oder umbenannte lokale Assets/Module müssen immer in `sw.js` in `ASSETS` ergänzt werden, damit Reloads keinen veralteten Stand liefern.
 - **Testing:** Run `npm test` to execute unit tests. Run `npm run lint` for ESLint checks. Add tests in `tests/unit/` for any logic in `*Logic.js` files.
 - **Pre-Commit Mandate:** You MUST run `npm run lint` and `npm test` BEFORE committing any changes; if lint reports errors, fix them before committing. Committing code with failing tests is strictly prohibited.
-- **Unit-Test Scope (current):** `fretboardLogic`, `tunerLogic`, `tonFinderLogic`, `akkordLogic`, `sheetMusicLogic`, `metronomeLogic`, `notePlayingLogic`, `appNavigationHistory` (260 passing tests)
+- **Unit-Test Scope (current):** `fretboardLogic`, `tunerLogic`, `tonFinderLogic`, `akkordLogic`, `sheetMusicLogic`, `metronomeLogic`, `notePlayingLogic`, `appNavigationHistory` (368 passing tests)
 
 ## 3. Workflow
 - **Research -> Strategy -> Execution -> Validation**
