@@ -241,8 +241,8 @@ describe('constants (heuristics)', () => {
     expect(PERFECT_TOLERANCE_CENTS).toBe(5);
   });
 
-  it('STABLE_CONFIRM_FRAMES is 2', () => {
-    expect(STABLE_CONFIRM_FRAMES).toBe(2);
+  it('STABLE_CONFIRM_FRAMES is 3', () => {
+    expect(STABLE_CONFIRM_FRAMES).toBe(3);
   });
 });
 

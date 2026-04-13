@@ -1,5 +1,13 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
+// Mock the registry so getAllExercises() returns the expected exercises
+const mockRegistry = new Map();
+vi.mock('../../js/exerciseRegistry.js', () => ({
+  registerExercise(key, meta) { mockRegistry.set(key, meta); },
+  getExercise(key) { return mockRegistry.get(key); },
+  getAllExercises() { return [...mockRegistry.entries()]; },
+}));
+
 vi.mock('../../js/components/index.js', () => ({}));
 vi.mock('../../js/games/fretboardToneRecognition/fretboardExercise.js', () => ({ startExercise: vi.fn(), stopExercise: vi.fn() }));
 vi.mock('../../js/tools/guitarTuner/guitarTuner.js', () => ({ startExercise: vi.fn(), stopExercise: vi.fn() }));
@@ -15,6 +23,8 @@ function createDummyElement() {
   const classSet = new Set();
   return {
     classList: {
+      add(className) { classSet.add(className); },
+      remove(className) { classSet.delete(className); },
       toggle(className, force) {
         if (force === true) classSet.add(className);
         else if (force === false) classSet.delete(className);
@@ -92,11 +102,25 @@ function installMinimalDom() {
     text: async () => 'Version 2026-04-10 22:43',
   });
 
+  // Populate the mock registry with all expected exercises
+  const exerciseDefs = [
+    ['fretboard',   { viewId: 'view-fretboard',   btnStartId: 'btn-start-fretboard',   btnBackId: 'btn-back',            start: vi.fn(), stop: vi.fn() }],
+    ['tuner',       { viewId: 'view-tuner',        btnStartId: 'btn-start-tuner',       btnBackId: 'btn-back-tuner',      start: vi.fn(), stop: vi.fn() }],
+    ['sheetMusic',  { viewId: 'view-sheet-music',  btnStartId: 'btn-start-sheet-music',  btnBackId: 'btn-back-sheet-music', start: vi.fn(), stop: vi.fn() }],
+    ['metronome',   { viewId: 'view-metronome',    btnStartId: 'btn-start-metronome',    btnBackId: 'btn-back-metronome',   start: vi.fn(), stop: vi.fn() }],
+    ['akkord',      { viewId: 'view-akkord-trainer', btnStartId: 'btn-start-akkord-trainer', btnBackId: 'btn-back-akkord-trainer', start: vi.fn(), stop: vi.fn() }],
+    ['tonFinder',   { viewId: 'view-ton-finder',   btnStartId: 'btn-start-ton-finder',   btnBackId: 'btn-back-ton-finder', start: vi.fn(), stop: vi.fn() }],
+    ['notePlaying', { viewId: 'view-note-play',    btnStartId: 'btn-start-note-play',    btnBackId: 'btn-back-note-play',  start: vi.fn(), stop: vi.fn() }],
+    ['sheetMic',    { viewId: 'view-sheet-mic',    btnStartId: 'btn-start-sheet-mic',    btnBackId: 'btn-back-sheet-mic',  start: vi.fn(), stop: vi.fn() }],
+  ];
+  exerciseDefs.forEach(([key, meta]) => mockRegistry.set(key, meta));
+
   return { elements, history };
 }
 
 describe('app navigation browser history', () => {
   beforeEach(() => {
+    mockRegistry.clear();
     vi.resetModules();
   });
 

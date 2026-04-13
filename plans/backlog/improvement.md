@@ -7,53 +7,30 @@
 
 ## 1. Architecture & Design
 
-### 1.1 Eliminate Module-Level Mutable State (HIGH PRIORITY)
+### 1.1 Eliminate Module-Level Mutable State ~~(HIGH PRIORITY)~~ ✅ DONE
 
-**Problem:** Nearly every exercise/tool controller (`*Exercise.js`) and the tuner use module-level `let state = {...}` with mutable objects. This makes:
-- Testing difficult (state leaks between test runs)
-- Reasoning about code hard (hidden side effects)
-- Hot-reloading / concurrent exercises impossible
+**Status:** Completed 2026-04-12
 
-**Affected files:**
-- `js/games/fretboardToneRecognition/fretboardExercise.js` — `let state = {...}`
-- `js/tools/guitarTuner/guitarTuner.js` — `let state = {...}`, `let guidedState = {...}`, plus 8+ module-level tracking variables
-- `js/tools/metronome/metronome.js` — `let logic = null; let svg = null;`
-- All other exercise controllers
+All 8 exercise/tool controllers now use factory functions (`createXxxExercise()`) that encapsulate state in closures. Each module creates a default instance and registers it. No more module-level `let state = {...}` leaking across tests or navigation cycles.
 
-**Recommendation:**
-- Introduce a lightweight state container pattern. Each exercise should instantiate a class or return a factory function that encapsulates state.
-- `startExercise()` should return a controller instance; `stopExercise()` calls `.dispose()` on it.
-- Example pattern:
-  ```js
-  export function createFretboardExercise() {
-    let state = { /* ... */ };
-    return { start(), stop(), dispose() };
-  }
-  ```
-- This makes state lifecycle explicit and testable.
+**Files refactored:**
+- `js/games/fretboardToneRecognition/fretboardExercise.js` → `createFretboardExercise()`
+- `js/tools/guitarTuner/guitarTuner.js` → `createGuitarTunerExercise()`
+- `js/games/sheetMusicReading/sheetMusicReading.js` → `createSheetMusicExercise()`
+- `js/tools/metronome/metronome.js` → `createMetronomeExercise()`
+- `js/games/akkordTrainer/akkordTrainer.js` → `createAkkordExercise()`
+- `js/games/tonFinder/tonFinder.js` → `createTonFinderExercise()`
+- `js/games/notePlayingExercise/notePlayingExercise.js` → `createNotePlayingExercise()`
+- `js/games/sheetMusicMic/sheetMusicMicExercise.js` → `createSheetMusicMicExercise()`
 
-### 1.2 Decouple `app.js` Navigation from Individual Modules
+### 1.2 Decouple `app.js` Navigation from Individual Modules ✅ DONE
 
-**Problem:** `app.js` has a hardcoded `navigateTo()` function with explicit `if` chains for every view. Adding a new exercise requires modifying `app.js` (violates OCP – Open/Closed Principle).
+**Status:** Completed 2026-04-12
 
-**Recommendation:**
-- Implement a registry pattern where exercises self-register with a route key:
-  ```js
-  // app.js
-  const exerciseRegistry = new Map();
-  function registerExercise(key, { start, stop }) {
-    exerciseRegistry.set(key, { start, stop });
-  }
-  ```
-- `navigateTo()` then becomes generic:
-  ```js
-  function navigateTo(name) {
-    currentExercise?.stop();
-    const exercise = exerciseRegistry.get(name);
-    exercise?.start();
-  }
-  ```
-- Each exercise module calls `registerExercise('fretboard', { startExercise, stopExercise })`.
+Implemented the exercise registry pattern. `app.js` is now generic — `navigateTo()` has zero hardcoded if/else chains. Button wiring is a single `for` loop over `getAllExercises()`. Each exercise module self-registers via `registerExercise()`.
+
+**New files:**
+- `js/exerciseRegistry.js` — Map-based registry with `registerExercise()`, `getExercise()`, `getAllExercises()`
 
 ### 1.3 Introduce a Shared Event Bus or Pub/Sub
 
@@ -350,14 +327,14 @@
 
 | Priority | Impact | Effort | Item |
 |----------|--------|--------|------|
-| 🔴 P0 | High | Medium | 1.1 — Eliminate module-level mutable state |
+| ~~🔴 P0~~ | High | Medium | 1.1 — Eliminate module-level mutable state | ✅ DONE |
 | 🔴 P0 | High | Low | 5.3 — Fix Service Worker caching strategy |
 | 🟠 P1 | High | Low | 2.2 — Shared settings component (DRY) |
-| 🟠 P1 | High | Medium | 1.2 — Decouple app.js navigation (OCP) |
+| ~~🟠 P1~~ | High | Medium | 1.2 — Decouple app.js navigation (OCP) | ✅ DONE |
 | 🟠 P1 | High | Low | 1.4 — Shared AudioContext manager |
 | 🟡 P2 | Medium | Medium | 2.1 — Split large files (SRP) |
 | 🟡 P2 | Medium | Low | 4.2 — Add Vite build step |
-| ✅ P2 | Medium | Low | 4.3 — Add pre-commit hooks (DONE) |
+| ~~✅ P2~~ | Medium | Low | 4.3 — Add pre-commit hooks (DONE) |
 | 🟡 P2 | Medium | Low | 5.2 — Lazy-load exercise modules |
 | 🟢 P3 | Medium | Low | 4.1 — Add JSDoc types + ts-check |
 | 🟢 P3 | Medium | Medium | 3.1 — Integration tests |
@@ -377,5 +354,5 @@
 4. Add `tests/fixtures/README.md`
 5. Fix Service Worker to actually cache static assets
 6. Add `window.onerror` global error handler
-7. ✅ Add pre-commit hooks (husky + lint-staged) (DONE)
+7. ~~Add pre-commit hooks (husky + lint-staged)~~ ✅ DONE
 8. Replace `innerHTML` with `textContent` for feedback strings
