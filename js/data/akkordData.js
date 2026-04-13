@@ -236,7 +236,7 @@ export const CHORD_CATEGORIES = {
 
 /**
  * Validates finger data integrity for a chords object.
- * @param {Object} chords - The chords object to validate.
+ * @param {Object.<string, Array<{string: number, fret: number, muted?: boolean, finger?: (1|2|3|4)}>} chords - The chords object to validate.
  * @returns {string[]} Array of error messages; empty array means all OK.
  */
 export function validateFingerData(chords) {
