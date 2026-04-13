@@ -14,8 +14,9 @@ const EXERCISE_MODULES = [
   { key: 'metronome',   path: './tools/metronome/metronome.js' },
   { key: 'akkord',      path: './games/akkordTrainer/akkordTrainer.js' },
   { key: 'tonFinder',   path: './games/tonFinder/tonFinder.js' },
-  { key: 'notePlaying', path: './games/notePlayingExercise/notePlayingExercise.js' },
-  { key: 'sheetMic',    path: './games/sheetMusicMic/sheetMusicMicExercise.js' },
+  { key: 'notePlaying',      path: './games/notePlayingExercise/notePlayingExercise.js' },
+  { key: 'sheetMic',         path: './games/sheetMusicMic/sheetMusicMicExercise.js' },
+  { key: 'akkordUebersicht', path: './tools/akkordUebersicht/akkordUebersicht.js' },
 ];
 
 const views = {
