@@ -139,5 +139,7 @@ describe('app navigation browser history', () => {
     elements.get('btn-start-tuner').click();
 
     expect(history.pushState).toHaveBeenCalled();
+    expect(elements.get('view-tuner').classList.contains('active')).toBe(true);
+    expect(elements.get('view-menu').classList.contains('active')).toBe(false);
   });
 });
