@@ -221,6 +221,13 @@ export function createSheetMusicMicExercise() {
 
     ui.permission.style.display = 'none';
 
+    // NOTE: This exercise uses its own AudioContext and AnalyserNode, separate
+    // from the tuner. The pitch-detection pipeline here is optimised for speed
+    // (responsive windows, fastNoteMatcher classifier) rather than precision.
+    // The tuner uses a different pipeline with larger windows and stabilisation
+    // heuristics. Sharing a single AnalyserNode would force one fftSize on both,
+    // causing audio glitches and wrong latency/precision trade-offs.
+    // See improvement.md §1.4 for the design rationale.
     audioCtx = new AudioContext();
     analyser = audioCtx.createAnalyser();
     currentFftSize = 0;

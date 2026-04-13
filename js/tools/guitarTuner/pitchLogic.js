@@ -1,4 +1,12 @@
 // Pure pitch detection and math – no heuristics or state
+//
+// NOTE: This is the tuner's precision pitch-detection pipeline (YIN + HPS
+// combined, adaptive fftSize, median stabilisation, EMA smoothing). It is
+// intentionally NOT shared with exercise modules ("Noten spielen", "Ton spielen")
+// because those prioritise speed over precision (smaller windows, fastNoteMatcher
+// classifier). A shared pipeline would force one precision/latency trade-off
+// on all features.
+// See improvement.md §1.4 for the design rationale.
 
 export const STANDARD_TUNING = [
   { note: 'E', octave: 2 },

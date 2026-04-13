@@ -6,6 +6,13 @@
 // narrowing drops the real fundamental of an octave-up signal out of the
 // YIN search band, which in turn makes YIN lock onto the subharmonic and
 // mis-classify, e.g., a played E3 as E2. Running detectPitch over the full
+//
+// NOTE: This classifier is optimised for speed (responsive note detection for
+// exercises), NOT precision. The tuner's pipeline (pitchLogic.js) uses larger
+// windows, median stabilisation, and EMA smoothing for maximum accuracy. These
+// two pipelines are intentionally separate — sharing one fftSize would cause
+// audio glitches and force the wrong precision/latency trade-off on one side.
+// See improvement.md §1.4 for the design rationale.
 // guitar range prevents that collapse.
 //
 // The cost of running the full-range detection is that every target needs

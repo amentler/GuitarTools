@@ -153,6 +153,14 @@ export function createGuitarTunerExercise() {
 
     permission.style.display = 'none';
 
+    // NOTE: The tuner creates its own AudioContext, AnalyserNode and audio
+    // pipeline. This is intentional — the tuner prioritises pitch precision
+    // over latency (adaptive large fftSize, YIN + HPS combined detection,
+    // median stabilisation, EMA smoothing). Exercise modules like "Noten
+    // spielen" use separate instances optimised for speed (smaller windows,
+    // fastNoteMatcher classifier). Sharing a single AnalyserNode would force
+    // one fftSize on both, causing glitches and wrong trade-offs.
+    // See improvement.md §1.4 for the design rationale.
     audioCtx = new AudioContext();
     analyser = audioCtx.createAnalyser();
     analyser.fftSize = getAdaptiveFftSize();
