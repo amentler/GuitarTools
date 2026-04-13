@@ -40,20 +40,35 @@ Implemented the exercise registry pattern. `app.js` is now generic — `navigate
 - Create a minimal `EventBus` for cross-module communication (e.g., settings changes, score updates).
 - Alternatively, use custom DOM events (already partially done with `<gt-fretboard>`'s `fret-select` event).
 
-### 1.4 Consolidate Audio Pipeline into a Shared AudioContext Manager
+### 1.4 Share AudioContext + Microphone Stream (NOT AnalyserNode)
 
 **Problem:** Each audio feature (tuner, note-playing, sheet-mic) creates its own `AudioContext`, `AnalyserNode`, and `getUserMedia` stream. This leads to:
-- Multiple AudioContext instances (resource waste)
-- Repeated microphone permission logic
-- Duplicated setup/teardown code
+- Multiple `AudioContext` instances over the app lifetime (resource waste)
+- Repeated microphone permission UI (jarring UX)
+- Duplicated stream setup/teardown code across 3 modules
+
+**Design constraint:** Der Tuner und die "Noten spielen"-Übung **müssen getrennte Pitch-Erkennung und separate AnalyserNodes** behalten:
+- Der Tuner benötigt **Präzision** (große fftSize, YIN + HPS, Median-Stabilisierung, EMA-Glättung).
+- "Noten spielen" benötigt **Geschwindigkeit** (kleinere fftSize für niedrige Latenz, schneller Frame-Classifier via `fastNoteMatcher`).
+- Beide könnten theoretisch gleichzeitig aktiv sein (Navigation zwischen Views) — ein gemeinsames AnalyserNode mit wechselnder fftSize würde Knackgeräusche erzeugen und ist konzeptionell falsch.
 
 **Recommendation:**
-- Create `js/audio/audioManager.js` — a singleton that manages:
-  - Single `AudioContext` instance
-  - Microphone stream (shared across features)
-  - AnalyserNode with configurable fftSize
-  - Cleanup on navigation
-- All audio features request an analyser node from the manager instead of creating their own.
+- Create `js/audio/audioSession.js` — a lightweight ref-counted session manager that shares **only**:
+  - One `AudioContext` instance (reused across all audio features)
+  - One `getUserMedia` stream (permission asked once)
+- Each exercise creates its **own** `AnalyserNode` and pitch-detection pipeline.
+- Cleanup via reference counting: the stream stays open as long as any audio feature is active.
+
+```js
+// Usage in any audio exercise:
+const { context, stream } = await audioSession.acquire();
+const analyser = context.createAnalyser();
+analyser.fftSize = myPreferredSize;
+context.createMediaStreamSource(stream).connect(analyser);
+
+// On stop:
+audioSession.release();
+```
 
 ---
 
