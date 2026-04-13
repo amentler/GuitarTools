@@ -34,22 +34,26 @@ Der Nutzer sieht einen zufälligen Akkordnamen und legt die richtigen Finger­po
 - Fehlklick-Korrektur ohne leeren Zwischenzustand: erneuter Klick auf Bund setzt die Saite zurück auf „offen“
 
 ### Progression
-- **Level 1:** Offene Akkorde (C, G, D, Em, Am)
-- **Level 2:** Weitere offene Akkorde + 7-Akkorde (aktuell erweitert um E-Dur, A-Dur, D-Moll)
+- **Kategorien:** Nutzer kann über Checkboxen wählen, welche Akkorde abgefragt werden.
+- **Simplified:** 1-2 Finger Akkorde (G1, C1, Em2, Am2)
+- **Standard:** CAGED System (C, G, D, Em, Am, E, A, Dm)
+- **Extended:** 7er-Akkorde und F-Dur klein (G7, C7, D7, A7, E7, F, H7)
+- **Sus & Add:** Asus2, Asus4, Dsus2, Dsus4, Esus4, Cadd9, G-Dur (Rock)
+- **Standard-Einstellung:** Nur "Simplified" ist aktiv, um Einsteiger nicht zu überfordern.
 
 ---
 
 ## Technische Umsetzung
 
 ### Neue Dateien
-- `js/games/akkordTrainer/akkordTrainer.js`: Spielzustand, Rundenverwaltung
-- `js/games/akkordTrainer/akkordLogic.js`: Akkord-Datenbank (Name → Fingerpositionen)
+- `js/games/akkordTrainer/akkordTrainer.js`: Spielzustand, Rundenverwaltung, Kategorie-Filterung
+- `js/games/akkordTrainer/akkordLogic.js`: Akkord-Datenbank (Name → Fingerpositionen), Kategorisierungs-Logik
 - `js/games/akkordTrainer/akkordSVG.js`: Interaktives Griffbrett-Diagramm (vertikal)
 - `js/games/akkordTrainer/CLAUDE.md`: Modulspezifische Dokumentation
 
 ### Integration
-- **index.html**: View `#view-akkord-trainer` und Menü-Karte hinzugefügt.
-- **style.css**: Styling für das neue Modul ergänzt.
+- **index.html**: View `#view-akkord-trainer` mit Checkboxen für Kategorien erweitert.
+- **style.css**: Styling für Checkboxen und Layout-Anpassungen.
 - **js/app.js**: Navigation und Lifecycle-Management integriert.
 
 ---

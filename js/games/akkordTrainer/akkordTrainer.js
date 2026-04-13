@@ -13,7 +13,25 @@ export function createAkkordExercise() {
   let userPositions = []; // Array<{string, fret, muted}>
   let feedback = null;
   let score = { correct: 0, total: 0 };
-  const level = 1;
+  
+  // Category mapping
+  const CATEGORIES = {
+    'check-cat-simplified': 'simplified',
+    'check-cat-standard': 'standard',
+    'check-cat-extended': 'extended',
+    'check-cat-sus-add': 'sus_add'
+  };
+
+  function getActiveCategories() {
+    const active = [];
+    Object.keys(CATEGORIES).forEach(id => {
+      const cb = document.getElementById(id);
+      if (cb && cb.checked) {
+        active.push(CATEGORIES[id]);
+      }
+    });
+    return active.length > 0 ? active : ['simplified'];
+  }
 
   function getDefaultStringPositions() {
     return Array.from({ length: 6 }, (_, idx) => ({
@@ -33,7 +51,7 @@ export function createAkkordExercise() {
   const feedbackText = document.getElementById('chord-feedback-text');
 
   function nextRound() {
-    currentChord = getRandomChord(level);
+    currentChord = getRandomChord(getActiveCategories());
     userPositions = getDefaultStringPositions();
     feedback = null;
 

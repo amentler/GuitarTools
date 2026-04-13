@@ -1,35 +1,36 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { CHORDS, LEVELS, getRandomChord, validateChord } from '../../js/games/akkordTrainer/akkordLogic.js';
+import { CHORDS, CHORD_CATEGORIES, getRandomChord, validateChord } from '../../js/games/akkordTrainer/akkordLogic.js';
 
 describe('getRandomChord', () => {
   afterEach(() => {
     vi.restoreAllMocks();
   });
 
-  it('returns only chords from the selected level pool', () => {
+  it('returns only chords from the selected category pool', () => {
     const randomSpy = vi.spyOn(Math, 'random');
     randomSpy.mockReturnValueOnce(0);
     randomSpy.mockReturnValueOnce(0.5);
     randomSpy.mockReturnValueOnce(0.9999);
 
+    const activeCategories = ['standard'];
     const draws = [
-      getRandomChord(2),
-      getRandomChord(2),
-      getRandomChord(2),
+      getRandomChord(activeCategories),
+      getRandomChord(activeCategories),
+      getRandomChord(activeCategories),
     ];
 
     for (const draw of draws) {
-      expect(LEVELS[1]).toContain(draw.name);
+      expect(CHORD_CATEGORIES.standard).toContain(draw.name);
       expect(draw.positions).toEqual(CHORDS[draw.name]);
     }
   });
 
-  it('falls back to level 1 for invalid level', () => {
+  it('falls back to simplified for invalid category', () => {
     vi.spyOn(Math, 'random').mockReturnValue(0);
-    const draw = getRandomChord(999);
+    const draw = getRandomChord(['non-existent']);
 
-    expect(LEVELS[0]).toContain(draw.name);
-    expect(draw.name).toBe(LEVELS[0][0]);
+    expect(CHORD_CATEGORIES.simplified).toContain(draw.name);
+    expect(draw.name).toBe(CHORD_CATEGORIES.simplified[0]);
     expect(draw.positions).toEqual(CHORDS[draw.name]);
   });
 });
