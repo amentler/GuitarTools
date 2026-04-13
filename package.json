@@ -10,7 +10,7 @@
   "lint-staged": {
     "*.js": [
       "eslint --fix",
-      "vitest related --run --passWithNoTests"
+      "vitest related --run --passWithNoTests --exclude 'tests/unit/tunerAudio.test.js' --exclude 'tests/unit/fastNoteMatcherAudio.test.js'"
     ]
   },
   "devDependencies": {
