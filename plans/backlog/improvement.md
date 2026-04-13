@@ -357,7 +357,7 @@
 | 🟠 P1 | High | Low | 1.4 — Shared AudioContext manager |
 | 🟡 P2 | Medium | Medium | 2.1 — Split large files (SRP) |
 | 🟡 P2 | Medium | Low | 4.2 — Add Vite build step |
-| 🟡 P2 | Medium | Low | 4.3 — Add pre-commit hooks |
+| ✅ P2 | Medium | Low | 4.3 — Add pre-commit hooks (DONE) |
 | 🟡 P2 | Medium | Low | 5.2 — Lazy-load exercise modules |
 | 🟢 P3 | Medium | Low | 4.1 — Add JSDoc types + ts-check |
 | 🟢 P3 | Medium | Medium | 3.1 — Integration tests |
@@ -377,5 +377,5 @@
 4. Add `tests/fixtures/README.md`
 5. Fix Service Worker to actually cache static assets
 6. Add `window.onerror` global error handler
-7. Add pre-commit hooks (husky + lint-staged)
+7. ✅ Add pre-commit hooks (husky + lint-staged) (DONE)
 8. Replace `innerHTML` with `textContent` for feedback strings
