@@ -1061,6 +1061,66 @@ input[type="range"] {
   box-shadow: 0 0 20px rgba(244, 67, 54, 0.3);
 }
 
+/* === Akkord Übersicht === */
+#view-akkord-uebersicht {
+  padding: 1rem;
+  gap: 1.5rem;
+  max-width: 900px;
+  width: 100%;
+  margin: 0 auto;
+  overflow-y: auto;
+}
+
+.akkord-uebersicht-section {
+  width: 100%;
+}
+
+.akkord-uebersicht-section-title {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--color-text-muted);
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.4rem;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.akkord-uebersicht-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 0.75rem;
+}
+
+.akkord-uebersicht-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.akkord-uebersicht-name {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--color-accent-alt);
+  text-align: center;
+}
+
+.akkord-uebersicht-diagram {
+  width: 100%;
+}
+
+#akkord-uebersicht-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  width: 100%;
+}
+
 /* === Responsive === */
 @media (max-width: 400px) {
   .note-buttons {
