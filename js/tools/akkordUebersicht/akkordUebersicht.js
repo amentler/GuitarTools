@@ -5,7 +5,7 @@
  */
 
 import { registerExercise } from '../../exerciseRegistry.js';
-import { CHORDS, CHORD_CATEGORIES } from '../../games/akkordTrainer/akkordLogic.js';
+import { CHORDS, CHORD_CATEGORIES } from '../../data/akkordData.js';
 import { renderChordDiagram } from '../../games/akkordTrainer/akkordSVG.js';
 
 const CATEGORY_LABELS = {
@@ -47,7 +47,7 @@ function render() {
 
       const diagramEl = document.createElement('div');
       diagramEl.className = 'akkord-uebersicht-diagram';
-      renderChordDiagram(diagramEl, positions, null, null, () => {});
+      renderChordDiagram(diagramEl, positions, null, null, () => {}, true);
       card.appendChild(diagramEl);
 
       grid.appendChild(card);
