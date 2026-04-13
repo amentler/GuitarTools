@@ -34,10 +34,12 @@ Manages game state, round management, and DOM interactions. Exports `startExerci
 ### `akkordLogic.js` – Chord database and validation
 
 Contains the chord definitions and logic to compare user input with the correct chord.
+Currently contains **35 chords** across 4 categories (simplified: 4, standard: 8, extended: 15, sus_add: 8) with optional `finger` fields (1–4) on fretted positions.
 
 **Exports:**
-- `CHORDS` – Object mapping chord names to their finger positions:
+- `CHORDS` – Object mapping chord names (32 total) to their finger positions:
   `{ "C-Dur": [{ string: 2, fret: 1 }, { string: 4, fret: 2 }, { string: 5, fret: 3 }], "A-Moll": [...], ... }`
+  Each position may also include a `finger` field (1–4) for fretted strings; `validateChord` ignores this field.
 - `LEVELS` – Array of chord name groups for different difficulties.
 - `getRandomChord(level)` → returns a random chord object `{ name, positions }`.
 - `validateChord(chordName, userPositions)` → returns `true` if `userPositions` match the reference.
