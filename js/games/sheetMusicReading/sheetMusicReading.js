@@ -1,6 +1,7 @@
 import { registerExercise } from '../../exerciseRegistry.js';
 import { generateBars, getFilteredNotes } from './sheetMusicLogic.js';
 import { renderScore }  from './sheetMusicSVG.js';
+import { wireStringToggles, syncStringToggles, wireFretSlider, syncFretSlider } from '../../utils/settings.js';
 
 export function createSheetMusicExercise() {
   let wired = false;
@@ -30,13 +31,11 @@ export function createSheetMusicExercise() {
   function syncSettingsUI() {
     const slider = document.getElementById('sheet-music-fret-range-slider');
     const label  = document.getElementById('sheet-music-fret-range-label');
-    slider.value = state.settings.maxFret;
-    label.textContent = state.settings.maxFret === 0 ? 'Nur Leer' : `0 – ${state.settings.maxFret}`;
-
-    document.querySelectorAll('#sheet-music-string-toggles .btn-string').forEach(btn => {
-      const idx = parseInt(btn.dataset.string, 10);
-      btn.classList.toggle('active', state.settings.activeStrings.includes(idx));
-    });
+    syncFretSlider(slider, label, state.settings.maxFret);
+    syncStringToggles(
+      document.querySelectorAll('#sheet-music-string-toggles .btn-string'),
+      state.settings.activeStrings,
+    );
   }
 
   function startExercise() {
@@ -59,27 +58,14 @@ export function createSheetMusicExercise() {
       // Fret range slider
       const slider = document.getElementById('sheet-music-fret-range-slider');
       const label  = document.getElementById('sheet-music-fret-range-label');
-      slider.addEventListener('input', () => {
-        state.settings.maxFret = parseInt(slider.value, 10);
-        label.textContent = state.settings.maxFret === 0 ? 'Nur Leer' : `0 – ${state.settings.maxFret}`;
-        regenerate();
-      });
+      wireFretSlider(slider, label, state.settings, regenerate);
 
       // String toggles
-      document.querySelectorAll('#sheet-music-string-toggles .btn-string').forEach(btn => {
-        btn.addEventListener('click', () => {
-          const idx    = parseInt(btn.dataset.string, 10);
-          const active = state.settings.activeStrings;
-          if (active.includes(idx)) {
-            if (active.length > 1) active.splice(active.indexOf(idx), 1);
-          } else {
-            active.push(idx);
-            active.sort((a, b) => a - b);
-          }
-          syncSettingsUI();
-          regenerate();
-        });
-      });
+      wireStringToggles(
+        document.querySelectorAll('#sheet-music-string-toggles .btn-string'),
+        state.settings.activeStrings,
+        () => { syncSettingsUI(); regenerate(); },
+      );
 
       wired = true;
     }

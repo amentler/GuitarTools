@@ -22,12 +22,6 @@ const views = {
   menu: document.getElementById('view-menu'),
 };
 
-// Build views map from registered exercises
-for (const [, meta] of getAllExercises()) {
-  const el = document.getElementById(meta.viewId);
-  if (el) views[meta.viewId] = el;
-}
-
 let currentKey = 'menu';
 const supportsHistory = typeof window !== 'undefined' && !!window.history;
 
@@ -61,17 +55,6 @@ async function navigateTo(key, { fromHistory = false } = {}) {
   }
 }
 
-// ── Wire up buttons ──────────────────────────────────────────────────────────
-
-for (const [key, meta] of getAllExercises()) {
-  const startBtn = document.getElementById(meta.btnStartId);
-  const backBtn  = document.getElementById(meta.btnBackId);
-
-  if (startBtn) startBtn.addEventListener('click', () => navigateTo(key));
-  if (backBtn)  backBtn.addEventListener('click', () => navigateTo('menu'));
-}
-
-// ── Initial view ─────────────────────────────────────────────────────────────
 async function loadVersionInfo() {
   const versionEl = document.getElementById('app-version');
   try {
@@ -84,10 +67,29 @@ async function loadVersionInfo() {
   }
 }
 
+// ── Initialization ───────────────────────────────────────────────────────────
+
 // Wait for all exercise modules to load before initializing the app
 const moduleLoads = EXERCISE_MODULES.map(m => import(m.path));
 await Promise.all(moduleLoads);
 
+// Now that all modules are loaded and have registered themselves:
+// 1. Build views map
+for (const [, meta] of getAllExercises()) {
+  const el = document.getElementById(meta.viewId);
+  if (el) views[meta.viewId] = el;
+}
+
+// 2. Wire up buttons
+for (const [key, meta] of getAllExercises()) {
+  const startBtn = document.getElementById(meta.btnStartId);
+  const backBtn  = document.getElementById(meta.btnBackId);
+
+  if (startBtn) startBtn.addEventListener('click', () => navigateTo(key));
+  if (backBtn)  backBtn.addEventListener('click', () => navigateTo('menu'));
+}
+
+// 3. Initialize history and version info
 loadVersionInfo();
 if (supportsHistory) {
   window.history.replaceState({ view: 'menu' }, '', '#menu');
