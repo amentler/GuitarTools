@@ -33,6 +33,17 @@ describe('getRandomChord', () => {
     expect(draw.name).toBe(CHORD_CATEGORIES.simplified[0]);
     expect(draw.positions).toEqual(CHORDS[draw.name]);
   });
+
+  it('returns positions that may contain finger fields without error', () => {
+    const draw = getRandomChord(['standard']);
+    expect(draw.positions).toBeDefined();
+    expect(Array.isArray(draw.positions)).toBe(true);
+    draw.positions.forEach(p => {
+      if (p.finger !== undefined) {
+        expect([1, 2, 3, 4]).toContain(p.finger);
+      }
+    });
+  });
 });
 
 describe('validateChord', () => {
@@ -83,5 +94,10 @@ describe('validateChord', () => {
     wrongState.find(position => position.string === 6).fret = 0;
 
     expect(validateChord('C-Dur', wrongState)).toBe(false);
+  });
+
+  it('ignores finger field in user positions', () => {
+    const withFinger = CHORDS['C-Dur'].map(p => ({ ...p, finger: p.fret > 0 ? 1 : undefined }));
+    expect(validateChord('C-Dur', withFinger)).toBe(true);
   });
 });

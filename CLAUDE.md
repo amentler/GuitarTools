@@ -17,6 +17,8 @@ style.css           – Global styles and CSS Custom Properties
 version.txt         – Version text shown on the main menu (format: `Version YYYY-MM-DD HH:MM`); update on each change
 js/
 ├── app.js          – View navigation (menu ↔ exercises/tools); imports components/index.js
+├── data/           – Shared data (Single Source of Truth)
+│   └── akkordData.js – All 23 chord definitions with finger data + validateFingerData()
 ├── components/     – Reusable Web Components (UI layer)
 │   ├── index.js    – Registers all custom elements (imported once from app.js)
 │   └── fretboard/
@@ -125,8 +127,8 @@ Phase 1 CI pipeline is active. Tests run on every push and pull request.
 - **Pre-Commit Mandate:** Run `npm run lint` before every commit; if lint errors occur, fix them before committing.
 - **Test files:** `tests/unit/` — pure logic tests only, no DOM/audio
 - **CI workflow:** `.github/workflows/ci.yml`
-- **Current unit-test scope:** `fretboardLogic`, `tunerLogic`, `tonFinderLogic`, `akkordLogic`, `sheetMusicLogic`, `metronomeLogic`, `notePlayingLogic`, `fastNoteMatcher`, `fastNoteMatcherAudio` (WAV fixtures), `fastNoteMatcherSequences` (sequence WAV+JSON fixtures)
-- **Current test count:** 368 passing Vitest tests (`tests/unit/**/*.test.js`, plus 1 skipped E4-octave case blocked by the tuner's max frequency)
+- **Current unit-test scope:** `fretboardLogic`, `tunerLogic`, `tonFinderLogic`, `akkordLogic`, `akkordData`, `sheetMusicLogic`, `metronomeLogic`, `notePlayingLogic`, `fastNoteMatcher`, `fastNoteMatcherAudio` (WAV fixtures), `fastNoteMatcherSequences` (sequence WAV+JSON fixtures)
+- **Current test count:** 379 passing Vitest tests (`tests/unit/**/*.test.js`, plus 1 skipped E4-octave case blocked by the tuner's max frequency)
 
 ### Tuner Fixture Tests – Zwei Testansätze
 
@@ -170,6 +172,7 @@ When adding logic to `*Logic.js` files, add corresponding tests in `tests/unit/`
 
 - Game modules: `js/games/tonFinder/`, `js/games/fretboardToneRecognition/`, `js/games/akkordTrainer/`, `js/games/sheetMusicReading/`, `js/games/notePlayingExercise/`, `js/games/sheetMusicMic/`
 - Tool modules: `js/tools/guitarTuner/`, `js/tools/metronome/`
+- Data modules: `js/data/akkordData.js` (chord definitions with finger data)
 - UI components: `js/components/fretboard/` (`gt-fretboard.js`, `gt-fretboard-render.js`)
 
 ## Noten spielen (sheetMusicMic)

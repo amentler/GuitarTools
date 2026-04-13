@@ -12,14 +12,14 @@ Reference lookup tool – no scoring, no interactivity. Shows every chord grip a
 
 ## Dependencies
 
-- `../../games/akkordTrainer/akkordLogic.js` — `CHORDS`, `CHORD_CATEGORIES`
+- `../../data/akkordData.js` — `CHORDS`, `CHORD_CATEGORIES` (single source of truth for chord data)
 - `../../games/akkordTrainer/akkordSVG.js` — `renderChordDiagram`
 - `../../exerciseRegistry.js` — `registerExercise`
 
 ## Architecture
 
 - Rendering is **lazy and idempotent**: diagrams are rendered only once on the first `startExercise()` call (`rendered` flag).
-- `renderChordDiagram` is called with `referencePositions = null`, `feedback = null`, and a no-op `onTogglePosition` to display static (non-interactive) chord finger positions as orange dots.
+- `renderChordDiagram` is called with `referencePositions = null`, `feedback = null`, a no-op `onTogglePosition`, and `showFingers = true` to display static (non-interactive) chord finger positions as orange dots with finger numbers (1–4) shown in white inside the dots.
 - `stopExercise()` is a no-op (no timers or audio to clean up).
 
 ## Registration
