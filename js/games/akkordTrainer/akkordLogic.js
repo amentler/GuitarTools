@@ -1,6 +1,6 @@
 /**
  * akkordLogic.js
- * Chord Trainer logic – chord data is imported from js/data/akkordData.js.
+ * Chord Trainer logic – chord data is the Single Source of Truth in js/data/akkordData.js.
  * String mapping: 1 = high e (top), 6 = low E (bottom)
  */
 
