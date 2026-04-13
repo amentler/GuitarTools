@@ -91,18 +91,19 @@ audioSession.release();
   - `audioFilters.js` — bandpass, damp, level analysis
   - `pitchMath.js` — frequencyToNote, noteToFrequency, cents calculations
 
-### 2.2 Reduce Code Duplication: Shared Settings Component
+### 2.2 ~~Reduce Code Duplication: Shared Settings Component~~ ✅ DONE
 
-**Problem:** The settings panel (fret range slider, string toggles) is duplicated across 5+ views with nearly identical HTML and JS wiring code:
-- `view-fretboard`, `view-ton-finder`, `view-sheet-music`, `view-sheet-mic`, `view-note-play`
+**Status:** Completed 2026-04-12
 
-**Recommendation:**
-- Create a `<gt-settings-panel>` Web Component that handles:
-  - Fret range slider with live label
-  - String toggle buttons
-  - Emits a `settings-change` event with `{ maxFret, activeStrings }`
-- Replace all inline settings HTML with the component.
-- Estimated reduction: ~200 lines of duplicated HTML + ~150 lines of duplicated JS wiring.
+Created `js/utils/settings.js` with shared utilities:
+- `wireStringToggles()` — eliminates 15 lines × 5 files = ~75 lines duplicated
+- `syncStringToggles()` — eliminates ~6 lines × 5 files = ~30 lines
+- `wireFretSlider()` — eliminates ~6 lines × 5 files = ~30 lines
+- `syncFretSlider()` — eliminates ~4 lines × 5 files = ~20 lines
+- `formatFretLabel()` — eliminates 1 line × 5 files = ~5 lines
+
+All 5 exercise files refactored: fretboard, ton-finder, sheet-music, sheet-mic, note-play.
+Removed standalone `updateFretLabel()` helpers where they existed.
 
 ### 2.3 Replace Inline Styles with CSS Classes
 
@@ -344,7 +345,7 @@ audioSession.release();
 |----------|--------|--------|------|
 | ~~🔴 P0~~ | High | Medium | 1.1 — Eliminate module-level mutable state | ✅ DONE |
 | 🔴 P0 | High | Low | 5.3 — Fix Service Worker caching strategy |
-| 🟠 P1 | High | Low | 2.2 — Shared settings component (DRY) |
+| ~~🟠 P1~~ | High | Low | 2.2 — Shared settings component (DRY) | ✅ DONE |
 | ~~🟠 P1~~ | High | Medium | 1.2 — Decouple app.js navigation (OCP) | ✅ DONE |
 | 🟠 P1 | High | Low | 1.4 — Shared AudioContext manager |
 | 🟡 P2 | Medium | Medium | 2.1 — Split large files (SRP) |

@@ -4,6 +4,7 @@
 import { registerExercise } from '../../exerciseRegistry.js';
 import { CHROMATIC_NOTES, getNoteAtPosition, getRandomPosition } from './fretboardLogic.js';
 import { renderFretboard } from './fretboardSVG.js';
+import { wireStringToggles, syncStringToggles, wireFretSlider, syncFretSlider } from '../../utils/settings.js';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 const RESHUFFLE_INTERVAL = 5;
@@ -116,31 +117,13 @@ export function createFretboardExercise() {
     const slider     = document.getElementById('fret-range-slider');
     const rangeLabel = document.getElementById('fret-range-label');
 
-    slider.addEventListener('input', () => {
-      state.settings.maxFret = parseInt(slider.value, 10);
-      rangeLabel.textContent = state.settings.maxFret === 0 ? 'Nur Leer' : `0 – ${state.settings.maxFret}`;
-      resetAndAdvance();
-    });
+    wireFretSlider(slider, rangeLabel, state.settings, resetAndAdvance);
 
-    document.querySelectorAll('.btn-string').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const idx    = parseInt(btn.dataset.string, 10);
-        const active = state.settings.activeStrings;
-
-        if (active.includes(idx)) {
-          if (active.length > 1) {
-            active.splice(active.indexOf(idx), 1);
-            btn.classList.remove('active');
-          }
-        } else {
-          active.push(idx);
-          active.sort((a, b) => a - b);
-          btn.classList.add('active');
-        }
-
-        resetAndAdvance();
-      });
-    });
+    wireStringToggles(
+      document.querySelectorAll('.btn-string'),
+      state.settings.activeStrings,
+      resetAndAdvance,
+    );
 
     const shuffleCheckbox = document.getElementById('shuffle-notes-checkbox');
     shuffleCheckbox.addEventListener('change', () => {
@@ -155,14 +138,8 @@ export function createFretboardExercise() {
   function syncSettingsUI() {
     const slider     = document.getElementById('fret-range-slider');
     const rangeLabel = document.getElementById('fret-range-label');
-    slider.value = state.settings.maxFret;
-    rangeLabel.textContent = state.settings.maxFret === 0 ? 'Nur Leer' : `0 – ${state.settings.maxFret}`;
-
-    document.querySelectorAll('.btn-string').forEach(btn => {
-      const idx = parseInt(btn.dataset.string, 10);
-      btn.classList.toggle('active', state.settings.activeStrings.includes(idx));
-    });
-
+    syncFretSlider(slider, rangeLabel, state.settings.maxFret);
+    syncStringToggles(document.querySelectorAll('.btn-string'), state.settings.activeStrings);
     document.getElementById('shuffle-notes-checkbox').checked = state.settings.shuffleNotes;
   }
 

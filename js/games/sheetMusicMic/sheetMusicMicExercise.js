@@ -14,6 +14,7 @@ import {
   getRecommendedFftSize,
 } from './fastNoteMatcher.js';
 import { renderScoreWithStatus } from './sheetMusicMicSVG.js';
+import { wireStringToggles, syncStringToggles, wireFretSlider, syncFretSlider } from '../../utils/settings.js';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 const SUCCESS_PAUSE_MS      = 600; // pause after correct note before advancing
@@ -326,47 +327,33 @@ export function createSheetMusicMicExercise() {
 
   // ── Settings ──────────────────────────────────────────────────────────────
   function syncSettingsUI() {
-    ui.slider.value = state.settings.maxFret;
-    updateFretLabel();
-    document.querySelectorAll('#sheet-mic-string-toggles .btn-string').forEach(btn => {
-      const idx = parseInt(btn.dataset.string, 10);
-      btn.classList.toggle('active', state.settings.activeStrings.includes(idx));
-    });
+    syncFretSlider(ui.slider, ui.sliderLabel, state.settings.maxFret);
+    syncStringToggles(
+      document.querySelectorAll('#sheet-mic-string-toggles .btn-string'),
+      state.settings.activeStrings,
+    );
     ui.modeSelect.value = state.mode;
   }
 
-  function updateFretLabel() {
-    ui.sliderLabel.textContent =
-      state.settings.maxFret === 0 ? 'Nur Leer' : `0 – ${state.settings.maxFret}`;
-  }
-
   function wireSettings() {
-    ui.slider.addEventListener('input', () => {
-      state.settings.maxFret = parseInt(ui.slider.value, 10);
-      updateFretLabel();
+    wireFretSlider(ui.slider, ui.sliderLabel, state.settings, () => {
       stopListening();
       generateNewBars();
       ui.startBtn.style.display = 'inline-block';
       ui.stopBtn.style.display  = 'none';
     });
 
-    document.querySelectorAll('#sheet-mic-string-toggles .btn-string').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const idx    = parseInt(btn.dataset.string, 10);
-        const active = state.settings.activeStrings;
-        if (active.includes(idx)) {
-          if (active.length > 1) active.splice(active.indexOf(idx), 1);
-        } else {
-          active.push(idx);
-          active.sort((a, b) => a - b);
-        }
+    wireStringToggles(
+      document.querySelectorAll('#sheet-mic-string-toggles .btn-string'),
+      state.settings.activeStrings,
+      () => {
         syncSettingsUI();
         stopListening();
         generateNewBars();
         ui.startBtn.style.display = 'inline-block';
         ui.stopBtn.style.display  = 'none';
-      });
-    });
+      },
+    );
 
     ui.modeSelect.addEventListener('change', () => {
       state.mode = ui.modeSelect.value;

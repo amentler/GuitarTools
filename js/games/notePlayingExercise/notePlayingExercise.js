@@ -11,6 +11,7 @@ import {
 } from '../sheetMusicMic/fastNoteMatcher.js';
 import { getRandomPitch, getPositionsForPitch } from './notePlayingLogic.js';
 import { renderNoteOnStaff, renderNotePositionsTab } from './notePlayingSVG.js';
+import { wireStringToggles, syncStringToggles, wireFretSlider, syncFretSlider } from '../../utils/settings.js';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 const ANALYZE_INTERVAL_MS = 50; // matching-loop cadence
@@ -164,31 +165,13 @@ export function createNotePlayingExercise() {
   // ── Settings wiring ───────────────────────────────────────────────────────
 
   function wireSettings() {
-    ui.slider.addEventListener('input', () => {
-      state.settings.maxFret = parseInt(ui.slider.value, 10);
-      updateFretLabel();
-      resetTargetNote();
-    });
+    wireFretSlider(ui.slider, ui.sliderLabel, state.settings, resetTargetNote);
 
-    document.querySelectorAll('#note-play-string-toggles .btn-string').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const idx    = parseInt(btn.dataset.string, 10);
-        const active = state.settings.activeStrings;
-
-        if (active.includes(idx)) {
-          if (active.length > 1) {
-            active.splice(active.indexOf(idx), 1);
-            btn.classList.remove('active');
-          }
-        } else {
-          active.push(idx);
-          active.sort((a, b) => a - b);
-          btn.classList.add('active');
-        }
-
-        resetTargetNote();
-      });
-    });
+    wireStringToggles(
+      document.querySelectorAll('#note-play-string-toggles .btn-string'),
+      state.settings.activeStrings,
+      resetTargetNote,
+    );
 
     ui.hint1Btn.addEventListener('click', () => {
       if (state.hintLevel < 1) {
@@ -206,18 +189,11 @@ export function createNotePlayingExercise() {
   }
 
   function syncSettingsUI() {
-    ui.slider.value = state.settings.maxFret;
-    updateFretLabel();
-
-    document.querySelectorAll('#note-play-string-toggles .btn-string').forEach(btn => {
-      const idx = parseInt(btn.dataset.string, 10);
-      btn.classList.toggle('active', state.settings.activeStrings.includes(idx));
-    });
-  }
-
-  function updateFretLabel() {
-    ui.sliderLabel.textContent =
-      state.settings.maxFret === 0 ? 'Nur Leer' : `0 – ${state.settings.maxFret}`;
+    syncFretSlider(ui.slider, ui.sliderLabel, state.settings.maxFret);
+    syncStringToggles(
+      document.querySelectorAll('#note-play-string-toggles .btn-string'),
+      state.settings.activeStrings,
+    );
   }
 
   function resetTargetNote() {

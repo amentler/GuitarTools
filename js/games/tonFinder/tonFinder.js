@@ -1,5 +1,6 @@
 import { registerExercise } from '../../exerciseRegistry.js';
 import { getAllPositions, getNotePool, evaluateRound, positionKey } from './tonFinderLogic.js';
+import { wireStringToggles, syncStringToggles, wireFretSlider, syncFretSlider } from '../../utils/settings.js';
 
 export function createTonFinderExercise() {
   let settingsWired = false;
@@ -60,29 +61,16 @@ export function createTonFinderExercise() {
   }
 
   function wireSettings() {
-    ui.slider.addEventListener('input', () => {
-      state.settings.maxFret = parseInt(ui.slider.value, 10);
-      updateFretLabel();
-      startNextRound();
-    });
+    const slider = document.getElementById('ton-finder-fret-range-slider');
+    const sliderLabel = document.getElementById('ton-finder-fret-range-label');
 
-    document.querySelectorAll('#ton-finder-string-toggles .btn-string').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const idx = parseInt(btn.dataset.string, 10);
-        const active = state.settings.activeStrings;
-        if (active.includes(idx)) {
-          if (active.length > 1) {
-            active.splice(active.indexOf(idx), 1);
-          }
-        } else {
-          active.push(idx);
-          active.sort((a, b) => a - b);
-        }
+    wireFretSlider(slider, sliderLabel, state.settings, startNextRound);
 
-        syncSettingsUI();
-        startNextRound();
-      });
-    });
+    wireStringToggles(
+      document.querySelectorAll('#ton-finder-string-toggles .btn-string'),
+      state.settings.activeStrings,
+      () => { syncSettingsUI(); startNextRound(); },
+    );
 
     ui.difficulty.addEventListener('change', () => {
       state.settings.difficulty = ui.difficulty.value;
@@ -99,18 +87,12 @@ export function createTonFinderExercise() {
   }
 
   function syncSettingsUI() {
-    ui.slider.value = state.settings.maxFret;
-    updateFretLabel();
+    syncFretSlider(ui.slider, ui.sliderLabel, state.settings.maxFret);
     ui.difficulty.value = state.settings.difficulty;
-
-    document.querySelectorAll('#ton-finder-string-toggles .btn-string').forEach(btn => {
-      const idx = parseInt(btn.dataset.string, 10);
-      btn.classList.toggle('active', state.settings.activeStrings.includes(idx));
-    });
-  }
-
-  function updateFretLabel() {
-    ui.sliderLabel.textContent = state.settings.maxFret === 0 ? 'Nur Leer' : `0 – ${state.settings.maxFret}`;
+    syncStringToggles(
+      document.querySelectorAll('#ton-finder-string-toggles .btn-string'),
+      state.settings.activeStrings,
+    );
   }
 
   function startNextRound() {
