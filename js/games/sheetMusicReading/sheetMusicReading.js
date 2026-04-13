@@ -1,3 +1,4 @@
+import { registerExercise } from '../../exerciseRegistry.js';
 import { generateBars, getFilteredNotes } from './sheetMusicLogic.js';
 import { renderScore }  from './sheetMusicSVG.js';
 
@@ -91,3 +92,12 @@ export function startExercise() {
 export function stopExercise() {
   // Nothing to tear down (no audio, no timers)
 }
+
+// ── Self-registration ─────────────────────────────────────────────────────────
+registerExercise('sheetMusic', {
+  viewId: 'view-sheet-music',
+  btnStartId: 'btn-start-sheet-music',
+  btnBackId: 'btn-back-sheet-music',
+  start: startExercise,
+  stop: stopExercise,
+});

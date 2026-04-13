@@ -4,6 +4,7 @@
 //   easy – wrong notes do not penalise, just keep playing
 //   hard – any wrong note restarts the current sequence from the beginning
 
+import { registerExercise } from '../../exerciseRegistry.js';
 import { generateBars, getFilteredNotes } from '../sheetMusicReading/sheetMusicLogic.js';
 import {
   classifyFrame,
@@ -420,3 +421,12 @@ export function startExercise() {
 export function stopExercise() {
   stopListening();
 }
+
+// ── Self-registration ─────────────────────────────────────────────────────────
+registerExercise('sheetMic', {
+  viewId: 'view-sheet-mic',
+  btnStartId: 'btn-start-sheet-mic',
+  btnBackId: 'btn-back-sheet-mic',
+  start: startExercise,
+  stop: stopExercise,
+});

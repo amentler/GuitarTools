@@ -1,5 +1,6 @@
 // Fretboard exercise – state management & DOM interaction
 
+import { registerExercise } from '../../exerciseRegistry.js';
 import { CHROMATIC_NOTES, getNoteAtPosition, getRandomPosition } from './fretboardLogic.js';
 import { renderFretboard } from './fretboardSVG.js';
 
@@ -314,3 +315,12 @@ function updateChancesDisplay() {
     icon.classList.toggle('used', i < used);
   });
 }
+
+// ── Self-registration ─────────────────────────────────────────────────────────
+registerExercise('fretboard', {
+  viewId: 'view-fretboard',
+  btnStartId: 'btn-start-fretboard',
+  btnBackId: 'btn-back',
+  start: startExercise,
+  stop: stopExercise,
+});

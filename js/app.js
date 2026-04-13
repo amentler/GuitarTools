@@ -1,92 +1,75 @@
-// App navigation – controls which view is visible
+// App navigation – generic, zero hardcoded if/else chains.
+// Each exercise self-registers via registerExercise().
+// This module dynamically imports all exercises and wires buttons.
 
 import './components/index.js';
-import { startExercise as startFretboard,   stopExercise as stopFretboard   } from './games/fretboardToneRecognition/fretboardExercise.js';
-import { startExercise as startTuner,       stopExercise as stopTuner       } from './tools/guitarTuner/guitarTuner.js';
-import { startExercise as startSheetMusic,  stopExercise as stopSheetMusic  } from './games/sheetMusicReading/sheetMusicReading.js';
-import { startExercise as startMetronome,   stopExercise as stopMetronome   } from './tools/metronome/metronome.js';
-import { startExercise as startAkkord,      stopExercise as stopAkkord      } from './games/akkordTrainer/akkordTrainer.js';
-import { startExercise as startTonFinder,   stopExercise as stopTonFinder   } from './games/tonFinder/tonFinder.js';
-import { startExercise as startNotePlaying, stopExercise as stopNotePlaying } from './games/notePlayingExercise/notePlayingExercise.js';
-import { startExercise as startSheetMic,   stopExercise as stopSheetMic   } from './games/sheetMusicMic/sheetMusicMicExercise.js';
+import { getExercise, getAllExercises } from './exerciseRegistry.js';
+
+// Dynamic imports – each module calls registerExercise() on load.
+// The keys match the view identifiers used in index.html and hash routes.
+const EXERCISE_MODULES = [
+  { key: 'fretboard',   path: './games/fretboardToneRecognition/fretboardExercise.js' },
+  { key: 'tuner',       path: './tools/guitarTuner/guitarTuner.js' },
+  { key: 'sheetMusic',  path: './games/sheetMusicReading/sheetMusicReading.js' },
+  { key: 'metronome',   path: './tools/metronome/metronome.js' },
+  { key: 'akkord',      path: './games/akkordTrainer/akkordTrainer.js' },
+  { key: 'tonFinder',   path: './games/tonFinder/tonFinder.js' },
+  { key: 'notePlaying', path: './games/notePlayingExercise/notePlayingExercise.js' },
+  { key: 'sheetMic',    path: './games/sheetMusicMic/sheetMusicMicExercise.js' },
+];
 
 const views = {
-  menu:        document.getElementById('view-menu'),
-  fretboard:   document.getElementById('view-fretboard'),
-  tuner:       document.getElementById('view-tuner'),
-  sheetMusic:  document.getElementById('view-sheet-music'),
-  metronome:   document.getElementById('view-metronome'),
-  akkord:      document.getElementById('view-akkord-trainer'),
-  tonFinder:   document.getElementById('view-ton-finder'),
-  notePlaying: document.getElementById('view-note-play'),
-  sheetMic:    document.getElementById('view-sheet-mic'),
+  menu: document.getElementById('view-menu'),
 };
 
-let currentView = 'menu';
-const supportsHistory = typeof window !== 'undefined' && !!window.history;
-
-function showView(name) {
-  for (const [key, el] of Object.entries(views)) {
-    el.classList.toggle('active', key === name);
-  }
+// Build views map from registered exercises
+for (const [, meta] of getAllExercises()) {
+  const el = document.getElementById(meta.viewId);
+  if (el) views[meta.viewId] = el;
 }
 
-function navigateTo(name, { fromHistory = false } = {}) {
+let currentKey = 'menu';
+const supportsHistory = typeof window !== 'undefined' && !!window.history;
+
+function showView(key) {
+  // Hide all views
+  for (const el of Object.values(views)) {
+    el.classList.remove('active');
+  }
+  // Show target
+  const viewEl = key === 'menu'
+    ? views.menu
+    : views[getExercise(key)?.viewId];
+  if (viewEl) viewEl.classList.add('active');
+}
+
+async function navigateTo(key, { fromHistory = false } = {}) {
   // Stop whatever is running
-  if (currentView === 'fretboard')   stopFretboard();
-  if (currentView === 'tuner')       stopTuner();
-  if (currentView === 'sheetMusic')  stopSheetMusic();
-  if (currentView === 'metronome')   stopMetronome();
-  if (currentView === 'akkord')      stopAkkord();
-  if (currentView === 'tonFinder')   stopTonFinder();
-  if (currentView === 'notePlaying') stopNotePlaying();
-  if (currentView === 'sheetMic')    stopSheetMic();
+  getExercise(currentKey)?.stop();
 
-  currentView = name;
-  showView(name);
+  currentKey = key;
+  showView(key);
 
-  if (name === 'fretboard')   startFretboard();
-  if (name === 'tuner')       startTuner();
-  if (name === 'sheetMusic')  startSheetMusic();
-  if (name === 'metronome')   startMetronome();
-  if (name === 'akkord')      startAkkord();
-  if (name === 'tonFinder')   startTonFinder();
-  if (name === 'notePlaying') startNotePlaying();
-  if (name === 'sheetMic')    startSheetMic();
+  // Start the new exercise
+  getExercise(key)?.start();
 
   if (!fromHistory && supportsHistory) {
-    const hash = `#${name}`;
-    const state = { view: name };
-    if (name === 'menu') window.history.replaceState(state, '', hash);
+    const hash = `#${key}`;
+    const state = { view: key };
+    if (key === 'menu') window.history.replaceState(state, '', hash);
     else window.history.pushState(state, '', hash);
   }
 }
 
 // ── Wire up buttons ──────────────────────────────────────────────────────────
 
-document.getElementById('btn-start-fretboard').addEventListener('click', () => navigateTo('fretboard'));
-document.getElementById('btn-back').addEventListener('click',             () => navigateTo('menu'));
+for (const [key, meta] of getAllExercises()) {
+  const startBtn = document.getElementById(meta.btnStartId);
+  const backBtn  = document.getElementById(meta.btnBackId);
 
-document.getElementById('btn-start-tuner').addEventListener('click',       () => navigateTo('tuner'));
-document.getElementById('btn-back-tuner').addEventListener('click',        () => navigateTo('menu'));
-
-document.getElementById('btn-start-sheet-music').addEventListener('click', () => navigateTo('sheetMusic'));
-document.getElementById('btn-back-sheet-music').addEventListener('click',  () => navigateTo('menu'));
-
-document.getElementById('btn-start-metronome').addEventListener('click',   () => navigateTo('metronome'));
-document.getElementById('btn-back-metronome').addEventListener('click',    () => navigateTo('menu'));
-
-document.getElementById('btn-start-akkord-trainer').addEventListener('click', () => navigateTo('akkord'));
-document.getElementById('btn-back-akkord-trainer').addEventListener('click',  () => navigateTo('menu'));
-
-document.getElementById('btn-start-ton-finder').addEventListener('click', () => navigateTo('tonFinder'));
-document.getElementById('btn-back-ton-finder').addEventListener('click',  () => navigateTo('menu'));
-
-document.getElementById('btn-start-note-play').addEventListener('click', () => navigateTo('notePlaying'));
-document.getElementById('btn-back-note-play').addEventListener('click',  () => navigateTo('menu'));
-
-document.getElementById('btn-start-sheet-mic').addEventListener('click', () => navigateTo('sheetMic'));
-document.getElementById('btn-back-sheet-mic').addEventListener('click',  () => navigateTo('menu'));
+  if (startBtn) startBtn.addEventListener('click', () => navigateTo(key));
+  if (backBtn)  backBtn.addEventListener('click', () => navigateTo('menu'));
+}
 
 // ── Initial view ─────────────────────────────────────────────────────────────
 async function loadVersionInfo() {
@@ -101,12 +84,16 @@ async function loadVersionInfo() {
   }
 }
 
+// Wait for all exercise modules to load before initializing the app
+const moduleLoads = EXERCISE_MODULES.map(m => import(m.path));
+await Promise.all(moduleLoads);
+
 loadVersionInfo();
 if (supportsHistory) {
   window.history.replaceState({ view: 'menu' }, '', '#menu');
   window.addEventListener('popstate', (event) => {
     const view = event?.state?.view;
-    if (view && views[view]) navigateTo(view, { fromHistory: true });
+    if (view && getExercise(view)) navigateTo(view, { fromHistory: true });
     else navigateTo('menu', { fromHistory: true });
   });
 }

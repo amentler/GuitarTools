@@ -1,6 +1,7 @@
 // Guitar Tuner – main controller
 // Exports startExercise() and stopExercise() to match the app navigation contract.
 
+import { registerExercise } from '../../exerciseRegistry.js';
 import {
   detectPitch, frequencyToNote, isStandardTuningNote,
   GUIDED_TUNING_STEPS, noteToFrequency, getCentsToTarget, PERFECT_TOLERANCE_CENTS,
@@ -467,3 +468,12 @@ function renderGuidedFeedback(display) {
     : 'Ton zu hoch – tiefer stimmen';
   container.appendChild(hintEl);
 }
+
+// ── Self-registration ─────────────────────────────────────────────────────────
+registerExercise('tuner', {
+  viewId: 'view-tuner',
+  btnStartId: 'btn-start-tuner',
+  btnBackId: 'btn-back-tuner',
+  start: startExercise,
+  stop: stopExercise,
+});

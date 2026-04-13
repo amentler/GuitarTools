@@ -1,6 +1,7 @@
 // Note-Playing Exercise – main controller
 // Shows a target note; listens via microphone to verify the user plays it.
 
+import { registerExercise } from '../../exerciseRegistry.js';
 import {
   classifyFrame,
   createMatchState,
@@ -331,3 +332,12 @@ function updateFeedback(kind) {
 function updateScore() {
   if (ui) ui.score.textContent = state.score.correct;
 }
+
+// ── Self-registration ─────────────────────────────────────────────────────────
+registerExercise('notePlaying', {
+  viewId: 'view-note-play',
+  btnStartId: 'btn-start-note-play',
+  btnBackId: 'btn-back-note-play',
+  start: startExercise,
+  stop: stopExercise,
+});

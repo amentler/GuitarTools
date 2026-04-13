@@ -1,3 +1,4 @@
+import { registerExercise } from '../../exerciseRegistry.js';
 import { getAllPositions, getNotePool, evaluateRound, positionKey } from './tonFinderLogic.js';
 
 let settingsWired = false;
@@ -197,3 +198,12 @@ function updateScore() {
   ui.scorePoints.textContent = state.score.points;
   ui.scoreRounds.textContent = state.score.rounds;
 }
+
+// ── Self-registration ─────────────────────────────────────────────────────────
+registerExercise('tonFinder', {
+  viewId: 'view-ton-finder',
+  btnStartId: 'btn-start-ton-finder',
+  btnBackId: 'btn-back-ton-finder',
+  start: startExercise,
+  stop: stopExercise,
+});

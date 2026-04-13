@@ -3,6 +3,7 @@
  * Handles DOM events, state management, and persistence.
  */
 
+import { registerExercise } from '../../exerciseRegistry.js';
 import { MetronomeLogic } from './metronomeLogic.js';
 import { MetronomeSVG } from './metronomeSVG.js';
 
@@ -109,3 +110,12 @@ function toggleMetronome() {
     startStopBtn.classList.add('playing');
   }
 }
+
+// ── Self-registration ─────────────────────────────────────────────────────────
+registerExercise('metronome', {
+  viewId: 'view-metronome',
+  btnStartId: 'btn-start-metronome',
+  btnBackId: 'btn-back-metronome',
+  start: startExercise,
+  stop: stopExercise,
+});
