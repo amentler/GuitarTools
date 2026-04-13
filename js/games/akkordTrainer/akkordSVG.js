@@ -37,12 +37,13 @@ function txt(content, attrs = {}) {
 /**
  * Renders an interactive horizontal chord diagram.
  * @param {HTMLElement} container - The DOM element to render into.
- * @param {Array} userPositions - [{string, fret, muted}]
+ * @param {Array} userPositions - [{string, fret, muted, finger?}]
  * @param {Array} referencePositions - [{string, fret, muted}] (for feedback)
  * @param {'correct'|'wrong'|null} feedback - Game feedback state.
  * @param {Function} onTogglePosition - Callback (string, fret, isMutedToggle)
+ * @param {boolean} [showFingers=false] - If true, renders finger numbers inside fretted dots.
  */
-export function renderChordDiagram(container, userPositions, referencePositions, feedback, onTogglePosition) {
+export function renderChordDiagram(container, userPositions, referencePositions, feedback, onTogglePosition, showFingers = false) {
   container.innerHTML = '';
 
   const svg = el('svg', {
@@ -179,6 +180,19 @@ export function renderChordDiagram(container, userPositions, referencePositions,
         cx: x, cy: y, r: '12',
         fill: dotFill
       }));
+
+      if (showFingers && pos.finger) {
+        svg.appendChild(txt(pos.finger.toString(), {
+          x: x,
+          y: y + 5,
+          'text-anchor': 'middle',
+          fill: '#ffffff',
+          'font-size': '13',
+          'font-weight': 'bold',
+          'font-family': 'sans-serif',
+          'pointer-events': 'none'
+        }));
+      }
     }
   });
 

@@ -33,14 +33,16 @@ Manages game state, round management, and DOM interactions. Exports `startExerci
 
 ### `akkordLogic.js` – Chord database and validation
 
-Contains the chord definitions and logic to compare user input with the correct chord.
+Chord data is imported from `../../data/akkordData.js` and re-exported. Contains logic to compare user input with the correct chord.
 
 **Exports:**
-- `CHORDS` – Object mapping chord names to their finger positions:
-  `{ "C-Dur": [{ string: 2, fret: 1 }, { string: 4, fret: 2 }, { string: 5, fret: 3 }], "A-Moll": [...], ... }`
-- `LEVELS` – Array of chord name groups for different difficulties.
-- `getRandomChord(level)` → returns a random chord object `{ name, positions }`.
-- `validateChord(chordName, userPositions)` → returns `true` if `userPositions` match the reference.
+- `CHORDS` – Object mapping chord names to their finger positions (imported from `akkordData.js`):
+  `{ "C-Dur": [{ string: 2, fret: 1, finger: 1 }, { string: 4, fret: 2, finger: 2 }, { string: 5, fret: 3, finger: 3 }], ... }`
+  Positions may include an optional `finger` field (1–4) for fretted notes. This field is ignored by `validateChord`.
+- `CHORD_CATEGORIES` – Object mapping category keys to chord name arrays (imported from `akkordData.js`).
+- `LEVELS` – Array of chord name groups for different difficulties (backward compatibility).
+- `getRandomChord(categories)` → returns a random chord object `{ name, positions }`.
+- `validateChord(chordName, userPositions)` → returns `true` if `userPositions` match the reference. Ignores the `finger` field.
 
 ---
 
@@ -49,18 +51,15 @@ Contains the chord definitions and logic to compare user input with the correct 
 Renders the first 5 frets of the guitar and handles click events to place markers.
 
 **Export:**
-- `renderChordDiagram(container, userPositions, referencePositions, feedback, onTogglePosition)`
+- `renderChordDiagram(container, userPositions, referencePositions, feedback, onTogglePosition, showFingers = false)`
   - `container`: DOM element to render into.
-  - `userPositions`: Array of `{string, fret}` currently selected.
+  - `userPositions`: Array of `{string, fret, finger?}` currently selected.
   - `referencePositions`: Array of `{string, fret}` for the correct chord (used for feedback).
   - `feedback`: `null | 'correct' | 'wrong'`.
   - `onTogglePosition`: Callback function `(string, fret)` triggered when a user clicks a spot.
+  - `showFingers`: If `true`, renders finger numbers (1–4) as white text inside fretted dots (default `false`).
 
-**SVG layout:**
-- Focused on the first 5 frets (nut + frets 1-5).
-- 6 strings (horizontal or vertical, depending on common chord diagram style - usually vertical).
-- Marker dots for user input.
-- "X" for muted strings, "O" for open strings (if applicable).
+> **Note:** No unit tests exist for `akkordSVG.js` because it has DOM dependencies. This is a deliberate exception per project convention (only pure logic in `tests/unit/`).
 
 ## AI Collaboration & Documentation
 
