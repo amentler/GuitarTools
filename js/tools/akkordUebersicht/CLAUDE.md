@@ -1,6 +1,6 @@
 # akkordUebersicht – 📋 Akkord Übersicht
 
-Static chord overview tool. Displays all chords from the Akkord Trainer as non-interactive diagrams, grouped by category.
+Static chord overview tool. Displays all chords from the Akkord Trainer as non-interactive diagrams, grouped by category. Currently shows **35 chords** across 4 categories.
 
 ## Purpose
 
