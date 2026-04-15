@@ -43,6 +43,34 @@ export function getFilteredNotes(maxFret, activeStrings) {
 }
 
 /**
+ * Returns configuration for a given time signature string.
+ * Supports 2/4, 3/4, 4/4 (quarter-note based) and 3/8, 6/8 (eighth-note based).
+ *
+ * @param {string} timeSignature - e.g. '4/4', '3/4', '6/8'
+ * @returns {{ beatsPerBar: number, noteDuration: string, vfTimeSig: string } | null}
+ *          null if the time signature is not supported.
+ */
+export function getTimeSignatureConfig(timeSignature) {
+  const configs = {
+    '2/4': { beatsPerBar: 2, noteDuration: 'q', vfTimeSig: '2/4' },
+    '3/4': { beatsPerBar: 3, noteDuration: 'q', vfTimeSig: '3/4' },
+    '4/4': { beatsPerBar: 4, noteDuration: 'q', vfTimeSig: '4/4' },
+    '3/8': { beatsPerBar: 3, noteDuration: 'e', vfTimeSig: '3/8' },
+    '6/8': { beatsPerBar: 6, noteDuration: 'e', vfTimeSig: '6/8' },
+  };
+  return configs[timeSignature] || null;
+}
+
+/**
+ * Returns true if the given string is a supported time signature.
+ * @param {string} sig
+ * @returns {boolean}
+ */
+export function validateTimeSignature(sig) {
+  return getTimeSignatureConfig(sig) !== null;
+}
+
+/**
  * Generates random 4/4 bars of single quarter notes in C major (frets 0–3).
  * Consecutive notes are constrained to at most a third (±2 diatonic steps).
  * @param {number} numBars
