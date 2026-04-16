@@ -15,13 +15,15 @@ Optional: Tabs unterhalb der Notenzeile.
 - `validateTimeSignature(sig)` → boolean
 - `EndlessBarGenerator(beatsPerBar, notesPool)` – stateful; `nextBatch(count=4)` → `Note[][]`; `reset()`; `setNotesPool()`; `setBeatsPerBar()`
 - `calcScrollTarget(rowIndex, rowDisplayHeight, viewportHeight, targetFraction=0.33)` → scrollTop (pure)
+- `calcFirstBarWidth(tsw, restBarW, marginW)` → `tsw + (restBarW - marginW)` – equalises note area of bar 0 with bars 1–N
 
 ### `sheetMusicSVG.js`
-- `renderScore(container, bars, showTab, timeSig)` → `{ notationDiv, staveLayout }` (normal mode; clears container)
-- `appendRow(container, bars, showTab, timeSig)` → `{ notationDiv, staveLayout, rowDiv }` (endless mode; appends row)
+- `renderScore(container, bars, showTab, timeSig)` → `{ notationDiv, staveLayout, vw }` (normal mode; clears container)
+- `appendRow(container, bars, showTab, timeSig)` → `{ notationDiv, staveLayout, rowDiv, vw }` (endless mode; appends row)
 - Shared: `_renderNotation(bars, timeSig)` – VexFlow rendering into new `notation-wrapper` div
 - `staveLayout`: `Array<{ noteStartX, noteEndX }>` – VexFlow-Koordinaten je Takt für `PlaybackBar`
-- Renderingbasis: VexFlow (CDN), viewBox 640×240, FIRST_BAR_W=256, REST_BAR_W=128
+- Renderingbasis: VexFlow (CDN), viewBox `vw×240`; `vw` is dynamic via `calcFirstBarWidth(tsw, REST_BAR_W, marginW) + 3×REST_BAR_W`
+- `REST_BAR_W=128`; `firstBarW≈208` computed to equalise bar-0 note area with bars 1–3 (no trailing gap)
 
 ### `playbackController.js`
 - Klasse `PlaybackController` – wrапpt `MetronomeLogic`

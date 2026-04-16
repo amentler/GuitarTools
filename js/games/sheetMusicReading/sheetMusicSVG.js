@@ -1,19 +1,16 @@
 // SVG score renderer – VexFlow for notation, custom SVG for tab
 
 import { Renderer, Stave, StaveNote, Voice, Formatter } from 'https://cdn.jsdelivr.net/npm/vexflow@4.2.2/+esm';
-import { getTimeSignatureConfig } from './sheetMusicLogic.js';
+import { getTimeSignatureConfig, calcFirstBarWidth } from './sheetMusicLogic.js';
 
 // Fixed virtual canvas – CSS scales this to the actual container width.
-// A narrower virtual canvas means CSS scales up the notes, making them appear
-// larger on screen while the 4-bar layout still fits within the container.
-const VW      = 640;   // narrower virtual canvas → CSS scales notes to ~141% on 900px container
 const VH      = 240;   // extra height prevents clef-curl clipping above and ledger-line clipping below
 const STAVE_Y = 80;    // y of top staff line (leaves 80 px for clef curl; low notes at ~155 px)
 
-// First bar is wider to accommodate clef + time signature glyphs.
-const FIRST_BAR_RATIO = 0.40;
-const FIRST_BAR_W     = Math.round(VW * FIRST_BAR_RATIO);
-const REST_BAR_W      = Math.floor((VW - FIRST_BAR_W) / 3);
+// Bar widths: REST_BAR_W is derived from the desired note area; FIRST_BAR_W is
+// computed dynamically after VexFlow reports the actual clef+time-sig width so
+// bar 0's note area equals that of bars 1–3 (no trailing-gap asymmetry).
+const REST_BAR_W = 128;
 
 // Tab constants (custom SVG below VexFlow notation)
 const TAB_VB_W    = 900;
@@ -99,19 +96,29 @@ function renderTab(tabDiv, bars) {
  *
  * @param {Array<Array<object>>} bars
  * @param {string} [timeSignature='4/4']
- * @returns {{ notationDiv: HTMLElement, staveLayout: Array<{ noteStartX: number, noteEndX: number }> }}
+ * @returns {{ notationDiv: HTMLElement, staveLayout: Array<{ noteStartX: number, noteEndX: number }>, vw: number }}
  */
 function _renderNotation(bars, timeSignature = '4/4') {
   const tsConfig = getTimeSignatureConfig(timeSignature) || getTimeSignatureConfig('4/4');
   const { vfTimeSig, noteDuration, beatsPerBar } = tsConfig;
   const beatValue = noteDuration === 'e' ? 8 : 4;
 
+  // Probe VexFlow to get the actual clef+time-sig width (tsw) and the bare
+  // leading margin (marginW) for the current time signature, without drawing.
+  const probeBar0 = new Stave(0, 0, 9999).addClef('treble').addTimeSignature(vfTimeSig);
+  const probeBar1 = new Stave(0, 0, 9999);
+  const tsw     = probeBar0.getNoteStartX();   // ≈ 90 for 4/4
+  const marginW = probeBar1.getNoteStartX();   // ≈ 10 (bare stave margin)
+
+  const firstBarW = calcFirstBarWidth(tsw, REST_BAR_W, marginW);
+  const actualVW  = firstBarW + (bars.length - 1) * REST_BAR_W;
+
   // position:relative so PlaybackBar can overlay its SVG cursor on top.
   const notationDiv = document.createElement('div');
   notationDiv.className = 'notation-wrapper';
 
   const renderer = new Renderer(notationDiv, Renderer.Backends.SVG);
-  renderer.resize(VW, VH);
+  renderer.resize(actualVW, VH);
   const ctx = renderer.getContext();
 
   // Match dark theme
@@ -126,7 +133,7 @@ function _renderNotation(bars, timeSignature = '4/4') {
   const vfSvg = notationDiv.querySelector('svg');
   const applyResponsive = () => {
     if (!vfSvg) return;
-    vfSvg.setAttribute('viewBox', `0 0 ${VW} ${VH}`);
+    vfSvg.setAttribute('viewBox', `0 0 ${actualVW} ${VH}`);
     vfSvg.setAttribute('width', '100%');
     vfSvg.setAttribute('height', 'auto');
     vfSvg.style.width   = '100%';
@@ -140,7 +147,7 @@ function _renderNotation(bars, timeSignature = '4/4') {
   let x = 0;
 
   for (let bi = 0; bi < bars.length; bi++) {
-    const w     = bi === 0 ? FIRST_BAR_W : REST_BAR_W;
+    const w     = bi === 0 ? firstBarW : REST_BAR_W;
     const stave = new Stave(x, STAVE_Y, w);
 
     if (bi === 0) stave.addClef('treble').addTimeSignature(vfTimeSig);
@@ -155,11 +162,9 @@ function _renderNotation(bars, timeSignature = '4/4') {
   }
 
   // ── Draw notes per bar ──────────────────────────────────────────────────
-  // Use the narrowest note area across all bars so every bar gets identical
-  // note spacing. Bar 0 is wider (clef + time signature take space), which
-  // would otherwise make its notes appear more spread out than in bars 1–3.
-  const noteAreas  = staves.map(s => s.getX() + s.getWidth() - s.getNoteStartX());
-  const uniformNoteArea = Math.min(...noteAreas);
+  // All bars now have the same note area (REST_BAR_W - marginW) because
+  // firstBarW was computed via calcFirstBarWidth to equalise the trailing gap.
+  const uniformNoteArea = REST_BAR_W - marginW;
 
   for (let bi = 0; bi < bars.length; bi++) {
     const stave = staves[bi];
@@ -194,14 +199,13 @@ function _renderNotation(bars, timeSignature = '4/4') {
 
   // ── Collect stave layout for PlaybackBar ───────────────────────────────
   // noteStartX: absolute x where notes begin (after clef / time signature).
-  // noteEndX:   noteStartX + uniformNoteArea (same for every bar) so that
-  //             PlaybackBar calcBeatX produces equal step widths across bars.
+  // noteEndX:   noteStartX + uniformNoteArea (same for every bar).
   const staveLayout = staves.map(stave => ({
     noteStartX: stave.getNoteStartX(),
     noteEndX:   stave.getNoteStartX() + uniformNoteArea,
   }));
 
-  return { notationDiv, staveLayout };
+  return { notationDiv, staveLayout, vw: actualVW };
 }
 
 /**
@@ -211,12 +215,12 @@ function _renderNotation(bars, timeSignature = '4/4') {
  * @param {Array<Array<object>>} bars
  * @param {boolean} showTab
  * @param {string} [timeSignature='4/4']
- * @returns {{ notationDiv: HTMLElement, staveLayout: Array<{ noteStartX: number, noteEndX: number }> }}
+ * @returns {{ notationDiv: HTMLElement, staveLayout: Array<{ noteStartX: number, noteEndX: number }>, vw: number }}
  */
 export function renderScore(container, bars, showTab, timeSignature = '4/4') {
   container.innerHTML = '';
 
-  const { notationDiv, staveLayout } = _renderNotation(bars, timeSignature);
+  const { notationDiv, staveLayout, vw } = _renderNotation(bars, timeSignature);
   container.appendChild(notationDiv);
 
   if (showTab) {
@@ -226,7 +230,7 @@ export function renderScore(container, bars, showTab, timeSignature = '4/4') {
     renderTab(tabDiv, bars);
   }
 
-  return { notationDiv, staveLayout };
+  return { notationDiv, staveLayout, vw };
 }
 
 /**
@@ -237,13 +241,13 @@ export function renderScore(container, bars, showTab, timeSignature = '4/4') {
  * @param {Array<Array<object>>} bars
  * @param {boolean} showTab
  * @param {string} [timeSignature='4/4']
- * @returns {{ notationDiv: HTMLElement, staveLayout: Array<{ noteStartX: number, noteEndX: number }>, rowDiv: HTMLElement }}
+ * @returns {{ notationDiv: HTMLElement, staveLayout: Array<{ noteStartX: number, noteEndX: number }>, rowDiv: HTMLElement, vw: number }}
  */
 export function appendRow(container, bars, showTab, timeSignature = '4/4') {
   const rowDiv = document.createElement('div');
   rowDiv.className = 'score-row';
 
-  const { notationDiv, staveLayout } = _renderNotation(bars, timeSignature);
+  const { notationDiv, staveLayout, vw } = _renderNotation(bars, timeSignature);
   rowDiv.appendChild(notationDiv);
 
   if (showTab) {
@@ -254,5 +258,5 @@ export function appendRow(container, bars, showTab, timeSignature = '4/4') {
   }
 
   container.appendChild(rowDiv);
-  return { notationDiv, staveLayout, rowDiv };
+  return { notationDiv, staveLayout, rowDiv, vw };
 }

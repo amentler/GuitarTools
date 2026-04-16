@@ -75,7 +75,7 @@ export function createSheetMusicExercise() {
 
     // Rebuild the playback bar overlay over the new notation SVG
     if (result?.notationDiv && result?.staveLayout) {
-      playbackBar.render(result.notationDiv, result.staveLayout);
+      playbackBar.render(result.notationDiv, result.staveLayout, result.vw);
       if (!isPlaying) playbackBar.hide();
     }
   }
@@ -84,11 +84,11 @@ export function createSheetMusicExercise() {
   function appendEndlessRow() {
     const bars      = endlessGen.nextBatch(BARS_PER_ROW);
     const container = document.getElementById('score-container');
-    const { notationDiv, staveLayout, rowDiv } = appendRow(
+    const { notationDiv, staveLayout, rowDiv, vw } = appendRow(
       container, bars, state.showTab, state.timeSig,
     );
     const bar = new PlaybackBar();
-    bar.render(notationDiv, staveLayout);
+    bar.render(notationDiv, staveLayout, vw);
     bar.hide();
     allRowDivs.push(rowDiv);
     allPlaybackBars.push(bar);

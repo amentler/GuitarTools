@@ -152,3 +152,17 @@ export function calcScrollTarget(rowIndex, rowDisplayHeight, viewportHeight, tar
   const rowTop = rowIndex * rowDisplayHeight;
   return Math.max(0, rowTop - viewportHeight * targetFraction);
 }
+
+/**
+ * Computes the correct width for bar 0 so its note area equals that of bars 1–N.
+ * Bar 0 is wider because it hosts the clef + time signature glyphs (tsw px),
+ * while bars 1–N have only a small leading margin (marginW px).
+ *
+ * @param {number} tsw      Clef + time-sig width in viewBox units (measured from VexFlow)
+ * @param {number} restBarW Width of bars 1–N
+ * @param {number} marginW  Leading margin in bars 1–N
+ * @returns {number}
+ */
+export function calcFirstBarWidth(tsw, restBarW, marginW) {
+  return tsw + (restBarW - marginW);
+}
