@@ -133,8 +133,7 @@ export function createSheetMusicExercise() {
     const totalBeats = BARS_PER_ROW * config.beatsPerBar;
 
     playback.onBeat(({ barIndex, beatIndex }) => {
-      const secondsPerBeat = 60 / state.bpm;
-      playbackBar.moveToBeat(barIndex, beatIndex, config.beatsPerBar, secondsPerBeat);
+      playbackBar.moveToBeat(barIndex, beatIndex, config.beatsPerBar);
     });
 
     playbackBar.show();
@@ -170,7 +169,6 @@ export function createSheetMusicExercise() {
     playback.onBeat(({ barIndex, beatIndex }) => {
       const rowIndex   = Math.floor(barIndex / BARS_PER_ROW);
       const barInRow   = barIndex % BARS_PER_ROW;
-      const secondsPerBeat = 60 / state.bpm;
 
       // Show only the current row's playback bar
       allPlaybackBars.forEach((bar, i) => {
@@ -180,7 +178,7 @@ export function createSheetMusicExercise() {
       // Move the playback bar within the current row
       if (allPlaybackBars[rowIndex]) {
         allPlaybackBars[rowIndex].moveToBeat(
-          barInRow, beatIndex, config.beatsPerBar, secondsPerBeat,
+          barInRow, beatIndex, config.beatsPerBar,
         );
       }
 
