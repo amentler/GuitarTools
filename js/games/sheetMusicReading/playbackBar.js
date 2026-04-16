@@ -21,9 +21,12 @@
  */
 export function calcBeatX(staveLayout, barIndex, beatIndex, beatsPerBar) {
   if (!staveLayout || barIndex < 0 || barIndex >= staveLayout.length) return null;
-  const { noteStartX, noteEndX } = staveLayout[barIndex];
-  const noteAreaW = noteEndX - noteStartX;
-  return noteStartX + (beatIndex / beatsPerBar) * noteAreaW;
+  const { noteStartX } = staveLayout[barIndex];
+  // Use the narrowest note area across all bars so every bar gets the same
+  // beat step width. Bar 0 has a wider area (clef + time signature take up
+  // space), which would otherwise make its notes appear more spread out.
+  const uniformNoteArea = Math.min(...staveLayout.map(b => b.noteEndX - b.noteStartX));
+  return noteStartX + (beatIndex / beatsPerBar) * uniformNoteArea;
 }
 
 /**
