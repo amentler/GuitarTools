@@ -45,6 +45,7 @@ export function createSheetMusicExercise() {
       document.getElementById('score-container'),
       state.bars,
       state.showTab,
+      state.timeSig,
     );
 
     // Rebuild the playback bar overlay over the new notation SVG
@@ -131,6 +132,7 @@ export function createSheetMusicExercise() {
           document.getElementById('score-container'),
           state.bars,
           state.showTab,
+          state.timeSig,
         );
       });
 

@@ -1,6 +1,7 @@
 // SVG score renderer – VexFlow for notation, custom SVG for tab
 
 import { Renderer, Stave, StaveNote, Voice, Formatter } from 'https://cdn.jsdelivr.net/npm/vexflow@4.2.2/+esm';
+import { getTimeSignatureConfig } from './sheetMusicLogic.js';
 
 // Fixed virtual canvas – CSS scales this to the actual container width.
 // A narrower virtual canvas means CSS scales up the notes, making them appear
@@ -99,11 +100,15 @@ function renderTab(tabDiv, bars) {
  * @param {HTMLElement} container
  * @param {Array<Array<object>>} bars
  * @param {boolean} showTab
+ * @param {string} [timeSignature='4/4']
  * @returns {{ notationDiv: HTMLElement, staveLayout: Array<{ noteStartX: number, noteEndX: number }> }}
  *   `staveLayout` contains one entry per bar with the x-positions of the note
  *   area in VexFlow viewBox coordinates — used by PlaybackBar for cursor positioning.
  */
-export function renderScore(container, bars, showTab) {
+export function renderScore(container, bars, showTab, timeSignature = '4/4') {
+  const tsConfig = getTimeSignatureConfig(timeSignature) || getTimeSignatureConfig('4/4');
+  const { vfTimeSig, noteDuration, beatsPerBar } = tsConfig;
+  const beatValue = noteDuration === 'e' ? 8 : 4;
   container.innerHTML = '';
 
   // ── Notation section (VexFlow) ──────────────────────────────────────────
@@ -145,7 +150,7 @@ export function renderScore(container, bars, showTab) {
     const w     = bi === 0 ? FIRST_BAR_W : REST_BAR_W;
     const stave = new Stave(x, STAVE_Y, w);
 
-    if (bi === 0) stave.addClef('treble').addTimeSignature('4/4');
+    if (bi === 0) stave.addClef('treble').addTimeSignature(vfTimeSig);
     if (bi === bars.length - 1) {
       // End barline – wrap in try/catch since enum values differ across VF versions
       try { stave.setEndBarType(3); } catch { /* VexFlow version compatibility */ }
@@ -160,10 +165,10 @@ export function renderScore(container, bars, showTab) {
   for (let bi = 0; bi < bars.length; bi++) {
     const stave = staves[bi];
     const notes = bars[bi].map(n =>
-      new StaveNote({ clef: 'treble', keys: [n.vfKey], duration: 'q' })
+      new StaveNote({ clef: 'treble', keys: [n.vfKey], duration: noteDuration })
     );
 
-    const voice = new Voice({ num_beats: 4, beat_value: 4 });
+    const voice = new Voice({ num_beats: beatsPerBar, beat_value: beatValue });
     try { voice.setMode(Voice.Mode.SOFT); } catch { /* VexFlow version compatibility */ }
     voice.addTickables(notes);
 

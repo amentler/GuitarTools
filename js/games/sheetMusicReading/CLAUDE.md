@@ -51,7 +51,7 @@ Optional: Tabs unterhalb der Notenzeile.
 | Phase 2 | `playbackBar.js` (Overlay + Positionsberechnung) | ✅ |
 | Phase 2 | Playback bar mit Exercise verdrahtet | ✅ |
 | Phase 2 | Note-Highlighting (aktuell gespielte Note) | ⬜ |
-| Phase 3 | Multiple Time Signatures in VexFlow-Rendering | ⬜ |
+| Phase 3 | Multiple Time Signatures in VexFlow-Rendering | ✅ |
 | Phase 4 | Endless Mode + Auto-Scrolling | ⬜ |
 | Phase 5 | Polish (Keyboard-Shortcuts, Fehlerbehandlung) | ⬜ |
 
