@@ -93,17 +93,16 @@ export class PlaybackBar {
    * @param {number} barIndex
    * @param {number} beatIndex
    * @param {number} beatsPerBar
-   * @param {number} [beatDurationSec=0.5]  Duration of one beat in seconds
    */
-  moveToBeat(barIndex, beatIndex, beatsPerBar, beatDurationSec = 0.5) {
+  moveToBeat(barIndex, beatIndex, beatsPerBar) {
     if (!this._rect || !this._staveLayout) return;
     const x = calcBeatX(this._staveLayout, barIndex, beatIndex, beatsPerBar);
     if (x === null) return;
 
-    // Transition duration = 80% of the beat interval so the bar always reaches
-    // the target before the next beat fires (prevents drift accumulation).
-    const transitionSec = (beatDurationSec * 0.8).toFixed(3);
-    this._rect.style.transition = `x ${transitionSec}s linear`;
+    // Snap the cursor to the exact beat position the instant the beat fires.
+    // A CSS transition FROM the previous position would delay the visual by
+    // one full beat, making the accent appear on beat 4 instead of beat 1.
+    this._rect.style.transition = 'none';
     this._rect.setAttribute('x', String(x));
   }
 
