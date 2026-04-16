@@ -530,6 +530,14 @@ input[type="range"] {
   border-bottom: 1px solid var(--color-border);
 }
 
+.pool-warning {
+  color: #f59e0b;
+  font-size: 0.85rem;
+  text-align: center;
+  padding: 0.4rem 0;
+  margin: 0;
+}
+
 /* === Tuner View === */
 #view-tuner {
   padding: 1rem;

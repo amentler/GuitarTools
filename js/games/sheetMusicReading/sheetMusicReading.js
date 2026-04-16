@@ -17,6 +17,8 @@ const LS_ENDLESS = 'sheetMusic_endless';
 const BARS_PER_ROW = 4;
 // How many rows ahead of the current position to keep pre-rendered.
 const LOOKAHEAD_ROWS = 2;
+// Minimum notes in the pool before showing the "too few notes" warning.
+const MIN_POOL_SIZE = 3;
 
 export function createSheetMusicExercise() {
   let wired = false;
@@ -52,8 +54,15 @@ export function createSheetMusicExercise() {
     return getTimeSignatureConfig(state.timeSig) || getTimeSignatureConfig('4/4');
   }
 
+  // ── Pool warning ────────────────────────────────────────────────────────
+  function updatePoolWarning() {
+    const el = document.getElementById('sheet-music-pool-warning');
+    if (el) el.hidden = getNotesPool().length >= MIN_POOL_SIZE;
+  }
+
   // ── Score rendering (normal mode) ───────────────────────────────────────
   function regenerate() {
+    updatePoolWarning();
     const config = getTimeSigConfig();
     state.bars = generateBars(BARS_PER_ROW, config.beatsPerBar, getNotesPool());
 
@@ -97,6 +106,19 @@ export function createSheetMusicExercise() {
       container.classList.remove('score-container--endless');
       container.scrollTop = 0;
     }
+  }
+
+  // ── BPM adjustment (used by keyboard shortcuts) ─────────────────────────
+  function adjustBpm(delta) {
+    const newBpm = Math.min(240, Math.max(40, state.bpm + delta));
+    if (newBpm === state.bpm) return;
+    state.bpm = newBpm;
+    const bpmSlider = document.getElementById('sheet-music-bpm-slider');
+    const bpmLabel  = document.getElementById('sheet-music-bpm-label');
+    if (bpmSlider) bpmSlider.value = String(newBpm);
+    if (bpmLabel)  bpmLabel.textContent = String(newBpm);
+    localStorage.setItem(LS_BPM, String(newBpm));
+    playback.setBpm(newBpm);
   }
 
   // ── Playback control – normal mode ──────────────────────────────────────
@@ -232,6 +254,8 @@ export function createSheetMusicExercise() {
 
     const endlessBtn = document.getElementById('btn-endless-mode');
     if (endlessBtn) endlessBtn.classList.toggle('active', state.endless);
+
+    updatePoolWarning();
   }
 
   // ── Exercise lifecycle ──────────────────────────────────────────────────
@@ -315,6 +339,43 @@ export function createSheetMusicExercise() {
           regenerate();
         },
       );
+
+      // Keyboard shortcuts (scoped to active view)
+      document.addEventListener('keydown', e => {
+        if (!document.getElementById('view-sheet-music')?.classList.contains('active')) return;
+        if (['INPUT', 'SELECT', 'TEXTAREA'].includes(e.target.tagName)) return;
+        switch (e.code) {
+          case 'Space':
+            e.preventDefault();
+            togglePlayback();
+            break;
+          case 'ArrowUp':
+            e.preventDefault();
+            adjustBpm(5);
+            break;
+          case 'ArrowDown':
+            e.preventDefault();
+            adjustBpm(-5);
+            break;
+          case 'KeyR':
+            document.getElementById('btn-new-bars')?.click();
+            break;
+          case 'KeyT':
+            document.getElementById('btn-show-tab')?.click();
+            break;
+          case 'KeyE':
+            document.getElementById('btn-endless-mode')?.click();
+            break;
+        }
+      });
+
+      // Pause when the browser tab loses focus (avoids desync)
+      document.addEventListener('visibilitychange', () => {
+        if (document.hidden && isPlaying) {
+          stopPlayback();
+          if (state.endless) regenerate();
+        }
+      });
 
       wired = true;
     }
