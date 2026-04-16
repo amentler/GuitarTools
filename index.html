@@ -364,6 +364,29 @@
       <button id="btn-show-tab" class="btn-mode">Tabs anzeigen</button>
     </div>
 
+    <!-- PLAYBACK: Play/Stop · BPM · Time Signature -->
+    <div class="playback-controls">
+      <button id="btn-sheet-play" class="btn-play-stop">▶ Play</button>
+
+      <div class="playback-bpm">
+        <label for="sheet-music-bpm-slider" class="settings-label">
+          BPM: <span id="sheet-music-bpm-label">80</span>
+        </label>
+        <input type="range" id="sheet-music-bpm-slider" min="40" max="240" value="80" />
+      </div>
+
+      <div class="playback-timesig">
+        <label for="sheet-music-time-sig" class="settings-label">Takt:</label>
+        <select id="sheet-music-time-sig">
+          <option value="2/4">2/4</option>
+          <option value="3/4">3/4</option>
+          <option value="4/4" selected>4/4</option>
+          <option value="3/8">3/8</option>
+          <option value="6/8">6/8</option>
+        </select>
+      </div>
+    </div>
+
     <div id="score-container" class="score-container"></div>
 
     <button id="btn-new-bars" class="btn-new-bars">Neue Takte</button>
