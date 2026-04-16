@@ -2,6 +2,7 @@
 
 Zeigt 4 zufällige Takte in C-Dur auf einer Notenzeile an.
 Metronom (BPM-Slider), wählbare Taktart (2/4–6/8), bewegender Playback-Cursor.
+Endlos-Modus: unbegrenzt neue Takte, auto-scrollend.
 Optional: Tabs unterhalb der Notenzeile.
 
 ## Dateien
@@ -12,11 +13,14 @@ Optional: Tabs unterhalb der Notenzeile.
 - `getFilteredNotes(maxFret, activeStrings)` → gefilterter Note-Pool
 - `getTimeSignatureConfig(sig)` → `{ beatsPerBar, noteDuration, vfTimeSig }` für 2/4, 3/4, 4/4, 3/8, 6/8
 - `validateTimeSignature(sig)` → boolean
+- `EndlessBarGenerator(beatsPerBar, notesPool)` – stateful; `nextBatch(count=4)` → `Note[][]`; `reset()`; `setNotesPool()`; `setBeatsPerBar()`
+- `calcScrollTarget(rowIndex, rowDisplayHeight, viewportHeight, targetFraction=0.33)` → scrollTop (pure)
 
 ### `sheetMusicSVG.js`
-- `renderScore(container, bars, showTab)` → `{ notationDiv, staveLayout }`
-  - `staveLayout`: `Array<{ noteStartX, noteEndX }>` – VexFlow-Koordinaten je Takt für `PlaybackBar`
-  - `notationDiv` hat `position: relative` für die Overlay-SVG
+- `renderScore(container, bars, showTab, timeSig)` → `{ notationDiv, staveLayout }` (normal mode; clears container)
+- `appendRow(container, bars, showTab, timeSig)` → `{ notationDiv, staveLayout, rowDiv }` (endless mode; appends row)
+- Shared: `_renderNotation(bars, timeSig)` – VexFlow rendering into new `notation-wrapper` div
+- `staveLayout`: `Array<{ noteStartX, noteEndX }>` – VexFlow-Koordinaten je Takt für `PlaybackBar`
 - Renderingbasis: VexFlow (CDN), viewBox 640×240, FIRST_BAR_W=256, REST_BAR_W=128
 
 ### `playbackController.js`
@@ -34,9 +38,9 @@ Optional: Tabs unterhalb der Notenzeile.
 
 ### `sheetMusicReading.js`
 - `startExercise()` / `stopExercise()`
-- Zustand: `{ bars, showTab, bpm, timeSig, settings }`
-- localStorage-Persistenz: `sheetMusic_bpm`, `sheetMusic_timeSig`, `sheetMusic_showTab`
-- Buttons: `#btn-sheet-play` (Play/Stop), `#btn-new-bars`, `#btn-show-tab`
+- Zustand: `{ bars, showTab, bpm, timeSig, endless, settings }`
+- localStorage-Persistenz: `sheetMusic_bpm`, `sheetMusic_timeSig`, `sheetMusic_showTab`, `sheetMusic_endless`
+- Buttons: `#btn-sheet-play` (Play/Stop), `#btn-new-bars`, `#btn-show-tab`, `#btn-endless-mode`
 - Slider: `#sheet-music-bpm-slider` (40–240), `#sheet-music-fret-range-slider`
 - Select: `#sheet-music-time-sig` (2/4|3/4|4/4|3/8|6/8)
 - `wired`-Flag verhindert doppeltes Event-Listener-Wiring
@@ -52,8 +56,8 @@ Optional: Tabs unterhalb der Notenzeile.
 | Phase 2 | Playback bar mit Exercise verdrahtet | ✅ |
 | Phase 2 | Note-Highlighting (aktuell gespielte Note) | ⬜ |
 | Phase 3 | Multiple Time Signatures in VexFlow-Rendering | ✅ |
-| Phase 4 | Endless Mode + Auto-Scrolling | ⬜ |
-| Phase 5 | Polish (Keyboard-Shortcuts, Fehlerbehandlung) | ⬜ |
+| Phase 4 | Endless Mode + Auto-Scrolling | ✅ |
+| Phase 5 | Polish (Keyboard-Shortcuts, Fehlerbehandlung) | ✅ |
 
 Detailplan: `plans/backlog.md` → "Plan: Enhanced Noten lesen"
 
