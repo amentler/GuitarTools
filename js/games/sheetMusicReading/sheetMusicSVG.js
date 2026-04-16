@@ -95,14 +95,19 @@ function renderTab(tabDiv, bars) {
 /**
  * Renders the 4-bar score into container using VexFlow for notation
  * and custom SVG for the optional tab section below.
+ *
  * @param {HTMLElement} container
  * @param {Array<Array<object>>} bars
  * @param {boolean} showTab
+ * @returns {{ notationDiv: HTMLElement, staveLayout: Array<{ noteStartX: number, noteEndX: number }> }}
+ *   `staveLayout` contains one entry per bar with the x-positions of the note
+ *   area in VexFlow viewBox coordinates — used by PlaybackBar for cursor positioning.
  */
 export function renderScore(container, bars, showTab) {
   container.innerHTML = '';
 
   // ── Notation section (VexFlow) ──────────────────────────────────────────
+  // position:relative so PlaybackBar can overlay its SVG cursor on top.
   const notationDiv = document.createElement('div');
   notationDiv.className = 'notation-wrapper';
   container.appendChild(notationDiv);
@@ -187,6 +192,14 @@ export function renderScore(container, bars, showTab) {
       });
   }
 
+  // ── Collect stave layout for PlaybackBar ───────────────────────────────
+  // noteStartX: absolute x where notes begin (after clef / time signature).
+  // noteEndX:   absolute x at the right edge of the stave.
+  const staveLayout = staves.map(stave => ({
+    noteStartX: stave.getNoteStartX(),
+    noteEndX:   stave.getX() + stave.getWidth(),
+  }));
+
   // ── Tab section (custom SVG) ────────────────────────────────────────────
   if (showTab) {
     const tabDiv = document.createElement('div');
@@ -194,4 +207,6 @@ export function renderScore(container, bars, showTab) {
     container.appendChild(tabDiv);
     renderTab(tabDiv, bars);
   }
+
+  return { notationDiv, staveLayout };
 }

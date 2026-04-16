@@ -52,11 +52,16 @@ export class PlaybackController {
 
   /**
    * Starts playback from the beginning.
+   * Lazily initialises the AudioContext on the first call (browser autoplay policy
+   * requires this to happen inside a user-gesture handler).
+   *
    * @param {number} bpm           - Beats per minute (40–240)
    * @param {number} beatsPerBar   - Beats per bar (time signature numerator)
    * @param {number} [totalBeats]  - Total beats in piece (for wrap-around). 0 = no wrap.
    */
   start(bpm, beatsPerBar, totalBeats = 0) {
+    // Lazy AudioContext creation – safe to call multiple times (MetronomeLogic.init is idempotent).
+    this._metronome.init();
     this._beatsPerBar = beatsPerBar || 4;
     this._totalBeats = totalBeats;
     this._globalBeat = -1;

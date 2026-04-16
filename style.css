@@ -447,6 +447,72 @@ input[type="range"] {
 .btn-new-bars:hover  { background: #c73652; }
 .btn-new-bars:active { transform: scale(0.97); }
 
+/* --- Playback controls (BPM · time sig · play button) --- */
+.playback-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1.25rem;
+}
+
+.btn-play-stop {
+  min-width: 7rem;
+  padding: 0.55rem 1.2rem;
+  background: var(--color-surface-2, #2a2a2a);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+.btn-play-stop:hover  { background: var(--color-surface-3, #333); }
+.btn-play-stop.active { background: var(--color-accent); color: #fff; border-color: var(--color-accent); }
+
+.playback-bpm,
+.playback-timesig {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.playback-bpm input[type="range"] {
+  width: 8rem;
+}
+
+#sheet-music-time-sig {
+  padding: 0.3rem 0.5rem;
+  background: var(--color-surface-2, #2a2a2a);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+/* --- Playback bar SVG overlay --- */
+.notation-wrapper {
+  position: relative; /* needed so the overlay is positioned inside it */
+}
+
+.playback-bar-svg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  pointer-events: none; /* clicks pass through to VexFlow SVG */
+  display: block;
+}
+
+.playback-bar-hidden {
+  display: none !important;
+}
+
+/* CSS transition on the SVG rect's x attribute (Chrome 83+, Firefox 72+) */
+.playback-rect {
+  transition: x 0.4s linear;
+}
+
 /* === Tuner View === */
 #view-tuner {
   padding: 1rem;
