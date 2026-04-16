@@ -25,19 +25,20 @@ describe('calcBeatX – 4/4 time', () => {
     expect(calcBeatX(LAYOUT, 3, 0, 4)).toBeCloseTo(522);
   });
 
-  it('returns noteEndX minus one step for last beat (beat beatsPerBar-1)', () => {
-    // beat 3 of 4 = 3/4 of note area, not at noteEndX
+  it('beat 3 of 4 in bar 0 uses uniform note area (same as bars 1–3)', () => {
+    // calcBeatX normalises to the minimum note area across all bars (118 px)
+    // so bar 0 no longer uses its own wider area (166 px).
     const x = calcBeatX(LAYOUT, 0, 3, 4);
-    expect(x).toBeCloseTo(90 + (3 / 4) * (256 - 90));
+    expect(x).toBeCloseTo(90 + (3 / 4) * 118);
   });
 
   it('calculates correct x for beat 2 of bar 1', () => {
-    // noteStartX=266, noteEndX=384, noteAreaW=118, beat 2 of 4: 2/4 * 118 = 59
+    // noteStartX=266, uniformNoteArea=118, beat 2 of 4: 2/4 * 118 = 59
     expect(calcBeatX(LAYOUT, 1, 2, 4)).toBeCloseTo(266 + (2 / 4) * 118);
   });
 
   it('calculates correct x for beat 1 of bar 0', () => {
-    expect(calcBeatX(LAYOUT, 0, 1, 4)).toBeCloseTo(90 + (1 / 4) * 166);
+    expect(calcBeatX(LAYOUT, 0, 1, 4)).toBeCloseTo(90 + (1 / 4) * 118);
   });
 
   it('x increases monotonically from beat 0 to beat 3 within the same bar', () => {
@@ -55,12 +56,12 @@ describe('calcBeatX – 3/4 time', () => {
     expect(calcBeatX(LAYOUT, 0, 0, 3)).toBeCloseTo(90);
   });
 
-  it('beat 1 of 3 is at 1/3 of note area', () => {
-    expect(calcBeatX(LAYOUT, 0, 1, 3)).toBeCloseTo(90 + (1 / 3) * 166);
+  it('beat 1 of 3 is at 1/3 of uniform note area', () => {
+    expect(calcBeatX(LAYOUT, 0, 1, 3)).toBeCloseTo(90 + (1 / 3) * 118);
   });
 
-  it('beat 2 of 3 is at 2/3 of note area', () => {
-    expect(calcBeatX(LAYOUT, 0, 2, 3)).toBeCloseTo(90 + (2 / 3) * 166);
+  it('beat 2 of 3 is at 2/3 of uniform note area', () => {
+    expect(calcBeatX(LAYOUT, 0, 2, 3)).toBeCloseTo(90 + (2 / 3) * 118);
   });
 
   it('positions are evenly spaced for bar 1', () => {
@@ -78,9 +79,9 @@ describe('calcBeatX – 6/8 time', () => {
     expect(calcBeatX(LAYOUT, 0, 0, 6)).toBeCloseTo(90);
   });
 
-  it('beat 3 of 6 (halfway) returns midpoint of note area', () => {
-    // 3/6 = 0.5 of note area
-    expect(calcBeatX(LAYOUT, 0, 3, 6)).toBeCloseTo(90 + 0.5 * 166);
+  it('beat 3 of 6 (halfway) returns midpoint of uniform note area', () => {
+    // 3/6 = 0.5 of uniform note area (118 px, not bar 0's own 166 px)
+    expect(calcBeatX(LAYOUT, 0, 3, 6)).toBeCloseTo(90 + 0.5 * 118);
   });
 
   it('beat 5 of 6 is 5/6 of the way across', () => {

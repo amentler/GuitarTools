@@ -155,6 +155,12 @@ function _renderNotation(bars, timeSignature = '4/4') {
   }
 
   // ── Draw notes per bar ──────────────────────────────────────────────────
+  // Use the narrowest note area across all bars so every bar gets identical
+  // note spacing. Bar 0 is wider (clef + time signature take space), which
+  // would otherwise make its notes appear more spread out than in bars 1–3.
+  const noteAreas  = staves.map(s => s.getX() + s.getWidth() - s.getNoteStartX());
+  const uniformNoteArea = Math.min(...noteAreas);
+
   for (let bi = 0; bi < bars.length; bi++) {
     const stave = staves[bi];
     const notes = bars[bi].map(n =>
@@ -165,11 +171,7 @@ function _renderNotation(bars, timeSignature = '4/4') {
     try { voice.setMode(Voice.Mode.SOFT); } catch { /* VexFlow version compatibility */ }
     voice.addTickables(notes);
 
-    // Compute the actual note area: from getNoteStartX() to the right edge of the stave.
-    // This correctly accounts for clef + time-signature width in bar 0, so notes
-    // don't overflow into the next bar.
-    const noteAreaW = stave.getX() + stave.getWidth() - stave.getNoteStartX();
-    new Formatter().joinVoices([voice]).format([voice], noteAreaW * 0.90);
+    new Formatter().joinVoices([voice]).format([voice], uniformNoteArea * 0.90);
     voice.draw(ctx, stave);
   }
 
@@ -192,10 +194,11 @@ function _renderNotation(bars, timeSignature = '4/4') {
 
   // ── Collect stave layout for PlaybackBar ───────────────────────────────
   // noteStartX: absolute x where notes begin (after clef / time signature).
-  // noteEndX:   absolute x at the right edge of the stave.
+  // noteEndX:   noteStartX + uniformNoteArea (same for every bar) so that
+  //             PlaybackBar calcBeatX produces equal step widths across bars.
   const staveLayout = staves.map(stave => ({
     noteStartX: stave.getNoteStartX(),
-    noteEndX:   stave.getX() + stave.getWidth(),
+    noteEndX:   stave.getNoteStartX() + uniformNoteArea,
   }));
 
   return { notationDiv, staveLayout };
