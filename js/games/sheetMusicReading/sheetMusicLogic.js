@@ -71,7 +71,7 @@ export function validateTimeSignature(sig) {
 }
 
 /**
- * Generates random 4/4 bars of single quarter notes in C major (frets 0–3).
+ * Generates random bars of single notes in C major (frets 0–3).
  * Consecutive notes are constrained to at most a third (±2 diatonic steps).
  * @param {number} numBars
  * @param {number} beatsPerBar
@@ -93,4 +93,62 @@ export function generateBars(numBars = 4, beatsPerBar = 4, notesPool = NOTES) {
       return notes[idx];
     })
   );
+}
+
+/**
+ * Stateful endless bar generator — maintains melodic continuity across batches.
+ * Use nextBatch(count) to generate successive rows without melodic jumps at boundaries.
+ */
+export class EndlessBarGenerator {
+  constructor(beatsPerBar, notesPool = NOTES) {
+    this._beatsPerBar = beatsPerBar;
+    this._notes = (notesPool && notesPool.length > 0) ? notesPool : NOTES;
+    this._idx = -1;
+  }
+
+  setNotesPool(pool) {
+    this._notes = (pool && pool.length > 0) ? pool : NOTES;
+  }
+
+  setBeatsPerBar(beats) {
+    this._beatsPerBar = beats;
+  }
+
+  /** Generates the next `count` bars, maintaining melodic continuity from the previous call. */
+  nextBatch(count = 4) {
+    const notes = this._notes;
+    const n = notes.length;
+    if (this._idx < 0) {
+      const margin = Math.min(2, Math.floor(n / 4));
+      this._idx = margin + Math.floor(Math.random() * Math.max(1, n - 2 * margin));
+    }
+    return Array.from({ length: count }, () =>
+      Array.from({ length: this._beatsPerBar }, () => {
+        const lo = Math.max(0, this._idx - 2);
+        const hi = Math.min(n - 1, this._idx + 2);
+        this._idx = lo + Math.floor(Math.random() * (hi - lo + 1));
+        return notes[this._idx];
+      })
+    );
+  }
+
+  /** Resets the generator so the next nextBatch() starts a fresh sequence. */
+  reset() {
+    this._idx = -1;
+  }
+}
+
+/**
+ * Calculates the scroll target (container.scrollTop) to keep a given row
+ * at `targetFraction` from the top of the viewport.
+ *
+ * @param {number} rowIndex         - 0-based row index
+ * @param {number} rowDisplayHeight - Pixel height of one row in the DOM
+ * @param {number} viewportHeight   - Pixel height of the scroll container
+ * @param {number} [targetFraction] - Fraction from top (default 0.33)
+ * @returns {number} scrollTop value (≥ 0)
+ */
+export function calcScrollTarget(rowIndex, rowDisplayHeight, viewportHeight, targetFraction = 0.33) {
+  const rowTop = rowIndex * rowDisplayHeight;
+  return Math.max(0, rowTop - viewportHeight * targetFraction);
 }

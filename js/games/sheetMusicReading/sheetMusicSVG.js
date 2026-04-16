@@ -94,28 +94,21 @@ function renderTab(tabDiv, bars) {
 }
 
 /**
- * Renders the 4-bar score into container using VexFlow for notation
- * and custom SVG for the optional tab section below.
+ * Renders bars as VexFlow notation into a new notation-wrapper div.
+ * Does not attach the div to any parent — caller is responsible.
  *
- * @param {HTMLElement} container
  * @param {Array<Array<object>>} bars
- * @param {boolean} showTab
  * @param {string} [timeSignature='4/4']
  * @returns {{ notationDiv: HTMLElement, staveLayout: Array<{ noteStartX: number, noteEndX: number }> }}
- *   `staveLayout` contains one entry per bar with the x-positions of the note
- *   area in VexFlow viewBox coordinates — used by PlaybackBar for cursor positioning.
  */
-export function renderScore(container, bars, showTab, timeSignature = '4/4') {
+function _renderNotation(bars, timeSignature = '4/4') {
   const tsConfig = getTimeSignatureConfig(timeSignature) || getTimeSignatureConfig('4/4');
   const { vfTimeSig, noteDuration, beatsPerBar } = tsConfig;
   const beatValue = noteDuration === 'e' ? 8 : 4;
-  container.innerHTML = '';
 
-  // ── Notation section (VexFlow) ──────────────────────────────────────────
   // position:relative so PlaybackBar can overlay its SVG cursor on top.
   const notationDiv = document.createElement('div');
   notationDiv.className = 'notation-wrapper';
-  container.appendChild(notationDiv);
 
   const renderer = new Renderer(notationDiv, Renderer.Backends.SVG);
   renderer.resize(VW, VH);
@@ -205,7 +198,24 @@ export function renderScore(container, bars, showTab, timeSignature = '4/4') {
     noteEndX:   stave.getX() + stave.getWidth(),
   }));
 
-  // ── Tab section (custom SVG) ────────────────────────────────────────────
+  return { notationDiv, staveLayout };
+}
+
+/**
+ * Renders a 4-bar score into container (normal mode — clears existing content).
+ *
+ * @param {HTMLElement} container
+ * @param {Array<Array<object>>} bars
+ * @param {boolean} showTab
+ * @param {string} [timeSignature='4/4']
+ * @returns {{ notationDiv: HTMLElement, staveLayout: Array<{ noteStartX: number, noteEndX: number }> }}
+ */
+export function renderScore(container, bars, showTab, timeSignature = '4/4') {
+  container.innerHTML = '';
+
+  const { notationDiv, staveLayout } = _renderNotation(bars, timeSignature);
+  container.appendChild(notationDiv);
+
   if (showTab) {
     const tabDiv = document.createElement('div');
     tabDiv.className = 'tab-wrapper';
@@ -214,4 +224,32 @@ export function renderScore(container, bars, showTab, timeSignature = '4/4') {
   }
 
   return { notationDiv, staveLayout };
+}
+
+/**
+ * Appends a new row of bars to container (endless mode — does not clear existing content).
+ * Each row is wrapped in a .score-row div so scroll position can be tracked per-row.
+ *
+ * @param {HTMLElement} container
+ * @param {Array<Array<object>>} bars
+ * @param {boolean} showTab
+ * @param {string} [timeSignature='4/4']
+ * @returns {{ notationDiv: HTMLElement, staveLayout: Array<{ noteStartX: number, noteEndX: number }>, rowDiv: HTMLElement }}
+ */
+export function appendRow(container, bars, showTab, timeSignature = '4/4') {
+  const rowDiv = document.createElement('div');
+  rowDiv.className = 'score-row';
+
+  const { notationDiv, staveLayout } = _renderNotation(bars, timeSignature);
+  rowDiv.appendChild(notationDiv);
+
+  if (showTab) {
+    const tabDiv = document.createElement('div');
+    tabDiv.className = 'tab-wrapper';
+    rowDiv.appendChild(tabDiv);
+    renderTab(tabDiv, bars);
+  }
+
+  container.appendChild(rowDiv);
+  return { notationDiv, staveLayout, rowDiv };
 }

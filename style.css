@@ -513,6 +513,23 @@ input[type="range"] {
   transition: x 0.4s linear;
 }
 
+/* --- Endless mode scroll container --- */
+.score-container--endless {
+  max-height: 60vh;
+  overflow-y: scroll;
+  overflow-x: hidden;
+  scroll-behavior: smooth;
+  scrollbar-width: none; /* Firefox */
+}
+
+.score-container--endless::-webkit-scrollbar {
+  display: none; /* Chrome/Safari */
+}
+
+.score-row {
+  border-bottom: 1px solid var(--color-border);
+}
+
 /* === Tuner View === */
 #view-tuner {
   padding: 1rem;
