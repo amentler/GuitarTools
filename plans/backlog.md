@@ -2,8 +2,9 @@
 
 ## Active Plan: Chord Exercise with Audio Recognition
 
-**Status:** 📋 Planning  
+**Status:** ✅ Implemented (Phases 1–4 complete)  
 **Created:** 2026-04-12  
+**Completed:** 2026-04-17  
 **Goal:** Create a chord exercise where the tool tells the user which chord to play, the user plays it on guitar, and the tool recognizes whether the chord sounded correct.
 
 ---
