@@ -68,7 +68,24 @@ describe('generateBars', () => {
 describe('getFilteredNotes', () => {
   it('returns all notes when maxFret is 3 and all strings are active', () => {
     const result = getFilteredNotes(3, [0, 1, 2, 3, 4, 5]);
-    expect(result).toHaveLength(NOTES.length);
+    expect(result).toHaveLength(17);
+  });
+
+  it('returns 18 notes when maxFret is 4 and all strings are active', () => {
+    const result = getFilteredNotes(4, [0, 1, 2, 3, 4, 5]);
+    expect(result).toHaveLength(18);
+  });
+
+  it('returns 24 notes when maxFret is 5 and all strings are active', () => {
+    const result = getFilteredNotes(5, [0, 1, 2, 3, 4, 5]);
+    expect(result).toHaveLength(24);
+  });
+
+  it('includes A4 on high E at fret 5', () => {
+    const result = getFilteredNotes(5, [5]); // stringIndex 5 = string 1 = high E
+    const a4 = result.find(n => n.name === 'A' && n.octave === 4);
+    expect(a4).toBeDefined();
+    expect(a4.fret).toBe(5);
   });
 
   it('returns only open-string notes when maxFret is 0', () => {
