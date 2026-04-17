@@ -1212,6 +1212,185 @@ input[type="range"] {
   width: 100%;
 }
 
+/* === Akkordfolgen-Trainer === */
+#view-akkordfolgen-trainer {
+  padding: 0.5rem;
+  gap: 0.5rem;
+  max-width: 620px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.aft-container {
+  max-width: 100%;
+  gap: 1rem;
+}
+
+.aft-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+}
+
+.aft-panel-title {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--color-text);
+  text-align: center;
+  margin-bottom: 0.25rem;
+}
+
+.aft-progression-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  width: 100%;
+  justify-content: flex-start;
+}
+
+.aft-prog-btn {
+  font-size: 0.85rem;
+  padding: 0.35rem 0.7rem;
+}
+
+.aft-prog-btn.active {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: #fff;
+}
+
+.aft-progression-display {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  justify-content: center;
+  width: 100%;
+}
+
+.aft-chord-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.1rem;
+  padding: 0.4rem 0.6rem;
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-bg);
+  min-width: 4rem;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.aft-chord-card.current {
+  border-color: var(--color-accent-alt);
+  background: rgba(245, 166, 35, 0.12);
+  box-shadow: 0 0 10px rgba(245, 166, 35, 0.25);
+}
+
+.aft-chord-card.played {
+  border-color: var(--color-correct);
+  background: rgba(76, 175, 80, 0.12);
+}
+
+.aft-chord-card.missed {
+  border-color: var(--color-wrong);
+  background: rgba(244, 67, 54, 0.10);
+}
+
+.aft-card-name {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--color-text);
+  text-align: center;
+  line-height: 1.2;
+}
+
+.aft-card-numeral {
+  font-size: 0.7rem;
+  color: var(--color-text-muted);
+  text-align: center;
+}
+
+.aft-current-display {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.1rem;
+}
+
+.aft-numeral {
+  font-size: 1.1rem;
+  color: var(--color-text-muted);
+  font-weight: 600;
+  text-align: center;
+}
+
+.aft-beat-dots {
+  display: flex;
+  gap: 0.6rem;
+  align-items: center;
+  justify-content: center;
+  min-height: 1.5rem;
+}
+
+.aft-beat-dot {
+  width: 0.85rem;
+  height: 0.85rem;
+  border-radius: 50%;
+  background: #333;
+  border: 2px solid var(--color-border);
+  transition: background 0.08s, transform 0.08s;
+}
+
+.aft-beat-dot.downbeat {
+  border-color: var(--color-accent);
+}
+
+.aft-beat-dot.active {
+  background: var(--color-accent-alt);
+  transform: scale(1.35);
+}
+
+.aft-beat-dot.downbeat.active {
+  background: var(--color-accent);
+}
+
+.aft-summary-stats {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  justify-content: center;
+  width: 100%;
+  margin: 0.5rem 0;
+}
+
+.aft-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 0.75rem 1.25rem;
+  min-width: 5rem;
+}
+
+.aft-stat-value {
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: var(--color-accent-alt);
+  line-height: 1;
+}
+
+.aft-stat-label {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
 /* === Responsive === */
 @media (max-width: 400px) {
   .note-buttons {
