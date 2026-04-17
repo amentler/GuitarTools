@@ -88,6 +88,16 @@
           </p>
           <button id="btn-start-sheet-mic" class="btn-start">Starten</button>
         </article>
+
+        <article class="exercise-card">
+          <div class="card-icon">🎸</div>
+          <h2 class="card-title">Akkord spielen</h2>
+          <p class="card-desc">
+            Ein Akkord wird angezeigt – spiele ihn auf der Gitarre. Das Mikrofon
+            prüft, ob du den richtigen Akkord gespielt hast.
+          </p>
+          <button id="btn-start-chord-exercise" class="btn-start">Starten</button>
+        </article>
       </div>
     </div>
 
@@ -597,6 +607,52 @@
     </div>
 
     <div id="akkord-uebersicht-container"></div>
+
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <!-- AKKORD SPIELEN (Chord Exercise with Mic)                               -->
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <section id="view-chord-exercise" class="view">
+
+    <div class="exercise-header">
+      <button id="btn-back-chord-exercise" class="btn-back">← Zurück zum Menü</button>
+      <div class="score-display">
+        Richtig: <span id="ce-score-correct">0</span> von <span id="ce-score-total">0</span>
+      </div>
+    </div>
+
+    <div class="chord-trainer-container">
+      <h2 id="ce-chord-name" class="chord-title-display">C-Dur</h2>
+
+      <div id="ce-chord-diagram" class="chord-diagram-container"></div>
+
+      <p id="ce-feedback" class="feedback-text"></p>
+
+      <div class="chord-controls">
+        <button id="btn-ce-listen" class="btn-start">🎤 Hören</button>
+      </div>
+
+      <div class="settings-panel">
+        <div class="settings-row-vertical">
+          <span class="settings-label">Akkord-Kategorien:</span>
+          <div class="category-checkboxes">
+            <label class="checkbox-label">
+              <input type="checkbox" id="ce-cat-simplified" checked> Einsteiger (vereinfacht)
+            </label>
+            <label class="checkbox-label">
+              <input type="checkbox" id="ce-cat-standard"> Standard (CAGED)
+            </label>
+            <label class="checkbox-label">
+              <input type="checkbox" id="ce-cat-extended"> Weiterführend (7er, F)
+            </label>
+            <label class="checkbox-label">
+              <input type="checkbox" id="ce-cat-sus-add"> Sus &amp; Add
+            </label>
+          </div>
+        </div>
+      </div>
+    </div>
 
   </section>
 

@@ -17,6 +17,7 @@ const EXERCISE_MODULES = [
   { key: 'notePlaying',      path: './games/notePlayingExercise/notePlayingExercise.js' },
   { key: 'sheetMic',         path: './games/sheetMusicMic/sheetMusicMicExercise.js' },
   { key: 'akkordUebersicht', path: './tools/akkordUebersicht/akkordUebersicht.js' },
+  { key: 'chordExercise',   path: './games/chordExercise/chordExercise.js' },
 ];
 
 const views = {
