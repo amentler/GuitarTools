@@ -8,7 +8,7 @@ Optional: Tabs unterhalb der Notenzeile.
 ## Dateien
 
 ### `sheetMusicLogic.js`
-- `NOTES` – 17 Noten in C-Dur, Bünde 0–3, Saiten 1–6 (E2–G4 sounding, vfKey = written pitch)
+- `NOTES` – 24 Noten in C-Dur, Bünde 0–5, Saiten 1–6 (E2–A4 sounding, vfKey = written pitch); Bünde 4–5 enthalten Alternativ-Positionen (gleiche Tonhöhe, andere Saite/Bund)
 - `generateBars(numBars, beatsPerBar, notesPool?)` → `Note[][]`
 - `getFilteredNotes(maxFret, activeStrings)` → gefilterter Note-Pool
 - `getTimeSignatureConfig(sig)` → `{ beatsPerBar, noteDuration, vfTimeSig }` für 2/4, 3/4, 4/4, 3/8, 6/8
