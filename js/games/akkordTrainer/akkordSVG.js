@@ -7,10 +7,10 @@ const SVG_NS = 'http://www.w3.org/2000/svg';
 
 // Layout Constants (Horizontal Diagram - like Tabs)
 const VB_W = 450;
-const VB_H = 300;
+const VB_H = 260;
 
 const MARGIN_LEFT = 60;
-const MARGIN_TOP = 50;
+const MARGIN_TOP = 30;
 const DIAGRAM_W = 340;
 const DIAGRAM_H = 180;
 
