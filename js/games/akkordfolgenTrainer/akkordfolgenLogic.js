@@ -79,6 +79,28 @@ export function buildProgression(keyId, progressionIndex) {
 }
 
 /**
+ * Creates a beat-sync object that signals when the chord should advance.
+ * Returns true from onBeat() exactly on beat 0 (the downbeat), but never
+ * on the very first beat 0 (which marks the start of chord 0, not an advance).
+ *
+ * Use this to drive chord changes from the metronome's onBeat callback
+ * instead of a separate setTimeout – ensuring the "1" of the metronome
+ * and the chord change always coincide.
+ *
+ * @returns {{ onBeat: (beatNumber: number) => boolean }}
+ */
+export function createBeatChordSync() {
+  let started = false;
+  return {
+    onBeat(beatNumber) {
+      if (beatNumber !== 0) return false;
+      if (!started) { started = true; return false; }
+      return true;
+    },
+  };
+}
+
+/**
  * Generates a random 4-chord diatonic progression for the given key.
  * Always starts with I, followed by 3 distinct chords from {ii, IV, V, vi}.
  * @param {string} keyId
