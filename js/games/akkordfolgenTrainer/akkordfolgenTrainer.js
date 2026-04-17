@@ -10,6 +10,7 @@ import { MetronomeLogic } from '../../tools/metronome/metronomeLogic.js';
 import {
   buildProgression,
   generateRandomProgression,
+  createBeatChordSync,
   PROGRESSIONS,
   MAJOR_KEYS,
 } from './akkordfolgenLogic.js';
@@ -23,7 +24,6 @@ const FFT_SIZE             = 4096;
 const LISTEN_INTERVAL_MS   = 50;
 const RMS_SPIKE_MULTIPLIER = 2.5;
 const STRUM_COOLDOWN_MS    = 1500;  // ignore further strums for this long after one fires
-const ADVANCE_DELAY_MS     = 800;   // show "played" feedback before advancing chord
 
 // ── Factory ───────────────────────────────────────────────────────────────────
 
@@ -41,17 +41,17 @@ export function createAkkordfolgenTrainer() {
 
   // ── Exercise state ───────────────────────────────────────────────────────────
   let state = {
-    key:              'G',
-    progressionIndex: 0,
-    isRandom:         false,
-    progression:      [],         // [{ name, numeral, degree }]
-    currentIndex:     0,
-    isRunning:        false,
-    bpm:              80,
-    beatsPerChord:    4,
-    chordTimeoutId:   null,
-    score:            { rounds: 0, played: 0, missed: 0 },
-    startTime:        null,
+    key:                'G',
+    progressionIndex:   0,
+    isRandom:           false,
+    progression:        [],         // [{ name, numeral, degree }]
+    currentIndex:       0,
+    isRunning:          false,
+    bpm:                80,
+    beatsPerChord:      4,
+    strummedThisChord:  false,      // true once the player strums the current chord
+    score:              { rounds: 0, played: 0, missed: 0 },
+    startTime:          null,
   };
 
   let settingsWired = false;
@@ -232,7 +232,17 @@ export function createAkkordfolgenTrainer() {
 
     metronome.setBpm(state.bpm);
     metronome.setBeatsPerMeasure(state.beatsPerChord);
-    metronome.onBeat = beatNumber => { highlightBeat(beatNumber); };
+
+    const beatSync = createBeatChordSync();
+    metronome.onBeat = beatNumber => {
+      highlightBeat(beatNumber);
+      if (!beatSync.onBeat(beatNumber) || !state.isRunning) return;
+      if (!state.strummedThisChord) {
+        state.score.missed++;
+        markCard(state.currentIndex, 'missed');
+      }
+      advanceChord();
+    };
     metronome.start();
 
     startStrumDetection();
@@ -247,9 +257,8 @@ export function createAkkordfolgenTrainer() {
   }
 
   function cleanup() {
-    if (state.chordTimeoutId) { clearTimeout(state.chordTimeoutId); state.chordTimeoutId = null; }
-    if (listenIntervalId)     { clearInterval(listenIntervalId);     listenIntervalId = null; }
-    if (strumCooldownId)      { clearTimeout(strumCooldownId);       strumCooldownId = null; }
+    if (listenIntervalId) { clearInterval(listenIntervalId); listenIntervalId = null; }
+    if (strumCooldownId)  { clearTimeout(strumCooldownId);  strumCooldownId = null; }
     strumCooldown = false;
 
     if (metronome) { metronome.stop(); metronome = null; }
@@ -263,8 +272,8 @@ export function createAkkordfolgenTrainer() {
   function showChordAtIndex(index) {
     if (!state.isRunning) return;
 
-    clearTimeout(state.chordTimeoutId);
-    state.currentIndex = index;
+    state.currentIndex        = index;
+    state.strummedThisChord   = false;
 
     const chord = state.progression[index];
     if (!chord) return;
@@ -283,20 +292,10 @@ export function createAkkordfolgenTrainer() {
       ui.chordDiagram.style.display = 'none';
       ui.chordDiagram.innerHTML = '';
     }
-
-    // Auto-advance timeout based on BPM + beats per chord
-    const chordDurationMs = (60 / state.bpm) * state.beatsPerChord * 1000;
-    state.chordTimeoutId = setTimeout(() => {
-      if (!state.isRunning) return;
-      state.score.missed++;
-      markCard(index, 'missed');
-      advanceChord();
-    }, chordDurationMs);
   }
 
   function advanceChord() {
     if (!state.isRunning) return;
-    clearTimeout(state.chordTimeoutId);
 
     // Reset strum cooldown so next chord can be detected immediately
     strumCooldown = false;
@@ -331,17 +330,13 @@ export function createAkkordfolgenTrainer() {
   }
 
   function handleStrum() {
-    if (!state.isRunning) return;
-    clearTimeout(state.chordTimeoutId);
+    if (!state.isRunning || state.strummedThisChord) return;
     state.score.played++;
+    state.strummedThisChord = true;
 
     markCard(state.currentIndex, 'played');
     setFeedback('\u2713 Gespielt!', 'correct');
-
-    state.chordTimeoutId = setTimeout(() => {
-      if (!state.isRunning) return;
-      advanceChord();
-    }, ADVANCE_DELAY_MS);
+    // Chord advances on the next beat 0 (metronome onBeat), not via a separate timer.
   }
 
   // ── Progression strip ─────────────────────────────────────────────────────
