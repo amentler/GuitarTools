@@ -7,9 +7,9 @@ Zeigt einen zufälligen Akkord an (z. B. "C-Dur"), der Nutzer spielt ihn auf der
 | Phase | Status |
 |-------|--------|
 | Phase 1: Logic (chordDetectionLogic.js) | ✅ Implementiert |
-| Phase 2: Audio Pipeline (chordDetection.js) | ⬜ Geplant |
-| Phase 3: Exercise Flow & UI (chordExercise.js) | ⬜ Geplant |
-| Phase 4: Testing with audio fixtures | ⬜ Geplant |
+| Phase 2: Audio Pipeline (chordDetection.js) | ✅ Implementiert |
+| Phase 3: Exercise Flow & UI (chordExercise.js) | ✅ Implementiert |
+| Phase 4: Unit Tests (chordDetection.test.js) | ✅ Implementiert |
 
 Detailplan: `plans/backlog.md` → "Active Plan: Chord Exercise with Audio Recognition"
 
