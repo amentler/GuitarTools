@@ -3,13 +3,13 @@
  * Microphone audio pipeline for HPCP-based chord detection.
  *
  * Pipeline:
- *   mic → AnalyserNode → time-domain frame
- *   → essentia Windowing → Spectrum → SpectralPeaks → HPCP
+ *   mic → AnalyserNode → getFloatFrequencyData (Web Audio FFT)
+ *   → inline peak detection → essentia.HPCP
  *   → average over ANALYSIS_FRAMES → matchHpcpToChord
  *
- * HPCP (Harmonic Pitch Class Profile) is much more robust than
- * raw FFT-peak detection because it integrates harmonic energy
- * into 12 pitch-class bins before comparing against chord templates.
+ * The Web Audio AnalyserNode handles windowing + FFT natively (no WASM calls
+ * for those steps), so only essentia.HPCP() runs in WASM. This is simpler,
+ * faster on mobile, and avoids potential frameSize mismatches in Windowing.
  */
 
 import { getEssentia } from './essentiaLoader.js';
@@ -24,6 +24,7 @@ const ANALYSIS_FRAMES    = 6;      // frames to average after strum
 const FRAME_INTERVAL_MS  = 80;     // interval between analysis frames
 const RMS_SPIKE_FACTOR   = 3;      // strum threshold = N × noise floor
 const GUITAR_MIN_RMS     = 0.008;  // minimum RMS to consider as input
+const PEAK_NOISE_FLOOR   = -80;    // dBFS: bins quieter than this are ignored
 
 // ── Chord templates (built once at module load) ───────────────────────────────
 
@@ -59,46 +60,46 @@ function computeRms(buf) {
 }
 
 /**
- * Computes a 12-bin HPCP vector from a time-domain audio frame.
- * All intermediate essentia WASM vectors are explicitly deleted to prevent
- * memory leaks on the WASM heap.
+ * Computes a 12-bin HPCP vector from the AnalyserNode's current frequency data.
+ *
+ * The Web Audio AnalyserNode performs windowing + FFT natively. We read dBFS
+ * magnitudes, detect local-maximum peaks in the guitar range (40–5000 Hz), and
+ * pass them to essentia.HPCP() which maps them onto 12 pitch-class bins.
  *
  * @param {InstanceType<window.Essentia>} essentia
- * @param {Float32Array} samples  - time-domain samples (length = FFT_SIZE)
- * @param {number}       sampleRate
+ * @param {AnalyserNode} analyserNode
+ * @param {number} sampleRate
  * @returns {Float32Array} 12-element HPCP vector (values in [0, 1])
  */
-function computeHpcp(essentia, samples, sampleRate) {
-  const frameSize = samples.length;
+function computeHpcp(essentia, analyserNode, sampleRate) {
+  const fftSize  = analyserNode.fftSize;
+  const freqData = new Float32Array(analyserNode.frequencyBinCount); // fftSize / 2
+  analyserNode.getFloatFrequencyData(freqData);
 
-  // Convert to WASM vector
-  const signal = essentia.arrayToVector(samples);
+  const binWidth = sampleRate / fftSize;
+  const minBin   = Math.max(1, Math.floor(40 / binWidth));
+  const maxBin   = Math.min(freqData.length - 2, Math.ceil(5000 / binWidth));
 
-  // Apply Hann window (size must match frame to avoid partial windowing)
-  const { frame: windowed } = essentia.Windowing(signal, true, frameSize, 'hann', 0, true);
-  signal.delete();
+  const peakFreqs = [];
+  const peakMags  = [];
 
-  // Magnitude spectrum (output size = frameSize/2 + 1)
-  const { spectrum } = essentia.Spectrum(windowed, frameSize);
-  windowed.delete();
+  for (let i = minBin; i <= maxBin; i++) {
+    const db = freqData[i];
+    // local maximum above noise floor
+    if (db > freqData[i - 1] && db > freqData[i + 1] && db > PEAK_NOISE_FLOOR) {
+      peakFreqs.push(i * binWidth);
+      peakMags.push(Math.pow(10, db / 20)); // dBFS → linear magnitude
+    }
+  }
 
-  // Find spectral peaks in the guitar fundamental range
-  const { frequencies, magnitudes } = essentia.SpectralPeaks(
-    spectrum,
-    0,          // magnitudeThreshold
-    5000,       // maxFrequency (Hz)
-    100,        // maxPeaks
-    40,         // minFrequency – lowest guitar string (E2 ≈ 82 Hz, but allow lower)
-    'magnitude', // orderBy strongest peaks first
-    sampleRate,
-  );
-  spectrum.delete();
+  if (!peakFreqs.length) return new Float32Array(12);
 
-  // HPCP: maps spectral peaks to 12 pitch-class bins
-  // harmonics=0 means only the fundamental of each peak contributes;
-  // the squaredCosine weight type gives smooth bin transitions.
+  const freqVec = essentia.arrayToVector(new Float32Array(peakFreqs));
+  const magVec  = essentia.arrayToVector(new Float32Array(peakMags));
+
+  // HPCP maps spectral peaks onto 12 pitch-class bins (C…B).
   const { hpcp } = essentia.HPCP(
-    frequencies, magnitudes,
+    freqVec, magVec,
     true,            // bandPreset
     500,             // bandSplitFrequency (Hz)
     0,               // harmonics
@@ -113,8 +114,8 @@ function computeHpcp(essentia, samples, sampleRate) {
     'squaredCosine', // weightType
     1,               // windowSize
   );
-  frequencies.delete();
-  magnitudes.delete();
+  freqVec.delete();
+  magVec.delete();
 
   const result = new Float32Array(essentia.vectorToArray(hpcp));
   hpcp.delete();
@@ -129,14 +130,14 @@ function computeHpcp(essentia, samples, sampleRate) {
  * matches the result against the target chord.
  *
  * @param {string} chordName - e.g. 'C-Dur'
- * @returns {Promise<{ isCorrect: boolean, confidence: number, bestMatch: string|null, timedOut?: boolean }>}
+ * @returns {Promise<{ isCorrect: boolean, confidence: number, bestMatch: string|null, timedOut?: boolean, essentiaError?: boolean }>}
  */
 export async function detectChordEssentia(chordName) {
   let essentia;
   try {
     [essentia] = await Promise.all([getEssentia(), ensureMic()]);
   } catch {
-    return { isCorrect: false, confidence: 0, bestMatch: null };
+    return { isCorrect: false, confidence: 0, bestMatch: null, essentiaError: true };
   }
 
   const rmsThreshold = RMS_SPIKE_FACTOR * GUITAR_MIN_RMS;
@@ -183,10 +184,8 @@ export async function detectChordEssentia(chordName) {
       for (let i = 0; i < ANALYSIS_FRAMES; i++) {
         if (i > 0) await new Promise(r => setTimeout(r, FRAME_INTERVAL_MS));
         if (!analyser) break;
-        const buf = new Float32Array(FFT_SIZE);
-        analyser.getFloatTimeDomainData(buf);
         try {
-          hpcps.push(computeHpcp(essentia, buf, sampleRate));
+          hpcps.push(computeHpcp(essentia, analyser, sampleRate));
         } catch {
           // single frame error is non-fatal; skip and continue
         }

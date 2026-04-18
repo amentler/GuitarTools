@@ -28,6 +28,8 @@ function loadScript(src) {
 /**
  * Returns the initialized Essentia instance (loads WASM on first call).
  * Subsequent calls return the cached instance immediately.
+ * On failure the rejected promise is kept — no retry to avoid re-fetching the
+ * 1.9 MB WASM binary a second time.
  *
  * @returns {Promise<InstanceType<window.Essentia>>}
  * @throws if WASM files cannot be loaded
@@ -37,28 +39,27 @@ export async function getEssentia() {
   if (loadPromise) return loadPromise;
 
   loadPromise = (async () => {
-    try {
-      // Step 1: load the Emscripten WASM factory (creates window.EssentiaWASM)
-      await loadScript(`${LIB_BASE}/essentia-wasm.web.js`);
+    // Step 1: load the Emscripten WASM factory (creates window.EssentiaWASM)
+    await loadScript(`${LIB_BASE}/essentia-wasm.web.js`);
 
-      // Step 2: initialise the WASM module.
-      // locateFile gives Emscripten the absolute URL for the .wasm binary so
-      // it works even when document.currentScript is null (dynamic script tag).
-      const wasmModule = window.EssentiaWASM({
-        locateFile: (filename) => `${LIB_BASE}/${filename}`,
-      });
-      await wasmModule.ready;
+    // Step 2: initialise the WASM module.
+    // locateFile gives Emscripten the absolute URL for the .wasm binary so
+    // it works even when document.currentScript is null (dynamic script tag).
+    const wasmModule = window.EssentiaWASM({
+      locateFile: (filename) => `${LIB_BASE}/${filename}`,
+    });
+    await wasmModule.ready;
 
-      // Step 3: load the high-level JS API (creates window.Essentia)
-      await loadScript(`${LIB_BASE}/essentia.js-core.umd.js`);
+    // Step 3: load the high-level JS API (creates window.Essentia)
+    await loadScript(`${LIB_BASE}/essentia.js-core.umd.js`);
 
-      essentiaInstance = new window.Essentia(wasmModule);
-      return essentiaInstance;
-    } catch (err) {
-      loadPromise = null; // allow retry after transient failure
-      throw err;
-    }
+    essentiaInstance = new window.Essentia(wasmModule);
+    return essentiaInstance;
   })();
+
+  // Do NOT reset loadPromise on failure — keeping the rejected promise prevents
+  // a second caller from re-fetching the 1.9 MB WASM binary unnecessarily.
+  loadPromise.catch(err => console.error('[essentiaLoader] init failed:', err));
 
   return loadPromise;
 }

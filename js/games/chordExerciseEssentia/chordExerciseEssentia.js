@@ -13,10 +13,11 @@ import { getEssentia } from './essentiaLoader.js';
 // ── Factory ───────────────────────────────────────────────────────────────────
 
 export function createChordExerciseEssentia() {
-  let currentChord    = null;
-  let score           = { correct: 0, total: 0 };
-  let pendingTimer    = null;
-  let isListening     = false;
+  let currentChord   = null;
+  let score          = { correct: 0, total: 0 };
+  let pendingTimer   = null;
+  let isListening    = false;
+  let essentiaReady  = false;
 
   const CATEGORIES = {
     'ece-cat-simplified': 'simplified',
@@ -77,12 +78,15 @@ export function createChordExerciseEssentia() {
 
   function nextRound() {
     clearPendingTimer();
-    isListening   = false;
-    currentChord  = getRandomChord(getActiveCategories());
+    isListening  = false;
+    currentChord = getRandomChord(getActiveCategories());
 
     if (ui.chordName)  ui.chordName.textContent = currentChord.name;
     if (ui.feedbackEl) { ui.feedbackEl.textContent = ''; ui.feedbackEl.className = 'feedback-text'; }
-    if (ui.listenBtn)  { ui.listenBtn.textContent = '\uD83C\uDFA4 H\u00F6ren'; ui.listenBtn.disabled = false; }
+    if (ui.listenBtn)  {
+      ui.listenBtn.textContent = '\uD83C\uDFA4 H\u00F6ren';
+      ui.listenBtn.disabled = !essentiaReady;
+    }
 
     drawChordDiagram();
   }
@@ -100,7 +104,7 @@ export function createChordExerciseEssentia() {
     try {
       result = await detectChordEssentia(currentChord.name);
     } catch {
-      result = { isCorrect: false, confidence: 0, bestMatch: null };
+      result = { isCorrect: false, confidence: 0, bestMatch: null, essentiaError: true };
     }
 
     isListening = false;
@@ -110,6 +114,16 @@ export function createChordExerciseEssentia() {
   }
 
   function showFeedback(result) {
+    // Essentia unavailable — show error but do not count as attempt
+    if (result.essentiaError) {
+      if (ui.feedbackEl) {
+        ui.feedbackEl.textContent = 'Essentia nicht verf\u00FCgbar. Bitte Seite neu laden.';
+        ui.feedbackEl.className   = 'feedback-text feedback-wrong';
+      }
+      if (ui.listenBtn) { ui.listenBtn.textContent = '\uD83C\uDFA4 Nochmal'; ui.listenBtn.disabled = false; }
+      return;
+    }
+
     score.total++;
     updateScoreUI();
 
@@ -139,7 +153,7 @@ export function createChordExerciseEssentia() {
         ? ` (erkannt: ${result.bestMatch})`
         : '';
       if (ui.feedbackEl) {
-        ui.feedbackEl.textContent = `\u274C Nicht erkannt – \u00DCbereinstimmung: ${pct}%${hint}`;
+        ui.feedbackEl.textContent = `\u274C Nicht erkannt \u2013 \u00DCbereinstimmung: ${pct}%${hint}`;
         ui.feedbackEl.className   = 'feedback-text feedback-wrong';
       }
       if (ui.listenBtn) { ui.listenBtn.textContent = '\uD83C\uDFA4 Nochmal'; ui.listenBtn.disabled = false; }
@@ -154,21 +168,31 @@ export function createChordExerciseEssentia() {
 
   function startExercise() {
     resolveUI();
-    score = { correct: 0, total: 0 };
+    score         = { correct: 0, total: 0 };
+    essentiaReady = false;
     updateScoreUI();
-
-    // Pre-warm essentia WASM in background
-    setStatus('Lade Essentia\u2026');
-    getEssentia()
-      .then(() => { if (ui.view?.classList.contains('active')) setStatus(''); })
-      .catch(() => { if (ui.view?.classList.contains('active')) setStatus('Essentia konnte nicht geladen werden.', true); });
 
     if (ui.listenBtn) {
       const fresh = ui.listenBtn.cloneNode(true);
       ui.listenBtn.replaceWith(fresh);
       ui.listenBtn = fresh;
       ui.listenBtn.addEventListener('click', handleListen);
+      ui.listenBtn.disabled = true; // stay disabled until essentia is ready
     }
+
+    // Pre-warm essentia WASM; enable "Hören" only on success
+    setStatus('Lade Essentia\u2026');
+    getEssentia()
+      .then(() => {
+        if (!ui.view?.classList.contains('active')) return;
+        essentiaReady = true;
+        setStatus('');
+        if (ui.listenBtn && !isListening) ui.listenBtn.disabled = false;
+      })
+      .catch(() => {
+        if (ui.view?.classList.contains('active'))
+          setStatus('Essentia konnte nicht geladen werden.', true);
+      });
 
     nextRound();
   }
