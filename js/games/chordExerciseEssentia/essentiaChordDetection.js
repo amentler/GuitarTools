@@ -3,28 +3,39 @@
  * Microphone audio pipeline for HPCP-based chord detection.
  *
  * Pipeline:
- *   mic → AnalyserNode → getFloatFrequencyData (Web Audio FFT)
- *   → inline peak detection → essentia.HPCP
+ *   mic → AnalyserNode.getFloatFrequencyData (Web Audio FFT)
+ *   → inline peak detection
+ *   → essentia.HPCP (WASM, when available) or computeHpcpPureJS (fallback)
  *   → average over ANALYSIS_FRAMES → matchHpcpToChord
  *
- * The Web Audio AnalyserNode handles windowing + FFT natively (no WASM calls
- * for those steps), so only essentia.HPCP() runs in WASM. This is simpler,
- * faster on mobile, and avoids potential frameSize mismatches in Windowing.
+ * The pure-JS fallback is used automatically when the essentia WASM fails to
+ * compile (e.g. iOS < 16.4 lacks WebAssembly SIMD support). The two code paths
+ * share the same templates and matching logic so results are comparable.
  */
 
 import { getEssentia } from './essentiaLoader.js';
-import { buildChordTemplates, matchHpcpToChord, averageHpcps } from './essentiaChordLogic.js';
+import {
+  buildChordTemplates,
+  matchHpcpToChord,
+  averageHpcps,
+  computeHpcpPureJS,
+} from './essentiaChordLogic.js';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
-const FFT_SIZE           = 4096;   // ~93 ms frame at 44100 Hz
-const ATTACK_SETTLE_MS   = 150;    // wait after strum onset
-const LISTEN_TIMEOUT_MS  = 8000;   // give up after 8 s of silence
-const ANALYSIS_FRAMES    = 6;      // frames to average after strum
-const FRAME_INTERVAL_MS  = 80;     // interval between analysis frames
-const RMS_SPIKE_FACTOR   = 3;      // strum threshold = N × noise floor
-const GUITAR_MIN_RMS     = 0.008;  // minimum RMS to consider as input
-const PEAK_NOISE_FLOOR   = -80;    // dBFS: bins quieter than this are ignored
+const FFT_SIZE          = 4096;   // ~93 ms frame at 44100 Hz
+const ATTACK_SETTLE_MS  = 150;    // wait after strum onset
+const LISTEN_TIMEOUT_MS = 8000;   // give up after 8 s of silence
+const ANALYSIS_FRAMES   = 6;      // frames to average after strum
+const FRAME_INTERVAL_MS = 80;     // interval between analysis frames
+const RMS_SPIKE_FACTOR  = 3;      // strum threshold = N × noise floor
+const GUITAR_MIN_RMS    = 0.008;  // minimum RMS to consider as input
+const PEAK_NOISE_FLOOR  = -80;    // dBFS: bins quieter than this are ignored
+
+// referenceFrequency for HPCP: C4 = 261.626 Hz so bin 0 = C, matching
+// NOTE_TO_BIN in essentiaChordLogic.js. Using 440 Hz (A4) would shift all bins
+// by +9, making C land on bin 3 and breaking template matching entirely.
+const HPCP_REFERENCE_HZ = 261.626;
 
 // ── Chord templates (built once at module load) ───────────────────────────────
 
@@ -60,20 +71,12 @@ function computeRms(buf) {
 }
 
 /**
- * Computes a 12-bin HPCP vector from the AnalyserNode's current frequency data.
- *
- * The Web Audio AnalyserNode performs windowing + FFT natively. We read dBFS
- * magnitudes, detect local-maximum peaks in the guitar range (40–5000 Hz), and
- * pass them to essentia.HPCP() which maps them onto 12 pitch-class bins.
- *
- * @param {InstanceType<window.Essentia>} essentia
- * @param {AnalyserNode} analyserNode
- * @param {number} sampleRate
- * @returns {Float32Array} 12-element HPCP vector (values in [0, 1])
+ * Detects spectral peaks from the AnalyserNode's current frequency data.
+ * Returns parallel arrays of peak frequencies (Hz) and linear magnitudes.
  */
-function computeHpcp(essentia, analyserNode, sampleRate) {
+function detectPeaks(analyserNode, sampleRate) {
   const fftSize  = analyserNode.fftSize;
-  const freqData = new Float32Array(analyserNode.frequencyBinCount); // fftSize / 2
+  const freqData = new Float32Array(analyserNode.frequencyBinCount);
   analyserNode.getFloatFrequencyData(freqData);
 
   const binWidth = sampleRate / fftSize;
@@ -85,42 +88,57 @@ function computeHpcp(essentia, analyserNode, sampleRate) {
 
   for (let i = minBin; i <= maxBin; i++) {
     const db = freqData[i];
-    // local maximum above noise floor
     if (db > freqData[i - 1] && db > freqData[i + 1] && db > PEAK_NOISE_FLOOR) {
       peakFreqs.push(i * binWidth);
       peakMags.push(Math.pow(10, db / 20)); // dBFS → linear magnitude
     }
   }
 
+  return { peakFreqs, peakMags };
+}
+
+/**
+ * Computes HPCP using the essentia WASM module.
+ * Must only be called when essentia is available.
+ */
+function computeHpcpEssentia(essentia, peakFreqs, peakMags, sampleRate) {
   if (!peakFreqs.length) return new Float32Array(12);
 
   const freqVec = essentia.arrayToVector(new Float32Array(peakFreqs));
   const magVec  = essentia.arrayToVector(new Float32Array(peakMags));
 
-  // HPCP maps spectral peaks onto 12 pitch-class bins (C…B).
   const { hpcp } = essentia.HPCP(
     freqVec, magVec,
-    true,            // bandPreset
-    500,             // bandSplitFrequency (Hz)
-    0,               // harmonics
-    5000,            // maxFrequency
-    false,           // maxShifted
-    40,              // minFrequency
-    false,           // nonLinear
-    'unitMax',       // normalized
-    440,             // referenceFrequency
+    true,              // bandPreset
+    500,               // bandSplitFrequency
+    0,                 // harmonics
+    5000,              // maxFrequency
+    false,             // maxShifted
+    40,                // minFrequency
+    false,             // nonLinear
+    'unitMax',         // normalized
+    HPCP_REFERENCE_HZ, // referenceFrequency — C4, not A4
     sampleRate,
-    12,              // size (12-bin chroma)
-    'squaredCosine', // weightType
-    1,               // windowSize
+    12,                // size
+    'squaredCosine',   // weightType
+    1,                 // windowSize
   );
   freqVec.delete();
   magVec.delete();
 
   const result = new Float32Array(essentia.vectorToArray(hpcp));
   hpcp.delete();
-
   return result;
+}
+
+/**
+ * Computes a 12-bin HPCP vector from the current AnalyserNode state.
+ * Uses essentia WASM when available, otherwise falls back to pure-JS.
+ */
+function computeHpcp(essentia, analyserNode, sampleRate) {
+  const { peakFreqs, peakMags } = detectPeaks(analyserNode, sampleRate);
+  if (essentia) return computeHpcpEssentia(essentia, peakFreqs, peakMags, sampleRate);
+  return computeHpcpPureJS(peakFreqs, peakMags, HPCP_REFERENCE_HZ);
 }
 
 // ── Public API ────────────────────────────────────────────────────────────────
@@ -129,19 +147,32 @@ function computeHpcp(essentia, analyserNode, sampleRate) {
  * Listens for a guitar strum, computes HPCP over several frames, and
  * matches the result against the target chord.
  *
+ * When the essentia WASM is unavailable (e.g. iOS < 16.4 lacks SIMD support),
+ * the function falls back to a pure-JS HPCP implementation so the exercise
+ * still works — the result includes `wasm: false` in that case.
+ *
  * @param {string} chordName - e.g. 'C-Dur'
- * @returns {Promise<{ isCorrect: boolean, confidence: number, bestMatch: string|null, timedOut?: boolean, essentiaError?: boolean }>}
+ * @returns {Promise<{ isCorrect, confidence, bestMatch, timedOut?, essentiaError?, wasm? }>}
  */
 export async function detectChordEssentia(chordName) {
-  let essentia;
+  let essentia = null;
+
   try {
     [essentia] = await Promise.all([getEssentia(), ensureMic()]);
   } catch {
-    return { isCorrect: false, confidence: 0, bestMatch: null, essentiaError: true };
+    // Essentia WASM unavailable (SIMD / memory / network failure).
+    // Attempt mic-only with pure-JS HPCP as fallback.
+    try {
+      await ensureMic();
+    } catch {
+      return { isCorrect: false, confidence: 0, bestMatch: null, essentiaError: true };
+    }
+    // essentia stays null → computeHpcp uses pure-JS path
   }
 
   const rmsThreshold = RMS_SPIKE_FACTOR * GUITAR_MIN_RMS;
   const sampleRate   = audioCtx?.sampleRate ?? 44100;
+  const usingWasm    = essentia !== null;
 
   return new Promise(resolve => {
     let strumDetected = false;
@@ -157,14 +188,11 @@ export async function detectChordEssentia(chordName) {
       resolve(r);
     }
 
-    // ── Timeout ───────────────────────────────────────────────────────────────
     timeoutId = setTimeout(() => {
-      if (!strumDetected) {
+      if (!strumDetected)
         resolveWith({ isCorrect: false, confidence: 0, bestMatch: null, timedOut: true });
-      }
     }, LISTEN_TIMEOUT_MS);
 
-    // ── Strum detection loop ──────────────────────────────────────────────────
     pollId = setInterval(() => {
       if (!analyser || strumDetected) return;
       const buf = new Float32Array(FFT_SIZE);
@@ -176,7 +204,6 @@ export async function detectChordEssentia(chordName) {
       }
     }, 50);
 
-    // ── Analysis after strum ──────────────────────────────────────────────────
     async function collectAndResolve() {
       if (!analyser) { resolveWith({ isCorrect: false, confidence: 0, bestMatch: null }); return; }
 
@@ -187,26 +214,20 @@ export async function detectChordEssentia(chordName) {
         try {
           hpcps.push(computeHpcp(essentia, analyser, sampleRate));
         } catch {
-          // single frame error is non-fatal; skip and continue
+          // single frame failure is non-fatal
         }
       }
 
       clearTimeout(timeoutId);
-      if (!hpcps.length) {
-        resolve({ isCorrect: false, confidence: 0, bestMatch: null });
-        return;
-      }
+      if (!hpcps.length) { resolve({ isCorrect: false, confidence: 0, bestMatch: null }); return; }
 
       const avgHpcp = averageHpcps(hpcps);
-      resolve(matchHpcpToChord(avgHpcp, chordName, CHORD_TEMPLATES));
+      resolve({ ...matchHpcpToChord(avgHpcp, chordName, CHORD_TEMPLATES), wasm: usingWasm });
     }
   });
 }
 
-/**
- * Tears down microphone and AudioContext.
- * Safe to call multiple times.
- */
+/** Tears down microphone and AudioContext. Safe to call multiple times. */
 export function stopListeningEssentia() {
   _tearDown();
 }

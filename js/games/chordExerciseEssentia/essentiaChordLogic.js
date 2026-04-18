@@ -70,6 +70,53 @@ export function averageHpcps(hpcps) {
 }
 
 /**
+ * Computes a 12-bin HPCP vector from spectral peak frequencies and magnitudes
+ * in pure JavaScript — no WASM required.
+ *
+ * referenceFrequency = C4 = 261.626 Hz so that bin 0 = C, matching NOTE_TO_BIN
+ * and the templates built by buildChordTemplates().
+ *
+ * Using A4 = 440 Hz as the reference (as the essentia default does) would shift
+ * all bins by +9, making C land on bin 3 and breaking template matching.
+ *
+ * @param {number[]} peakFreqs         Peak frequencies in Hz
+ * @param {number[]} peakMags          Corresponding linear magnitudes
+ * @param {number}  [referenceFrequency=261.626]  Frequency of bin 0 (C4)
+ * @param {number}  [hpcpSize=12]
+ * @param {number}  [windowSize=1]     squaredCosine window width in bins
+ * @returns {Float32Array} 12-bin HPCP (values normalised to [0, 1])
+ */
+export function computeHpcpPureJS(peakFreqs, peakMags, referenceFrequency = 261.626, hpcpSize = 12, windowSize = 1) {
+  const hpcp = new Float32Array(hpcpSize);
+  const half = windowSize / 2;
+
+  for (let i = 0; i < peakFreqs.length; i++) {
+    const f = peakFreqs[i];
+    const m = peakMags[i];
+    if (f <= 0 || m <= 0) continue;
+
+    // Fractional pitch-class bin position (octave-invariant via modulo)
+    const pc = ((hpcpSize * Math.log2(f / referenceFrequency)) % hpcpSize + hpcpSize) % hpcpSize;
+
+    for (let b = 0; b < hpcpSize; b++) {
+      let dist = Math.abs(b - pc);
+      if (dist > hpcpSize / 2) dist = hpcpSize - dist; // circular wrap
+      if (dist <= half) {
+        const w = Math.cos((Math.PI * dist) / windowSize);
+        hpcp[b] += m * w * w; // squaredCosine weight
+      }
+    }
+  }
+
+  // unitMax normalisation
+  let maxVal = 0;
+  for (const v of hpcp) if (v > maxVal) maxVal = v;
+  if (maxVal > 0) for (let b = 0; b < hpcpSize; b++) hpcp[b] /= maxVal;
+
+  return hpcp;
+}
+
+/**
  * Matches an HPCP vector against the target chord using cosine similarity.
  *
  * The result is "correct" when:

@@ -4,6 +4,7 @@ import {
   cosineSimilarity,
   averageHpcps,
   matchHpcpToChord,
+  computeHpcpPureJS,
 } from '../../js/games/chordExerciseEssentia/essentiaChordLogic.js';
 
 // ── cosineSimilarity ──────────────────────────────────────────────────────────
@@ -169,5 +170,76 @@ describe('matchHpcpToChord', () => {
     expect(resultLenient.isCorrect).toBe(true);
     // strict may or may not pass depending on noise – just check it runs
     expect(typeof resultStrict.isCorrect).toBe('boolean');
+  });
+});
+
+// ── computeHpcpPureJS ─────────────────────────────────────────────────────────
+// These tests were written RED (computeHpcpPureJS did not exist) and verify
+// two things that were also bugs in the WASM path:
+//   1. bin 0 = C (referenceFrequency = C4 = 261.626 Hz, NOT A4 = 440 Hz)
+//   2. the pure-JS HPCP matches the same templates used for WASM, so the
+//      exercise works on devices where the WASM binary fails to compile
+//      (e.g. iOS < 16.4 which lacks WebAssembly SIMD support).
+
+describe('computeHpcpPureJS', () => {
+  it('returns a Float32Array of length 12', () => {
+    expect(computeHpcpPureJS([261.626], [1])).toBeInstanceOf(Float32Array);
+    expect(computeHpcpPureJS([261.626], [1]).length).toBe(12);
+  });
+
+  it('returns zero vector for empty peak list', () => {
+    expect(Array.from(computeHpcpPureJS([], []))).toEqual(new Array(12).fill(0));
+  });
+
+  it('maps C4 (261.626 Hz) to bin 0 – referenceFrequency must be C4, not A4', () => {
+    const hpcp = computeHpcpPureJS([261.626], [1]);
+    const maxBin = Array.from(hpcp).indexOf(Math.max(...hpcp));
+    expect(maxBin).toBe(0); // bin 0 = C
+    expect(hpcp[0]).toBeCloseTo(1.0);
+  });
+
+  it('maps A4 (440 Hz) to bin 9', () => {
+    const hpcp = computeHpcpPureJS([440], [1]);
+    const maxBin = Array.from(hpcp).indexOf(Math.max(...hpcp));
+    expect(maxBin).toBe(9); // bin 9 = A
+  });
+
+  it('maps G4 (392 Hz) to bin 7', () => {
+    const hpcp = computeHpcpPureJS([392], [1]);
+    const maxBin = Array.from(hpcp).indexOf(Math.max(...hpcp));
+    expect(maxBin).toBe(7); // bin 7 = G
+  });
+
+  it('is octave-invariant: C3 and C5 both map to bin 0', () => {
+    const hpcpC3 = computeHpcpPureJS([130.813], [1]); // C3
+    const hpcpC5 = computeHpcpPureJS([523.251], [1]); // C5
+    expect(Array.from(hpcpC3).indexOf(Math.max(...hpcpC3))).toBe(0);
+    expect(Array.from(hpcpC5).indexOf(Math.max(...hpcpC5))).toBe(0);
+  });
+
+  it('normalises to unitMax (max bin = 1.0)', () => {
+    const hpcp = computeHpcpPureJS([440], [7]); // magnitude 7, not 1
+    expect(Math.max(...hpcp)).toBeCloseTo(1.0);
+  });
+
+  it('C-Dur peaks (C4, E4, G4) correctly match C-Dur template', () => {
+    // This is the end-to-end test: real frequencies → pure-JS HPCP → template match.
+    // With the wrong referenceFrequency (440 Hz) C maps to bin 3, not 0 → no match.
+    const hpcp = computeHpcpPureJS([261.626, 329.628, 392.0], [1, 1, 1]);
+    const result = matchHpcpToChord(hpcp, 'C-Dur', buildChordTemplates());
+    expect(result.isCorrect).toBe(true);
+    expect(result.confidence).toBeCloseTo(1.0, 1);
+  });
+
+  it('G-Dur peaks (G4, B4, D5) correctly match G-Dur template', () => {
+    const hpcp = computeHpcpPureJS([392.0, 493.88, 587.33], [1, 1, 1]);
+    const result = matchHpcpToChord(hpcp, 'G-Dur', buildChordTemplates());
+    expect(result.isCorrect).toBe(true);
+  });
+
+  it('A-Moll peaks (A4, C5, E5) correctly match A-Moll template', () => {
+    const hpcp = computeHpcpPureJS([440.0, 523.251, 659.255], [1, 1, 1]);
+    const result = matchHpcpToChord(hpcp, 'A-Moll', buildChordTemplates());
+    expect(result.isCorrect).toBe(true);
   });
 });

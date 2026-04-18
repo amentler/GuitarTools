@@ -180,7 +180,8 @@ export function createChordExerciseEssentia() {
       ui.listenBtn.disabled = true; // stay disabled until essentia is ready
     }
 
-    // Pre-warm essentia WASM; enable "Hören" only on success
+    // Pre-warm essentia WASM. Enable "Hören" regardless of outcome:
+    // on WASM failure the detection falls back to pure-JS HPCP automatically.
     setStatus('Lade Essentia\u2026');
     getEssentia()
       .then(() => {
@@ -190,8 +191,10 @@ export function createChordExerciseEssentia() {
         if (ui.listenBtn && !isListening) ui.listenBtn.disabled = false;
       })
       .catch(() => {
-        if (ui.view?.classList.contains('active'))
-          setStatus('Essentia konnte nicht geladen werden.', true);
+        if (!ui.view?.classList.contains('active')) return;
+        essentiaReady = true; // pure-JS fallback is active
+        setStatus('Basis-Modus (WASM nicht verf\u00FCgbar, z.\u00A0B. iOS\u00A0<\u00A016.4).');
+        if (ui.listenBtn && !isListening) ui.listenBtn.disabled = false;
       });
 
     nextRound();
