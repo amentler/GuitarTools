@@ -169,4 +169,69 @@ describe('essentiaLoader – getEssentia()', () => {
     );
     expect(wasmInjections.length).toBe(1);
   });
+
+  // ── EssentiaWASM factory throws synchronously ─────────────────────────────
+  // Firefox for Android rejects WASM modules that contain atomic instructions
+  // without SharedArrayBuffer (no COOP/COEP headers on GitHub Pages).
+  // The essentia WASM binary has 1288 atomic-prefixed instructions (0xFE).
+  // On Firefox Mobile the EssentiaWASM factory itself throws synchronously
+  // (or wasmModule.ready rejects with a CompileError / LinkError).
+
+  it('rejects when EssentiaWASM factory throws synchronously (Firefox atomics error)', async () => {
+    appendSpy = vi.spyOn(document.head, 'appendChild').mockImplementation((el) => {
+      if (typeof el.src === 'string' && el.src.includes('essentia-wasm.web.js')) {
+        globalThis.EssentiaWASM = vi.fn(() => {
+          throw new Error('LinkError: WASM atomics require SharedArrayBuffer');
+        });
+        setTimeout(() => el.onload?.(), 0);
+      }
+      return el;
+    });
+
+    const { getEssentia } = await import('../../js/games/chordExerciseEssentia/essentiaLoader.js');
+    await expect(getEssentia()).rejects.toThrow('LinkError: WASM atomics require SharedArrayBuffer');
+  });
+
+  it('rejects with the original error object, not a wrapper', async () => {
+    const originalError = new WebAssembly.CompileError('Wasm decoding failed');
+    appendSpy = vi.spyOn(document.head, 'appendChild').mockImplementation((el) => {
+      if (typeof el.src === 'string' && el.src.includes('essentia-wasm.web.js')) {
+        globalThis.EssentiaWASM = vi.fn(() => {
+          const ready = Promise.reject(originalError);
+          ready.catch(() => {});
+          return { ready };
+        });
+        setTimeout(() => el.onload?.(), 0);
+      }
+      return el;
+    });
+
+    const { getEssentia } = await import('../../js/games/chordExerciseEssentia/essentiaLoader.js');
+    await expect(getEssentia()).rejects.toBe(originalError);
+  });
+
+  // ── WebAssembly availability guard ───────────────────────────────────────────
+  // If the browser doesn't expose WebAssembly at all (very old browser or CSP),
+  // getEssentia() should reject immediately without making any network requests.
+
+  it('rejects immediately when WebAssembly is not available – no scripts injected', async () => {
+    const origWA = globalThis.WebAssembly;
+    delete globalThis.WebAssembly;
+    // Without a WebAssembly guard in essentiaLoader, getEssentia() would try to
+    // load scripts. Mock appendChild to immediately fire onerror so the test
+    // fails fast instead of timing out; after the guard is added no script is
+    // injected at all and this mock is never called.
+    appendSpy = vi.spyOn(document.head, 'appendChild').mockImplementation((el) => {
+      setTimeout(() => el.onerror?.(new Error('no WebAssembly')), 0);
+      return el;
+    });
+
+    try {
+      const { getEssentia } = await import('../../js/games/chordExerciseEssentia/essentiaLoader.js');
+      await expect(getEssentia()).rejects.toThrow(/WebAssembly/i);
+      expect(appendSpy).not.toHaveBeenCalled(); // guard must fire before loadScript
+    } finally {
+      globalThis.WebAssembly = origWA;
+    }
+  });
 });

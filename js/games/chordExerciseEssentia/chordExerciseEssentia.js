@@ -190,10 +190,11 @@ export function createChordExerciseEssentia() {
         setStatus('');
         if (ui.listenBtn && !isListening) ui.listenBtn.disabled = false;
       })
-      .catch(() => {
+      .catch(err => {
         if (!ui.view?.classList.contains('active')) return;
         essentiaReady = true; // pure-JS fallback is active
-        setStatus('Basis-Modus (WASM nicht verf\u00FCgbar, z.\u00A0B. iOS\u00A0<\u00A016.4).');
+        const reason = err?.message ? `: ${err.message}` : '';
+        setStatus(`Basis-Modus (WASM nicht verf\u00FCgbar${reason}).`);
         if (ui.listenBtn && !isListening) ui.listenBtn.disabled = false;
       });
 

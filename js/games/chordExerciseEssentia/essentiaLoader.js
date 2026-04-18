@@ -39,6 +39,11 @@ export async function getEssentia() {
   if (loadPromise) return loadPromise;
 
   loadPromise = (async () => {
+    // Fail fast before making any network requests if the browser has no WASM.
+    if (typeof WebAssembly === 'undefined') {
+      throw new Error('WebAssembly wird von diesem Browser nicht unterstützt.');
+    }
+
     // Step 1: load the Emscripten WASM factory (creates window.EssentiaWASM)
     await loadScript(`${LIB_BASE}/essentia-wasm.web.js`);
 
