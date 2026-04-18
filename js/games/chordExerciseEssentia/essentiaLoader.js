@@ -2,14 +2,14 @@
  * essentiaLoader.js
  * Singleton loader for the essentia.js WASM backend.
  *
- * Loads essentia-wasm.web.js + essentia.js-core.umd.js via dynamic
- * <script> tags on first use, then caches the initialized Essentia instance.
- *
- * Files are served from /js/lib/essentia/ and pre-cached by the service
- * worker for offline use.
+ * LIB_BASE is computed from import.meta.url so the paths are correct
+ * regardless of the deployment base path (e.g. GitHub Pages subdirectory).
  */
 
-const LIB_BASE = '/js/lib/essentia';
+// Resolve the lib directory relative to this module's location.
+// essentiaLoader.js is at js/games/chordExerciseEssentia/essentiaLoader.js
+// essentia libs are at  js/lib/essentia/
+const LIB_BASE = new URL('../../lib/essentia', import.meta.url).href;
 
 let essentiaInstance = null;
 let loadPromise = null;
@@ -41,10 +41,11 @@ export async function getEssentia() {
       // Step 1: load the Emscripten WASM factory (creates window.EssentiaWASM)
       await loadScript(`${LIB_BASE}/essentia-wasm.web.js`);
 
-      // Step 2: initialise the WASM module
-      //   locateFile tells Emscripten where to fetch the .wasm binary
+      // Step 2: initialise the WASM module.
+      // locateFile gives Emscripten the absolute URL for the .wasm binary so
+      // it works even when document.currentScript is null (dynamic script tag).
       const wasmModule = window.EssentiaWASM({
-        locateFile: (path) => `${LIB_BASE}/${path}`,
+        locateFile: (filename) => `${LIB_BASE}/${filename}`,
       });
       await wasmModule.ready;
 
