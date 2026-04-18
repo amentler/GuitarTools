@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
+  filterHarmonicPeaks,
   getChordNotes,
   identifyNotesFromPeaks,
   matchChordToTarget,
@@ -312,5 +313,74 @@ describe('matchChordToTarget', () => {
     expect(result.confidence).toBeCloseTo(1 / 3);
     expect(result.missingNotes).toContain('C');
     expect(result.missingNotes).toContain('E');
+  });
+});
+
+// ── filterHarmonicPeaks ───────────────────────────────────────────────────────
+
+describe('filterHarmonicPeaks', () => {
+  it('returns empty array for empty input', () => {
+    expect(filterHarmonicPeaks([])).toEqual([]);
+  });
+
+  it('keeps a single frequency unchanged', () => {
+    const result = filterHarmonicPeaks([440]);
+    expect(result).toEqual([440]);
+  });
+
+  it('removes an exact octave duplicate (2nd harmonic)', () => {
+    // 440 Hz and 880 Hz (= 440 × 2)
+    const result = filterHarmonicPeaks([440, 880]);
+    expect(result).toHaveLength(1);
+    expect(result).toContain(440);
+    expect(result).not.toContain(880);
+  });
+
+  it('removes a 3rd harmonic (B2 → F#4 false positive pattern from G chord)', () => {
+    // B2 ≈ 123.47 Hz; B2 × 3 ≈ 370.41 Hz (≈ F#4 = 369.99 Hz)
+    const b2 = 123.47;
+    const fakeF4 = b2 * 3; // exact 3rd harmonic
+    const result = filterHarmonicPeaks([b2, fakeF4]);
+    expect(result).toHaveLength(1);
+    expect(result).toContain(b2);
+  });
+
+  it('keeps frequencies that are NOT harmonically related', () => {
+    // C3 (130.81), E3 (164.81), G3 (196) — none is a harmonic of another
+    const result = filterHarmonicPeaks([130.81, 164.81, 196.00]);
+    expect(result).toHaveLength(3);
+  });
+
+  it('filters the 3rd harmonic of D3 that lands near A4 (G chord false positive)', () => {
+    const d3 = 146.83;
+    const fakeA4 = d3 * 3; // ≈ 440.49 Hz ≈ A4
+    const result = filterHarmonicPeaks([d3, fakeA4]);
+    expect(result).toHaveLength(1);
+    expect(result).toContain(d3);
+  });
+
+  it('reduces a G-chord-like spectrum to its three lowest fundamentals', () => {
+    // G chord strings: G2(97), B2(124), D3(148), G3(194=2×G2), B3(247=2×B2)
+    // G3 and B3 are octave duplicates → filtered out; D3 is NOT a harmonic of any lower peak
+    const gChordPeaks = [97, 124, 148, 194, 247];
+    const result = filterHarmonicPeaks(gChordPeaks);
+    // Lowest fundamentals must survive
+    expect(result).toContain(97);   // G2
+    expect(result).toContain(124);  // B2
+    expect(result).toContain(148);  // D3
+    // Output is shorter because octave duplicates are removed
+    expect(result.length).toBeLessThan(gChordPeaks.length);
+  });
+
+  it('filters out zero and negative frequencies', () => {
+    const result = filterHarmonicPeaks([0, -50, 440]);
+    expect(result).toEqual([440]);
+  });
+
+  it('returns sorted ascending output', () => {
+    const result = filterHarmonicPeaks([440, 220, 330]);
+    for (let i = 1; i < result.length; i++) {
+      expect(result[i]).toBeGreaterThan(result[i - 1]);
+    }
   });
 });

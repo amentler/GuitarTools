@@ -9,7 +9,7 @@
  */
 
 import { GUITAR_MIN_RMS, analyzeInputLevel } from '../../tools/guitarTuner/pitchLogic.js';
-import { identifyNotesFromPeaks, matchChordToTarget } from './chordDetectionLogic.js';
+import { filterHarmonicPeaks, identifyNotesFromPeaks, matchChordToTarget } from './chordDetectionLogic.js';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -196,7 +196,7 @@ export async function detectChord(chordName) {
           MIN_DB_THRESHOLD,
         );
 
-        const notes = identifyNotesFromPeaks(peaks);
+        const notes = identifyNotesFromPeaks(filterHarmonicPeaks(peaks));
         allDetectedNotes.push(...notes);
 
         frame++;

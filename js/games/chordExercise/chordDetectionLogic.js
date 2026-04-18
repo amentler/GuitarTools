@@ -53,6 +53,40 @@ export function getChordNotes(chordName) {
 }
 
 /**
+ * Removes frequencies that are likely harmonics of a lower detected frequency.
+ *
+ * Iterates from the lowest peak upward. For each confirmed fundamental f0,
+ * any peak within `toleranceCents` of f0 × n (n = 2…maxHarmonic) is tagged
+ * as a harmonic and excluded from the output.
+ *
+ * @param {number[]} freqPeaks      Frequency values in Hz, any order.
+ * @param {number}   toleranceCents Acceptance window in cents (default 50).
+ * @param {number}   maxHarmonic    Highest harmonic multiple to test (default 6).
+ * @returns {number[]} Subset of freqPeaks containing only fundamentals.
+ */
+export function filterHarmonicPeaks(freqPeaks, toleranceCents = 50, maxHarmonic = 6) {
+  const sorted = [...freqPeaks].filter(f => f > 0).sort((a, b) => a - b);
+  const harmonic = new Set();
+
+  for (let i = 0; i < sorted.length; i++) {
+    if (harmonic.has(sorted[i])) continue;
+    const f0 = sorted[i];
+    for (let n = 2; n <= maxHarmonic; n++) {
+      const target = f0 * n;
+      for (let j = i + 1; j < sorted.length; j++) {
+        if (sorted[j] > target * 1.1) break; // already past the window
+        const cents = Math.abs(1200 * Math.log2(sorted[j] / target));
+        if (cents <= toleranceCents) {
+          harmonic.add(sorted[j]);
+        }
+      }
+    }
+  }
+
+  return sorted.filter(f => !harmonic.has(f));
+}
+
+/**
  * Converts an array of frequency peaks to detected note objects.
  * Zero and negative frequencies are filtered out.
  *
