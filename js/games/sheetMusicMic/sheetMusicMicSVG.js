@@ -16,9 +16,9 @@ const FIRST_BAR_W  = Math.round(VW * FIRST_BAR_RATIO);
 const REST_BAR_W   = Math.floor((VW - FIRST_BAR_W) / 3);
 
 const STATUS_COLORS = {
-  correct: '#4caf50',
-  wrong:   '#f44336',
-  current: '#f5a623',
+  correct: '#2ecc71',
+  wrong:   '#e74c3c',
+  current: '#ff6b35',
 };
 
 /**
@@ -38,7 +38,7 @@ export function renderScoreWithStatus(container, bars) {
   const ctx = renderer.getContext();
 
   const style = getComputedStyle(document.documentElement);
-  const fg    = style.getPropertyValue('--color-text').trim() || '#eaeaea';
+  const fg    = style.getPropertyValue('--color-text').trim() || '#2d2d2d';
   ctx.setFillStyle(fg);
   ctx.setStrokeStyle(fg);
 

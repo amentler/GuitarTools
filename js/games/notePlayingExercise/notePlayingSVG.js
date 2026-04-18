@@ -54,7 +54,7 @@ export function renderNoteOnStaff(container, pitch) {
   const ctx = renderer.getContext();
 
   const style = getComputedStyle(document.documentElement);
-  const fg    = style.getPropertyValue('--color-text').trim() || '#eaeaea';
+  const fg    = style.getPropertyValue('--color-text').trim() || '#2d2d2d';
   ctx.setFillStyle(fg);
   ctx.setStrokeStyle(fg);
 

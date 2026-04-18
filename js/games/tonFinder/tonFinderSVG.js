@@ -59,14 +59,14 @@ export function renderInteractiveFretboard(
   svg.appendChild(el('rect', {
     x: NUT_X, y: TOP_Y - 10,
     width: FRETBOARD_W, height: BOTTOM_Y - TOP_Y + 20,
-    fill: '#3b1f0a', rx: '4',
+    fill: '#5c2e0a', rx: '4',
   }));
 
   const markerY = Math.round((stringY(2) + stringY(3)) / 2);
   for (const mf of INLAY_FRETS) {
     if (mf > maxFret) continue;
     const markerX = Math.round((fretWireX[mf] + fretWireX[mf + 1]) / 2);
-    svg.appendChild(el('circle', { cx: markerX, cy: markerY, r: '7', fill: '#5a3010', opacity: '0.7' }));
+    svg.appendChild(el('circle', { cx: markerX, cy: markerY, r: '7', fill: '#7a3e1a', opacity: '0.7' }));
   }
 
   svg.appendChild(el('rect', {
@@ -79,7 +79,7 @@ export function renderInteractiveFretboard(
     svg.appendChild(el('line', {
       x1: fretWireX[f], y1: TOP_Y - 10,
       x2: fretWireX[f], y2: BOTTOM_Y + 10,
-      stroke: '#c0c0c0', 'stroke-width': '3', 'stroke-linecap': 'round',
+      stroke: '#d4a843', 'stroke-width': '3', 'stroke-linecap': 'round',
     }));
   }
 
@@ -109,7 +109,7 @@ export function renderInteractiveFretboard(
     svg.appendChild(txt(fretLabels[f], {
       x: fretCenterX[f], y: TOP_Y - 18,
       'text-anchor': 'middle', 'dominant-baseline': 'middle',
-      fill: '#8892a4', 'font-size': '12', 'font-family': 'sans-serif',
+      fill: '#8a7a6a', 'font-size': '12', 'font-family': 'sans-serif',
     }));
   }
 
@@ -124,19 +124,19 @@ export function renderInteractiveFretboard(
       let fill = 'transparent';
       let stroke;
       if (result === 'correct') {
-        fill = '#4caf50';
-        stroke = '#4caf50';
+        fill = '#2ecc71';
+        stroke = '#2ecc71';
       } else if (result === 'wrong') {
-        fill = '#f44336';
-        stroke = '#f44336';
+        fill = '#e74c3c';
+        stroke = '#e74c3c';
       } else if (result === 'missed') {
-        fill = '#f5a623';
-        stroke = '#f5a623';
+        fill = '#ff6b35';
+        stroke = '#ff6b35';
       } else if (isSelected) {
-        fill = '#f5a623';
-        stroke = '#f5a623';
+        fill = '#ff6b35';
+        stroke = '#ff6b35';
       } else {
-        stroke = '#60739a';
+        stroke = '#c8b89a';
       }
 
       svg.appendChild(el('circle', {

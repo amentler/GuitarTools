@@ -82,7 +82,7 @@ export function renderFretboard(container, targetString, targetFret, feedbackSta
   svg.appendChild(el('rect', {
     x: NUT_X, y: TOP_Y - 10,
     width: FRETBOARD_W, height: BOTTOM_Y - TOP_Y + 20,
-    fill: '#3b1f0a',
+    fill: '#5c2e0a',
     rx: '4',
   }));
 
@@ -93,7 +93,7 @@ export function renderFretboard(container, targetString, targetFret, feedbackSta
     const markerX = Math.round((fretWireX[mf] + fretWireX[mf + 1]) / 2);
     svg.appendChild(el('circle', {
       cx: markerX, cy: markerY, r: '7',
-      fill: '#5a3010', opacity: '0.7',
+      fill: '#7a3e1a', opacity: '0.7',
     }));
   }
 
@@ -110,7 +110,7 @@ export function renderFretboard(container, targetString, targetFret, feedbackSta
     svg.appendChild(el('line', {
       x1: fretWireX[f], y1: TOP_Y - 10,
       x2: fretWireX[f], y2: BOTTOM_Y + 10,
-      stroke: '#c0c0c0',
+      stroke: '#d4a843',
       'stroke-width': '3',
       'stroke-linecap': 'round',
     }));
@@ -145,7 +145,7 @@ export function renderFretboard(container, targetString, targetFret, feedbackSta
       y: TOP_Y - 18,
       'text-anchor': 'middle',
       'dominant-baseline': 'middle',
-      fill: '#8892a4',
+      fill: '#8a7a6a',
       'font-size': '12',
       'font-family': 'sans-serif',
     }));
@@ -157,11 +157,11 @@ export function renderFretboard(container, targetString, targetFret, feedbackSta
 
   let dotFill;
   if (feedbackState === 'correct') {
-    dotFill = '#4caf50';
+    dotFill = '#2ecc71';
   } else if (feedbackState === 'wrong') {
-    dotFill = '#f44336';
+    dotFill = '#e74c3c';
   } else {
-    dotFill = '#f5a623';
+    dotFill = '#ff6b35';
   }
 
   const dotGroup = el('g');
@@ -171,7 +171,7 @@ export function renderFretboard(container, targetString, targetFret, feedbackSta
     const glow = el('circle', {
       cx: dotX, cy: dotY, r: '20',
       fill: 'none',
-      stroke: '#f5a623',
+      stroke: '#ff6b35',
       'stroke-width': '2',
       opacity: '0.5',
     });

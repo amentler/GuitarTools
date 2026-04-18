@@ -26,7 +26,7 @@ export class MetronomeSVG {
       circle.setAttribute("cx", spacing * (i + 1));
       circle.setAttribute("cy", 50);
       circle.setAttribute("r", 15);
-      circle.setAttribute("fill", "#333"); // Default inactive color
+      circle.setAttribute("fill", "#c0b0a0"); // Default inactive color
       circle.setAttribute("stroke", i === 0 ? "#ff4d4d" : "#4d94ff"); // Accent color for beat 1
       circle.setAttribute("stroke-width", "2");
       
@@ -46,7 +46,7 @@ export class MetronomeSVG {
         dot.style.transition = "r 0.1s ease-out, fill 0.1s ease-out";
       } else {
         // Resetting others
-        dot.setAttribute("fill", "#333");
+        dot.setAttribute("fill", "#c0b0a0");
         dot.setAttribute("r", "15");
       }
     });
