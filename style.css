@@ -182,6 +182,23 @@ body {
   line-height: 1.3;
 }
 
+.card-subtitle {
+  font-size: 0.65rem;
+  color: var(--color-accent);
+  font-weight: 500;
+}
+
+.ece-status {
+  font-size: 0.8rem;
+  color: var(--color-text-muted, #888);
+  min-height: 1.2em;
+  text-align: center;
+}
+
+.ece-status-error {
+  color: var(--color-wrong, #e55);
+}
+
 .btn-start {
   padding: 0.35rem 0.75rem;
   background: var(--color-accent);

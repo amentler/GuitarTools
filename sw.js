@@ -1,10 +1,16 @@
 // GuitarTools Service Worker – no caching, always fetch fresh
+// Exception: essentia.js WASM files are pre-cached for offline support.
 
-const CACHE_VERSION = 'v2';
+const CACHE_VERSION = 'v3';
 const CACHE_NAME = `guitartools-static-${CACHE_VERSION}`;
 
-// No URLs are pre-cached. Every request goes directly to the network.
-const PRECACHE_URLS = [];
+// Essentia WASM files are large binaries; pre-cache them so the
+// chord-exercise-essentia feature works offline after first load.
+const PRECACHE_URLS = [
+  '/js/lib/essentia/essentia-wasm.web.js',
+  '/js/lib/essentia/essentia-wasm.web.wasm',
+  '/js/lib/essentia/essentia.js-core.umd.js',
+];
 
 self.addEventListener('install', event => {
   self.skipWaiting();
