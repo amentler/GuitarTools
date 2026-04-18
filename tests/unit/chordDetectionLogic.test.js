@@ -218,8 +218,8 @@ describe('matchChordToTarget', () => {
     expect(result.confidence).toBeCloseTo(2 / 3);
   });
 
-  it('detects extra notes while still being correct', () => {
-    // C, E, G correct + unexpected A
+  it('rejects chord when extra fundamental notes are present', () => {
+    // C, E, G correct but unexpected A is also detected (e.g. muted string ringing)
     const detected = [
       { note: 'C', octave: 3 },
       { note: 'E', octave: 3 },
@@ -227,9 +227,9 @@ describe('matchChordToTarget', () => {
       { note: 'A', octave: 3 },
     ];
     const result = matchChordToTarget(detected, 'C-Dur');
-    expect(result.isCorrect).toBe(true); // extra notes don't fail the chord
+    expect(result.isCorrect).toBe(false); // extra fundamental note disqualifies the chord
     expect(result.extraNotes).toContain('A');
-    expect(result.confidence).toBe(1);
+    expect(result.confidence).toBe(1); // all expected notes were found
   });
 
   it('returns confidence=0 for unknown chord name', () => {
