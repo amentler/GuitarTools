@@ -1,8 +1,8 @@
 /**
  * akkordfolgenTrainer.js
  * Chord Progression Trainer – plays through a chord progression in a chosen key
- * while a metronome ticks. Strum detection advances to the next chord
- * automatically; a timeout auto-advances if no strum is detected.
+ * while a metronome ticks. After each strum, the microphone analyses the spectrum
+ * to verify the correct chord is being played before marking it as done.
  */
 
 import { registerExercise } from '../../exerciseRegistry.js';
@@ -17,13 +17,26 @@ import {
 import { renderChordDiagram } from '../akkordTrainer/akkordSVG.js';
 import { CHORDS } from '../../data/akkordData.js';
 import { GUITAR_MIN_RMS, analyzeInputLevel } from '../../tools/guitarTuner/pitchLogic.js';
+import { detectPeaksFromSpectrum } from '../chordExercise/chordDetection.js';
+import { identifyNotesFromPeaks } from '../chordExercise/chordDetectionLogic.js';
+import { getExpectedNoteClasses, matchDetectedNotes } from './akkordfolgenChordMatcher.js';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
-const FFT_SIZE             = 4096;
+const FFT_SIZE              = 4096;
 const LISTEN_INTERVAL_MS   = 50;
 const RMS_SPIKE_MULTIPLIER = 2.5;
-const STRUM_COOLDOWN_MS    = 1500;  // ignore further strums for this long after one fires
+const STRUM_COOLDOWN_MS    = 1500;  // cooldown after a correct strum
+const WRONG_COOLDOWN_MS    = 700;   // shorter cooldown to allow quick retry
+const ATTACK_SETTLE_MS     = 150;   // wait after strum onset for transient to decay
+const ANALYSIS_FRAMES      = 5;     // FFT frames to collect after strum
+const FRAME_INTERVAL_MS    = 50;    // ms between analysis frames
+const GUITAR_MIN_FREQUENCY = 70;    // Hz
+const GUITAR_MAX_FREQUENCY = 1200;  // Hz
+const MIN_DB_THRESHOLD     = -55;   // dB floor for peak detection
+const MIN_CONFIDENCE       = 0.6;   // fraction of expected notes that must be detected
+
+const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 
 // ── Factory ───────────────────────────────────────────────────────────────────
 
@@ -35,6 +48,8 @@ export function createAkkordfolgenTrainer() {
   let listenIntervalId = null;
   let strumCooldown   = false;
   let strumCooldownId = null;
+  // Monotonically-increasing token; incremented to cancel in-flight chord analysis.
+  let analysisToken   = 0;
 
   // ── Metronome ────────────────────────────────────────────────────────────────
   let metronome = null;
@@ -49,7 +64,7 @@ export function createAkkordfolgenTrainer() {
     isRunning:          false,
     bpm:                80,
     beatsPerChord:      4,
-    strummedThisChord:  false,      // true once the player strums the current chord
+    strummedThisChord:  false,      // true once the player correctly plays the current chord
     score:              { rounds: 0, played: 0, missed: 0 },
     startTime:          null,
   };
@@ -260,6 +275,7 @@ export function createAkkordfolgenTrainer() {
     if (listenIntervalId) { clearInterval(listenIntervalId); listenIntervalId = null; }
     if (strumCooldownId)  { clearTimeout(strumCooldownId);  strumCooldownId = null; }
     strumCooldown = false;
+    analysisToken++;   // cancel any in-flight analysis
 
     if (metronome) { metronome.stop(); metronome = null; }
 
@@ -297,7 +313,8 @@ export function createAkkordfolgenTrainer() {
   function advanceChord() {
     if (!state.isRunning) return;
 
-    // Reset strum cooldown so next chord can be detected immediately
+    // Cancel any pending chord analysis and reset strum gate for the new chord.
+    analysisToken++;
     strumCooldown = false;
     if (strumCooldownId) { clearTimeout(strumCooldownId); strumCooldownId = null; }
 
@@ -323,20 +340,66 @@ export function createAkkordfolgenTrainer() {
       const { rms } = analyzeInputLevel(buffer);
       if (rms > rmsThreshold) {
         strumCooldown = true;
-        strumCooldownId = setTimeout(() => { strumCooldown = false; }, STRUM_COOLDOWN_MS);
-        handleStrum();
+        analyzeChordAfterStrum(++analysisToken);
       }
     }, LISTEN_INTERVAL_MS);
   }
 
-  function handleStrum() {
+  async function analyzeChordAfterStrum(token) {
+    await delay(ATTACK_SETTLE_MS);
+    if (token !== analysisToken || !state.isRunning || !analyser || !audioCtx) return;
+
+    const targetChord = state.progression[state.currentIndex];
+    const sampleRate  = audioCtx.sampleRate;
+    const freqBuffer  = new Float32Array(analyser.frequencyBinCount);
+    const detected    = new Set();
+
+    for (let frame = 0; frame < ANALYSIS_FRAMES; frame++) {
+      if (token !== analysisToken || !state.isRunning || !analyser) break;
+      analyser.getFloatFrequencyData(freqBuffer);
+      const peaks = detectPeaksFromSpectrum(
+        freqBuffer, sampleRate,
+        GUITAR_MIN_FREQUENCY, GUITAR_MAX_FREQUENCY, MIN_DB_THRESHOLD,
+      );
+      identifyNotesFromPeaks(peaks).forEach(n => detected.add(n.note));
+      if (frame < ANALYSIS_FRAMES - 1) await delay(FRAME_INTERVAL_MS);
+    }
+
+    // Analysis cancelled or exercise stopped while collecting frames
+    if (token !== analysisToken || !state.isRunning) return;
+    // Chord advanced by metronome while we were analysing
+    if (state.progression[state.currentIndex] !== targetChord) return;
+
+    const expectedNotes = getExpectedNoteClasses(targetChord.name);
+    if (expectedNotes.length === 0) {
+      // Chord not in theory database (should not happen) – accept any strum as fallback
+      strumCooldownId = setTimeout(() => { strumCooldown = false; }, STRUM_COOLDOWN_MS);
+      handleCorrectStrum();
+      return;
+    }
+
+    const { confidence } = matchDetectedNotes([...detected], targetChord.name);
+
+    if (confidence >= MIN_CONFIDENCE) {
+      strumCooldownId = setTimeout(() => { strumCooldown = false; }, STRUM_COOLDOWN_MS);
+      handleCorrectStrum();
+    } else {
+      setFeedback('Falscher Akkord', 'wrong');
+      strumCooldownId = setTimeout(() => {
+        if (state.isRunning) setFeedback('');
+        strumCooldown = false;
+        strumCooldownId = null;
+      }, WRONG_COOLDOWN_MS);
+    }
+  }
+
+  function handleCorrectStrum() {
     if (!state.isRunning || state.strummedThisChord) return;
     state.score.played++;
     state.strummedThisChord = true;
-
     markCard(state.currentIndex, 'played');
     setFeedback('\u2713 Gespielt!', 'correct');
-    // Chord advances on the next beat 0 (metronome onBeat), not via a separate timer.
+    // Chord advances on the next beat 0 (metronome onBeat), not via a timer.
   }
 
   // ── Progression strip ─────────────────────────────────────────────────────

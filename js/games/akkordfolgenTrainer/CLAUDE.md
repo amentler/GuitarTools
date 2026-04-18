@@ -30,15 +30,50 @@ akkordfolgenTrainer.js
 5. **Timeout**: Kein Strum innerhalb von `beatsPerChord` Schlägen → Auto-Wechsel, Fehler++
 6. **Zusammenfassung**: Zeit, gespielte Akkorde, verpasste Akkorde, Runden
 
-## Strum-Erkennung
+## Akkord-Erkennung
 
-Verwendet RMS-Schwelle statt exakter Frequenzanalyse, da die meisten diatonischen Akkorde
-nicht in `akkordData.js` vorhanden sind. Die Logik:
+Nach jedem RMS-Strum-Spike analysiert der Trainer das Frequenzspektrum und prüft,
+ob der gespielte Akkord dem erwarteten entspricht.
+
+### Pipeline
 
 ```
-if (rms > GUITAR_MIN_RMS × 2.5) → Strum erkannt
-Cooldown: 1500 ms nach jedem erkannten Strum
+RMS-Spike (> 2.5 × GUITAR_MIN_RMS)
+  → 150 ms Settle (Anschlag-Transient abklingen lassen)
+  → 5 × FFT-Frame (je 50 ms): Frequenzspitzen → Notenklassen
+  → matchDetectedNotes(erkannte Noten, Zielakkord)
+    → confidence ≥ 0.6 → "✓ Gespielt!", 1500 ms Cooldown
+    → confidence < 0.6 → "Falscher Akkord", 700 ms Cooldown (nochmal versuchen)
 ```
+
+### Modularer Aufbau
+
+| Modul | Aufgabe |
+|-------|---------|
+| `akkordfolgenChordMatcher.js` | **Reine Logik** – Akkordname parsen, Notenklassen berechnen, Matching |
+| `chordDetection.js` (chordExercise) | `detectPeaksFromSpectrum` – FFT-Peaks finden |
+| `chordDetectionLogic.js` (chordExercise) | `identifyNotesFromPeaks` – Hz → Notenname |
+
+### Akkordname-Parsing (`akkordfolgenChordMatcher.js`)
+
+Alle diatonischen Akkordnamen aus `akkordfolgenLogic.js` werden direkt aus der
+Musiktheorie abgeleitet (ohne Akkord-Datenbank-Einträge):
+
+- **C-Dur** → C, E, G (Dur-Dreiklang: [0, 4, 7])
+- **A-Moll** → A, C, E (Moll-Dreiklang: [0, 3, 7])
+- **H-dim** → H(=B), D, F (vermindert: [0, 3, 6])
+- **G7** → G, B, D, F (Dominantseptakkord: [0, 4, 7, 10])
+
+Deutsche Tonnamen werden auf englische Sharp-Notation gemappt (H→B, B→A#, Fis→F# usw.)
+
+### Cancellation
+
+`analysisToken` wird inkrementiert wenn:
+- Ein neuer Strum erkannt wird (neuere Analyse übernimmt)
+- Der Akkord durch das Metronom wechselt (`advanceChord()`)
+- Das Übung gestoppt wird (`cleanup()`)
+
+Jede async Analyse prüft `token !== analysisToken` nach jedem `await`.
 
 ## Chord-Diagramme
 
