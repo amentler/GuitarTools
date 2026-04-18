@@ -46,7 +46,9 @@ export function decodeWav(buf) {
 
   const bytesPerSample = bitsPerSample / 8;
   const bytesPerFrame = bytesPerSample * numChannels;
-  const numFrames = Math.floor(dataSize / bytesPerFrame);
+  // Clamp to actual buffer size – some encoders write a dataSize 1–2 bytes too large.
+  const availableBytes = Math.min(dataSize, buf.length - dataOffset);
+  const numFrames = Math.floor(availableBytes / bytesPerFrame);
   const samples = new Float32Array(numFrames);
 
   for (let i = 0; i < numFrames; i++) {
