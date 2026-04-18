@@ -73,7 +73,7 @@ export function renderChordDiagram(container, userPositions, referencePositions,
       x: MARGIN_LEFT - 35,
       y: y + 5,
       'text-anchor': 'middle',
-      fill: '#8892a4',
+      fill: '#8a7a6a',
       'font-size': '16',
       'font-weight': 'bold',
       'font-family': 'monospace'
@@ -89,7 +89,7 @@ export function renderChordDiagram(container, userPositions, referencePositions,
       y1: MARGIN_TOP,
       x2: x,
       y2: MARGIN_TOP + DIAGRAM_H,
-      stroke: isNut ? '#f5e6c8' : '#c0c0c0',
+      stroke: isNut ? '#f5e6c8' : '#d4a843',
       'stroke-width': isNut ? '8' : '3',
       'stroke-linecap': 'round'
     }));
@@ -100,7 +100,7 @@ export function renderChordDiagram(container, userPositions, referencePositions,
         x: x - FRET_SPACING / 2,
         y: MARGIN_TOP + DIAGRAM_H + 30,
         'text-anchor': 'middle',
-        fill: '#8892a4',
+        fill: '#8a7a6a',
         'font-size': '14'
       }));
     }
@@ -151,13 +151,13 @@ export function renderChordDiagram(container, userPositions, referencePositions,
       svg.appendChild(el('line', {
         x1: x - size, y1: y - size,
         x2: x + size, y2: y + size,
-        stroke: feedback === 'wrong' ? '#f44336' : (feedback === 'correct' ? '#4caf50' : '#8892a4'),
+        stroke: feedback === 'wrong' ? '#e74c3c' : (feedback === 'correct' ? '#2ecc71' : '#8a7a6a'),
         'stroke-width': '3'
       }));
       svg.appendChild(el('line', {
         x1: x + size, y1: y - size,
         x2: x - size, y2: y + size,
-        stroke: feedback === 'wrong' ? '#f44336' : (feedback === 'correct' ? '#4caf50' : '#8892a4'),
+        stroke: feedback === 'wrong' ? '#e74c3c' : (feedback === 'correct' ? '#2ecc71' : '#8a7a6a'),
         'stroke-width': '3'
       }));
     } else if (pos.fret === 0) {
@@ -166,15 +166,15 @@ export function renderChordDiagram(container, userPositions, referencePositions,
       svg.appendChild(el('circle', {
         cx: x, cy: y, r: '8',
         fill: 'none',
-        stroke: feedback === 'wrong' ? '#f44336' : (feedback === 'correct' ? '#4caf50' : '#8892a4'),
+        stroke: feedback === 'wrong' ? '#e74c3c' : (feedback === 'correct' ? '#2ecc71' : '#8a7a6a'),
         'stroke-width': '3'
       }));
     } else {
       // Draw Dot for fretted
       const x = MARGIN_LEFT + (pos.fret - 0.5) * FRET_SPACING;
-      let dotFill = '#f5a623';
-      if (feedback === 'correct') dotFill = '#4caf50';
-      if (feedback === 'wrong') dotFill = '#f44336';
+      let dotFill = '#ff6b35';
+      if (feedback === 'correct') dotFill = '#2ecc71';
+      if (feedback === 'wrong') dotFill = '#e74c3c';
       
       svg.appendChild(el('circle', {
         cx: x, cy: y, r: '12',
@@ -210,24 +210,24 @@ export function renderChordDiagram(container, userPositions, referencePositions,
           svg.appendChild(el('line', {
             x1: x - size, y1: y - size,
             x2: x + size, y2: y + size,
-            stroke: '#8892a4', opacity: '0.5', 'stroke-width': '2'
+            stroke: '#8a7a6a', opacity: '0.5', 'stroke-width': '2'
           }));
           svg.appendChild(el('line', {
             x1: x + size, y1: y - size,
             x2: x - size, y2: y + size,
-            stroke: '#8892a4', opacity: '0.5', 'stroke-width': '2'
+            stroke: '#8a7a6a', opacity: '0.5', 'stroke-width': '2'
           }));
         } else if (ref.fret === 0) {
           const x = MARGIN_LEFT - 20;
           svg.appendChild(el('circle', {
             cx: x, cy: y, r: '6',
-            fill: 'none', stroke: '#8892a4', opacity: '0.5', 'stroke-width': '2'
+            fill: 'none', stroke: '#8a7a6a', opacity: '0.5', 'stroke-width': '2'
           }));
         } else {
           const x = MARGIN_LEFT + (ref.fret - 0.5) * FRET_SPACING;
           svg.appendChild(el('circle', {
             cx: x, cy: y, r: '10',
-            fill: '#8892a4', opacity: '0.4'
+            fill: '#8a7a6a', opacity: '0.4'
           }));
         }
       }

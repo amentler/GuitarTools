@@ -1,18 +1,19 @@
 /* === CSS Custom Properties === */
 :root {
-  --color-bg:         #1a1a2e;
-  --color-surface:    #16213e;
-  --color-card:       #0f3460;
-  --color-accent:     #e94560;
-  --color-accent-alt: #f5a623;
-  --color-text:       #eaeaea;
-  --color-text-muted: #8892a4;
-  --color-correct:    #4caf50;
-  --color-wrong:      #f44336;
-  --color-border:     #2a3a5e;
+  --color-bg:         #fffbf0;
+  --color-surface:    #fff3d6;
+  --color-card:       #ffffff;
+  --color-card-hover: #fff0e8;
+  --color-accent:     #ff6b35;
+  --color-accent-alt: #7c4dff;
+  --color-text:       #2d2d2d;
+  --color-text-muted: #8a7a6a;
+  --color-correct:    #2ecc71;
+  --color-wrong:      #e74c3c;
+  --color-border:     #f0e0c0;
 
-  --fretboard-wood:   #3b1f0a;
-  --fretboard-fret:   #c0c0c0;
+  --fretboard-wood:   #5c2e0a;
+  --fretboard-fret:   #d4a843;
   --fretboard-nut:    #f5e6c8;
 
   --radius:  8px;
@@ -66,7 +67,7 @@ body {
   font-weight: 700;
   color: var(--color-accent-alt);
   letter-spacing: -0.02em;
-  text-shadow: 0 0 30px rgba(245, 166, 35, 0.3);
+  text-shadow: 0 0 30px rgba(124, 77, 255, 0.3);
 }
 
 .menu-title {
@@ -74,7 +75,7 @@ body {
   font-weight: 700;
   color: var(--color-accent-alt);
   letter-spacing: -0.02em;
-  text-shadow: 0 0 30px rgba(245, 166, 35, 0.3);
+  text-shadow: 0 0 30px rgba(124, 77, 255, 0.3);
 }
 
 .menu-subtitle {
@@ -163,7 +164,7 @@ body {
 .exercise-card:hover {
   transform: translateY(-2px);
   border-color: var(--color-accent);
-  background: var(--color-card-hover, #1e1e3a);
+  background: var(--color-card-hover, #fff0e8);
 }
 
 .exercise-card:active {
@@ -194,7 +195,7 @@ body {
 }
 
 .btn-start:hover {
-  background: #c73652;
+  background: #e55a20;
 }
 
 .btn-start:active {
@@ -447,7 +448,7 @@ input[type="range"] {
   transition: background 0.2s, transform 0.1s;
 }
 
-.btn-new-bars:hover  { background: #c73652; }
+.btn-new-bars:hover  { background: #e55a20; }
 .btn-new-bars:active { transform: scale(0.97); }
 
 /* --- Playback controls (BPM · time sig · play button) --- */
@@ -461,7 +462,7 @@ input[type="range"] {
 .btn-play-stop {
   min-width: 7rem;
   padding: 0.55rem 1.2rem;
-  background: var(--color-surface-2, #2a2a2a);
+  background: var(--color-surface-2, #f0e8d8);
   color: var(--color-text);
   border: 1px solid var(--color-border);
   border-radius: var(--radius);
@@ -470,7 +471,7 @@ input[type="range"] {
   cursor: pointer;
   transition: background 0.15s, border-color 0.15s;
 }
-.btn-play-stop:hover  { background: var(--color-surface-3, #333); }
+.btn-play-stop:hover  { background: var(--color-surface-3, #e8dcc8); }
 .btn-play-stop.active { background: var(--color-accent); color: #fff; border-color: var(--color-accent); }
 
 .playback-bpm,
@@ -486,7 +487,7 @@ input[type="range"] {
 
 #sheet-music-time-sig {
   padding: 0.3rem 0.5rem;
-  background: var(--color-surface-2, #2a2a2a);
+  background: var(--color-surface-2, #f0e8d8);
   color: var(--color-text);
   border: 1px solid var(--color-border);
   border-radius: var(--radius);
@@ -616,7 +617,7 @@ input[type="range"] {
 }
 
 .btn-start-guided:hover {
-  background: #1a4080;
+  background: #f0e0c8;
 }
 
 .btn-guided-next {
@@ -632,7 +633,7 @@ input[type="range"] {
 }
 
 .btn-guided-next:hover {
-  background: #1a4080;
+  background: #f0e0c8;
 }
 
 .guided-step-header {
@@ -808,7 +809,7 @@ input[type="range"] {
   background: var(--color-accent-alt);
   border-radius: 50%;
   cursor: pointer;
-  box-shadow: 0 0 10px rgba(245, 166, 35, 0.4);
+  box-shadow: 0 0 10px rgba(124, 77, 255, 0.4);
 }
 
 .bpm-buttons {
@@ -877,7 +878,7 @@ input[type="range"] {
 
 .btn-start-toggle:hover {
   background: #c73652;
-  box-shadow: 0 0 20px rgba(233, 69, 96, 0.3);
+  box-shadow: 0 0 20px rgba(255, 107, 53, 0.3);
 }
 
 .btn-start-toggle.playing {
@@ -1287,8 +1288,8 @@ input[type="range"] {
 
 .aft-chord-card.current {
   border-color: var(--color-accent-alt);
-  background: rgba(245, 166, 35, 0.12);
-  box-shadow: 0 0 10px rgba(245, 166, 35, 0.25);
+  background: rgba(124, 77, 255, 0.12);
+  box-shadow: 0 0 10px rgba(124, 77, 255, 0.25);
 }
 
 .aft-chord-card.played {
@@ -1341,7 +1342,7 @@ input[type="range"] {
   width: 0.85rem;
   height: 0.85rem;
   border-radius: 50%;
-  background: #333;
+  background: #d0c0b0;
   border: 2px solid var(--color-border);
   transition: background 0.08s, transform 0.08s;
 }

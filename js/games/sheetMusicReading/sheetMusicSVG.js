@@ -123,7 +123,7 @@ function _renderNotation(bars, timeSignature = '4/4') {
 
   // Match dark theme
   const style = getComputedStyle(document.documentElement);
-  const fg    = style.getPropertyValue('--color-text').trim() || '#eaeaea';
+  const fg    = style.getPropertyValue('--color-text').trim() || '#2d2d2d';
   ctx.setFillStyle(fg);
   ctx.setStrokeStyle(fg);
 
