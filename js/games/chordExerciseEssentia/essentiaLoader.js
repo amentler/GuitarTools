@@ -31,8 +31,8 @@ function loadScript(src) {
  * On failure the rejected promise is kept — no retry to avoid re-fetching the
  * 1.9 MB WASM binary a second time.
  *
- * @returns {Promise<InstanceType<window.Essentia>>}
- * @throws if WASM files cannot be loaded
+ * @returns {Promise<object>} initialized EssentiaJS instance
+ * @throws if WASM cannot be loaded or initialized
  */
 export async function getEssentia() {
   if (essentiaInstance) return essentiaInstance;
@@ -47,18 +47,29 @@ export async function getEssentia() {
     // Step 1: load the Emscripten WASM factory (creates window.EssentiaWASM)
     await loadScript(`${LIB_BASE}/essentia-wasm.web.js`);
 
-    // Step 2: initialise the WASM module.
+    // Step 2: verify the global is a callable function before invoking it.
+    // On mobile Safari / strict CSP the script may load (HTTP 200) but the
+    // global is never set, causing a silent TypeError on the next line.
+    if (typeof window.EssentiaWASM !== 'function') {
+      throw new TypeError('EssentiaWASM is not a function — global not set after script load');
+    }
+
+    // Step 3: await the factory.  Emscripten module factories return a
+    // thenable whose resolution is the fully-initialised module object.
+    // Using `await` instead of the older `.ready` pattern works for both
+    // the thenable form (Emscripten ≥ 3.1) and a plain Promise return.
     // locateFile gives Emscripten the absolute URL for the .wasm binary so
     // it works even when document.currentScript is null (dynamic script tag).
-    const wasmModule = window.EssentiaWASM({
+    const wasmModule = await window.EssentiaWASM({
       locateFile: (filename) => `${LIB_BASE}/${filename}`,
     });
-    await wasmModule.ready;
 
-    // Step 3: load the high-level JS API (creates window.Essentia)
-    await loadScript(`${LIB_BASE}/essentia.js-core.umd.js`);
-
-    essentiaInstance = new window.Essentia(wasmModule);
+    // Step 4: instantiate using the EssentiaJS class bundled inside the
+    // WASM module itself — no separate essentia.js-core.umd.js required.
+    if (typeof wasmModule?.EssentiaJS !== 'function') {
+      throw new TypeError('EssentiaJS is not a function on wasmModule');
+    }
+    essentiaInstance = new wasmModule.EssentiaJS(wasmModule);
     return essentiaInstance;
   })();
 

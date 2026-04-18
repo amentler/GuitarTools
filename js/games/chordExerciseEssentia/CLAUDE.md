@@ -35,11 +35,11 @@ Gespeichert in `/js/lib/essentia/` (nicht per CDN, für Offline-Support):
 
 | Datei | Größe | Zweck |
 |---|---|---|
-| `essentia-wasm.web.js` | ~215 KB | Emscripten JS-Loader |
+| `essentia-wasm.web.js` | ~215 KB | Emscripten JS-Loader (setzt `window.EssentiaWASM`) |
 | `essentia-wasm.web.wasm` | ~1.9 MB | WASM-Binary |
-| `essentia.js-core.umd.js` | ~333 KB | Hochlevel JS-API |
+| `essentia.js-core.umd.js` | ~333 KB | Hochlevel JS-API (nicht mehr direkt geladen – `EssentiaJS` kommt aus dem WASM-Modul) |
 
-Alle drei sind in `sw.js` → `PRECACHE_URLS` eingetragen → Offline nach dem ersten Load.
+Die ersten beiden sind in `sw.js` → `PRECACHE_URLS` eingetragen → Offline nach dem ersten Load.
 
 **Lizenz:** essentia.js ist AGPL-3.0. Da GuitarTools Open-Source auf GitHub Pages
 läuft, ist die AGPL-Nutzung kompatibel (Quellcode öffentlich zugänglich).
@@ -49,7 +49,7 @@ läuft, ist die AGPL-Nutzung kompatibel (Quellcode öffentlich zugänglich).
 ```
 chordExerciseEssentia.js
   ├── essentiaChordDetection.js
-  │     ├── essentiaLoader.js         ← window.EssentiaWASM + window.Essentia
+  │     ├── essentiaLoader.js         ← await EssentiaWASM() → new module.EssentiaJS()
   │     └── essentiaChordLogic.js     ← buildChordTemplates, matchHpcpToChord
   └── akkordLogic.js (getRandomChord)
   └── akkordSVG.js (renderChordDiagram)

@@ -8,9 +8,16 @@
  *
  * The most important failure mode tested here is the "mobile Safari scenario":
  * the script file loads (HTTP 200) but the browser does not expose the expected
- * global – window.EssentiaWASM or window.Essentia – because of strict mode,
- * content-security-policy, or an Emscripten quirk. Without this test the bug
- * is invisible because desktop Chrome always sets the globals.
+ * global – window.EssentiaWASM – because of strict mode, content-security-policy,
+ * or an Emscripten quirk. Without this test the bug is invisible because desktop
+ * Chrome always sets the global.
+ *
+ * Initialization flow:
+ *   1. loadScript(essentia-wasm.web.js) → sets window.EssentiaWASM
+ *   2. typeof window.EssentiaWASM === 'function' guard
+ *   3. const wasmModule = await window.EssentiaWASM({ locateFile })
+ *   4. typeof wasmModule.EssentiaJS === 'function' guard
+ *   5. essentiaInstance = new wasmModule.EssentiaJS(wasmModule)
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
@@ -21,7 +28,6 @@ describe('essentiaLoader – getEssentia()', () => {
   beforeEach(() => {
     vi.resetModules();
     delete globalThis.EssentiaWASM;
-    delete globalThis.Essentia;
   });
 
   afterEach(() => {
@@ -34,18 +40,16 @@ describe('essentiaLoader – getEssentia()', () => {
    * without touching the network.
    *
    * Options:
-   *   wasmJsOk          – true → fire onload; false → fire onerror (404 / network failure)
-   *   wasmJsSetsGlobal  – whether the script exposes window.EssentiaWASM
-   *   wasmReadyRejects  – whether wasmModule.ready rejects (WASM compile failure)
-   *   coreJsOk          – true → fire onload; false → fire onerror
-   *   coreJsSetsGlobal  – whether the script exposes window.Essentia
+   *   wasmJsOk           – true → fire onload; false → fire onerror (404 / network failure)
+   *   wasmJsSetsGlobal   – whether the script exposes window.EssentiaWASM
+   *   wasmFactoryRejects – whether await EssentiaWASM() rejects (WASM compile failure)
+   *   wasmHasEssentiaJS  – whether the resolved module object has an EssentiaJS constructor
    */
   function mockScripts({
-    wasmJsOk         = true,
-    wasmJsSetsGlobal = true,
-    wasmReadyRejects = false,
-    coreJsOk         = true,
-    coreJsSetsGlobal = true,
+    wasmJsOk           = true,
+    wasmJsSetsGlobal   = true,
+    wasmFactoryRejects = false,
+    wasmHasEssentiaJS  = true,
   } = {}) {
     appendSpy = vi.spyOn(document.head, 'appendChild').mockImplementation((el) => {
       const src = typeof el.src === 'string' ? el.src : '';
@@ -56,22 +60,14 @@ describe('essentiaLoader – getEssentia()', () => {
           return el;
         }
         if (wasmJsSetsGlobal) {
-          const readyPromise = wasmReadyRejects
+          const MockEssentiaJS = vi.fn(function MockEssentiaJS() {});
+          const resolvedModule = wasmHasEssentiaJS ? { EssentiaJS: MockEssentiaJS } : {};
+          const factoryResult = wasmFactoryRejects
             ? Promise.reject(new Error('WASM compile error'))
-            : Promise.resolve();
+            : Promise.resolve(resolvedModule);
           // Suppress unhandled-rejection warning before the loader's await captures it
-          readyPromise.catch(() => {});
-          globalThis.EssentiaWASM = vi.fn(() => ({ ready: readyPromise }));
-        }
-        setTimeout(() => el.onload?.(), 0);
-
-      } else if (src.includes('essentia.js-core')) {
-        if (!coreJsOk) {
-          setTimeout(() => el.onerror?.(new Error('net::ERR_FAILED')), 0);
-          return el;
-        }
-        if (coreJsSetsGlobal) {
-          globalThis.Essentia = vi.fn(function MockEssentia() {});
+          factoryResult.catch(() => {});
+          globalThis.EssentiaWASM = vi.fn(() => factoryResult);
         }
         setTimeout(() => el.onload?.(), 0);
       }
@@ -86,7 +82,8 @@ describe('essentiaLoader – getEssentia()', () => {
     mockScripts();
     const { getEssentia } = await import('../../js/games/chordExerciseEssentia/essentiaLoader.js');
     const result = await getEssentia();
-    expect(result).toBeInstanceOf(globalThis.Essentia);
+    expect(result).toBeDefined();
+    expect(result).not.toBeNull();
   });
 
   it('returns the same cached instance on subsequent calls after success', async () => {
@@ -107,34 +104,29 @@ describe('essentiaLoader – getEssentia()', () => {
     await expect(getEssentia()).rejects.toThrow();
   });
 
-  it('rejects when essentia.js-core.umd.js fails to load (network / 404)', async () => {
-    mockScripts({ coreJsOk: false });
-    const { getEssentia } = await import('../../js/games/chordExerciseEssentia/essentiaLoader.js');
-    await expect(getEssentia()).rejects.toThrow();
-  });
-
   // ── Mobile Safari / CSP: script loads but global is not set ──────────────────
 
   it('rejects when EssentiaWASM global is not set after script load (mobile failure scenario)', async () => {
     // The script file downloads successfully (200 OK) but window.EssentiaWASM
     // is never defined – this is the observed failure on mobile Safari.
-    // Calling window.EssentiaWASM() then throws TypeError.
+    // The explicit typeof guard throws TypeError before any call is attempted.
     mockScripts({ wasmJsSetsGlobal: false });
     const { getEssentia } = await import('../../js/games/chordExerciseEssentia/essentiaLoader.js');
     await expect(getEssentia()).rejects.toThrow(TypeError);
   });
 
-  it('rejects when Essentia global is not set after second script load', async () => {
-    // new window.Essentia(wasmModule) throws TypeError if Essentia is undefined.
-    mockScripts({ coreJsSetsGlobal: false });
+  it('rejects when EssentiaJS is not available on the resolved wasmModule', async () => {
+    // EssentiaWASM() resolves successfully but the module object does not
+    // expose EssentiaJS — wrong bundle version or build without JS bindings.
+    mockScripts({ wasmHasEssentiaJS: false });
     const { getEssentia } = await import('../../js/games/chordExerciseEssentia/essentiaLoader.js');
     await expect(getEssentia()).rejects.toThrow(TypeError);
   });
 
   // ── WASM compile / memory failure ────────────────────────────────────────────
 
-  it('rejects when wasmModule.ready rejects (WASM compile or memory failure)', async () => {
-    mockScripts({ wasmReadyRejects: true });
+  it('rejects when EssentiaWASM factory promise rejects (WASM compile or memory failure)', async () => {
+    mockScripts({ wasmFactoryRejects: true });
     const { getEssentia } = await import('../../js/games/chordExerciseEssentia/essentiaLoader.js');
     await expect(getEssentia()).rejects.toThrow('WASM compile error');
   });
@@ -175,7 +167,7 @@ describe('essentiaLoader – getEssentia()', () => {
   // without SharedArrayBuffer (no COOP/COEP headers on GitHub Pages).
   // The essentia WASM binary has 1288 atomic-prefixed instructions (0xFE).
   // On Firefox Mobile the EssentiaWASM factory itself throws synchronously
-  // (or wasmModule.ready rejects with a CompileError / LinkError).
+  // (or the returned promise rejects with a CompileError / LinkError).
 
   it('rejects when EssentiaWASM factory throws synchronously (Firefox atomics error)', async () => {
     appendSpy = vi.spyOn(document.head, 'appendChild').mockImplementation((el) => {
@@ -197,9 +189,9 @@ describe('essentiaLoader – getEssentia()', () => {
     appendSpy = vi.spyOn(document.head, 'appendChild').mockImplementation((el) => {
       if (typeof el.src === 'string' && el.src.includes('essentia-wasm.web.js')) {
         globalThis.EssentiaWASM = vi.fn(() => {
-          const ready = Promise.reject(originalError);
-          ready.catch(() => {});
-          return { ready };
+          const p = Promise.reject(originalError);
+          p.catch(() => {});
+          return p;
         });
         setTimeout(() => el.onload?.(), 0);
       }
