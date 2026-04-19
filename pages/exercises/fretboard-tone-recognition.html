@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Griffbrett: Töne erkennen - Gitarren-Lerntools</title>
+  <link rel="stylesheet" href="../../style.css" />
+</head>
+<body>
+  <section id="view-fretboard" class="view active">
+    <gt-exercise-header title="Töne erkennen" score-type="correct"></gt-exercise-header>
+
+    <div id="fretboard-svg" class="fretboard-container"></div>
+
+    <p class="question-prompt">Welcher Ton ist markiert?</p>
+
+    <div id="note-buttons" class="note-buttons"></div>
+
+    <div id="chances-display" class="chances-display">
+      <span class="chance-icon" data-index="0">●</span>
+      <span class="chance-icon" data-index="1">●</span>
+      <span class="chance-icon" data-index="2">●</span>
+    </div>
+
+    <p id="feedback-text" class="feedback-text"></p>
+
+    <div id="settings-panel" class="settings-panel">
+      <div class="settings-row">
+        <label for="fret-range-slider" class="settings-label">
+          Bünde: <span id="fret-range-label">0 – 4</span>
+        </label>
+        <input type="range" id="fret-range-slider" min="0" max="12" value="4" />
+      </div>
+      <div class="settings-row">
+        <span class="settings-label">Saiten:</span>
+        <div id="string-toggles" class="string-toggles">
+          <button class="btn-string active" data-string="0">E2</button>
+          <button class="btn-string active" data-string="1">A2</button>
+          <button class="btn-string active" data-string="2">D3</button>
+          <button class="btn-string active" data-string="3">G3</button>
+          <button class="btn-string active" data-string="4">B3</button>
+          <button class="btn-string active" data-string="5">E4</button>
+        </div>
+      </div>
+      <div class="settings-row">
+        <label for="shuffle-notes-checkbox" class="settings-label">Zufällige Töne:</label>
+        <input type="checkbox" id="shuffle-notes-checkbox" class="settings-checkbox" />
+      </div>
+    </div>
+  </section>
+
+  <script type="module">
+    import { createFretboardExercise } from '../../js/games/fretboardToneRecognition/fretboardExercise.js';
+    import '../../js/components/index.js';
+
+    const exercise = createFretboardExercise();
+    exercise.startExercise();
+  </script>
+</body>
+</html>

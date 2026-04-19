@@ -8,12 +8,8 @@ import { getExercise, getAllExercises } from './exerciseRegistry.js';
 // Dynamic imports – each module calls registerExercise() on load.
 // The keys match the view identifiers used in index.html and hash routes.
 const EXERCISE_MODULES = [
-  { key: 'fretboard',   path: './games/fretboardToneRecognition/fretboardExercise.js' },
-  { key: 'tuner',       path: './tools/guitarTuner/guitarTuner.js' },
   { key: 'sheetMusic',  path: './games/sheetMusicReading/sheetMusicReading.js' },
-  { key: 'metronome',   path: './tools/metronome/metronome.js' },
   { key: 'akkord',      path: './games/akkordTrainer/akkordTrainer.js' },
-  { key: 'tonFinder',   path: './games/tonFinder/tonFinder.js' },
   { key: 'notePlaying',      path: './games/notePlayingExercise/notePlayingExercise.js' },
   { key: 'sheetMic',         path: './games/sheetMusicMic/sheetMusicMicExercise.js' },
   { key: 'akkordUebersicht', path: './tools/akkordUebersicht/akkordUebersicht.js' },

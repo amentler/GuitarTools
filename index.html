@@ -29,10 +29,7 @@
     <div class="menu-section">
       <h3 class="menu-section-title">Übungen</h3>
       <div class="menu-cards">
-        <button id="btn-start-fretboard" class="exercise-card">
-          <div class="card-icon">🎯</div>
-          <span class="card-title">Griffbrett: Töne erkennen</span>
-        </button>
+        <gt-menu-card icon="🎯" title="Griffbrett" subtitle="Töne erkennen" href="pages/exercises/fretboard-tone-recognition.html"></gt-menu-card>
 
         <button id="btn-start-sheet-music" class="exercise-card">
           <div class="card-icon">🎼</div>
@@ -44,10 +41,7 @@
           <span class="card-title">Akkord-Trainer</span>
         </button>
 
-        <button id="btn-start-ton-finder" class="exercise-card">
-          <div class="card-icon">🔍</div>
-          <span class="card-title">Ton-Finder</span>
-        </button>
+        <gt-menu-card icon="🔍" title="Ton-Finder" href="pages/exercises/ton-finder.html"></gt-menu-card>
       </div>
     </div>
 
@@ -80,15 +74,9 @@
     <div class="menu-section">
       <h3 class="menu-section-title">Werkzeuge</h3>
       <div class="menu-cards">
-        <button id="btn-start-tuner" class="exercise-card">
-          <div class="card-icon">🎵</div>
-          <span class="card-title">Gitarren-Stimmgerät</span>
-        </button>
+        <gt-menu-card icon="🎵" title="Gitarren-Stimmgerät" href="pages/tools/guitar-tuner.html"></gt-menu-card>
 
-        <button id="btn-start-metronome" class="exercise-card">
-          <div class="card-icon">⏱️</div>
-          <span class="card-title">Metronom</span>
-        </button>
+        <gt-menu-card icon="⏱️" title="Metronom" href="pages/tools/metronome.html"></gt-menu-card>
 
         <button id="btn-start-akkord-uebersicht" class="exercise-card">
           <div class="card-icon">📋</div>
@@ -159,173 +147,8 @@
 
   </section>
 
-  <!-- ═══════════════════════════════════════════════════════════════════════ -->
-  <!-- GRIFFBRETT-ÜBUNG                                                        -->
-  <!-- ═══════════════════════════════════════════════════════════════════════ -->
-  <section id="view-fretboard" class="view">
 
-    <!-- Header: Zurück + Score -->
-    <div class="exercise-header">
-      <button id="btn-back" class="btn-back">← Zurück zum Menü</button>
-      <div class="score-display">
-        Richtig: <span id="score-correct">0</span> von <span id="score-total">0</span>
-      </div>
-    </div>
 
-    <!-- SVG Griffbrett -->
-    <div id="fretboard-svg" class="fretboard-container"></div>
-
-    <!-- Frage -->
-    <p class="question-prompt">Welcher Ton ist markiert?</p>
-
-    <!-- Ton-Buttons (12 Halbtöne) -->
-    <div id="note-buttons" class="note-buttons"></div>
-
-    <!-- Chancen-Anzeige -->
-    <div id="chances-display" class="chances-display">
-      <span class="chance-icon" data-index="0">●</span>
-      <span class="chance-icon" data-index="1">●</span>
-      <span class="chance-icon" data-index="2">●</span>
-    </div>
-
-    <!-- Feedback -->
-    <p id="feedback-text" class="feedback-text"></p>
-
-    <!-- Settings: Bund-Slider + Saitenauswahl -->
-    <div id="settings-panel" class="settings-panel">
-      <div class="settings-row">
-        <label for="fret-range-slider" class="settings-label">
-          Bünde: <span id="fret-range-label">0 – 4</span>
-        </label>
-        <input type="range" id="fret-range-slider" min="0" max="12" value="4" />
-      </div>
-      <div class="settings-row">
-        <span class="settings-label">Saiten:</span>
-        <div id="string-toggles" class="string-toggles">
-          <button class="btn-string active" data-string="0">E2</button>
-          <button class="btn-string active" data-string="1">A2</button>
-          <button class="btn-string active" data-string="2">D3</button>
-          <button class="btn-string active" data-string="3">G3</button>
-          <button class="btn-string active" data-string="4">B3</button>
-          <button class="btn-string active" data-string="5">E4</button>
-        </div>
-      </div>
-      <div class="settings-row">
-        <label for="shuffle-notes-checkbox" class="settings-label">Zufällige Töne:</label>
-        <input type="checkbox" id="shuffle-notes-checkbox" class="settings-checkbox" />
-      </div>
-    </div>
-
-  </section>
-
-  <!-- ═══════════════════════════════════════════════════════════════════════ -->
-  <!-- TON-FINDER                                                              -->
-  <!-- ═══════════════════════════════════════════════════════════════════════ -->
-  <section id="view-ton-finder" class="view">
-
-    <div class="exercise-header">
-      <button id="btn-back-ton-finder" class="btn-back">← Zurück zum Menü</button>
-      <div class="score-display">
-        Punkte: <span id="ton-finder-score-points">0</span> · Runden: <span id="ton-finder-score-rounds">0</span>
-      </div>
-    </div>
-
-    <p class="question-prompt">
-      Finde alle Positionen von: <strong id="ton-finder-target-note">C</strong>
-    </p>
-
-    <gt-fretboard id="ton-finder-svg" class="fretboard-container" interactive></gt-fretboard>
-
-    <p id="ton-finder-feedback" class="feedback-text"></p>
-
-    <div class="settings-panel">
-      <div class="settings-row">
-        <label for="ton-finder-fret-range-slider" class="settings-label">
-          Bünde: <span id="ton-finder-fret-range-label">0 – 5</span>
-        </label>
-        <input type="range" id="ton-finder-fret-range-slider" min="0" max="12" value="5" />
-      </div>
-
-      <div class="settings-row">
-        <span class="settings-label">Saiten:</span>
-        <div id="ton-finder-string-toggles" class="string-toggles">
-          <button class="btn-string active" data-string="0">E2</button>
-          <button class="btn-string active" data-string="1">A2</button>
-          <button class="btn-string active" data-string="2">D3</button>
-          <button class="btn-string active" data-string="3">G3</button>
-          <button class="btn-string active" data-string="4">B3</button>
-          <button class="btn-string active" data-string="5">E4</button>
-        </div>
-      </div>
-
-      <div class="settings-row">
-        <label for="ton-finder-difficulty" class="settings-label">Schwierigkeit:</label>
-        <select id="ton-finder-difficulty" class="metronome-select">
-          <option value="natural">Nur natürliche Töne</option>
-          <option value="all" selected>Alle Töne inkl. #</option>
-        </select>
-      </div>
-    </div>
-
-    <div class="ton-finder-controls">
-      <button id="btn-ton-finder-finish" class="btn-start">Fertig</button>
-      <button id="btn-ton-finder-next" class="btn-mode" disabled>Nächste Runde</button>
-    </div>
-
-  </section>
-
-  <!-- ═══════════════════════════════════════════════════════════════════════ -->
-  <!-- STIMMGERÄT                                                              -->
-  <!-- ═══════════════════════════════════════════════════════════════════════ -->
-  <section id="view-tuner" class="view">
-
-    <!-- Header: Zurück + Modus-Toggle -->
-    <div class="exercise-header" id="tuner-header">
-      <button id="btn-back-tuner" class="btn-back">← Zurück zum Menü</button>
-      <div class="tuner-mode-toggle">
-        <button id="btn-mode-standard" class="btn-mode active">Standard</button>
-        <button id="btn-mode-chromatic" class="btn-mode">Chromatisch</button>
-      </div>
-    </div>
-
-    <!-- Mikrofon-Berechtigung / Fehler -->
-    <p id="tuner-permission" class="tuner-permission" style="display:none"></p>
-
-    <!-- SVG Stimmgerät -->
-    <div id="tuner-display" class="tuner-container"></div>
-
-    <!-- Guided Tuning Section -->
-    <div id="guided-tuner-section" class="guided-tuner-section">
-      <button id="btn-start-guided" class="btn-start-guided">Geführtes Stimmen starten</button>
-
-      <div id="guided-active" style="display:none">
-        <div class="guided-step-header">
-          <div class="guided-step-info">
-            Stimme die
-            <strong id="guided-step-label">6. Saite</strong>
-            auf
-            <strong id="guided-step-target" class="guided-target-note">E2</strong>
-          </div>
-          <div id="guided-step-progress" class="guided-step-progress"></div>
-        </div>
-        <div id="guided-feedback" class="guided-feedback"></div>
-        <div class="guided-actions">
-          <button id="btn-guided-next" class="btn-guided-next">Weiter →</button>
-          <button id="btn-guided-stop" class="btn-back">Beenden</button>
-        </div>
-      </div>
-
-      <div id="guided-finished" style="display:none" class="guided-finished">
-        <div class="guided-done-icon">🎸</div>
-        <p class="guided-done-text">Alle Saiten gestimmt!</p>
-        <div class="guided-actions">
-          <button id="btn-guided-restart" class="btn-guided-next">Nochmal stimmen</button>
-          <button id="btn-guided-done" class="btn-back">Fertig</button>
-        </div>
-      </div>
-    </div>
-
-  </section>
 
   <!-- ═══════════════════════════════════════════════════════════════════════ -->
   <!-- NOTEN LESEN                                                              -->
@@ -517,48 +340,6 @@
 
   </section>
 
-  <!-- ═══════════════════════════════════════════════════════════════════════ -->
-  <!-- METRONOM                                                                -->
-  <!-- ═══════════════════════════════════════════════════════════════════════ -->
-  <section id="view-metronome" class="view">
-
-    <div class="exercise-header">
-      <button id="btn-back-metronome" class="btn-back">← Zurück zum Menü</button>
-    </div>
-
-    <div id="metronome-display" class="metronome-container"></div>
-
-    <div class="metronome-controls">
-      <div class="bpm-display-container">
-        <span id="metronome-bpm-value" class="bpm-value">120</span>
-        <span class="bpm-unit">BPM</span>
-      </div>
-
-      <input type="range" id="metronome-bpm-slider" min="40" max="240" value="120" class="bpm-slider" />
-
-      <div class="bpm-buttons">
-        <button id="btn-metronome-minus-5" class="btn-bpm">-5</button>
-        <button id="btn-metronome-minus-1" class="btn-bpm">-1</button>
-        <button id="btn-metronome-plus-1" class="btn-bpm">+1</button>
-        <button id="btn-metronome-plus-5" class="btn-bpm">+5</button>
-      </div>
-    </div>
-
-    <div class="metronome-settings">
-      <div class="settings-row">
-        <label for="metronome-beats-select" class="settings-label">Taktart:</label>
-        <select id="metronome-beats-select" class="metronome-select">
-          <option value="2">2/4</option>
-          <option value="3">3/4</option>
-          <option value="4" selected>4/4</option>
-          <option value="6">6/8</option>
-        </select>
-      </div>
-    </div>
-
-    <button id="btn-metronome-toggle" class="btn-start-toggle">Start</button>
-
-  </section>
 
   <!-- ═══════════════════════════════════════════════════════════════════════ -->
   <!-- AKKORD ÜBERSICHT                                                        -->
