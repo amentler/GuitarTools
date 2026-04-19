@@ -48,10 +48,7 @@
 
         <gt-menu-card icon="🎸" title="Akkord spielen" subtitle="Essentia (Beta)" href="pages/exercises/chord-playing-essentia.html"></gt-menu-card>
 
-        <button id="btn-start-akkordfolgen-trainer" class="exercise-card">
-          <div class="card-icon">🎵</div>
-          <span class="card-title">Akkordfolgen-Trainer</span>
-        </button>
+        <gt-menu-card icon="🎵" title="Akkordfolgen-Trainer" href="pages/exercises/akkordfolgen-trainer.html"></gt-menu-card>
       </div>
     </div>
 
@@ -92,107 +89,6 @@
 
 
 
-  <!-- ═══════════════════════════════════════════════════════════════════════ -->
-  <!-- AKKORDFOLGEN-TRAINER                                                    -->
-  <!-- ═══════════════════════════════════════════════════════════════════════ -->
-  <section id="view-akkordfolgen-trainer" class="view">
-
-    <div class="exercise-header">
-      <button id="btn-back-akkordfolgen-trainer" class="btn-back">← Zurück zum Menü</button>
-    </div>
-
-    <div class="chord-trainer-container aft-container">
-
-      <!-- Mikrofon-Berechtigung -->
-      <p id="aft-permission" class="tuner-permission" style="display:none"></p>
-
-      <!-- ── Setup-Panel ───────────────────────────────────────────────────── -->
-      <div id="aft-setup" class="aft-panel">
-        <h2 class="aft-panel-title">Akkordfolgen-Trainer</h2>
-
-        <div class="settings-row">
-          <label for="aft-key-select" class="settings-label">Tonart:</label>
-          <select id="aft-key-select" class="metronome-select"></select>
-        </div>
-
-        <div class="settings-row-vertical">
-          <span class="settings-label">Akkordfolge:</span>
-          <div id="aft-progression-list" class="aft-progression-list"></div>
-          <button id="aft-random-btn" class="btn-mode aft-prog-btn">🎲 Zufällige Folge</button>
-        </div>
-
-        <div class="settings-row">
-          <label class="settings-label">BPM: <span id="aft-bpm-label">80</span></label>
-          <input type="range" id="aft-bpm-slider" min="40" max="200" value="80" />
-        </div>
-        <div class="bpm-buttons">
-          <button id="aft-bpm-minus5" class="btn-bpm">-5</button>
-          <button id="aft-bpm-minus1" class="btn-bpm">-1</button>
-          <button id="aft-bpm-plus1"  class="btn-bpm">+1</button>
-          <button id="aft-bpm-plus5"  class="btn-bpm">+5</button>
-        </div>
-
-        <div class="settings-row">
-          <label for="aft-beats-select" class="settings-label">Schläge/Akkord:</label>
-          <select id="aft-beats-select" class="metronome-select">
-            <option value="1">1 Schlag</option>
-            <option value="2">2 Schläge</option>
-            <option value="4" selected>4 Schläge</option>
-            <option value="8">8 Schläge</option>
-          </select>
-        </div>
-
-        <button id="aft-start-btn" class="btn-start">🎤 Start</button>
-      </div>
-
-      <!-- ── Aktiv-Panel ───────────────────────────────────────────────────── -->
-      <div id="aft-active" class="aft-panel" style="display:none">
-        <div id="aft-progression-display" class="aft-progression-display"></div>
-
-        <div class="aft-current-display">
-          <h2 id="aft-current-chord-name" class="chord-title-display">–</h2>
-          <p  id="aft-current-numeral"    class="aft-numeral">–</p>
-        </div>
-
-        <div id="aft-chord-diagram" class="chord-diagram-container" style="display:none"></div>
-
-        <div id="aft-beat-dots" class="aft-beat-dots"></div>
-
-        <p id="aft-feedback" class="feedback-text"></p>
-
-        <button id="aft-stop-btn" class="btn-back">⏹ Stopp</button>
-      </div>
-
-      <!-- ── Zusammenfassung ───────────────────────────────────────────────── -->
-      <div id="aft-summary" class="aft-panel" style="display:none">
-        <h2 class="aft-panel-title">Zusammenfassung</h2>
-        <div class="aft-summary-stats">
-          <div class="aft-stat">
-            <span class="aft-stat-value" id="aft-summary-time">–</span>
-            <span class="aft-stat-label">Zeit</span>
-          </div>
-          <div class="aft-stat">
-            <span class="aft-stat-value" id="aft-summary-played">0</span>
-            <span class="aft-stat-label">Gespielt</span>
-          </div>
-          <div class="aft-stat">
-            <span class="aft-stat-value" id="aft-summary-missed">0</span>
-            <span class="aft-stat-label">Verpasst</span>
-          </div>
-          <div class="aft-stat">
-            <span class="aft-stat-value" id="aft-summary-rounds">0</span>
-            <span class="aft-stat-label">Runden</span>
-          </div>
-        </div>
-        <div class="chord-controls" style="gap:0.5rem">
-          <button id="aft-again-btn" class="btn-start">Nochmal</button>
-          <button id="aft-new-btn"   class="btn-mode">Neue Einstellungen</button>
-        </div>
-      </div>
-
-    </div>
-
-  </section>
 
   <script type="module" src="js/app.js"></script>
   <script>
