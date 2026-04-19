@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Akkord-Trainer - Gitarren-Lerntools</title>
+  <link rel="stylesheet" href="../../style.css" />
+</head>
+<body>
+  <section id="view-akkord-trainer" class="view active">
+    <gt-exercise-header title="Akkord-Trainer" score-type="correct"></gt-exercise-header>
+
+    <div class="chord-trainer-container">
+      <h2 id="chord-name-display" class="chord-title-display">C-Dur</h2>
+      
+      <div id="chord-diagram-container" class="chord-diagram-container"></div>
+      
+      <p id="chord-feedback-text" class="feedback-text">Trage den Akkord ein...</p>
+
+      <div class="chord-controls">
+        <button id="btn-chord-check" class="btn-start">Prüfen</button>
+      </div>
+
+      <div class="settings-panel">
+        <div class="settings-row-vertical">
+          <span class="settings-label">Akkord-Kategorien:</span>
+          <div class="category-checkboxes">
+            <label class="checkbox-label">
+              <input type="checkbox" id="check-cat-simplified" checked> Einsteiger (vereinfacht)
+            </label>
+            <label class="checkbox-label">
+              <input type="checkbox" id="check-cat-standard"> Standard (CAGED)
+            </label>
+            <label class="checkbox-label">
+              <input type="checkbox" id="check-cat-extended"> Weiterführend (7er, F)
+            </label>
+            <label class="checkbox-label">
+              <input type="checkbox" id="check-cat-sus-add"> Sus & Add
+            </label>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <script type="module">
+    import { createAkkordExercise } from '../../js/games/akkordTrainer/akkordTrainer.js';
+    import '../../js/components/index.js';
+
+    const exercise = createAkkordExercise();
+    exercise.startExercise();
+  </script>
+</body>
+</html>

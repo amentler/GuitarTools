@@ -33,10 +33,7 @@
 
         <gt-menu-card icon="🎼" title="Noten lesen" href="pages/exercises/sheet-music-reading.html"></gt-menu-card>
 
-        <button id="btn-start-akkord-trainer" class="exercise-card">
-          <div class="card-icon">🎸</div>
-          <span class="card-title">Akkord-Trainer</span>
-        </button>
+        <gt-menu-card icon="🎸" title="Akkord-Trainer" href="pages/exercises/akkord-trainer.html"></gt-menu-card>
 
         <gt-menu-card icon="🔍" title="Ton-Finder" href="pages/exercises/ton-finder.html"></gt-menu-card>
       </div>
@@ -98,51 +95,6 @@
     </footer>
   </section>
 
-  <!-- ═══════════════════════════════════════════════════════════════════════ -->
-  <!-- AKKORD-TRAINER                                                         -->
-  <!-- ═══════════════════════════════════════════════════════════════════════ -->
-  <section id="view-akkord-trainer" class="view">
-
-    <div class="exercise-header">
-      <button id="btn-back-akkord-trainer" class="btn-back">← Zurück zum Menü</button>
-      <div class="score-display">
-        Richtig: <span id="chord-score-correct">0</span> von <span id="chord-score-total">0</span>
-      </div>
-    </div>
-
-    <div class="chord-trainer-container">
-      <h2 id="chord-name-display" class="chord-title-display">C-Dur</h2>
-      
-      <div id="chord-diagram-container" class="chord-diagram-container"></div>
-      
-      <p id="chord-feedback-text" class="feedback-text">Trage den Akkord ein...</p>
-
-      <div class="chord-controls">
-        <button id="btn-chord-check" class="btn-start">Prüfen</button>
-      </div>
-
-      <div class="settings-panel">
-        <div class="settings-row-vertical">
-          <span class="settings-label">Akkord-Kategorien:</span>
-          <div class="category-checkboxes">
-            <label class="checkbox-label">
-              <input type="checkbox" id="check-cat-simplified" checked> Einsteiger (vereinfacht)
-            </label>
-            <label class="checkbox-label">
-              <input type="checkbox" id="check-cat-standard"> Standard (CAGED)
-            </label>
-            <label class="checkbox-label">
-              <input type="checkbox" id="check-cat-extended"> Weiterführend (7er, F)
-            </label>
-            <label class="checkbox-label">
-              <input type="checkbox" id="check-cat-sus-add"> Sus & Add
-            </label>
-          </div>
-        </div>
-      </div>
-    </div>
-
-  </section>
 
 
 
