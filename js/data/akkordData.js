@@ -335,6 +335,62 @@ export const CHORDS = {
     { string: 2, fret: 3, finger: 2 },
     { string: 1, fret: 2, finger: 1 }
   ],
+  "Adim": [
+    { string: 6, muted: true },
+    { string: 5, fret: 0 },
+    { string: 4, fret: 1, finger: 1 },
+    { string: 3, fret: 2, finger: 2 },
+    { string: 2, fret: 3, finger: 4 },
+    { string: 1, fret: 0 }
+  ],
+  "Hdim": [
+    { string: 6, muted: true },
+    { string: 5, fret: 2, finger: 1 },
+    { string: 4, fret: 3, finger: 2 },
+    { string: 3, fret: 4, finger: 4 },
+    { string: 2, fret: 3, finger: 3 },
+    { string: 1, muted: true }
+  ],
+  "Cdim": [
+    { string: 6, muted: true },
+    { string: 5, fret: 3, finger: 1 },
+    { string: 4, fret: 4, finger: 2 },
+    { string: 3, fret: 5, finger: 4 },
+    { string: 2, fret: 4, finger: 3 },
+    { string: 1, muted: true }
+  ],
+  "Ddim": [
+    { string: 6, muted: true },
+    { string: 5, muted: true },
+    { string: 4, fret: 0 },
+    { string: 3, fret: 1, finger: 1 },
+    { string: 2, fret: 0 },
+    { string: 1, fret: 1, finger: 2 }
+  ],
+  "Edim": [
+    { string: 6, fret: 0 },
+    { string: 5, fret: 1, finger: 1 },
+    { string: 4, fret: 2, finger: 2 },
+    { string: 3, fret: 3, finger: 3 },
+    { string: 2, fret: 0 },
+    { string: 1, fret: 0 }
+  ],
+  "Fdim": [
+    { string: 6, fret: 1, finger: 1 },
+    { string: 5, fret: 2, finger: 2 },
+    { string: 4, fret: 3, finger: 3 },
+    { string: 3, fret: 4, finger: 4 },
+    { string: 2, fret: 0 },
+    { string: 1, fret: 0 }
+  ],
+  "Gdim": [
+    { string: 6, fret: 3, finger: 2 },
+    { string: 5, fret: 4, finger: 3 },
+    { string: 4, fret: 5, finger: 4 },
+    { string: 3, fret: 3, finger: 1 },
+    { string: 2, fret: 0 },
+    { string: 1, fret: 0 }
+  ],
 
   // --- 4. Spezielle Variationen (Sus & Add) ---
   "Asus2": [
@@ -369,6 +425,14 @@ export const CHORDS = {
     { string: 2, fret: 3, finger: 2 },
     { string: 1, fret: 3, finger: 4 }
   ],
+  "Esus2": [
+    { string: 6, fret: 0 },
+    { string: 5, fret: 2, finger: 1 },
+    { string: 4, fret: 2, finger: 2 },
+    { string: 3, fret: 4, finger: 4 },
+    { string: 2, fret: 0 },
+    { string: 1, fret: 0 }
+  ],
   "Esus4": [
     { string: 6, fret: 0 },
     { string: 5, fret: 2, finger: 2 },
@@ -376,6 +440,38 @@ export const CHORDS = {
     { string: 3, fret: 2, finger: 4 },
     { string: 2, fret: 0 },
     { string: 1, fret: 0 }
+  ],
+  "Csus2": [
+    { string: 6, muted: true },
+    { string: 5, fret: 3, finger: 3 },
+    { string: 4, fret: 0 },
+    { string: 3, fret: 0 },
+    { string: 2, fret: 1, finger: 1 },
+    { string: 1, fret: 0 }
+  ],
+  "Csus4": [
+    { string: 6, muted: true },
+    { string: 5, fret: 3, finger: 3 },
+    { string: 4, fret: 3, finger: 4 },
+    { string: 3, fret: 0 },
+    { string: 2, fret: 1, finger: 1 },
+    { string: 1, fret: 0 }
+  ],
+  "Fsus2": [
+    { string: 6, fret: 1, finger: 1 },
+    { string: 5, fret: 3, finger: 3 },
+    { string: 4, fret: 3, finger: 4 },
+    { string: 3, fret: 0 },
+    { string: 2, fret: 1, finger: 1 },
+    { string: 1, fret: 1, finger: 1 }
+  ],
+  "Fsus4": [
+    { string: 6, fret: 1, finger: 1 },
+    { string: 5, fret: 3, finger: 3 },
+    { string: 4, fret: 3, finger: 3 },
+    { string: 3, fret: 3, finger: 3 },
+    { string: 2, fret: 1, finger: 1 },
+    { string: 1, fret: 1, finger: 1 }
   ],
   "Cadd9": [
     { string: 6, muted: true },
@@ -425,6 +521,14 @@ export const CHORDS = {
     { string: 2, fret: 1, finger: 1 },
     { string: 1, fret: 1, finger: 1 }
   ],
+  "Hsus2": [
+    { string: 6, muted: true },
+    { string: 5, fret: 2, finger: 1 },
+    { string: 4, fret: 4, finger: 3 },
+    { string: 3, fret: 4, finger: 4 },
+    { string: 2, fret: 2, finger: 1 },
+    { string: 1, fret: 2, finger: 1 }
+  ],
   "Hsus4": [
     { string: 6, muted: true },
     { string: 5, fret: 2, finger: 1 },
@@ -467,11 +571,13 @@ export const CHORD_CATEGORIES = {
     "G7", "C7", "D7", "A7", "E7", "F7", "H7 (B7)",
     "Cmaj7", "Gmaj7", "Dmaj7", "Amaj7", "Emaj7", "Fmaj7", "Hmaj7",
     "Am7", "Dm7", "Em7", "Cm7", "Fm7", "Gm7", "Hm7",
+    "Adim", "Hdim", "Cdim", "Ddim", "Edim", "Fdim", "Gdim",
     "F-Dur (klein)"
   ],
   "sus_add": [
-    "Asus2", "Asus4", "Dsus2", "Dsus4", "Esus4",
-    "Gsus2", "Gsus4", "G7sus4", "Hsus4", "H7sus4",
+    "Asus2", "Asus4", "Dsus2", "Dsus4",
+    "Esus2", "Esus4", "Csus2", "Csus4", "Fsus2", "Fsus4",
+    "Gsus2", "Gsus4", "G7sus4", "Hsus2", "Hsus4", "H7sus4",
     "Cadd9", "Gadd9", "Eadd9", "Aadd9",
     "G-Dur (Rock)"
   ]
