@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { CHORDS, CHORD_CATEGORIES, validateFingerData } from '../../js/data/akkordData.js';
-import { getChordNotes } from '../../js/games/chordExercise/chordDetectionLogic.js';
+import { getChordNotes } from '../../js/utils/chordDetectionUtils.js';
 
 function pitchClasses(chordName) {
   return [...new Set(getChordNotes(chordName).map(n => n.note))].sort();
