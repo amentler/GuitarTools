@@ -31,10 +31,7 @@
       <div class="menu-cards">
         <gt-menu-card icon="🎯" title="Griffbrett" subtitle="Töne erkennen" href="pages/exercises/fretboard-tone-recognition.html"></gt-menu-card>
 
-        <button id="btn-start-sheet-music" class="exercise-card">
-          <div class="card-icon">🎼</div>
-          <span class="card-title">Noten lesen</span>
-        </button>
+        <gt-menu-card icon="🎼" title="Noten lesen" href="pages/exercises/sheet-music-reading.html"></gt-menu-card>
 
         <button id="btn-start-akkord-trainer" class="exercise-card">
           <div class="card-icon">🎸</div>
@@ -150,71 +147,6 @@
 
 
 
-  <!-- ═══════════════════════════════════════════════════════════════════════ -->
-  <!-- NOTEN LESEN                                                              -->
-  <!-- ═══════════════════════════════════════════════════════════════════════ -->
-  <section id="view-sheet-music" class="view">
-
-    <div class="exercise-header">
-      <button id="btn-back-sheet-music" class="btn-back">← Zurück zum Menü</button>
-      <button id="btn-show-tab" class="btn-mode">Tabs anzeigen</button>
-      <button id="btn-endless-mode" class="btn-mode">∞ Endlos</button>
-    </div>
-
-    <!-- PLAYBACK: Play/Stop · BPM · Time Signature -->
-    <div class="playback-controls">
-      <button id="btn-sheet-play" class="btn-play-stop">▶ Play</button>
-
-      <div class="playback-bpm">
-        <label for="sheet-music-bpm-slider" class="settings-label">
-          BPM: <span id="sheet-music-bpm-label">80</span>
-        </label>
-        <input type="range" id="sheet-music-bpm-slider" min="40" max="240" value="80" />
-      </div>
-
-      <div class="playback-timesig">
-        <label for="sheet-music-time-sig" class="settings-label">Takt:</label>
-        <select id="sheet-music-time-sig">
-          <option value="2/4">2/4</option>
-          <option value="3/4">3/4</option>
-          <option value="4/4" selected>4/4</option>
-          <option value="3/8">3/8</option>
-          <option value="6/8">6/8</option>
-        </select>
-      </div>
-    </div>
-
-    <p id="sheet-music-pool-warning" class="pool-warning" hidden>
-      Zu wenige Noten – bitte mehr Saiten oder Bünde aktivieren.
-    </p>
-
-    <div id="score-container" class="score-container"></div>
-
-    <button id="btn-new-bars" class="btn-new-bars">Neue Takte</button>
-
-    <!-- SETTINGS: Fret Range + String Selection -->
-    <div class="settings-panel">
-      <div class="settings-row">
-        <label for="sheet-music-fret-range-slider" class="settings-label">
-          Bünde: <span id="sheet-music-fret-range-label">0 – 3</span>
-        </label>
-        <input type="range" id="sheet-music-fret-range-slider" min="0" max="5" value="3" />
-      </div>
-
-      <div class="settings-row">
-        <span class="settings-label">Saiten:</span>
-        <div id="sheet-music-string-toggles" class="string-toggles">
-          <button class="btn-string active" data-string="0">E2</button>
-          <button class="btn-string active" data-string="1">A2</button>
-          <button class="btn-string active" data-string="2">D3</button>
-          <button class="btn-string active" data-string="3">G3</button>
-          <button class="btn-string active" data-string="4">B3</button>
-          <button class="btn-string active" data-string="5">E4</button>
-        </div>
-      </div>
-    </div>
-
-  </section>
 
   <!-- ═══════════════════════════════════════════════════════════════════════ -->
   <!-- NOTEN SPIELEN (mit Mikrofon)                                           -->
