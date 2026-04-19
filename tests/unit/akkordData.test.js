@@ -1,5 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import { CHORDS, CHORD_CATEGORIES, validateFingerData } from '../../js/data/akkordData.js';
+import { getChordNotes } from '../../js/games/chordExercise/chordDetectionLogic.js';
+
+function pitchClasses(chordName) {
+  return [...new Set(getChordNotes(chordName).map(n => n.note))].sort();
+}
 
 describe('CHORD_CATEGORIES', () => {
   it('contains exactly the 4 expected category keys', () => {
@@ -58,6 +63,98 @@ describe('CHORDS integrity', () => {
         }
       }
     }
+  });
+});
+
+describe('Dim-Akkorde – Pitch-Klassen', () => {
+  it('Adim enthält A, C, D# (kein D oder E)', () => {
+    const pc = pitchClasses('Adim');
+    expect(pc).toContain('A');
+    expect(pc).toContain('C');
+    expect(pc).toContain('D#');
+    expect(pc).not.toContain('D');
+    expect(pc).not.toContain('E');
+  });
+
+  it('Hdim enthält B, D, F', () => {
+    const pc = pitchClasses('Hdim');
+    expect(pc).toContain('B');
+    expect(pc).toContain('D');
+    expect(pc).toContain('F');
+  });
+
+  it('Cdim enthält C, D#, F#', () => {
+    const pc = pitchClasses('Cdim');
+    expect(pc).toContain('C');
+    expect(pc).toContain('D#');
+    expect(pc).toContain('F#');
+  });
+
+  it('Ddim enthält D, F, G# (kein B)', () => {
+    const pc = pitchClasses('Ddim');
+    expect(pc).toContain('D');
+    expect(pc).toContain('F');
+    expect(pc).toContain('G#');
+    expect(pc).not.toContain('B');
+  });
+
+  it('Edim enthält E, G, A# (kein B)', () => {
+    const pc = pitchClasses('Edim');
+    expect(pc).toContain('E');
+    expect(pc).toContain('G');
+    expect(pc).toContain('A#');
+    expect(pc).not.toContain('B');
+  });
+
+  it('Fdim enthält F, G#, B (kein E)', () => {
+    const pc = pitchClasses('Fdim');
+    expect(pc).toContain('F');
+    expect(pc).toContain('G#');
+    expect(pc).toContain('B');
+    expect(pc).not.toContain('E');
+  });
+
+  it('Gdim enthält G, A#, C# (kein B oder E)', () => {
+    const pc = pitchClasses('Gdim');
+    expect(pc).toContain('G');
+    expect(pc).toContain('A#');
+    expect(pc).toContain('C#');
+    expect(pc).not.toContain('B');
+    expect(pc).not.toContain('E');
+  });
+});
+
+describe('Add9-Akkorde – Pitch-Klassen', () => {
+  it('Gadd9 enthält G, B, D UND A (die Quinte und die Add9)', () => {
+    const pc = pitchClasses('Gadd9');
+    expect(pc).toContain('G');
+    expect(pc).toContain('B');
+    expect(pc).toContain('D');
+    expect(pc).toContain('A');
+  });
+
+  it('Cadd9 enthält C, E, G, D', () => {
+    const pc = pitchClasses('Cadd9');
+    expect(pc).toContain('C');
+    expect(pc).toContain('E');
+    expect(pc).toContain('G');
+    expect(pc).toContain('D');
+  });
+
+  it('Eadd9 enthält E, G#, B, F# (die Add9)', () => {
+    const pc = pitchClasses('Eadd9');
+    expect(pc).toContain('E');
+    expect(pc).toContain('G#');
+    expect(pc).toContain('B');
+    expect(pc).toContain('F#');
+  });
+
+  it('Aadd9 enthält A, C#, E, B (die Add9)', () => {
+    const pc = pitchClasses('Aadd9');
+    expect(pc).toContain('A');
+    expect(pc).toContain('C#');
+    expect(pc).toContain('E');
+    expect(pc).toContain('B');
   });
 });
 

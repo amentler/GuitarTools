@@ -71,14 +71,16 @@ function computeRms(buf) {
 }
 
 /**
- * Detects spectral peaks from the AnalyserNode's current frequency data.
- * Returns parallel arrays of peak frequencies (Hz) and linear magnitudes.
+ * Pure function: detects spectral peaks from a dBFS frequency buffer.
+ * freqData has length = frequencyBinCount = fftSize / 2.
+ * Exported so tests can run the same logic on WAV-derived spectra.
+ *
+ * @param {Float32Array} freqData - dBFS values (output of getFloatFrequencyData or equivalent)
+ * @param {number} sampleRate
+ * @returns {{ peakFreqs: number[], peakMags: number[] }}
  */
-function detectPeaks(analyserNode, sampleRate) {
-  const fftSize  = analyserNode.fftSize;
-  const freqData = new Float32Array(analyserNode.frequencyBinCount);
-  analyserNode.getFloatFrequencyData(freqData);
-
+export function detectEssentiaPeaks(freqData, sampleRate) {
+  const fftSize  = freqData.length * 2; // frequencyBinCount = fftSize / 2
   const binWidth = sampleRate / fftSize;
   const minBin   = Math.max(1, Math.floor(40 / binWidth));
   const maxBin   = Math.min(freqData.length - 2, Math.ceil(5000 / binWidth));
@@ -95,6 +97,13 @@ function detectPeaks(analyserNode, sampleRate) {
   }
 
   return { peakFreqs, peakMags };
+}
+
+/** Thin wrapper: reads AnalyserNode state and calls the pure detectEssentiaPeaks. */
+function detectPeaks(analyserNode, sampleRate) {
+  const freqData = new Float32Array(analyserNode.frequencyBinCount);
+  analyserNode.getFloatFrequencyData(freqData);
+  return detectEssentiaPeaks(freqData, sampleRate);
 }
 
 /**
