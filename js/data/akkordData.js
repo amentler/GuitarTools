@@ -338,10 +338,10 @@ export const CHORDS = {
   "Adim": [
     { string: 6, muted: true },
     { string: 5, fret: 0 },
-    { string: 4, fret: 1, finger: 1 },
-    { string: 3, fret: 2, finger: 2 },
-    { string: 2, fret: 3, finger: 4 },
-    { string: 1, fret: 0 }
+    { string: 4, fret: 1, finger: 2 },
+    { string: 3, fret: 2, finger: 3 },
+    { string: 2, fret: 1, finger: 1 },
+    { string: 1, muted: true }
   ],
   "Hdim": [
     { string: 6, muted: true },
@@ -364,32 +364,32 @@ export const CHORDS = {
     { string: 5, muted: true },
     { string: 4, fret: 0 },
     { string: 3, fret: 1, finger: 1 },
-    { string: 2, fret: 0 },
+    { string: 2, muted: true },
     { string: 1, fret: 1, finger: 2 }
   ],
   "Edim": [
     { string: 6, fret: 0 },
     { string: 5, fret: 1, finger: 1 },
     { string: 4, fret: 2, finger: 2 },
-    { string: 3, fret: 3, finger: 3 },
-    { string: 2, fret: 0 },
-    { string: 1, fret: 0 }
+    { string: 3, fret: 0 },
+    { string: 2, muted: true },
+    { string: 1, muted: true }
   ],
   "Fdim": [
     { string: 6, fret: 1, finger: 1 },
     { string: 5, fret: 2, finger: 2 },
     { string: 4, fret: 3, finger: 3 },
-    { string: 3, fret: 4, finger: 4 },
-    { string: 2, fret: 0 },
-    { string: 1, fret: 0 }
+    { string: 3, fret: 1, finger: 1 },
+    { string: 2, muted: true },
+    { string: 1, muted: true }
   ],
   "Gdim": [
     { string: 6, fret: 3, finger: 2 },
     { string: 5, fret: 4, finger: 3 },
     { string: 4, fret: 5, finger: 4 },
     { string: 3, fret: 3, finger: 1 },
-    { string: 2, fret: 0 },
-    { string: 1, fret: 0 }
+    { string: 2, muted: true },
+    { string: 1, muted: true }
   ],
 
   // --- 4. Spezielle Variationen (Sus & Add) ---
@@ -482,11 +482,11 @@ export const CHORDS = {
     { string: 1, fret: 0 }
   ],
   "Gadd9": [
-    { string: 6, fret: 3, finger: 2 },
-    { string: 5, fret: 2, finger: 1 },
+    { string: 6, fret: 3, finger: 3 },
+    { string: 5, fret: 2, finger: 2 },
     { string: 4, fret: 0 },
-    { string: 3, fret: 0 },
-    { string: 2, fret: 3, finger: 3 },
+    { string: 3, fret: 2, finger: 1 },
+    { string: 2, fret: 0 },
     { string: 1, fret: 3, finger: 4 }
   ],
   "G-Dur (Rock)": [
