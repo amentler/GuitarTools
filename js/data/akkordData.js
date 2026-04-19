@@ -111,6 +111,54 @@ export const CHORDS = {
   ],
 
   // --- 3. Weiterführende Akkorde (Extended) ---
+  "F-Dur": [
+    { string: 6, fret: 1, finger: 1 },
+    { string: 5, fret: 3, finger: 3 },
+    { string: 4, fret: 3, finger: 4 },
+    { string: 3, fret: 2, finger: 2 },
+    { string: 2, fret: 1, finger: 1 },
+    { string: 1, fret: 1, finger: 1 }
+  ],
+  "H-Dur": [
+    { string: 6, muted: true },
+    { string: 5, fret: 2, finger: 1 },
+    { string: 4, fret: 4, finger: 2 },
+    { string: 3, fret: 4, finger: 3 },
+    { string: 2, fret: 4, finger: 4 },
+    { string: 1, fret: 2, finger: 1 }
+  ],
+  "H-Moll": [
+    { string: 6, muted: true },
+    { string: 5, fret: 2, finger: 1 },
+    { string: 4, fret: 4, finger: 3 },
+    { string: 3, fret: 4, finger: 4 },
+    { string: 2, fret: 3, finger: 2 },
+    { string: 1, fret: 2, finger: 1 }
+  ],
+  "C-Moll": [
+    { string: 6, muted: true },
+    { string: 5, fret: 3, finger: 1 },
+    { string: 4, fret: 5, finger: 3 },
+    { string: 3, fret: 5, finger: 4 },
+    { string: 2, fret: 4, finger: 2 },
+    { string: 1, fret: 3, finger: 1 }
+  ],
+  "F-Moll": [
+    { string: 6, fret: 1, finger: 1 },
+    { string: 5, fret: 3, finger: 3 },
+    { string: 4, fret: 3, finger: 4 },
+    { string: 3, fret: 1, finger: 1 },
+    { string: 2, fret: 1, finger: 1 },
+    { string: 1, fret: 1, finger: 1 }
+  ],
+  "G-Moll": [
+    { string: 6, fret: 3, finger: 1 },
+    { string: 5, fret: 5, finger: 3 },
+    { string: 4, fret: 5, finger: 4 },
+    { string: 3, fret: 3, finger: 1 },
+    { string: 2, fret: 3, finger: 1 },
+    { string: 1, fret: 3, finger: 1 }
+  ],
   "G7": [
     { string: 6, fret: 3, finger: 3 },
     { string: 5, fret: 2, finger: 2 },
@@ -231,6 +279,62 @@ export const CHORDS = {
     { string: 2, fret: 0 },
     { string: 1, fret: 2, finger: 4 }
   ],
+  "F7": [
+    { string: 6, fret: 1, finger: 1 },
+    { string: 5, fret: 3, finger: 3 },
+    { string: 4, fret: 1, finger: 1 },
+    { string: 3, fret: 2, finger: 2 },
+    { string: 2, fret: 1, finger: 1 },
+    { string: 1, fret: 1, finger: 1 }
+  ],
+  "Fmaj7": [
+    { string: 6, fret: 1, finger: 1 },
+    { string: 5, fret: 3, finger: 3 },
+    { string: 4, fret: 3, finger: 4 },
+    { string: 3, fret: 2, finger: 2 },
+    { string: 2, fret: 1, finger: 1 },
+    { string: 1, fret: 0 }
+  ],
+  "Hmaj7": [
+    { string: 6, muted: true },
+    { string: 5, fret: 2, finger: 1 },
+    { string: 4, fret: 4, finger: 3 },
+    { string: 3, fret: 3, finger: 2 },
+    { string: 2, fret: 4, finger: 4 },
+    { string: 1, fret: 2, finger: 1 }
+  ],
+  "Cm7": [
+    { string: 6, muted: true },
+    { string: 5, fret: 3, finger: 1 },
+    { string: 4, fret: 5, finger: 3 },
+    { string: 3, fret: 3, finger: 1 },
+    { string: 2, fret: 4, finger: 2 },
+    { string: 1, fret: 3, finger: 1 }
+  ],
+  "Fm7": [
+    { string: 6, fret: 1, finger: 1 },
+    { string: 5, fret: 3, finger: 3 },
+    { string: 4, fret: 1, finger: 1 },
+    { string: 3, fret: 1, finger: 1 },
+    { string: 2, fret: 1, finger: 1 },
+    { string: 1, fret: 1, finger: 1 }
+  ],
+  "Gm7": [
+    { string: 6, fret: 3, finger: 1 },
+    { string: 5, fret: 5, finger: 3 },
+    { string: 4, fret: 3, finger: 1 },
+    { string: 3, fret: 3, finger: 1 },
+    { string: 2, fret: 3, finger: 1 },
+    { string: 1, fret: 3, finger: 1 }
+  ],
+  "Hm7": [
+    { string: 6, muted: true },
+    { string: 5, fret: 2, finger: 1 },
+    { string: 4, fret: 4, finger: 3 },
+    { string: 3, fret: 2, finger: 1 },
+    { string: 2, fret: 3, finger: 2 },
+    { string: 1, fret: 2, finger: 1 }
+  ],
 
   // --- 4. Spezielle Variationen (Sus & Add) ---
   "Asus2": [
@@ -296,14 +400,81 @@ export const CHORDS = {
     { string: 3, fret: 0 },
     { string: 2, fret: 3, finger: 3 },
     { string: 1, fret: 3, finger: 4 }
+  ],
+  "Gsus2": [
+    { string: 6, fret: 3, finger: 2 },
+    { string: 5, fret: 0 },
+    { string: 4, fret: 0 },
+    { string: 3, fret: 2, finger: 1 },
+    { string: 2, fret: 3, finger: 3 },
+    { string: 1, fret: 3, finger: 4 }
+  ],
+  "Gsus4": [
+    { string: 6, fret: 3, finger: 2 },
+    { string: 5, fret: 3, finger: 3 },
+    { string: 4, fret: 0 },
+    { string: 3, fret: 0 },
+    { string: 2, fret: 1, finger: 1 },
+    { string: 1, fret: 3, finger: 4 }
+  ],
+  "G7sus4": [
+    { string: 6, fret: 3, finger: 2 },
+    { string: 5, fret: 3, finger: 3 },
+    { string: 4, fret: 0 },
+    { string: 3, fret: 0 },
+    { string: 2, fret: 1, finger: 1 },
+    { string: 1, fret: 1, finger: 1 }
+  ],
+  "Hsus4": [
+    { string: 6, muted: true },
+    { string: 5, fret: 2, finger: 1 },
+    { string: 4, fret: 4, finger: 2 },
+    { string: 3, fret: 4, finger: 3 },
+    { string: 2, fret: 5, finger: 4 },
+    { string: 1, fret: 2, finger: 1 }
+  ],
+  "H7sus4": [
+    { string: 6, muted: true },
+    { string: 5, fret: 2, finger: 1 },
+    { string: 4, fret: 2, finger: 1 },
+    { string: 3, fret: 2, finger: 1 },
+    { string: 2, fret: 0 },
+    { string: 1, fret: 0 }
+  ],
+  "Eadd9": [
+    { string: 6, fret: 0 },
+    { string: 5, fret: 2, finger: 2 },
+    { string: 4, fret: 2, finger: 3 },
+    { string: 3, fret: 1, finger: 1 },
+    { string: 2, fret: 0 },
+    { string: 1, fret: 2, finger: 4 }
+  ],
+  "Aadd9": [
+    { string: 6, muted: true },
+    { string: 5, fret: 0 },
+    { string: 4, fret: 2, finger: 1 },
+    { string: 3, fret: 4, finger: 4 },
+    { string: 2, fret: 2, finger: 2 },
+    { string: 1, fret: 0 }
   ]
 };
 
 export const CHORD_CATEGORIES = {
   "simplified": ["G-Dur (1-Finger)", "C-Dur (1-Finger)", "E-Moll (2-Finger)", "A-Moll (2-Finger)"],
   "standard": ["C-Dur", "G-Dur", "D-Dur", "E-Moll", "A-Moll", "E-Dur", "A-Dur", "D-Moll"],
-  "extended": ["G7", "C7", "D7", "A7", "E7", "F-Dur (klein)", "H7 (B7)", "Cmaj7", "Gmaj7", "Dmaj7", "Amaj7", "Emaj7", "Am7", "Dm7", "Em7"],
-  "sus_add": ["Asus2", "Asus4", "Dsus2", "Dsus4", "Esus4", "Cadd9", "Gadd9", "G-Dur (Rock)"]
+  "extended": [
+    "F-Dur", "H-Dur", "H-Moll", "C-Moll", "F-Moll", "G-Moll",
+    "G7", "C7", "D7", "A7", "E7", "F7", "H7 (B7)",
+    "Cmaj7", "Gmaj7", "Dmaj7", "Amaj7", "Emaj7", "Fmaj7", "Hmaj7",
+    "Am7", "Dm7", "Em7", "Cm7", "Fm7", "Gm7", "Hm7",
+    "F-Dur (klein)"
+  ],
+  "sus_add": [
+    "Asus2", "Asus4", "Dsus2", "Dsus4", "Esus4",
+    "Gsus2", "Gsus4", "G7sus4", "Hsus4", "H7sus4",
+    "Cadd9", "Gadd9", "Eadd9", "Aadd9",
+    "G-Dur (Rock)"
+  ]
 };
 
 /**
