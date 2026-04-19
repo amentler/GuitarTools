@@ -16,7 +16,7 @@ import { filterHarmonicPeaks, identifyNotesFromPeaks, matchChordToTarget } from 
 const FFT_SIZE = 16384;              // high resolution for chord detection
 const GUITAR_MIN_FREQUENCY = 70;     // Hz – lowest guitar fundamental (low E)
 const GUITAR_MAX_FREQUENCY = 1200;   // Hz – upper limit for fundamental detection
-const MIN_DB_THRESHOLD = -55;        // dB threshold for peak detection
+const MIN_DB_THRESHOLD = -65;        // dB threshold for peak detection
 const ATTACK_SETTLE_MS = 150;        // wait after strum onset before analyzing
 const LISTEN_TIMEOUT_MS = 8000;      // give up after 8 seconds of silence
 const ANALYSIS_FRAMES = 6;           // number of frames to average after strum
@@ -83,6 +83,7 @@ async function ensureMic() {
   audioCtx = new AudioContext();
   analyser = audioCtx.createAnalyser();
   analyser.fftSize = FFT_SIZE;
+  analyser.smoothingTimeConstant = 0; // no inter-frame smoothing – each frame is fresh
   audioCtx.createMediaStreamSource(stream).connect(analyser);
 }
 

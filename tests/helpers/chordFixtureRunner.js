@@ -12,7 +12,11 @@ import { filterHarmonicPeaks, identifyNotesFromPeaks, matchChordToTarget } from 
 const DEFAULT_FFT_SIZE = 16384;
 const GUITAR_MIN_HZ = 70;
 const GUITAR_MAX_HZ = 1200;
-const DEFAULT_DB_THRESHOLD = -70; // looser than production (-55) for quieter recordings
+// Note: test threshold is intentionally more permissive than production (-65 dB)
+// because the custom Hann-FFT here normalises differently from the Web Audio API
+// AnalyserNode (Blackman window + smoothingTimeConstant=0). Roughly -70 dB here ≈
+// -65 dB in the AnalyserNode for a typical guitar recording.
+const DEFAULT_DB_THRESHOLD = -70;
 
 // ── Radix-2 Cooley-Tukey FFT (in-place) ──────────────────────────────────────
 

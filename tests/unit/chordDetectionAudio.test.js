@@ -5,19 +5,50 @@
  * Uses computeDbSpectrum + detectPeaksFromSpectrum + matchChordToTarget pipeline.
  *
  * Fixture layout:
- *   tests/fixtures/chords/G-Dur/g_chord.wav   – real guitar G-Dur recording
- *   tests/fixtures/chords/C-Dur/synth.wav      – synthetic C-Dur chord
- *   tests/fixtures/chords/E-Dur/synth.wav      – synthetic E-Dur chord
+ *   tests/fixtures/chords/{ChordName}/*.wav  – any WAV → auto-discovered
+ *   tests/fixtures/chords/G-Dur/g_chord.wav  – real guitar G-Dur recording
+ *   tests/fixtures/chords/C-Dur/synth.wav    – synthetic C-Dur chord
+ *
+ * Auto-discovery: every WAV file inside a chord subfolder becomes a positive
+ * recognition test for that chord. Add a WAV → get a test. Empty folder → skip.
  */
 
 import { describe, it, expect } from 'vitest';
 import { join, dirname } from 'path';
+import { readdirSync, existsSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { readWavFile } from '../helpers/wavDecoder.js';
 import { detectChordFromSamples, sliceCenterWindow } from '../helpers/chordFixtureRunner.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const FIXTURES = join(__dirname, '../fixtures/chords');
+
+// ── Auto-discovery: positive recognition for every chord subfolder ────────────
+// Each subfolder name IS the chord name. Every *.wav inside → one test.
+
+const chordDirs = readdirSync(FIXTURES, { withFileTypes: true })
+  .filter(e => e.isDirectory())
+  .map(e => e.name);
+
+for (const chordName of chordDirs) {
+  const dir = join(FIXTURES, chordName);
+  const wavFiles = existsSync(dir)
+    ? readdirSync(dir).filter(f => f.endsWith('.wav'))
+    : [];
+
+  if (wavFiles.length === 0) continue; // skip empty folders (no recordings yet)
+
+  describe(`Auto: ${chordName} – ${wavFiles.length} Aufnahme(n)`, () => {
+    for (const wavFile of wavFiles) {
+      it(`erkennt ${chordName} aus ${wavFile}`, () => {
+        const { samples, sampleRate } = readWavFile(join(dir, wavFile));
+        const window = sliceCenterWindow(samples, 16384);
+        const result = detectChordFromSamples(window, sampleRate, chordName);
+        expect(result.isCorrect, `${wavFile}: erkannte Töne: [${result.detectedNotes?.map(n => n.note).join(', ')}], fehlend: [${result.missingNotes?.join(', ')}], extra: [${result.extraNotes?.join(', ')}]`).toBe(true);
+      });
+    }
+  });
+}
 
 // ── Iteration 1: G-Dur positive recognition from real recording ───────────────
 
