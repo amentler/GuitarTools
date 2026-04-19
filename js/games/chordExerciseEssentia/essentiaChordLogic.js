@@ -117,11 +117,30 @@ export function computeHpcpPureJS(peakFreqs, peakMags, referenceFrequency = 261.
 }
 
 /**
+ * Returns true when every active bin of subTemplate is also active in superTemplate.
+ * Used to detect when the best-matching chord is a pitch-class subset of the target,
+ * which indicates the recording contains all required notes (the cosine denominator
+ * effect just favours the smaller template).
+ */
+function isSubsetOf(subTemplate, superTemplate) {
+  for (let i = 0; i < 12; i++) {
+    if (subTemplate[i] > 0 && superTemplate[i] === 0) return false;
+  }
+  return true;
+}
+
+/**
  * Matches an HPCP vector against the target chord using cosine similarity.
  *
  * The result is "correct" when:
- *   - the target chord's cosine similarity ≥ threshold
- *   - no other chord scores more than (targetScore + epsilon) above the target
+ *   - the target chord's cosine similarity ≥ threshold, AND one of:
+ *     a) the target is the best match overall
+ *     b) the best match is within 0.05 of the target (ties / variants)
+ *     c) the best match is a pitch-class subset of the target — cosine similarity
+ *        systematically favours smaller templates (smaller L2 norm), so if the
+ *        top-scoring chord contains only notes that are also in the target, the
+ *        recording does contain all required notes and the target should be accepted
+ *        (e.g. Esus2 [E,B] ⊂ E-Dur [E,G#,B] when G# is present but weak).
  *
  * @param {ArrayLike<number>} hpcp           12-bin HPCP vector
  * @param {string}            targetChordName chord to match against
@@ -147,8 +166,11 @@ export function matchHpcpToChord(hpcp, targetChordName, templates, threshold = 0
     }
   }
 
-  // Correct if target is the best match (within 0.05 tolerance) and above threshold
-  const isCorrect = confidence >= threshold && (bestMatch === targetChordName || bestScore - confidence <= 0.05);
+  const isCorrect = confidence >= threshold && (
+    bestMatch === targetChordName ||
+    bestScore - confidence <= 0.05 ||
+    isSubsetOf(templates[bestMatch], targetTemplate)
+  );
 
   return { isCorrect, confidence, bestMatch, bestScore };
 }
