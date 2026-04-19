@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Gitarren-Stimmgerät - Gitarren-Lerntools</title>
+  <link rel="stylesheet" href="../../style.css" />
+</head>
+<body>
+  <section id="view-tuner" class="view active">
+    <gt-exercise-header title="Stimmgerät"></gt-exercise-header>
+
+    <div class="tuner-mode-toggle-container">
+      <div class="tuner-mode-toggle">
+        <button id="btn-mode-standard" class="btn-mode active">Standard</button>
+        <button id="btn-mode-chromatic" class="btn-mode">Chromatisch</button>
+      </div>
+    </div>
+
+    <p id="tuner-permission" class="tuner-permission" style="display:none"></p>
+
+    <div id="tuner-display" class="tuner-container"></div>
+
+    <div id="guided-tuner-section" class="guided-tuner-section">
+      <button id="btn-start-guided" class="btn-start-guided">Geführtes Stimmen starten</button>
+
+      <div id="guided-active" style="display:none">
+        <div class="guided-step-header">
+          <div class="guided-step-info">
+            Stimme die
+            <strong id="guided-step-label">6. Saite</strong>
+            auf
+            <strong id="guided-step-target" class="guided-target-note">E2</strong>
+          </div>
+          <div id="guided-step-progress" class="guided-step-progress"></div>
+        </div>
+        <div id="guided-feedback" class="guided-feedback"></div>
+        <div class="guided-actions">
+          <button id="btn-guided-next" class="btn-guided-next">Weiter →</button>
+          <button id="btn-guided-stop" class="btn-back">Beenden</button>
+        </div>
+      </div>
+
+      <div id="guided-finished" style="display:none" class="guided-finished">
+        <div class="guided-done-icon">🎸</div>
+        <p class="guided-done-text">Alle Saiten gestimmt!</p>
+        <div class="guided-actions">
+          <button id="btn-guided-restart" class="btn-guided-next">Nochmal stimmen</button>
+          <button id="btn-guided-done" class="btn-back">Fertig</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <script type="module">
+    import { createGuitarTunerExercise } from '../../js/tools/guitarTuner/guitarTuner.js';
+    import '../../js/components/index.js';
+
+    const tuner = createGuitarTunerExercise();
+    tuner.startExercise();
+  </script>
+</body>
+</html>

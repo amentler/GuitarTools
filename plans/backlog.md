@@ -1,69 +1,23 @@
 # GuitarTools – Backlog & Plans
 
-## Active Plan: Chord Exercise with Audio Recognition
+## Active Plan: Chord Exercise with Audio Recognition (Essentia Version)
 
-**Status:** ✅ Implemented (Phases 1–4 complete)  
+**Status:** ✅ Implemented (Old version removed, Essentia Beta active)  
 **Created:** 2026-04-12  
-**Completed:** 2026-04-17  
-**Goal:** Create a chord exercise where the tool tells the user which chord to play, the user plays it on guitar, and the tool recognizes whether the chord sounded correct.
+**Completed:** 2026-04-17 (Updated 2026-04-19)
+**Goal:** Create a chord exercise where the tool tells the user which chord to play, the user plays it on guitar, and the tool recognizes whether the chord sounded correct. The current version uses Essentia.js for HPCP-based recognition.
 
 ---
 
-## Overview
+## Overview (Historical - Old FFT Version Removed)
 
-This feature extends the existing akkordTrainer (which is purely visual/manual) with **microphone-based audio recognition**. The exercise will:
+The old version used simple FFT peak detection. It was replaced by `chordExerciseEssentia` which uses HPCP-based recognition for better accuracy.
 
-1. Display a target chord (e.g., "C-Dur")
-2. Listen via microphone while the user plays the chord
-3. Analyze the audio to detect whether the correct notes are sounding simultaneously
-4. Provide feedback (correct/wrong/which strings are incorrect)
+### Legacy Removal (2026-04-19)
+- `js/games/chordExercise/` deleted.
+- Shared logic moved to `js/utils/chordDetectionUtils.js`.
+- `chordExerciseEssentia` is now the primary chord recognition exercise.
 
----
-
-## Technical Approach
-
-### Core Challenge: Multi-Note (Chord) Detection
-
-The existing audio pipeline (`pitchLogic.js` → `tunerLogic.js` → `fastNoteMatcher.js`) is designed for **single-note detection** using YIN + HPS algorithms. Chords require detecting **multiple simultaneous fundamentals**.
-
-**Proposed Solution: Spectral Peak Analysis + Harmonic Validation**
-
-Instead of YIN (which finds one fundamental), we'll use:
-1. **FFT spectrum analysis** via `AnalyserNode.getFloatFrequencyData()` (already in use)
-2. **Peak detection** in the frequency domain to find multiple strong frequencies
-3. **Harmonic validation** to distinguish fundamentals from harmonics
-4. **Chord matching** against expected note combinations from `akkordLogic.js`
-
-### Architecture
-
-```
-┌─────────────────────────────────────────────────────────┐
-│  chordExercise.js (Game Controller)                     │
-│  - Start/stop exercise, DOM interaction                 │
-│  - Round management, scoring, feedback                  │
-│  - Uses <gt-fretboard> for chord visualization          │
-└────────────┬──────────────────────────────┬──────────────┘
-             │                              │
-             ▼                              ▼
-┌────────────────────────┐    ┌──────────────────────────────┐
-│ chordDetection.js      │    │ chordVisualization.js        │
-│ (Audio Pipeline)       │    │ (SVG chord diagrams)         │
-│ - Microphone input     │    │ - Show target chord shape    │
-│ - FFT analysis         │    │ - Show detected strings      │
-│ - Peak detection       │    │ - Color feedback (✓/✗)       │
-│ - Note identification  │    └──────────────────────────────┘
-│ - Chord matching       │
-└────────────┬───────────┘
-             │
-             ▼
-┌─────────────────────────────────────────┐
-│ chordDetectionLogic.js (Pure Functions) │
-│ - frequencyToNote (reuse from tuner)    │
-│ - detectChordNotes(freqPeaks)           │
-│ - matchChord(detectedNotes, targetChord)│
-│ - confidence scoring                    │
-└─────────────────────────────────────────┘
-```
 
 ---
 

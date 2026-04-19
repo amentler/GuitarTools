@@ -237,6 +237,20 @@ body {
   gap: 0.5rem;
 }
 
+.exercise-title-header {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--color-accent-alt);
+}
+
+.exercise-subheader {
+  display: flex;
+  gap: 0.5rem;
+  width: 100%;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
 .btn-back {
   background: transparent;
   border: 1px solid var(--color-border);
@@ -584,6 +598,13 @@ input[type="range"] {
   padding: 1.5rem;
   color: var(--color-text-muted);
   font-size: 0.95rem;
+}
+
+.tuner-mode-toggle-container {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  margin-bottom: 0.5rem;
 }
 
 .tuner-mode-toggle {

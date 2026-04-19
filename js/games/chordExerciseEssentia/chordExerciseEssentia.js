@@ -43,11 +43,11 @@ export function createChordExerciseEssentia() {
     ui = {
       chordName:    document.getElementById('ece-chord-name'),
       diagramEl:    document.getElementById('ece-chord-diagram'),
-      feedbackEl:   document.getElementById('ece-feedback'),
+      feedbackEl:   document.getElementById('feedback-text'),
       statusEl:     document.getElementById('ece-essentia-status'),
       listenBtn:    document.getElementById('btn-ece-listen'),
-      scoreCorrect: document.getElementById('ece-score-correct'),
-      scoreTotal:   document.getElementById('ece-score-total'),
+      scoreCorrect: document.getElementById('score-correct'),
+      scoreTotal:   document.getElementById('score-total'),
       view:         document.getElementById('view-chord-exercise-essentia'),
     };
   }

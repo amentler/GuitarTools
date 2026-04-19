@@ -17,8 +17,7 @@ import {
 import { renderChordDiagram } from '../akkordTrainer/akkordSVG.js';
 import { CHORDS } from '../../data/akkordData.js';
 import { GUITAR_MIN_RMS, analyzeInputLevel } from '../../tools/guitarTuner/pitchLogic.js';
-import { detectPeaksFromSpectrum } from '../chordExercise/chordDetection.js';
-import { identifyNotesFromPeaks } from '../chordExercise/chordDetectionLogic.js';
+import { detectPeaksFromSpectrum, identifyNotesFromPeaks } from '../../utils/chordDetectionUtils.js';
 import { getExpectedNoteClasses, matchDetectedNotes } from './akkordfolgenChordMatcher.js';
 
 // ── Constants ─────────────────────────────────────────────────────────────────

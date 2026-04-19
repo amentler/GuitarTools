@@ -1,63 +1,5 @@
-// App navigation – generic, zero hardcoded if/else chains.
-// Each exercise self-registers via registerExercise().
-// This module dynamically imports all exercises and wires buttons.
-
+// App - Main Menu Controller
 import './components/index.js';
-import { getExercise, getAllExercises } from './exerciseRegistry.js';
-
-// Dynamic imports – each module calls registerExercise() on load.
-// The keys match the view identifiers used in index.html and hash routes.
-const EXERCISE_MODULES = [
-  { key: 'fretboard',   path: './games/fretboardToneRecognition/fretboardExercise.js' },
-  { key: 'tuner',       path: './tools/guitarTuner/guitarTuner.js' },
-  { key: 'sheetMusic',  path: './games/sheetMusicReading/sheetMusicReading.js' },
-  { key: 'metronome',   path: './tools/metronome/metronome.js' },
-  { key: 'akkord',      path: './games/akkordTrainer/akkordTrainer.js' },
-  { key: 'tonFinder',   path: './games/tonFinder/tonFinder.js' },
-  { key: 'notePlaying',      path: './games/notePlayingExercise/notePlayingExercise.js' },
-  { key: 'sheetMic',         path: './games/sheetMusicMic/sheetMusicMicExercise.js' },
-  { key: 'akkordUebersicht', path: './tools/akkordUebersicht/akkordUebersicht.js' },
-  { key: 'chordExercise',          path: './games/chordExercise/chordExercise.js' },
-  { key: 'chordExerciseEssentia', path: './games/chordExerciseEssentia/chordExerciseEssentia.js' },
-  { key: 'akkordfolgenTrainer',    path: './games/akkordfolgenTrainer/akkordfolgenTrainer.js' },
-];
-
-const views = {
-  menu: document.getElementById('view-menu'),
-};
-
-let currentKey = 'menu';
-const supportsHistory = typeof window !== 'undefined' && !!window.history;
-
-function showView(key) {
-  // Hide all views
-  for (const el of Object.values(views)) {
-    el.classList.remove('active');
-  }
-  // Show target
-  const viewEl = key === 'menu'
-    ? views.menu
-    : views[getExercise(key)?.viewId];
-  if (viewEl) viewEl.classList.add('active');
-}
-
-async function navigateTo(key, { fromHistory = false } = {}) {
-  // Stop whatever is running
-  getExercise(currentKey)?.stop();
-
-  currentKey = key;
-  showView(key);
-
-  // Start the new exercise
-  getExercise(key)?.start();
-
-  if (!fromHistory && supportsHistory) {
-    const hash = `#${key}`;
-    const state = { view: key };
-    if (key === 'menu') window.history.replaceState(state, '', hash);
-    else window.history.pushState(state, '', hash);
-  }
-}
 
 async function loadVersionInfo() {
   const versionEl = document.getElementById('app-version');
@@ -73,34 +15,10 @@ async function loadVersionInfo() {
 
 // ── Initialization ───────────────────────────────────────────────────────────
 
-// Wait for all exercise modules to load before initializing the app
-const moduleLoads = EXERCISE_MODULES.map(m => import(m.path));
-await Promise.all(moduleLoads);
-
-// Now that all modules are loaded and have registered themselves:
-// 1. Build views map
-for (const [, meta] of getAllExercises()) {
-  const el = document.getElementById(meta.viewId);
-  if (el) views[meta.viewId] = el;
-}
-
-// 2. Wire up buttons
-for (const [key, meta] of getAllExercises()) {
-  const startBtn = document.getElementById(meta.btnStartId);
-  const backBtn  = document.getElementById(meta.btnBackId);
-
-  if (startBtn) startBtn.addEventListener('click', () => navigateTo(key));
-  if (backBtn)  backBtn.addEventListener('click', () => navigateTo('menu'));
-}
-
-// 3. Initialize history and version info
 loadVersionInfo();
-if (supportsHistory) {
-  window.history.replaceState({ view: 'menu' }, '', '#menu');
-  window.addEventListener('popstate', (event) => {
-    const view = event?.state?.view;
-    if (view && getExercise(view)) navigateTo(view, { fromHistory: true });
-    else navigateTo('menu', { fromHistory: true });
-  });
+
+// Ensure menu is visible
+const menuView = document.getElementById('view-menu');
+if (menuView) {
+  menuView.classList.add('active');
 }
-showView('menu');

@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ton spielen - Gitarren-Lerntools</title>
+  <link rel="stylesheet" href="../../style.css" />
+</head>
+<body>
+  <section id="view-note-play" class="view active">
+    <gt-exercise-header title="Ton spielen" score-type="simple"></gt-exercise-header>
+
+    <p id="note-play-permission" class="tuner-permission" style="display:none"></p>
+
+    <div class="note-play-display">
+      <p class="question-prompt">Spiele diesen Ton:</p>
+
+      <!-- Target note in sheet music -->
+      <div id="note-play-notation" class="note-play-notation"></div>
+
+      <!-- Hint 1: note name (hidden until requested) -->
+      <p id="note-play-target" class="note-play-target-note" style="visibility:hidden">–</p>
+
+      <!-- Hint 2: tab (hidden until requested) -->
+      <div id="note-play-tab" class="note-play-tab" style="display:none"></div>
+
+      <!-- Hint buttons -->
+      <div class="note-play-hints">
+        <button id="note-play-hint1" class="btn-hint">Hilfe 1: Notenname</button>
+        <button id="note-play-hint2" class="btn-hint">Hilfe 2: Tabs</button>
+      </div>
+
+      <!-- Detected note in sheet music -->
+      <div class="note-play-detected-label">Gehört:</div>
+      <div id="note-play-detected" class="note-play-detected-notation"></div>
+
+      <p id="note-play-feedback" class="feedback-text"></p>
+    </div>
+
+    <div class="settings-panel">
+      <div class="settings-row">
+        <label for="note-play-fret-slider" class="settings-label">
+          Bünde: <span id="note-play-fret-label">0 – 5</span>
+        </label>
+        <input type="range" id="note-play-fret-slider" min="0" max="15" value="5" />
+      </div>
+      <div class="settings-row">
+        <span class="settings-label">Saiten:</span>
+        <div id="note-play-string-toggles" class="string-toggles">
+          <button class="btn-string active" data-string="0">E2</button>
+          <button class="btn-string active" data-string="1">A2</button>
+          <button class="btn-string active" data-string="2">D3</button>
+          <button class="btn-string active" data-string="3">G3</button>
+          <button class="btn-string active" data-string="4">B3</button>
+          <button class="btn-string active" data-string="5">E4</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <script type="module">
+    import { createNotePlayingExercise } from '../../js/games/notePlayingExercise/notePlayingExercise.js';
+    import '../../js/components/index.js';
+
+    const exercise = createNotePlayingExercise();
+    exercise.startExercise();
+  </script>
+</body>
+</html>

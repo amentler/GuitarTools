@@ -46,15 +46,17 @@ Location: `js/components/fretboard/gt-fretboard.js`
 
 **Phase rollout:**
 - ✅ Phase 1: `tonFinder` migrated to `<gt-fretboard>`
-- ⬜ Phase 2: `fretboardToneRecognition` migration
-- ⬜ Phase 3: Shared controls extraction
+- ✅ Phase 2: `chordExercise` (old FFT version) removed in favor of `chordExerciseEssentia`
+- ⬜ Phase 3: `fretboardToneRecognition` migration
+- ⬜ Phase 4: Shared controls extraction
 
 ## Current Modules
 
-- Game modules: `js/games/tonFinder/`, `js/games/fretboardToneRecognition/`, `js/games/akkordTrainer/`, `js/games/sheetMusicReading/`, `js/games/notePlayingExercise/`, `js/games/sheetMusicMic/`
+- Game modules: `js/games/tonFinder/`, `js/games/fretboardToneRecognition/`, `js/games/akkordTrainer/`, `js/games/sheetMusicReading/`, `js/games/notePlayingExercise/`, `js/games/sheetMusicMic/`, `js/games/chordExerciseEssentia/`, `js/games/akkordfolgenTrainer/`
 - Tool modules: `js/tools/guitarTuner/`, `js/tools/metronome/`
 - UI components: `js/components/fretboard/` (`gt-fretboard.js`, `gt-fretboard-render.js`)
-- Logic modules with tests: `fretboardLogic`, `tunerLogic`, `tonFinderLogic`, `akkordLogic`, `sheetMusicLogic` (incl. `getFilteredNotes` for fret/string selection), `metronomeLogic`, `notePlayingLogic`
+- Logic modules with tests: `fretboardLogic`, `tunerLogic`, `tonFinderLogic`, `akkordLogic`, `sheetMusicLogic`, `metronomeLogic`, `notePlayingLogic`, `essentiaChordLogic`
+- Shared utilities: `js/utils/chordDetectionUtils.js` (shared by `akkordfolgenTrainer` and `chordExerciseEssentia`)
 
 ## Guitar Tuner Detection Status
 

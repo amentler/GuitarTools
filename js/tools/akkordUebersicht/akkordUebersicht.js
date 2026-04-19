@@ -85,12 +85,12 @@ function initFilters() {
   initialized = true;
 }
 
-function startExercise() {
+export function startExercise() {
   initFilters();
   renderGrid();
 }
 
-function stopExercise() {}
+export function stopExercise() {}
 
 registerExercise('akkordUebersicht', {
   viewId:     'view-akkord-uebersicht',

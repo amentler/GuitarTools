@@ -51,8 +51,8 @@ export function createNotePlayingExercise() {
       hint1Btn:        document.getElementById('note-play-hint1'),
       hint2Btn:        document.getElementById('note-play-hint2'),
       detectedNote:    document.getElementById('note-play-detected'),
-      feedback:        document.getElementById('note-play-feedback'),
-      score:           document.getElementById('note-play-score'),
+      feedback:        document.getElementById('feedback-text'),
+      score:           document.getElementById('score-value'),
       slider:          document.getElementById('note-play-fret-slider'),
       sliderLabel:     document.getElementById('note-play-fret-label'),
     };
