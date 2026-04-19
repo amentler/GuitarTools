@@ -69,6 +69,12 @@
           <span class="card-title">Akkord spielen</span>
         </button>
 
+        <button id="btn-start-chord-exercise-essentia" class="exercise-card">
+          <div class="card-icon">🎸</div>
+          <span class="card-title">Akkord spielen</span>
+          <span class="card-subtitle">Essentia (Beta)</span>
+        </button>
+
         <button id="btn-start-akkordfolgen-trainer" class="exercise-card">
           <div class="card-icon">🎵</div>
           <span class="card-title">Akkordfolgen-Trainer</span>
@@ -610,6 +616,53 @@
             </label>
             <label class="checkbox-label">
               <input type="checkbox" id="ce-cat-sus-add"> Sus &amp; Add
+            </label>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <!-- AKKORD SPIELEN – ESSENTIA (HPCP-based recognition)                     -->
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <section id="view-chord-exercise-essentia" class="view">
+
+    <div class="exercise-header">
+      <button id="btn-back-chord-exercise-essentia" class="btn-back">← Zurück zum Menü</button>
+      <div class="score-display">
+        Richtig: <span id="ece-score-correct">0</span> von <span id="ece-score-total">0</span>
+      </div>
+    </div>
+
+    <div class="chord-trainer-container">
+      <h2 id="ece-chord-name" class="chord-title-display">C-Dur</h2>
+
+      <div id="ece-chord-diagram" class="chord-diagram-container"></div>
+
+      <p id="ece-essentia-status" class="ece-status"></p>
+      <p id="ece-feedback" class="feedback-text"></p>
+
+      <div class="chord-controls">
+        <button id="btn-ece-listen" class="btn-start">🎤 Hören</button>
+      </div>
+
+      <div class="settings-panel">
+        <div class="settings-row-vertical">
+          <span class="settings-label">Akkord-Kategorien:</span>
+          <div class="category-checkboxes">
+            <label class="checkbox-label">
+              <input type="checkbox" id="ece-cat-simplified" checked> Einsteiger (vereinfacht)
+            </label>
+            <label class="checkbox-label">
+              <input type="checkbox" id="ece-cat-standard"> Standard (CAGED)
+            </label>
+            <label class="checkbox-label">
+              <input type="checkbox" id="ece-cat-extended"> Weiterführend (7er, F)
+            </label>
+            <label class="checkbox-label">
+              <input type="checkbox" id="ece-cat-sus-add"> Sus &amp; Add
             </label>
           </div>
         </div>
