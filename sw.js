@@ -1,7 +1,7 @@
 // GuitarTools Service Worker
 // Exception: essentia.js WASM files use cache-first (large binaries, pre-cached).
 
-const CACHE_VERSION = 'v4';
+const CACHE_VERSION = 'v5';
 const CACHE_NAME = `guitartools-static-${CACHE_VERSION}`;
 
 // Relative paths (no leading /) so they resolve correctly regardless of the
@@ -10,6 +10,17 @@ const PRECACHE_URLS = [
   'js/lib/essentia/essentia-wasm.web.js',
   'js/lib/essentia/essentia-wasm.web.wasm',
   'js/lib/essentia/essentia.js-core.umd.js',
+  'pages/exercises/ton-finder.html',
+  'pages/exercises/fretboard-tone-recognition.html',
+  'pages/exercises/sheet-music-reading.html',
+  'pages/exercises/akkord-trainer.html',
+  'pages/exercises/note-playing.html',
+  'pages/exercises/sheet-music-mic.html',
+  'pages/exercises/chord-playing-essentia.html',
+  'pages/exercises/akkordfolgen-trainer.html',
+  'pages/tools/guitar-tuner.html',
+  'pages/tools/metronome.html',
+  'pages/tools/akkord-uebersicht.html',
 ];
 
 self.addEventListener('install', event => {
