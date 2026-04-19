@@ -52,12 +52,12 @@ export function createSheetMusicMicExercise() {
   function resolveUI() {
     ui = {
       permission:   document.getElementById('sheet-mic-permission'),
-      scoreEl:      document.getElementById('sheet-mic-score'),
+      scoreEl:      document.getElementById('score-value'),
       container:    document.getElementById('sheet-mic-score-container'),
       startBtn:     document.getElementById('sheet-mic-start-btn'),
       stopBtn:      document.getElementById('sheet-mic-stop-btn'),
       newBarsBtn:   document.getElementById('sheet-mic-new-bars'),
-      feedback:     document.getElementById('sheet-mic-feedback'),
+      feedback:     document.getElementById('feedback-text'),
       currentNote:  document.getElementById('sheet-mic-current-note'),
       modeSelect:   document.getElementById('sheet-mic-mode'),
       slider:       document.getElementById('sheet-mic-fret-slider'),

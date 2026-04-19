@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Noten spielen - Gitarren-Lerntools</title>
+  <link rel="stylesheet" href="../../style.css" />
+</head>
+<body>
+  <section id="view-sheet-mic" class="view active">
+    <gt-exercise-header title="Noten spielen" score-type="simple"></gt-exercise-header>
+
+    <p id="sheet-mic-permission" class="tuner-permission" style="display:none"></p>
+
+    <!-- Sheet-music score container -->
+    <div id="sheet-mic-score-container" class="score-container"></div>
+
+    <!-- Current note indicator + feedback -->
+    <div class="sheet-mic-status">
+      <span class="sheet-mic-label">Aktuell:</span>
+      <span id="sheet-mic-current-note" class="sheet-mic-current-note">–</span>
+      <span id="sheet-mic-feedback" class="feedback-text"></span>
+    </div>
+
+    <!-- Start / Stop listening buttons -->
+    <div class="sheet-mic-controls">
+      <button id="sheet-mic-start-btn" class="btn-start-toggle">🎙️ Hören starten</button>
+      <button id="sheet-mic-stop-btn"  class="btn-start-toggle btn-stop" style="display:none">⏹ Stopp</button>
+      <button id="sheet-mic-new-bars"  class="btn-new-bars">Neue Noten</button>
+    </div>
+
+    <!-- Settings -->
+    <div class="settings-panel">
+      <div class="settings-row">
+        <label class="settings-label">Modus:</label>
+        <select id="sheet-mic-mode" class="metronome-select">
+          <option value="easy">Einfach</option>
+          <option value="hard">Schwer</option>
+        </select>
+      </div>
+
+      <div class="settings-row">
+        <label for="sheet-mic-fret-slider" class="settings-label">
+          Bünde: <span id="sheet-mic-fret-label">0 – 3</span>
+        </label>
+        <input type="range" id="sheet-mic-fret-slider" min="0" max="3" value="3" />
+      </div>
+
+      <div class="settings-row">
+        <span class="settings-label">Saiten:</span>
+        <div id="sheet-mic-string-toggles" class="string-toggles">
+          <button class="btn-string active" data-string="0">E2</button>
+          <button class="btn-string active" data-string="1">A2</button>
+          <button class="btn-string active" data-string="2">D3</button>
+          <button class="btn-string active" data-string="3">G3</button>
+          <button class="btn-string active" data-string="4">B3</button>
+          <button class="btn-string active" data-string="5">E4</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <script type="module">
+    import { createSheetMusicMicExercise } from '../../js/games/sheetMusicMic/sheetMusicMicExercise.js';
+    import '../../js/components/index.js';
+
+    const exercise = createSheetMusicMicExercise();
+    exercise.startExercise();
+  </script>
+</body>
+</html>
