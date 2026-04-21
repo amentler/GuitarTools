@@ -40,7 +40,6 @@ import {
   frequencyToNote,
   noteToFrequency,
   GUITAR_MIN_FREQUENCY,
-  GUITAR_MIN_RMS,
 } from '../../tools/guitarTuner/tunerLogic.js';
 
 // ── Public constants ──────────────────────────────────────────────────────────
@@ -53,6 +52,12 @@ export const FAST_REJECT_STREAK = 3;
 
 /** Half-width of the acceptance window in cents (±FAST_CENTS_TOLERANCE). */
 export const FAST_CENTS_TOLERANCE = 35;
+
+/**
+ * Lower RMS gate for exercise-mode detection.
+ * Exercises should accept softer plucks than the tuner's default gate.
+ */
+export const FAST_MIN_RMS = 0.005;
 
 // ── Pitch-string parsing ──────────────────────────────────────────────────────
 
@@ -141,7 +146,7 @@ export function getRecommendedFftSize(_targetPitch, sampleRate = 44100) {
  */
 export function classifyFrame(samples, sampleRate, targetPitch, options = {}) {
   const tolerateCents = options.tolerateCents ?? FAST_CENTS_TOLERANCE;
-  const minRms        = options.minRms ?? GUITAR_MIN_RMS;
+  const minRms        = options.minRms ?? FAST_MIN_RMS;
 
   const { name: targetName, octave: targetOctave } = parsePitch(targetPitch);
   const targetHz = noteToFrequency(targetName, targetOctave);
