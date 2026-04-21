@@ -15,6 +15,7 @@ export class MetronomeLogic {
     this.nextNoteTime = 0.0; // When the next note is due
     this.timerID = null;
     this.onBeat = null; // Callback for UI updates
+    this.onBeatAdvanceSeconds = 0; // Positive value fires UI callback slightly before audio tick
   }
 
   init() {
@@ -55,7 +56,8 @@ export class MetronomeLogic {
     // Trigger UI update callback
     if (this.onBeat) {
       // Use setTimeout to sync with audio as closely as possible
-      const delay = (time - this.audioContext.currentTime) * 1000;
+      const rawDelay = (time - this.audioContext.currentTime - this.onBeatAdvanceSeconds) * 1000;
+      const delay = Math.max(0, rawDelay);
       setTimeout(() => {
         if (this.isPlaying && this.onBeat) {
           this.onBeat(beatNumber);
@@ -98,5 +100,9 @@ export class MetronomeLogic {
 
   setBeatsPerMeasure(beats) {
     this.beatsPerMeasure = beats;
+  }
+
+  setOnBeatAdvanceSeconds(seconds) {
+    this.onBeatAdvanceSeconds = Math.max(0, Number(seconds) || 0);
   }
 }

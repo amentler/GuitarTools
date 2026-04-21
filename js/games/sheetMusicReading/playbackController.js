@@ -18,6 +18,8 @@ import { MetronomeLogic } from '../../tools/metronome/metronomeLogic.js';
 export class PlaybackController {
   constructor() {
     this._metronome = new MetronomeLogic();
+    // Keep playback cursor visually a touch ahead of the click for easier reading.
+    this._metronome.setOnBeatAdvanceSeconds(0.1);
     this._beatsPerBar = 4;
     this._totalBeats = 0;
     this._globalBeat = -1;
