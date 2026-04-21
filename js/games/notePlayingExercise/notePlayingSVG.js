@@ -2,6 +2,11 @@
 // Renders a single note on a treble clef staff (VexFlow) and tab positions (custom SVG).
 
 import { Renderer, Stave, StaveNote, Voice, Formatter, Accidental } from 'https://cdn.jsdelivr.net/npm/vexflow@4.2.2/+esm';
+import {
+  NOTE_STAFF_VIEW_WIDTH,
+  NOTE_STAFF_VIEW_HEIGHT,
+  NOTE_STAFF_Y,
+} from './notePlayingLayoutMetrics.js';
 
 // ── Octave-aware pitch → VexFlow key ──────────────────────────────────────────
 
@@ -36,10 +41,10 @@ function toGuitarWrittenPitch(pitch) {
   return `${noteName}${octave + 1}`;
 }
 
-const VW = 220;
-const VH = 185;
+const VW = NOTE_STAFF_VIEW_WIDTH;
+const VH = NOTE_STAFF_VIEW_HEIGHT;
 // Slightly higher staff baseline prevents clipping of very low ledger-line notes.
-const STAVE_Y = 46;
+const STAVE_Y = NOTE_STAFF_Y;
 const STAVE_W = 180;
 
 /**
