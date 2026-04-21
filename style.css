@@ -1098,6 +1098,7 @@ input[type="range"] {
   display: flex;
   align-items: center;
   justify-content: center;
+  margin-bottom: -0.08rem;
 }
 
 .note-play-hints {
@@ -1106,6 +1107,7 @@ input[type="range"] {
   gap: 0.35rem;
   width: 100%;
   max-width: 332px;
+  margin-top: -0.1rem;
 }
 
 .note-play-hints .btn-hint,
@@ -1140,13 +1142,15 @@ input[type="range"] {
 .note-play-tab {
   width: 100%;
   max-width: 280px;
+  margin-bottom: -0.1rem;
 }
 
 .note-play-detected-label {
   font-size: 0.78rem;
   color: var(--color-text-muted);
   text-align: center;
-  margin-top: 0.05rem;
+  margin-top: -0.03rem;
+  margin-bottom: -0.08rem;
 }
 
 .note-play-detected-notation {

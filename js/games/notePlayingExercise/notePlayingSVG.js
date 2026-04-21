@@ -38,7 +38,8 @@ function toGuitarWrittenPitch(pitch) {
 
 const VW = 220;
 const VH = 185;
-const STAVE_Y = 50;
+// Slightly higher staff baseline prevents clipping of very low ledger-line notes.
+const STAVE_Y = 46;
 const STAVE_W = 180;
 
 /**
