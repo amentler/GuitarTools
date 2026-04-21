@@ -20,7 +20,7 @@ As an AI agent working on this project, you MUST adhere to the following rules:
 - **Testing:** Run `npm test` to execute unit tests. Run `npm run lint` for ESLint checks. Add tests in `tests/unit/` for any logic in `*Logic.js` files.
 - **Pre-Commit Mandate:** You MUST run `npm run lint` and `npm test` BEFORE committing any changes; if lint reports errors, fix them before committing. Committing code with failing tests is strictly prohibited.
 - **Note-Recognition Fix:** Fixed ID mismatches for feedback elements in `sheetMusicMic`, `notePlaying`, and `akkordTrainer`. Added `audioCtx.resume()` to all audio-based exercises to ensure compatibility with standalone page loads.
-- **Unit-Test Scope (current):** `fretboardLogic`, `tunerLogic`, `tonFinderLogic`, `akkordLogic`, `sheetMusicLogic`, `metronomeLogic`, `notePlayingLogic`, `appNavigationHistory`, `exerciseHeader` (675 passing tests)
+- **Unit-Test Scope (current):** `fretboardLogic`, `tunerLogic`, `tonFinderLogic`, `akkordLogic`, `sheetMusicLogic`, `metronomeLogic`, `notePlayingLogic`, `appNavigationHistory`, `exerciseHeader`, `sheetMusicMicIntegration` (677 passing tests)
 
 ## 3. Workflow
 - **Research -> Strategy -> Execution -> Validation**
