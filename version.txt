@@ -1,1 +1,1 @@
-Version 2026-04-21 22:28 UTC | notenlesen: playback bar 0.1s vorlauf
+Version 2026-04-21 22:49 UTC | menu labels and icons update
