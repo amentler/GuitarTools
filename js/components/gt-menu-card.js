@@ -6,35 +6,35 @@ class GtMenuCard extends HTMLElement {
   getIconMarkup(icon) {
     if (icon === 'triad-c-major') {
       return `
-        <svg viewBox="0 0 44 32" aria-hidden="true" focusable="false">
-          <g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 44 32" aria-hidden="true" focusable="false">
+          <g fill="none" stroke="#5a4a3a" stroke-width="1.6" stroke-linecap="round">
             <line x1="3" y1="7"  x2="41" y2="7"></line>
             <line x1="3" y1="11" x2="41" y2="11"></line>
             <line x1="3" y1="15" x2="41" y2="15"></line>
             <line x1="3" y1="19" x2="41" y2="19"></line>
             <line x1="3" y1="23" x2="41" y2="23"></line>
           </g>
-          <g fill="currentColor">
+          <g fill="#1f1f1f">
             <ellipse cx="19" cy="23" rx="3.5" ry="2.7"></ellipse>
             <ellipse cx="19" cy="19" rx="3.5" ry="2.7"></ellipse>
             <ellipse cx="19" cy="15" rx="3.5" ry="2.7"></ellipse>
           </g>
-          <line x1="22.5" y1="15" x2="22.5" y2="6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"></line>
+          <line x1="22.5" y1="15" x2="22.5" y2="6" stroke="#1f1f1f" stroke-width="1.6" stroke-linecap="round"></line>
         </svg>
       `;
     }
 
     if (icon === 'triad-double') {
       return `
-        <svg viewBox="0 0 44 32" aria-hidden="true" focusable="false">
-          <g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 44 32" aria-hidden="true" focusable="false">
+          <g fill="none" stroke="#5a4a3a" stroke-width="1.6" stroke-linecap="round">
             <line x1="3" y1="7"  x2="41" y2="7"></line>
             <line x1="3" y1="11" x2="41" y2="11"></line>
             <line x1="3" y1="15" x2="41" y2="15"></line>
             <line x1="3" y1="19" x2="41" y2="19"></line>
             <line x1="3" y1="23" x2="41" y2="23"></line>
           </g>
-          <g fill="currentColor">
+          <g fill="#1f1f1f">
             <ellipse cx="14" cy="21" rx="3.1" ry="2.4"></ellipse>
             <ellipse cx="14" cy="17" rx="3.1" ry="2.4"></ellipse>
             <ellipse cx="14" cy="13" rx="3.1" ry="2.4"></ellipse>
@@ -42,7 +42,7 @@ class GtMenuCard extends HTMLElement {
             <ellipse cx="30" cy="19" rx="3.1" ry="2.4"></ellipse>
             <ellipse cx="30" cy="15" rx="3.1" ry="2.4"></ellipse>
           </g>
-          <g stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
+          <g stroke="#1f1f1f" stroke-width="1.6" stroke-linecap="round">
             <line x1="17" y1="13" x2="17" y2="6"></line>
             <line x1="33" y1="15" x2="33" y2="8"></line>
           </g>
@@ -52,15 +52,15 @@ class GtMenuCard extends HTMLElement {
 
     if (icon === 'triad-triple') {
       return `
-        <svg viewBox="0 0 44 32" aria-hidden="true" focusable="false">
-          <g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 44 32" aria-hidden="true" focusable="false">
+          <g fill="none" stroke="#5a4a3a" stroke-width="1.5" stroke-linecap="round">
             <line x1="3" y1="7"  x2="41" y2="7"></line>
             <line x1="3" y1="11" x2="41" y2="11"></line>
             <line x1="3" y1="15" x2="41" y2="15"></line>
             <line x1="3" y1="19" x2="41" y2="19"></line>
             <line x1="3" y1="23" x2="41" y2="23"></line>
           </g>
-          <g fill="currentColor">
+          <g fill="#1f1f1f">
             <ellipse cx="10" cy="21" rx="2.6" ry="2.1"></ellipse>
             <ellipse cx="10" cy="17" rx="2.6" ry="2.1"></ellipse>
             <ellipse cx="10" cy="13" rx="2.6" ry="2.1"></ellipse>
@@ -71,11 +71,22 @@ class GtMenuCard extends HTMLElement {
             <ellipse cx="34" cy="19" rx="2.6" ry="2.1"></ellipse>
             <ellipse cx="34" cy="15" rx="2.6" ry="2.1"></ellipse>
           </g>
-          <g stroke="currentColor" stroke-width="1.4" stroke-linecap="round">
+          <g stroke="#1f1f1f" stroke-width="1.4" stroke-linecap="round">
             <line x1="12.5" y1="13" x2="12.5" y2="7"></line>
             <line x1="24.5" y1="14" x2="24.5" y2="8"></line>
             <line x1="36.5" y1="15" x2="36.5" y2="9"></line>
           </g>
+        </svg>
+      `;
+    }
+
+    if (icon === 'tuner-needle') {
+      return `
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 44 32" aria-hidden="true" focusable="false">
+          <path d="M7 24a15 15 0 0 1 30 0" fill="none" stroke="#5a4a3a" stroke-width="2" stroke-linecap="round"></path>
+          <line x1="22" y1="24" x2="31" y2="13" stroke="#ff6b35" stroke-width="2.1" stroke-linecap="round"></line>
+          <circle cx="22" cy="24" r="2.7" fill="#1f1f1f"></circle>
+          <path d="M19 8h6" stroke="#5a4a3a" stroke-width="1.4" stroke-linecap="round"></path>
         </svg>
       `;
     }
