@@ -94,14 +94,31 @@
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js', { updateViaCache: 'none' });
+        navigator.serviceWorker.register('./sw.js', { updateViaCache: 'none' })
+          .then(registration => {
+            // Trigger update checks while the page is open.
+            const UPDATE_CHECK_INTERVAL_MS = 30 * 60 * 1000;
+            const tryUpdate = async () => {
+              try { await registration.update(); } catch (e) { console.warn('SW update check failed:', e); }
+            };
+
+            tryUpdate();
+            setInterval(tryUpdate, UPDATE_CHECK_INTERVAL_MS);
+
+            // Also re-check when the tab becomes visible again.
+            document.addEventListener('visibilitychange', () => {
+              if (document.visibilityState === 'visible') {
+                tryUpdate();
+              }
+            });
+          })
+          .catch(err => console.warn('SW registration failed:', err));
       });
     }
 
     // Hard refresh: update SW, clear all caches, reload with cache-buster.
     // The SW is intentionally NOT unregistered — it must stay active so that
-    // on reload it can intercept all asset requests and bypass the browser
-    // HTTP cache (via cache:'no-cache' in sw.js), guaranteeing fresh content.
+    // on reload it can intercept all asset requests and rebuild fresh caches.
     async function forceAppReload() {
       try {
         const registrations = await navigator.serviceWorker.getRegistrations();
