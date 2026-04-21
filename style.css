@@ -1058,7 +1058,7 @@ input[type="range"] {
 /* === Note Playing Exercise === */
 #view-note-play {
   padding: 0.75rem 1rem 1rem;
-  gap: 1rem;
+  gap: 0.85rem;
   max-width: 460px;
   width: 100%;
   margin: 0 auto;
@@ -1068,32 +1068,33 @@ input[type="range"] {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.55rem;
+  gap: 0.45rem;
   width: 100%;
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
-  padding: 1.1rem 0.9rem 0.8rem;
+  padding: 0.95rem 0.85rem 0.65rem;
 }
 
 .note-play-display .question-prompt {
+  font-size: 0.95rem;
   margin-top: -0.1rem;
-  margin-bottom: 0.1rem;
+  margin-bottom: 0;
 }
 
 .note-play-notation {
   width: 100%;
   /* Keep enough headroom/footroom for high/low notes while reducing overall height. */
-  max-width: 228px;
+  max-width: 216px;
 }
 
 .note-play-target-note {
-  font-size: 2.2rem;
+  font-size: 2.05rem;
   font-weight: 800;
   color: var(--color-accent-alt);
   line-height: 1;
   text-align: center;
-  min-height: 2.35rem;
+  min-height: 2.1rem;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1145,17 +1146,17 @@ input[type="range"] {
   font-size: 0.8rem;
   color: var(--color-text-muted);
   text-align: center;
-  margin-top: 0.2rem;
+  margin-top: 0.1rem;
 }
 
 .note-play-detected-notation {
   width: 100%;
-  max-width: 172px;
+  max-width: 165px;
   opacity: 0.65;
 }
 
 #note-play-feedback {
-  min-height: 1rem;
+  min-height: 0.9rem;
 }
 
 /* === Sheet-Music-Mic Exercise === */
