@@ -6,14 +6,11 @@
 //   'wrong'   → red
 
 import { Renderer, Stave, StaveNote, Voice, Formatter } from 'https://cdn.jsdelivr.net/npm/vexflow@4.2.2/+esm';
+import { computeSheetMicLayout, SHEET_MIC_REST_BAR_W } from './sheetMusicMicLayout.js';
 
 // Fixed virtual canvas – same dimensions as sheetMusicSVG for visual consistency.
-const VW           = 640;
 const VH           = 240;
 const STAVE_Y      = 80;
-const FIRST_BAR_RATIO = 0.40;
-const FIRST_BAR_W  = Math.round(VW * FIRST_BAR_RATIO);
-const REST_BAR_W   = Math.floor((VW - FIRST_BAR_W) / 3);
 
 const STATUS_COLORS = {
   correct: '#2ecc71',
@@ -33,8 +30,17 @@ export function renderScoreWithStatus(container, bars) {
   notationDiv.className = 'notation-wrapper';
   container.appendChild(notationDiv);
 
+  // Same width normalisation strategy as in sheetMusicReading/sheetMusicSVG:
+  // measure clef+time-signature width and equalise bar-0 note area to bars 1..N.
+  const probeBar0 = new Stave(0, 0, 9999).addClef('treble').addTimeSignature('4/4');
+  const probeBar1 = new Stave(0, 0, 9999);
+  const tsw       = probeBar0.getNoteStartX();
+  const marginW   = probeBar1.getNoteStartX();
+  const { firstBarW, actualVW, uniformNoteArea } =
+    computeSheetMicLayout(bars.length, tsw, marginW, SHEET_MIC_REST_BAR_W);
+
   const renderer = new Renderer(notationDiv, Renderer.Backends.SVG);
-  renderer.resize(VW, VH);
+  renderer.resize(actualVW, VH);
   const ctx = renderer.getContext();
 
   const style = getComputedStyle(document.documentElement);
@@ -47,7 +53,7 @@ export function renderScoreWithStatus(container, bars) {
   let x = 0;
 
   for (let bi = 0; bi < bars.length; bi++) {
-    const w     = bi === 0 ? FIRST_BAR_W : REST_BAR_W;
+    const w     = bi === 0 ? firstBarW : SHEET_MIC_REST_BAR_W;
     const stave = new Stave(x, STAVE_Y, w);
 
     if (bi === 0) stave.addClef('treble').addTimeSignature('4/4');
@@ -82,15 +88,14 @@ export function renderScoreWithStatus(container, bars) {
     try { voice.setMode(Voice.Mode.SOFT); } catch { /* VexFlow version compatibility */ }
     voice.addTickables(notes);
 
-    const noteAreaW = stave.getX() + stave.getWidth() - stave.getNoteStartX();
-    new Formatter().joinVoices([voice]).format([voice], noteAreaW * 0.90);
+    new Formatter().joinVoices([voice]).format([voice], uniformNoteArea * 0.90);
     voice.draw(ctx, stave);
   }
 
   // ── Make SVG responsive ────────────────────────────────────────────────
   const vfSvg = notationDiv.querySelector('svg');
   if (vfSvg) {
-    vfSvg.setAttribute('viewBox', `0 0 ${VW} ${VH}`);
+    vfSvg.setAttribute('viewBox', `0 0 ${actualVW} ${VH}`);
     vfSvg.setAttribute('width', '100%');
     vfSvg.setAttribute('height', 'auto');
     vfSvg.style.width   = '100%';
