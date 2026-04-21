@@ -28,6 +28,18 @@ function extractCssNumber(css, selector, prop) {
 }
 
 describe('Note Playing layout spacing', () => {
+  it('keeps enough notation footroom for low notes like E2', () => {
+    const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
+    const css = fs.readFileSync(path.join(root, 'style.css'), 'utf8');
+
+    const notationWidth = extractCssNumber(css, '.note-play-notation', 'max-width');
+    const lowerStaffLineY = NOTE_STAFF_Y + 40;
+    const pxBelowStaffInNotation = notationWidth * (NOTE_STAFF_VIEW_HEIGHT - lowerStaffLineY) / NOTE_STAFF_VIEW_WIDTH;
+
+    // Keep enough visible SVG space under the lowest staff line so E2 noteheads/ledger lines don't get clipped.
+    expect(pxBelowStaffInNotation).toBeGreaterThanOrEqual(72);
+  });
+
   it('keeps the gap from bottom staff line to hint-button top within a compact limit', () => {
     const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
     const css = fs.readFileSync(path.join(root, 'style.css'), 'utf8');
