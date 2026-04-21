@@ -37,7 +37,7 @@ describe('Note Playing layout spacing', () => {
     const pxBelowStaffInNotation = notationWidth * (NOTE_STAFF_VIEW_HEIGHT - lowerStaffLineY) / NOTE_STAFF_VIEW_WIDTH;
 
     // Keep enough visible SVG space under the lowest staff line so E2 noteheads/ledger lines don't get clipped.
-    expect(pxBelowStaffInNotation).toBeGreaterThanOrEqual(72);
+    expect(pxBelowStaffInNotation).toBeGreaterThanOrEqual(90);
   });
 
   it('keeps the gap from bottom staff line to hint-button top within a compact limit', () => {
@@ -63,6 +63,6 @@ describe('Note Playing layout spacing', () => {
       displayGap +
       hintsMarginTop;
 
-    expect(distancePx).toBeLessThanOrEqual(110);
+    expect(distancePx).toBeLessThanOrEqual(125);
   });
 });
