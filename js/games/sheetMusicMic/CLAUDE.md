@@ -18,6 +18,7 @@ guitar. Correct notes turn green. Two difficulty modes:
 | `sheetMusicMicExercise.js` | Exercise controller – audio pipeline, mode logic, score state, DOM |
 | `sheetMusicMicSVG.js`      | VexFlow rendering with per-note colour based on `status` field |
 | `fastNoteMatcher.js`       | Pure pitch-classification and streak state machine (shared with `notePlayingExercise`) |
+| `noteOnsetGate.js`         | Pure attack/onset gate so repeated identical notes require a fresh pluck |
 | `CLAUDE.md`                | This file |
 
 ## Architecture
@@ -27,9 +28,12 @@ sheetMusicMicExercise.js
   │
   ├─ generateBars()          ← sheetMusicReading/sheetMusicLogic.js
   ├─ renderScoreWithStatus() ← sheetMusicMicSVG.js
+  ├─ updateOnsetGate()
   └─ classifyFrame()
      updateMatchState()
      getRecommendedFftSize() ← fastNoteMatcher.js
+        ↑
+     noteOnsetGate.js
                                    └─ detectPitch()
                                       frequencyToNote()
                                       noteToFrequency() ← tools/guitarTuner/tunerLogic.js
@@ -72,6 +76,7 @@ state = {
   mode:             'easy',    // 'easy' | 'hard'
   isListening:      false,
   matchState:       createMatchState(),
+  onsetGateState:   createOnsetGateState(),
   isLocked:         false,
   score:            { correct: 0, total: 0 },
   settings: {
@@ -80,6 +85,22 @@ state = {
   },
 }
 ```
+
+## Fresh-Pluck Requirement
+
+`sheetMusicMicExercise` no longer accepts a note from pitch stability alone.
+Each note must be preceded by a fresh attack:
+
+- `noteOnsetGate.js` watches per-frame RMS and emits an onset only on a rising edge.
+- After a note is accepted, the onset window is consumed immediately.
+- As long as the previous note is only ringing out, frames are forced to `unsure`
+  before they reach `updateMatchState(...)`.
+
+Effect:
+
+- `E4, E4, E4` only advances when the player plucks three times.
+- A sustained `E4` cannot automatically satisfy the next `E4`.
+- The same gate also prevents hard mode from rejecting on leftover sustain before a new attack.
 
 ## Detection Constants (from fastNoteMatcher)
 

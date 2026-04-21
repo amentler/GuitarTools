@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { createSheetMusicMicExercise } from '../../js/games/sheetMusicMic/sheetMusicMicExercise.js';
 
 // Mock the dependencies that use external imports or complex DOM
@@ -13,12 +13,30 @@ vi.mock('../../js/utils/settings.js', () => ({
   syncFretSlider: vi.fn()
 }));
 vi.mock('../../js/games/sheetMusicReading/sheetMusicLogic.js', async () => {
-    const actual = await vi.importActual('../../js/games/sheetMusicReading/sheetMusicLogic.js');
-    return {
-        ...actual,
-        getFilteredNotes: vi.fn(() => actual.NOTES)
-    };
+  const actual = await vi.importActual('../../js/games/sheetMusicReading/sheetMusicLogic.js');
+  return {
+    ...actual,
+    generateBars: vi.fn((...args) => actual.generateBars(...args)),
+    getFilteredNotes: vi.fn(() => actual.NOTES),
+  };
 });
+vi.mock('../../js/games/sheetMusicMic/fastNoteMatcher.js', async () => {
+  const actual = await vi.importActual('../../js/games/sheetMusicMic/fastNoteMatcher.js');
+  return {
+    ...actual,
+    classifyFrame: vi.fn(() => ({
+      status: 'correct',
+      detectedPitch: 'E4',
+      hz: 329.63,
+      cents: 0,
+    })),
+  };
+});
+
+const repeatedBars = [[
+  { name: 'E', octave: 4, duration: 'q', string: 1, fret: 0 },
+  { name: 'E', octave: 4, duration: 'q', string: 1, fret: 0 },
+]];
 
 describe('SheetMusicMic Exercise Basic Integration', () => {
   let exercise;
@@ -46,6 +64,11 @@ describe('SheetMusicMic Exercise Basic Integration', () => {
     `;
 
     exercise = createSheetMusicMicExercise();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.unstubAllGlobals();
   });
 
   it('should initialize without crashing and generate a target note', () => {
@@ -82,5 +105,51 @@ describe('SheetMusicMic Exercise Basic Integration', () => {
     }
     
     expect(different).toBe(true);
+  });
+
+  it('requires a new attack before repeated identical notes advance', async () => {
+    vi.useFakeTimers();
+
+    class MockAudioContext {
+      constructor() {
+        this.state = 'running';
+        this.sampleRate = 44100;
+      }
+      createAnalyser() {
+        return {
+          fftSize: 4096,
+          connect: vi.fn(),
+          getFloatTimeDomainData: vi.fn(buffer => buffer.fill(0.08)),
+        };
+      }
+      createMediaStreamSource() { return { connect: vi.fn() }; }
+      resume() { return Promise.resolve(); }
+      close() { return Promise.resolve(); }
+    }
+
+    vi.stubGlobal('AudioContext', MockAudioContext);
+    vi.stubGlobal('navigator', {
+      mediaDevices: {
+        getUserMedia: vi.fn().mockResolvedValue({ getTracks: () => [{ stop: vi.fn() }] }),
+      },
+    });
+
+    const sheetMusicLogic = await import('../../js/games/sheetMusicReading/sheetMusicLogic.js');
+    sheetMusicLogic.generateBars.mockReturnValue(repeatedBars);
+
+    exercise.startExercise();
+    document.getElementById('sheet-mic-start-btn').click();
+    await Promise.resolve();
+
+    vi.advanceTimersByTime(150);
+
+    expect(document.getElementById('score-value').textContent).toBe('1 / 2');
+    expect(document.getElementById('sheet-mic-current-note').textContent).toBe('E4');
+
+    vi.advanceTimersByTime(1200);
+
+    expect(document.getElementById('score-value').textContent).toBe('1 / 2');
+    expect(document.getElementById('sheet-mic-current-note').textContent).toBe('E4');
+    expect(document.getElementById('sheet-mic-feedback').textContent).toBe('');
   });
 });

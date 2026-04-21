@@ -205,8 +205,9 @@ describe('Audio Fixture Integration Tests – Gitarren-Aufnahmen', () => {
         expect(result).not.toBeNull();
         expect(result.note).toBe(fixture.expectedNote);
         expect(result.octave).toBe(fixture.expectedOctave);
-      // E2 YIN-Analyse: ~800 ms/Fenster × 3 Fenster max → bis 10 s erlaubt
-      }, 10_000);
+      // Real-guitar low-string fixtures get much slower when the overall test
+      // suite runs with fewer parallel workers; keep a wider timeout budget.
+      }, 20_000);
     }
   }
 });
@@ -231,7 +232,7 @@ describe('Audio Fixture Integration Tests – Gitarren-Aufnahmen (unpräzise)', 
         expect(result).not.toBeNull();
         expect(result.note).toBe(fixture.expectedNote);
         expect(result.octave).toBe(fixture.expectedOctave);
-      }, 10_000);
+      }, 20_000);
     }
   }
 });

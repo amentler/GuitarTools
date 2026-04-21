@@ -13,6 +13,12 @@ import {
   updateMatchState,
   getRecommendedFftSize,
 } from './fastNoteMatcher.js';
+import {
+  createOnsetGateState,
+  updateOnsetGate,
+  isOnsetGateOpen,
+  consumeOnsetGate,
+} from './noteOnsetGate.js';
 import { renderScoreWithStatus } from './sheetMusicMicSVG.js';
 import { wireStringToggles, syncStringToggles, wireFretSlider, syncFretSlider } from '../../utils/settings.js';
 
@@ -37,6 +43,7 @@ export function createSheetMusicMicExercise() {
     mode:             'easy',
     isListening:      false,
     matchState:       createMatchState(),
+    onsetGateState:   createOnsetGateState(),
     isLocked:         false,
     score:            { correct: 0, total: 0 },
     settings: {
@@ -84,6 +91,7 @@ export function createSheetMusicMicExercise() {
     state.score.correct    = 0;
     state.score.total      = state.bars.reduce((s, b) => s + b.length, 0);
     state.matchState       = createMatchState();
+    state.onsetGateState   = createOnsetGateState();
 
     markCurrentNote();
     renderCurrentState();
@@ -141,6 +149,7 @@ export function createSheetMusicMicExercise() {
     state.currentBeatIndex = 0;
     state.score.correct    = 0;
     state.matchState       = createMatchState();
+    state.onsetGateState   = consumeOnsetGate(state.onsetGateState);
     state.isLocked         = false;
     markCurrentNote();
     updateScore();
@@ -207,8 +216,9 @@ export function createSheetMusicMicExercise() {
   async function startListening() {
     if (state.isListening) return;
 
-    state.matchState = createMatchState();
-    state.isLocked   = false;
+    state.matchState     = createMatchState();
+    state.onsetGateState = createOnsetGateState();
+    state.isLocked       = false;
 
     ui.permission.style.display = 'block';
     ui.permission.textContent   = 'Mikrofon-Zugriff wird benötigt…';
@@ -275,13 +285,20 @@ export function createSheetMusicMicExercise() {
     const buffer = new Float32Array(analyser.fftSize);
     analyser.getFloatTimeDomainData(buffer);
 
+    const gate = updateOnsetGate(state.onsetGateState, buffer);
+    state.onsetGateState = gate.nextState;
+
     const targetPitch = `${targetNote.name}${targetNote.octave}`;
     const frameResult = classifyFrame(buffer, audioCtx.sampleRate, targetPitch);
 
     // In easy mode we discard wrong frames so they neither advance nor reject.
-    const effective = state.mode === 'easy' && frameResult.status === 'wrong'
+    let effective = state.mode === 'easy' && frameResult.status === 'wrong'
       ? { ...frameResult, status: 'unsure' }
       : frameResult;
+
+    if (!isOnsetGateOpen(state.onsetGateState)) {
+      effective = { ...effective, status: 'unsure' };
+    }
 
     const { nextState, event } = updateMatchState(state.matchState, effective);
     state.matchState = nextState;
@@ -296,6 +313,7 @@ export function createSheetMusicMicExercise() {
   function handleCorrectNote() {
     state.isLocked = true;
     state.matchState = createMatchState();
+    state.onsetGateState = consumeOnsetGate(state.onsetGateState);
 
     const note = getCurrentNote();
     if (note) note.status = 'correct';
@@ -321,6 +339,7 @@ export function createSheetMusicMicExercise() {
     // Hard mode only: restart the sequence after a brief delay
     state.isLocked = true;
     state.matchState = createMatchState();
+    state.onsetGateState = consumeOnsetGate(state.onsetGateState);
     updateFeedback('wrong');
     setTimeout(() => {
       state.isLocked = false;
@@ -396,6 +415,7 @@ export function createSheetMusicMicExercise() {
       mode:             state.mode,
       isListening:      false,
       matchState:       createMatchState(),
+      onsetGateState:   createOnsetGateState(),
       isLocked:         false,
       score:            { correct: 0, total: 0 },
       settings:         state.settings,
