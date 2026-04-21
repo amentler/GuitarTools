@@ -4,7 +4,8 @@ As an AI agent working on this project, you MUST adhere to the following rules:
 
 ## 1. Documentation & Plan Updates
 - **AFTER EVERY COMPLETED TASK**, you MUST update the corresponding `.md` files (plans in `plans/`, `CLAUDE.md`, or this `GEMINI.md`).
-- **AFTER EVERY CODE/CONTENT CHANGE**, you MUST update `/version.txt` (format: `Version YYYY-MM-DD HH:MM`) so the main menu shows the current version.
+- **AFTER EVERY CODE/CONTENT CHANGE**, you MUST update `/version.txt` (format: `Version YYYY-MM-DD HH:MM | label`) so the main menu shows the current version.
+- **NO COMMIT WITHOUT VERSION UPDATE:** Every commit must include a `version.txt` update with a change-specific label (example: `Version 2026-04-21 20:40 | ton spielen layout update 3`).
 - Ensure that the project status, next steps, and architectural changes are accurately reflected in the documentation.
 - If a plan in `plans/` was implemented, mark it as completed or update it with the next iteration.
 - Store additional feature/tool ideas in `plans/ideen.md`.

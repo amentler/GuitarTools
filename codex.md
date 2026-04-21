@@ -37,3 +37,11 @@ Qualitätsmanagement (Ist):
 
 - Root-Policies in `CLAUDE.md` und `GEMINI.md` vorhanden (Vanilla + SVG, Doku-Updates gefordert)
 - Feature-spezifische `CLAUDE.md`-Dateien in Untermodulen vorhanden
+
+## 4) Commit-Checkliste (verbindlich)
+
+Vor jedem Commit:
+- `version.txt` aktualisieren
+- Format strikt einhalten: `Version YYYY-MM-DD HH:MM | label`
+- Label muss den Change benennen (z. B. `ton spielen layout update 3`)
+- Danach erst `npm run lint`/`npm test` und Commit erstellen

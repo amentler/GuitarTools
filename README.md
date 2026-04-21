@@ -85,7 +85,7 @@ Dadurch werden Updates **sofort** sichtbar – auch auf Firefox für Android.
 ```
 index.html          – UI / alle Views (Menü, Übungen, Werkzeuge)
 style.css           – Globale Styles & CSS Custom Properties (Dark Theme)
-version.txt         – Versionsanzeige im Hauptmenü (Format: `Version YYYY-MM-DD HH:MM`)
+version.txt         – Versionsanzeige im Hauptmenü (Format: `Version YYYY-MM-DD HH:MM | label`, z. B. `Version 2026-04-21 20:40 | ton spielen layout update 3`)
 manifest.json       – PWA-Manifest
 sw.js               – Service Worker (Network-First + Essentia Cache-First)
 js/

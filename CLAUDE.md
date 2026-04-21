@@ -14,7 +14,7 @@ A static web app for learning guitar, running directly on GitHub Pages without a
 ```
 index.html          – Main menu / landing page
 style.css           – Global styles and CSS Custom Properties
-version.txt         – Version text shown on the main menu (format: `Version YYYY-MM-DD HH:MM`); update on each change
+version.txt         – Version text shown on the main menu (format: `Version YYYY-MM-DD HH:MM | label`); update on each change
 pages/
 ├── exercises/      – Individual HTML pages for exercises (e.g., ton-finder.html)
 └── tools/          – Individual HTML pages for tools (e.g., guitar-tuner.html)
@@ -114,7 +114,8 @@ Branch `claude/guitar-learning-app-i9WM3`, root `/` — no build pipeline needed
 
 **IMPORTANT FOR ALL AGENTS (Claude, Gemini, Codex):**
 - **Update .md files:** After completing a task or implementing a feature, you MUST update all relevant `.md` files (this `CLAUDE.md`, `GEMINI.md`, and any plans in `plans/`). If a module subfolder (e.g. `js/games/myGame/`) does not yet have a `CLAUDE.md`, create one — this is explicitly permitted and encouraged.
-- **Update `version.txt`:** After every code/content change, you MUST update `/version.txt` so the main page shows the new version timestamp.
+- **Update `version.txt`:** After every code/content change, you MUST update `/version.txt` with format `Version YYYY-MM-DD HH:MM | label` (example: `Version 2026-04-21 20:40 | ton spielen layout update 3`).
+- **No Commit Without Version Bump:** Every commit must include an updated `version.txt` entry that matches the current change scope.
 - **Service-Worker Assets pflegen:** Wenn neue lokale Assets/Module (JS, CSS, JSON, Icons, etc.) hinzukommen oder umbenannt werden, müssen sie in `sw.js` in die `ASSETS`-Liste aufgenommen werden.
 - **Keep Plans Current:** If a feature from `plans/` is implemented, update the file to reflect the new state and next steps.
 - **Ideen-Sammlung:** Weitere Tool- und Übungsideen werden in `plans/ideen.md` gepflegt.
