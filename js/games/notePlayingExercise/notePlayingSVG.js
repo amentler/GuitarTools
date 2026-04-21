@@ -110,6 +110,7 @@ const TAB_STAFF_L = 28;
 const TAB_STAFF_R = 250;
 const STR_SP      = 14;
 const STR_COUNT   = 6;
+const TAB_TOP_PAD = 6;
 
 function tabEl(tag, attrs = {}, text) {
   const el = document.createElementNS('http://www.w3.org/2000/svg', tag);
@@ -129,7 +130,7 @@ export function renderNotePositionsTab(container, positions) {
 
   if (!positions || positions.length === 0) return;
 
-  const vbH = (STR_COUNT - 1) * STR_SP + 28;
+  const vbH = TAB_TOP_PAD + (STR_COUNT - 1) * STR_SP + 28;
   const svg = tabEl('svg', {
     viewBox: `0 0 ${TAB_VW} ${vbH}`,
     width: '100%',
@@ -145,7 +146,7 @@ export function renderNotePositionsTab(container, positions) {
   // T A B label
   for (const [char, i] of [['T', 0], ['A', 1], ['B', 2]]) {
     svg.appendChild(tabEl('text', {
-      x: 10, y: 4 + i * STR_SP,
+      x: 10, y: TAB_TOP_PAD + 4 + i * STR_SP,
       fill: 'var(--color-text-muted)', 'font-size': 11, 'font-weight': 700,
       'text-anchor': 'middle', 'dominant-baseline': 'middle',
     }, char));
@@ -153,7 +154,7 @@ export function renderNotePositionsTab(container, positions) {
 
   // String lines (string 0 = low E = bottom line in tab)
   for (let s = 0; s < STR_COUNT; s++) {
-    const y = 4 + (STR_COUNT - 1 - s) * STR_SP;
+    const y = TAB_TOP_PAD + 4 + (STR_COUNT - 1 - s) * STR_SP;
     svg.appendChild(tabEl('line', {
       x1: TAB_STAFF_L, y1: y, x2: TAB_STAFF_R, y2: y,
       stroke: 'var(--color-border)', 'stroke-width': 1,
@@ -177,7 +178,7 @@ export function renderNotePositionsTab(container, positions) {
     for (const fret of byString[s]) {
       const x  = TAB_STAFF_L + (col + 0.5) * colW;
       // string 0 = low E = bottom row (highest y)
-      const y  = 4 + (STR_COUNT - 1 - s) * STR_SP;
+      const y  = TAB_TOP_PAD + 4 + (STR_COUNT - 1 - s) * STR_SP;
       const txt = String(fret);
       const bgW = txt.length > 1 ? 18 : 12;
 
