@@ -13,10 +13,25 @@ Die App läuft direkt im Browser (Desktop & Mobil) und kann dank Service Worker 
   Mit Score, begrenzten Versuchen und Einstellungen (Bundbereich, Saiten).
 
 - **Noten lesen**  
-  Generiert zufällige Noten/Takte zum Vom-Blatt-Spielen (Notendarstellung via VexFlow).
+  Vom-Blatt-Training mit Notendarstellung, Taktwahl, Metronom und Playback-Leiste.
 
 - **Akkord-Trainer**  
   Trainiert wichtige Akkorde mit Anzeige, Abfrage und Score.
+
+- **Ton-Finder**  
+  Zielton vorgegeben, alle Positionen auf dem Griffbrett finden.
+
+- **Ton spielen**  
+  Zielton wird vorgegeben, Erkennung über Mikrofon.
+
+- **Noten spielen**  
+  Kombination aus Notenbild und Mikrofon-Erkennung.
+
+- **Akkord spielen (Essentia, Beta)**  
+  Akkorderkennung über Essentia/WebAssembly.
+
+- **Akkordfolgen-Trainer**  
+  Gehör-/Praxisübung für Akkordwechsel und -folgen.
 
 ### Werkzeuge
 - **Gitarren-Stimmgerät**  
@@ -24,6 +39,9 @@ Die App läuft direkt im Browser (Desktop & Mobil) und kann dank Service Worker 
 
 - **Metronom**  
   Einstellbares Tempo (BPM) mit Unterstützung verschiedener Taktarten.
+
+- **Akkord-Übersicht**  
+  Schnellzugriff auf Akkordformen.
 
 ---
 
@@ -48,16 +66,10 @@ npx http-server -p 8000
 
 ## PWA & Offline-Funktion
 
-Die App nutzt einen **Service Worker** mit einer **Allowlist-Strategie**:
-- Ressourcen auf der Allowlist (lokale Assets, JS-Module, CSS, Icons) werden mit **Cache-First** bedient: der Cache wird sofort zurückgegeben; im Hintergrund wird der Cache nach einem Netzwerktreffer aktualisiert.
-- Ressourcen außerhalb der Allowlist (z. B. externe CDN-URLs) werden **Network-Only** geladen – kein Cache-Schreiben.
-- Wenn das Netzwerk nicht erreichbar ist (offline), werden gecachte Allowlist-Ressourcen automatisch zurückgegeben.
-
-Beim ersten Aufruf (oder nach einem Update-Knopf-Druck) werden folgende Ressourcen vorgeladen (Precache):
-- `index.html`, `style.css`, `manifest.json`
-- JavaScript-Module unter `js/`
-- Icons unter `icons/`
-- VexFlow (CDN) wird opportunistisch gecacht (sofern erreichbar)
+Die App nutzt einen **Service Worker** mit einer gemischten Strategie:
+- **Cache-First nur für Essentia-Dateien** unter `js/lib/essentia/` (große WASM-Binaries).
+- **Network-First für alle anderen GET-Requests**, bei Offline-Fall mit `caches.match(...)` als Fallback.
+- Ein Precache beim Installieren enthält aktuell Essentia-Dateien sowie die Tool-/Übungsseiten unter `pages/`.
 
 ### Installation als PWA
 Im Browser öffnen und „Zum Startbildschirm hinzufügen" / „Installieren" wählen (je nach Browser und Betriebssystem).
@@ -75,9 +87,10 @@ index.html          – UI / alle Views (Menü, Übungen, Werkzeuge)
 style.css           – Globale Styles & CSS Custom Properties (Dark Theme)
 version.txt         – Versionsanzeige im Hauptmenü (Format: `Version YYYY-MM-DD HH:MM`)
 manifest.json       – PWA-Manifest
-sw.js               – Service Worker (Offline-Cache)
+sw.js               – Service Worker (Network-First + Essentia Cache-First)
 js/
 ├── app.js          – Navigation zwischen Views, Start/Stop der Module
+├── exerciseRegistry.js – Laufzeit-Registry für alle Übungen
 ├── components/     – Wiederverwendbare Web Components (UI-Schicht)
 │   ├── index.js    – Registriert alle Custom Elements
 │   └── fretboard/
@@ -87,10 +100,15 @@ js/
 │   ├── fretboardToneRecognition/   – Griffbrett: Töne erkennen
 │   ├── sheetMusicReading/          – Noten lesen
 │   ├── akkordTrainer/              – Akkord-Trainer
-│   └── tonFinder/                  – Ton-Finder (nutzt <gt-fretboard>)
+│   ├── tonFinder/                  – Ton-Finder (nutzt <gt-fretboard>)
+│   ├── notePlayingExercise/        – Ton spielen (Mikrofon)
+│   ├── sheetMusicMic/              – Noten spielen (Mikrofon + Notenbild)
+│   ├── chordExerciseEssentia/      – Akkord spielen (Essentia)
+│   └── akkordfolgenTrainer/        – Akkordfolgen-Training
 └── tools/          – Werkzeuge (ohne Score)
     ├── guitarTuner/                – Gitarren-Stimmgerät
-    └── metronome/                  – Metronom
+    ├── metronome/                  – Metronom
+    └── akkordUebersicht/           – Akkord-Übersicht
 icons/              – App-Icons (SVG)
 docs/               – Dokumentation / Notizen
 plans/              – Planungsdokumente

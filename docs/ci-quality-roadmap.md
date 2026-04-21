@@ -1,193 +1,41 @@
 # CI- und Qualitätspipeline – Roadmap
 
-Stand: 2026-04-03 (Phase 3 abgeschlossen)
+Stand: 2026-04-21
 
----
+## 1. Aktueller Zustand
 
-## 1. Ist-Zustand
+GuitarTools ist eine statische Web-App ohne Build-Schritt. Die Qualitätssicherung läuft über Linting und Tests in GitHub Actions.
 
-### GitHub Pages
+CI-Workflow (`.github/workflows/ci.yml`):
+- Trigger: `push`, `pull_request`
+- Runtime: Node.js 22
+- Schritte:
+  - `npm ci`
+  - `npm run lint`
+  - `npm test`
 
-GuitarTools wird als statische App direkt aus dem Repository auf GitHub Pages veröffentlicht.
-Es gibt keinen Build-Step: der Browser lädt `index.html` und die JS-Module unmittelbar.
-Deployment und Hosting sind dadurch sehr einfach. Die CI-Pipeline schützt den Branch durch
-automatische Lint- und Testläufe vor jeder Veröffentlichung.
+Lokal verifiziert am 2026-04-21:
+- `npm run lint`: erfolgreich
+- `npm test`: erfolgreich (`31` Testdateien, `677` bestanden, `1` übersprungen)
 
-### Vanilla JavaScript im Browser
+## 2. Scope der Teststrategie
 
-Die gesamte Anwendungslogik ist in reinem JavaScript (ES Modules) geschrieben, ohne Framework und ohne
-Transpilation. Logik und UI sind in den meisten Modulen bereits getrennt:
+Schwerpunkt:
+- Reine Logikmodule und zentrale Controllerpfade
+- Audio-/Fixture-basierte Tests für Tuner, Note-Matching und Akkorderkennung
+- Rendering- und Integrationsnahe Unit-Tests in `jsdom`, wo sinnvoll
 
-- **Reine Logikmodule** (gut testbar): `fretboardLogic.js`, `tunerLogic.js`, `tonFinderLogic.js`, `akkordLogic.js`, `sheetMusicLogic.js`, `metronomeLogic.js`, `notePlayingLogic.js`
-- **DOM-/SVG-nahe Module** (aufwändiger zu testen): `fretboardSVG.js`, `tunerSVG.js`, `fretboardExercise.js`, `guitarTuner.js`
-- **Navigation/Routing**: `app.js`
+Bewusste Grenzen:
+- Keine E2E-Browser-Tests (Playwright/Cypress) im aktuellen Setup
+- Kein TypeScript-Compile-Check (`tsc --noEmit`), da Projekt auf Vanilla JS ausgelegt ist
 
-Es gibt eine `package.json` mit Vitest (Test-Runner) und ESLint (Linter). Die Testinfrastruktur ist
-vollständig eingerichtet und aktiv. Aktuell: **130 Unit-Tests** über 7 Testdateien in `tests/unit/`.
+## 3. Nächste sinnvolle Schritte
 
-### Getestete Module
+1. Branch Protection mit Pflichtstatus `CI` aktivieren, falls noch nicht gesetzt.
+2. Flaky-Test-Monitoring ergänzen (z. B. wiederholte Ausführung kritischer Audio-Tests im CI bei Bedarf).
+3. Optional: schlanke Smoke-E2E-Tests für Kernflows (Startseite, Navigation, Tuner-Start, eine Übung starten/beenden).
+4. Optional: Coverage-Reporting nur für Kernlogik einführen, nicht als hartes Merge-Kriterium.
 
-Alle reinen Logikmodule sind durch Unit-Tests abgedeckt. Audio- und Mikrofon-abhängige Pfade
-(z. B. `guitarTuner.js`) werden bewusst nicht in Unit-Tests einbezogen.
+## 4. Pflegehinweis
 
-### TypeScript
-
-TypeScript ist bewusst nicht eingeführt. Die Vanilla-JS-Ausrichtung bleibt erhalten.
-
----
-
-## 2. Roadmap
-
-| Phase | Inhalt | Voraussetzung |
-|-------|--------|---------------|
-| **Phase 0** | Dokumentation, Planung, Scope-Abgrenzung | – (abgeschlossen) |
-| **Phase 1** | Minimale CI-Pipeline: `package.json` + Vitest + erste Unit-Tests für Logikmodule | Phase 0 (abgeschlossen) |
-| **Phase 2** | Linting (ESLint) in der Pipeline | Phase 1 (abgeschlossen) |
-| **Phase 3** | Unit-Test-Abdeckung ausgebaut: `notePlayingLogic`, Edge Cases, 130 Tests gesamt | Phase 2 (abgeschlossen) |
-| **Phase 4** | TypeScript-Prüfung (`tsc --noEmit`, `checkJs`) | Phase 3 |
-| **Phase 5** | Schrittweise TS-Migration der Logikmodule | Phase 4 |
-| **Phase 6** | Browsernahe Tests (Playwright Smoke Tests) | Phase 1 oder 4 |
-| **Phase 7** | Branch Protection + Pflicht-Statusprüfungen | Phase 1 |
-
----
-
-## 3. Phase 1 – Umgesetzt
-
-### Umfang
-
-- `package.json` mit Vitest als einzige Dev-Dependency angelegt
-- `vitest.config.js` für ES-Module-kompatible Testkonfiguration
-- **Unit-Tests** für `fretboardLogic.js`, `tunerLogic.js`, `tonFinderLogic.js`, `akkordLogic.js`, `sheetMusicLogic.js`
-- **GitHub Actions Workflow** (`.github/workflows/ci.yml`) bei `push` und `pull_request`
-
-### Neue Dateien
-
-| Datei | Zweck |
-|-------|-------|
-| `package.json` | npm-Projektdatei mit `vitest` Dev-Dependency und `test`-Script |
-| `vitest.config.js` | Vitest-Konfiguration (`tests/unit/**/*.test.js`) |
-| `tests/unit/fretboardLogic.test.js` | Unit-Tests für Notenberechnung am Griffbrett |
-| `tests/unit/tunerLogic.test.js` | Unit-Tests für Frequenz-/Notenberechnung im Tuner |
-| `.github/workflows/ci.yml` | CI-Workflow: Checkout → Node setup → `npm ci` → `npm test` |
-| `.gitignore` | Schließt `node_modules/` aus dem Repository aus |
-
-### Minimaler sichtbarer Nutzen
-
-- Jeder Push und jeder Pull Request löst automatisch die Unit-Tests aus (aktuell: 36)
-- GitHub zeigt grün/rot direkt beim Pull Request
-- Fehler in zentralen Logikfunktionen werden sofort erkannt
-
-### Warum Vitest (nicht Jest)
-
-Vitest unterstützt ES Modules nativ – passend zur bestehenden Modulstruktur ohne
-CommonJS-Konversion. Lässt sich später mit `jsdom` für einfache DOM-Tests erweitern.
-
----
-
-## 4. Bewusste Abgrenzung
-
-Folgendes erfolgt **nicht** in Phase 1 und wird explizit auf spätere Phasen verschoben:
-
-| Thema | Begründung |
-|-------|------------|
-| Linting (ESLint/Prettier) | Erhöht Scope und Konfigurationsaufwand, kein Muss für erste CI |
-| TypeScript / `tsconfig.json` | Bewusst in Phase 3–4 verschoben |
-| TypeScript-Migration | Erst nach funktionierender Basis (Phase 4) |
-| Playwright / E2E-Tests | Schwergewichtiger, erst nach Phase 1 |
-| Coverage-Konfiguration | Kein Selbstzweck in Phase 1 |
-| Build-/Transpilationsschritt | Nicht nötig für Logik-Unit-Tests |
-| Deployment-Änderungen | GitHub Pages bleibt unverändert |
-| React / Vue / Angular | Nicht geplant |
-
----
-
-## 4. Phase 2 – Umgesetzt
-
-### Umfang
-
-- **ESLint 9** (Flat Config) als Dev-Dependency hinzugefügt (`eslint`, `@eslint/js`, `globals`)
-- `eslint.config.js` mit minimalen Regeln für Browser-ES-Module und Test-Dateien
-- `lint`-Script in `package.json` hinzugefügt (`eslint .`)
-- CI-Workflow um `npm run lint` vor `npm test` erweitert
-- 8 vorhandene Linting-Fehler in bestehenden JS-Modulen korrigiert (keine Funktionsänderungen)
-- **Unit-Tests** für `metronomeLogic.js` hinzugefügt (10 neue Tests → gesamt: 46)
-
-### Neue / geänderte Dateien
-
-| Datei | Änderung |
-|-------|----------|
-| `eslint.config.js` | Neu: ESLint Flat Config mit `recommended`-Regeln |
-| `package.json` | `lint`-Script + neue Dev-Dependencies (`eslint`, `@eslint/js`, `globals`) |
-| `.github/workflows/ci.yml` | `npm run lint` vor `npm test` |
-| `tests/unit/metronomeLogic.test.js` | Neu: Unit-Tests für BPM-Clamping und Beat-Zählung |
-| `js/components/fretboard/gt-fretboard-render.js` | Fix: `let stroke` ohne initialisierten Wert |
-| `js/games/akkordTrainer/akkordSVG.js` | Fix: ungenutztes `stringNum` entfernt |
-| `js/games/sheetMusicReading/sheetMusicSVG.js` | Fix: leere `catch`-Blöcke mit Kommentar versehen |
-| `js/games/tonFinder/tonFinderSVG.js` | Fix: `let stroke` ohne initialisierten Wert |
-| `js/tools/guitarTuner/guitarTuner.js` | Fix: ungenutzten `err`-Parameter im `catch` entfernt |
-
-### Minimaler sichtbarer Nutzen
-
-- Jeder Push und jeder Pull Request prüft jetzt: Lint (ESLint) **und** Unit-Tests (Vitest)
-- Syntaxfehler, ungenutzte Variablen und offensichtliche JS-Fehler werden automatisch abgefangen
-- Keine Änderungen am Funktionsverhalten der App
-
----
-
-## 5. Bewusste Abgrenzung
-
-Folgendes erfolgt **nicht** in Phase 1/2 und wird explizit auf spätere Phasen verschoben:
-
-| Thema | Begründung |
-|-------|------------|
-| Prettier / Code-Formatierung | Kein Muss für Phase 2; separater Scope |
-| TypeScript / `tsconfig.json` | Bewusst in Phase 3–4 verschoben |
-| TypeScript-Migration | Erst nach funktionierender Basis (Phase 4) |
-| Playwright / E2E-Tests | Schwergewichtiger, erst nach Phase 1 |
-| Coverage-Konfiguration | Kein Selbstzweck in Phase 1/2 |
-| Build-/Transpilationsschritt | Nicht nötig für Logik-Unit-Tests |
-| Deployment-Änderungen | GitHub Pages bleibt unverändert |
-| React / Vue / Angular | Nicht geplant |
-
----
-
-## 6. Aufgabenteilung: Agent vs. manuell
-
-### Was der Agent in Phase 1 umgesetzt hat
-
-- `package.json` angelegt (mit `vitest` als Dev-Dependency)
-- `vitest.config.js` angelegt
-- Testdateien erstellt: `tests/unit/fretboardLogic.test.js`, `tests/unit/tunerLogic.test.js`
-- `.github/workflows/ci.yml` erstellt (Trigger: `push`, `pull_request`)
-- `.gitignore` angelegt
-- Dokumentation aktualisiert
-
-### Was der Agent in Phase 3 umgesetzt hat
-
-- Unit-Tests für `notePlayingLogic.js` hinzugefügt (`tests/unit/notePlayingLogic.test.js`, 14 Tests)
-- Edge-Case-Abdeckung in `tonFinderLogic.test.js` ergänzt (`positionKey` mit Nullwerten, `evaluateRound` für leer/korrekt/falsch)
-- Testabdeckung gesamt: **67 Tests** über 7 Testdateien (inzwischen auf 130 Tests ausgebaut durch geführtes Stimmen und weitere Edge Cases)
-- Abgedeckte Module: `fretboardLogic`, `tunerLogic`, `tonFinderLogic`, `akkordLogic`, `sheetMusicLogic`, `metronomeLogic`, `notePlayingLogic`
-- Dokumentation aktualisiert
-
-### Was der Agent in Phase 2 umgesetzt hat
-
-- ESLint-Konfiguration (`eslint.config.js`) und `lint`-Script angelegt
-- Bestehende Linting-Fehler in JS-Modulen korrigiert
-- `npm run lint` im CI-Workflow ergänzt
-- Unit-Tests für `metronomeLogic.js` hinzugefügt
-- Dokumentation aktualisiert
-
-### Was manuell in GitHub konfiguriert werden muss
-
-| Schritt | Wo | Wann |
-|---------|----|------|
-| GitHub Pages – Deployment-Quelle prüfen | Repository → Settings → Pages | Einmalig, falls noch nicht auf „GitHub Actions" gestellt |
-| Workflow-Berechtigungen prüfen | Repository → Settings → Actions → General | Einmalig, falls Actions nicht aktiv oder ohne Schreibrecht |
-| Branch Protection einrichten | Repository → Settings → Branches | Nach Phase 1, wenn CI stabil läuft |
-| Required Status Checks aktivieren | Branch Protection Rule | Nach Phase 1, als Qualitätsgatter |
-| PR reviewen und mergen | GitHub Pull Request | Bei jedem Agent-PR |
-
-**Hinweis:** GitHub Actions-Workflow-Dateien (`.github/workflows/*.yml`) kann der Agent direkt
-anlegen. Die Ausführung startet automatisch nach dem Merge. Manuelle Eingriffe sind nur für
-Repository-Settings nötig, die nicht per Datei konfigurierbar sind.
+Diese Datei ist ein aktueller Snapshot, kein Phasenprotokoll. Nach größeren CI- oder Teständerungen Datum und Kennzahlen aktualisieren.

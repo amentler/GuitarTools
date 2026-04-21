@@ -1,6 +1,6 @@
 # Codex – Ist-Zustand GuitarTools
 
-Stand: 2026-04-03 (Phase 2 abgeschlossen)
+Stand: 2026-04-21
 
 ## 1) Projektüberblick
 
@@ -8,8 +8,9 @@ Stand: 2026-04-03 (Phase 2 abgeschlossen)
 - Kein Build-Step, direkte Ausführung als statische GitHub-Pages-App
 - Hauptbereiche:
   - `index.html`, `style.css`, `js/app.js` (Navigation/View-Wechsel)
-  - Spiele unter `js/games/*`
+  - Übungen unter `js/games/*`
   - Tools unter `js/tools/*`
+  - Laufzeit-Registry unter `js/exerciseRegistry.js`
   - Roadmap in `plans/*.md`
 
 ## 2) Code- und Architekturstatus
@@ -17,32 +18,22 @@ Stand: 2026-04-03 (Phase 2 abgeschlossen)
 Status:
 - Klare modulare Trennung pro Feature (Controller/Logik/SVG in separaten Dateien)
 - Wiederverwendung von Logikmodulen (z. B. Fretboard-Logik)
-- Navigation in `js/app.js` über View-Wechsel
+- Navigation über `js/app.js` + `exerciseRegistry.js` (keine harte if/else-Verkettung pro Übung)
 - PWA-Basis vorhanden (`sw.js`, `manifest.json`)
+- Service Worker mit gemischter Strategie:
+  - `js/lib/essentia/*`: Cache-First
+  - übrige GET-Requests: Network-First mit Cache-Fallback bei Offline
 
 Qualitätsmanagement (Ist):
-- **Phase 0 abgeschlossen:** Roadmap und Scope-Abgrenzung dokumentiert in `docs/ci-quality-roadmap.md`
-- **Phase 1 abgeschlossen/erweitert:** CI-Pipeline eingerichtet und Unit-Testabdeckung ausgebaut
-  - `package.json` + Vitest als Dev-Dependency
-  - `vitest.config.js`
-  - Unit-Tests für `fretboardLogic.js`, `tunerLogic.js`, `tonFinderLogic.js`, `akkordLogic.js`, `sheetMusicLogic.js` unter `tests/unit/`
-  - GitHub Actions Workflow (`.github/workflows/ci.yml`) bei `push` und `pull_request`
-- **Phase 2 abgeschlossen:** ESLint eingerichtet, Lint-Schritt in CI integriert
-  - `eslint.config.js` mit minimalen Regeln (Browser + ES Modules)
-  - `npm run lint` Script in `package.json`
-  - CI-Workflow führt jetzt Lint vor Tests aus
-  - 8 vorhandene Linting-Fehler in JS-Modulen korrigiert
-  - 10 neue Unit-Tests für `metronomeLogic.js` hinzugefügt
-- **Phase 3 abgeschlossen:** Unit-Testabdeckung weiter ausgebaut und gehärtet
-  - `tests/unit/notePlayingLogic.test.js` (14 Tests für `notePlayingLogic.js`)
-  - Edge-Case-Abdeckung für `tonFinderLogic.js` ergänzt (`positionKey`, `evaluateRound` mit leer/korrekt/falsch)
-  - Gesamt: 130 Unit-Tests über 7 Testdateien: `fretboardLogic`, `tunerLogic`, `tonFinderLogic`, `akkordLogic`, `sheetMusicLogic`, `metronomeLogic`, `notePlayingLogic`
-- Kein TypeScript (Phase 4–5)
-- Service-Worker-Assetliste wird manuell versionsgeführt
-- Service Worker nutzt **Network-First-Strategie**: Netzwerk bevorzugt, Cache als Fallback bei Offline
+- CI-Workflow (`.github/workflows/ci.yml`) führt bei `push` und `pull_request` aus:
+  - `npm ci`
+  - `npm run lint`
+  - `npm test`
+- Lokal verifiziert am 2026-04-21:
+  - `npm run lint` erfolgreich
+  - `npm test` erfolgreich: 31 Testdateien, 677 Tests grün, 1 Test übersprungen
 
 ## 3) Dokumentations- und Agentenstatus
 
 - Root-Policies in `CLAUDE.md` und `GEMINI.md` vorhanden (Vanilla + SVG, Doku-Updates gefordert)
-- In `plans/metronom.md` ist der Metronom-Plan als abgeschlossen dokumentiert
 - Feature-spezifische `CLAUDE.md`-Dateien in Untermodulen vorhanden
