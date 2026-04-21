@@ -129,6 +129,12 @@ self.addEventListener('fetch', event => {
     return;
   }
 
+  // Keep release metadata fresh so version/update indicators react quickly.
+  if (url.pathname.endsWith('/version.txt') || url.pathname.endsWith('/manifest.json')) {
+    event.respondWith(networkFirst(request, PAGE_CACHE_NAME));
+    return;
+  }
+
   if (url.pathname.includes('/api/')) {
     event.respondWith(networkFirst(request, API_CACHE_NAME));
     return;
