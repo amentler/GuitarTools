@@ -57,7 +57,7 @@ export function createSheetMusicMicExercise() {
       startBtn:     document.getElementById('sheet-mic-start-btn'),
       stopBtn:      document.getElementById('sheet-mic-stop-btn'),
       newBarsBtn:   document.getElementById('sheet-mic-new-bars'),
-      feedback:     document.getElementById('feedback-text'),
+      feedback:     document.getElementById('sheet-mic-feedback'),
       currentNote:  document.getElementById('sheet-mic-current-note'),
       modeSelect:   document.getElementById('sheet-mic-mode'),
       slider:       document.getElementById('sheet-mic-fret-slider'),
@@ -230,6 +230,9 @@ export function createSheetMusicMicExercise() {
     // causing audio glitches and wrong latency/precision trade-offs.
     // See improvement.md §1.4 for the design rationale.
     audioCtx = new AudioContext();
+    if (audioCtx.state === 'suspended') {
+      await audioCtx.resume();
+    }
     analyser = audioCtx.createAnalyser();
     currentFftSize = 0;
     applyTargetFftSize();

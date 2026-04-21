@@ -51,7 +51,7 @@ export function createNotePlayingExercise() {
       hint1Btn:        document.getElementById('note-play-hint1'),
       hint2Btn:        document.getElementById('note-play-hint2'),
       detectedNote:    document.getElementById('note-play-detected'),
-      feedback:        document.getElementById('feedback-text'),
+      feedback:        document.getElementById('note-play-feedback'),
       score:           document.getElementById('score-value'),
       slider:          document.getElementById('note-play-fret-slider'),
       sliderLabel:     document.getElementById('note-play-fret-label'),
@@ -116,6 +116,9 @@ export function createNotePlayingExercise() {
     // causing audio glitches and wrong latency/precision trade-offs.
     // See improvement.md §1.4 for the design rationale.
     audioCtx = new AudioContext();
+    if (audioCtx.state === 'suspended') {
+      await audioCtx.resume();
+    }
     analyser = audioCtx.createAnalyser();
     currentFftSize = 0;
     applyTargetFftSize();

@@ -54,6 +54,9 @@ async function ensureMic() {
   _tearDown();
   stream   = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
   audioCtx = new AudioContext();
+  if (audioCtx.state === 'suspended') {
+    await audioCtx.resume();
+  }
   analyser = audioCtx.createAnalyser();
   analyser.fftSize = FFT_SIZE;
   audioCtx.createMediaStreamSource(stream).connect(analyser);

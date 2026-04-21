@@ -162,6 +162,9 @@ export function createGuitarTunerExercise() {
     // one fftSize on both, causing glitches and wrong trade-offs.
     // See improvement.md §1.4 for the design rationale.
     audioCtx = new AudioContext();
+    if (audioCtx.state === 'suspended') {
+      await audioCtx.resume();
+    }
     analyser = audioCtx.createAnalyser();
     analyser.fftSize = getAdaptiveFftSize();
 

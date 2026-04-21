@@ -48,7 +48,7 @@ export function createAkkordExercise() {
   const btnCheck = document.getElementById('btn-chord-check');
   const scoreCorrect = document.getElementById('score-correct');
   const scoreTotal = document.getElementById('score-total');
-  const feedbackText = document.getElementById('feedback-text');
+  const feedbackText = document.getElementById('chord-feedback-text');
 
   function nextRound() {
     currentChord = getRandomChord(getActiveCategories());

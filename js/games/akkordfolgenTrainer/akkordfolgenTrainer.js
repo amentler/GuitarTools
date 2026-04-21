@@ -240,6 +240,9 @@ export function createAkkordfolgenTrainer() {
     if (ui.permission) ui.permission.style.display = 'none';
 
     audioCtx = new AudioContext();
+    if (audioCtx.state === 'suspended') {
+      await audioCtx.resume();
+    }
     analyser = audioCtx.createAnalyser();
     analyser.fftSize = FFT_SIZE;
     audioCtx.createMediaStreamSource(stream).connect(analyser);
