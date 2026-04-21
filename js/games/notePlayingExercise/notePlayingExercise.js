@@ -50,6 +50,7 @@ export function createNotePlayingExercise() {
       tabContainer:    document.getElementById('note-play-tab'),
       hint1Btn:        document.getElementById('note-play-hint1'),
       hint2Btn:        document.getElementById('note-play-hint2'),
+      skipBtn:         document.getElementById('note-play-skip'),
       detectedNote:    document.getElementById('note-play-detected'),
       feedback:        document.getElementById('note-play-feedback'),
       score:           document.getElementById('score-value'),
@@ -189,6 +190,10 @@ export function createNotePlayingExercise() {
         updateHintDisplay();
       }
     });
+
+    ui.skipBtn?.addEventListener('click', () => {
+      skipToNextNote();
+    });
   }
 
   function syncSettingsUI() {
@@ -246,20 +251,31 @@ export function createNotePlayingExercise() {
     updateFeedback('correct');
 
     state.advanceTimeout = setTimeout(() => {
-      state.targetNote = getRandomPitch(
-        state.targetNote,
-        state.settings.maxFret,
-        state.settings.activeStrings
-      );
-      state.matchState     = createMatchState();
-      state.isLocked       = false;
-      state.hintLevel      = 0;
       state.advanceTimeout = null;
-      applyTargetFftSize();
-      updateTargetDisplay();
-      updateDetectedNote(null);
-      updateFeedback(null);
+      skipToNextNote();
     }, 1500);
+  }
+
+  function skipToNextNote() {
+    if (!state.targetNote) return;
+
+    if (state.advanceTimeout) {
+      clearTimeout(state.advanceTimeout);
+      state.advanceTimeout = null;
+    }
+
+    state.targetNote = getRandomPitch(
+      state.targetNote,
+      state.settings.maxFret,
+      state.settings.activeStrings
+    );
+    state.matchState = createMatchState();
+    state.isLocked = false;
+    state.hintLevel = 0;
+    applyTargetFftSize();
+    updateTargetDisplay();
+    updateDetectedNote(null);
+    updateFeedback(null);
   }
 
   // ── DOM update helpers ────────────────────────────────────────────────────
