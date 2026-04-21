@@ -12,11 +12,14 @@ A static web app for learning guitar, running directly on GitHub Pages without a
 ## Project Structure
 
 ```
-index.html          – Main HTML, contains all views (#view-menu, #view-fretboard, #view-tuner)
+index.html          – Main menu / landing page
 style.css           – Global styles and CSS Custom Properties
 version.txt         – Version text shown on the main menu (format: `Version YYYY-MM-DD HH:MM`); update on each change
+pages/
+├── exercises/      – Individual HTML pages for exercises (e.g., ton-finder.html)
+└── tools/          – Individual HTML pages for tools (e.g., guitar-tuner.html)
 js/
-├── app.js          – View navigation (menu ↔ exercises/tools); imports components/index.js
+├── app.js          – Main menu controller; imports components/index.js
 ├── data/           – Shared data (Single Source of Truth)
 │   └── akkordData.js – All 23 chord definitions with finger data + validateFingerData()
 ├── components/     – Reusable Web Components (UI layer)
@@ -47,12 +50,12 @@ js/
 
 The app has four layers:
 
-1. **Navigation** (`js/app.js`): Controls which view is visible, calls `startExercise()` / `stopExercise()`, and syncs browser history (`pushState`/`replaceState` + `popstate`) so browser-back returns to menu/exercise state.
-2. **Games/Tools** (`js/games/*`, `js/tools/*`): State + flow control. All game-specific code lives in its own subfolder.
+1. **Navigation**: Standard HTML links between `index.html` and `pages/exercises/*.html` or `pages/tools/*.html`. `js/app.js` initializes the menu and version info.
+2. **Games/Tools** (`js/games/*`, `js/tools/*`): State + flow control. Each exercise/tool has its own HTML page that loads the necessary logic and components.
 3. **UI Components** (`js/components/*`): Reusable Web Components (custom elements) for shared UI elements like the fretboard.
 4. **Logic** (`*Logic.js`): Pure functions with no DOM/audio dependencies; fully unit-tested.
 
-Views are shown/hidden via the `.active` CSS class. No router needed.
+Navigation between menu and exercises is handled via standard `<a>` tags. Browser back-button works natively.
 
 ## `<gt-fretboard>` Web Component
 
@@ -190,8 +193,11 @@ New exercise combining "Noten lesen" (sheet music) with microphone-based note re
 
 ## Adding a New Game
 
-1. Create `js/games/myGame/` with `myGame.js` exporting `startExercise()` and `stopExercise()`
-2. Add the view HTML to `index.html` (`<section id="view-my-game" class="view">`)
-3. Wire navigation in `js/app.js`
-4. Use `<gt-fretboard>` if a fretboard is needed (see API above)
-5. Add a `CLAUDE.md` in the new folder (always — create it even if it doesn't exist yet)
+1. Create `js/games/myGame/` with `myGame.js` exporting `createMyGameExercise()`
+2. Create `pages/exercises/my-game.html` that:
+   - Links to `../../style.css`
+   - Includes `<gt-exercise-header>`
+   - Imports `../../js/components/index.js`
+   - Imports and initializes your exercise from `../../js/games/myGame/myGame.js`
+3. Add a `<gt-menu-card>` to `index.html` pointing to `pages/exercises/my-game.html`
+4. Add a `CLAUDE.md` in the new game folder

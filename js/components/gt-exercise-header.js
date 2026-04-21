@@ -30,7 +30,7 @@ class GtExerciseHeader extends HTMLElement {
 
     this.innerHTML = `
       <div class="exercise-header">
-        <a href="index.html" class="btn-back">← Zurück zum Menü</a>
+        <a href="../../index.html" class="btn-back">← Zurück zum Menü</a>
         ${title ? `<h2 class="exercise-title-header">${title}</h2>` : ''}
         ${scoreHtml}
       </div>

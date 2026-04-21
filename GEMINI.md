@@ -29,7 +29,7 @@ As an AI agent working on this project, you MUST adhere to the following rules:
 ## Current Architecture (updated – Phase 1 Web Components)
 
 Four layers:
-1. **Navigation** (`js/app.js`) – imports `js/components/index.js`, starts/stops games, and syncs browser history with `pushState`/`replaceState` plus `popstate`
+1. **Navigation** (HTML Files) – navigation between main menu (`index.html`) and exercises/tools (e.g., `pages/exercises/*.html`) via standard links; `js/app.js` manages version display and menu initialization.
 2. **Games/Tools** (`js/games/*`, `js/tools/*`) – State + flow control
 3. **UI Components** (`js/components/*`) – Reusable Web Components
 4. **Logic** (`*Logic.js`) – Pure functions, fully unit-tested
