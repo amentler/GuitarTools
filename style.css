@@ -54,7 +54,7 @@ body {
 
 /* === Main Menu === */
 #view-menu {
-  padding: 3rem 1rem 2rem;
+  padding: 1.5rem 1rem 2rem;
   gap: 2rem;
 }
 
@@ -63,7 +63,7 @@ body {
 }
 
 .menu-title {
-  font-size: clamp(1.8rem, 5vw, 3rem);
+  font-size: clamp(1.4rem, 4vw, 2.2rem);
   font-weight: 700;
   color: var(--color-accent-alt);
   letter-spacing: -0.02em;
@@ -71,7 +71,7 @@ body {
 }
 
 .menu-title {
-  font-size: clamp(1.8rem, 5vw, 3rem);
+  font-size: clamp(1.4rem, 4vw, 2.2rem);
   font-weight: 700;
   color: var(--color-accent-alt);
   letter-spacing: -0.02em;
