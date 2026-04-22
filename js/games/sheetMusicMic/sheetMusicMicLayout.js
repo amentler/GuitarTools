@@ -1,4 +1,4 @@
-import { calcFirstBarWidth } from '../sheetMusicReading/sheetMusicLogic.js';
+import { calcFirstBarWidth } from '../../shared/music/sheetMusicLogic.js';
 
 export const SHEET_MIC_REST_BAR_W = 128;
 

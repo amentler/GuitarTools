@@ -4,8 +4,8 @@
  * same flow as chordExercise.js but uses HPCP-based recognition.
  */
 
-import { getRandomChord } from '../akkordTrainer/akkordLogic.js';
-import { renderChordDiagram } from '../akkordTrainer/akkordSVG.js';
+import { getRandomChord } from '../../domain/chords/chordCatalog.js';
+import { renderChordDiagram } from '../../shared/rendering/chords/chordDiagramRenderer.js';
 import { detectChordEssentia, stopListeningEssentia } from './essentiaChordDetection.js';
 import { getEssentia } from './essentiaLoader.js';
 

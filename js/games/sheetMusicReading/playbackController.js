@@ -13,7 +13,7 @@
  *   pc.stop();
  */
 
-import { MetronomeLogic } from '../../tools/metronome/metronomeLogic.js';
+import { MetronomeLogic } from '../../shared/audio/metronomeLogic.js';
 
 export class PlaybackController {
   constructor() {

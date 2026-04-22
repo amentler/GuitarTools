@@ -20,6 +20,22 @@ export default [
     },
   },
   {
+    files: ['js/components/**/*.js'],
+    rules: {
+      'no-restricted-imports': ['error', {
+        patterns: ['**/games/**', '**/tools/**'],
+      }],
+    },
+  },
+  {
+    files: ['js/tools/**/*.js'],
+    rules: {
+      'no-restricted-imports': ['error', {
+        patterns: ['**/games/**'],
+      }],
+    },
+  },
+  {
     files: ['tests/**/*.js', 'vitest.config.js', 'eslint.config.js'],
     languageOptions: {
       ecmaVersion: 2022,

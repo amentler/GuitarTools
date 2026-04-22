@@ -12,8 +12,8 @@ vi.mock('../../js/utils/settings.js', () => ({
   wireFretSlider: vi.fn(),
   syncFretSlider: vi.fn()
 }));
-vi.mock('../../js/games/sheetMusicReading/sheetMusicLogic.js', async () => {
-  const actual = await vi.importActual('../../js/games/sheetMusicReading/sheetMusicLogic.js');
+vi.mock('../../js/shared/music/sheetMusicLogic.js', async () => {
+  const actual = await vi.importActual('../../js/shared/music/sheetMusicLogic.js');
   return {
     ...actual,
     generateBars: vi.fn((...args) => actual.generateBars(...args)),
@@ -134,7 +134,7 @@ describe('SheetMusicMic Exercise Basic Integration', () => {
       },
     });
 
-    const sheetMusicLogic = await import('../../js/games/sheetMusicReading/sheetMusicLogic.js');
+    const sheetMusicLogic = await import('../../js/shared/music/sheetMusicLogic.js');
     sheetMusicLogic.generateBars.mockReturnValue(repeatedBars);
 
     exercise.startExercise();

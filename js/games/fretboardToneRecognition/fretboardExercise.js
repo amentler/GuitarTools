@@ -1,7 +1,7 @@
 // Fretboard exercise – state management & DOM interaction
 // Encapsulates all state in a factory function for testability and isolation.
 
-import { CHROMATIC_NOTES, getNoteAtPosition, getRandomPosition } from './fretboardLogic.js';
+import { CHROMATIC_NOTES, getNoteAtPosition, getRandomPosition } from '../../domain/fretboard/fretboardLogic.js';
 import { renderFretboard } from './fretboardSVG.js';
 import { wireStringToggles, syncStringToggles, wireFretSlider, syncFretSlider } from '../../utils/settings.js';
 

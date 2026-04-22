@@ -17,13 +17,21 @@ export const STANDARD_TUNING = [
   { note: 'E', octave: 4 },
 ];
 
-export const NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+import {
+  analyzeInputLevel,
+  GUITAR_MIN_RMS,
+  GUITAR_MAX_CLIPPING_RATIO,
+} from '../../shared/audio/inputLevel.js';
+import {
+  NOTE_NAMES,
+  frequencyToNote,
+  noteToFrequency,
+} from '../../domain/pitch/pitchCore.js';
+
+export { NOTE_NAMES, frequencyToNote, noteToFrequency, analyzeInputLevel, GUITAR_MIN_RMS, GUITAR_MAX_CLIPPING_RATIO };
 
 export const GUITAR_MIN_FREQUENCY = 70;
 export const GUITAR_MAX_FREQUENCY = 1000;
-export const GUITAR_MIN_RMS = 0.008;
-export const GUITAR_MAX_CLIPPING_RATIO = 0.02;
-
 // ── V4: Adaptiver Noise Floor ────────────────────────────────────────────────
 
 /** Multiplier applied to measured noise floor to derive the effective RMS gate. */
@@ -74,23 +82,6 @@ export function getAdaptiveFftSize(referenceHz = null) {
   if (referenceHz !== null && referenceHz > 160) return 8192;
   // A2/D3 (90–160 Hz) and free mode (null): safe middle-ground.
   return 16384;
-}
-
-export function analyzeInputLevel(buffer, minRms = GUITAR_MIN_RMS) {
-  let sumSquares = 0;
-  let clipping = 0;
-  for (let i = 0; i < buffer.length; i++) {
-    const v = buffer[i];
-    sumSquares += v * v;
-    if (Math.abs(v) >= 0.98) clipping++;
-  }
-  const rms = Math.sqrt(sumSquares / buffer.length);
-  const clippingRatio = clipping / buffer.length;
-  return {
-    rms,
-    clippingRatio,
-    isValid: rms >= minRms && clippingRatio <= GUITAR_MAX_CLIPPING_RATIO,
-  };
 }
 
 function onePoleLowpass(input, sampleRate, cutoffHz) {
@@ -367,32 +358,6 @@ export function detectPitch(buffer, sampleRate, options = {}) {
   }
   
   return selectCombinedPitch(yinHz, hpsHz, hpsAgreementCents, options.lastStableHz ?? null);
-}
-
-/**
- * Converts a frequency to the nearest note, octave, and cents offset.
- * @param {number} freq Hz
- * @returns {{ note: string, octave: number, cents: number }}
- */
-export function frequencyToNote(freq) {
-  const midiNum = 12 * Math.log2(freq / 440) + 69;
-  const midiRounded = Math.round(midiNum);
-  const noteIndex = ((midiRounded % 12) + 12) % 12;
-  const octave = Math.floor(midiRounded / 12) - 1;
-  const cents = (midiNum - midiRounded) * 100;
-  return { note: NOTE_NAMES[noteIndex], octave, cents };
-}
-
-/**
- * Converts a note name and octave to frequency in Hz.
- * @param {string} note   e.g. 'E', 'A', 'D#'
- * @param {number} octave
- * @returns {number} Hz
- */
-export function noteToFrequency(note, octave) {
-  const idx = NOTE_NAMES.indexOf(note);
-  const midi = (octave + 1) * 12 + idx;
-  return 440 * Math.pow(2, (midi - 69) / 12);
 }
 
 /**

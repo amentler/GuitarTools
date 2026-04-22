@@ -1,47 +1,5 @@
-/**
- * akkordLogic.js
- * Chord Trainer logic – chord data is the Single Source of Truth in js/data/akkordData.js.
- * String mapping: 1 = high e (top), 6 = low E (bottom)
- *
- * TODO (for agent on PR #58 / copilot/add-finger-information-to-akkord-uebersicht):
- * When js/data/akkordData.js is created as the single source of truth, migrate
- * CHORDS and CHORD_CATEGORIES from this file to akkordData.js and replace them
- * here with: import { CHORDS, CHORD_CATEGORIES } from '../../data/akkordData.js';
- *            export { CHORDS, CHORD_CATEGORIES };
- * The finger fields added here must be preserved during migration.
- * getRandomChord and validateChord stay in this file unchanged.
- */
-
-import { CHORDS, CHORD_CATEGORIES } from '../../data/akkordData.js';
-export { CHORDS, CHORD_CATEGORIES };
-
-// Keep LEVELS for backward compatibility if needed, but we use categories now
-export const LEVELS = [
-  CHORD_CATEGORIES.standard.slice(0, 5),
-  CHORD_CATEGORIES.standard
-];
-
-/**
- * Gets a random chord name from the specified categories.
- */
-export function getRandomChord(activeCategories = ["simplified"]) {
-  let pool = [];
-  activeCategories.forEach(cat => {
-    if (CHORD_CATEGORIES[cat]) {
-      pool = pool.concat(CHORD_CATEGORIES[cat]);
-    }
-  });
-
-  if (pool.length === 0) {
-    pool = CHORD_CATEGORIES.simplified; // Fallback
-  }
-
-  const name = pool[Math.floor(Math.random() * pool.length)];
-  return {
-    name,
-    positions: CHORDS[name]
-  };
-}
+import { CHORDS, CHORD_CATEGORIES, LEVELS, getRandomChord } from '../../domain/chords/chordCatalog.js';
+export { CHORDS, CHORD_CATEGORIES, LEVELS, getRandomChord };
 
 /**
  * Validates the user's positions against the reference chord.

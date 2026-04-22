@@ -5,7 +5,7 @@
 //   hard – any wrong note restarts the current sequence from the beginning
 // Encapsulates all state in a factory function.
 
-import { generateBars, getFilteredNotes } from '../sheetMusicReading/sheetMusicLogic.js';
+import { generateBars, getFilteredNotes } from '../../shared/music/sheetMusicLogic.js';
 import {
   classifyFrame,
   createMatchState,

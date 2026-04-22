@@ -1,6 +1,6 @@
 // Pure note-playing exercise logic – no DOM or audio dependencies
 
-import { getNoteAtPosition } from '../fretboardToneRecognition/fretboardLogic.js';
+import { getNoteAtPosition } from '../../domain/fretboard/fretboardLogic.js';
 
 const CHROMATIC_NOTES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
 

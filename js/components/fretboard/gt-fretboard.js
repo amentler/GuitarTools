@@ -1,5 +1,5 @@
 import { renderFretboard } from './gt-fretboard-render.js';
-import { getNoteAtPosition } from '../../games/fretboardToneRecognition/fretboardLogic.js';
+import { getNoteAtPosition } from '../../domain/fretboard/fretboardLogic.js';
 
 /**
  * <gt-fretboard> – reusable interactive fretboard Web Component.

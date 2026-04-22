@@ -1,4 +1,4 @@
-import { CHROMATIC_NOTES, getNoteAtPosition } from '../fretboardToneRecognition/fretboardLogic.js';
+import { CHROMATIC_NOTES, getNoteAtPosition } from '../../domain/fretboard/fretboardLogic.js';
 
 export const NATURAL_NOTES = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
 

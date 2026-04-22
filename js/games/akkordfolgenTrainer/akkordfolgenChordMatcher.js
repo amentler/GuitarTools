@@ -5,7 +5,7 @@
  * No DOM/audio dependencies — fully unit-testable.
  */
 
-import { NOTE_NAMES } from '../../tools/guitarTuner/pitchLogic.js';
+import { NOTE_NAMES } from '../../domain/pitch/pitchCore.js';
 
 // German note name → chromatic index (C=0 … B=11, using sharp/English notation)
 const GERMAN_TO_CHROMA = {

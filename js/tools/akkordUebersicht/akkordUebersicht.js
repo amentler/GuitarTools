@@ -1,5 +1,5 @@
 import { CHORDS, CHORD_META } from '../../data/akkordData.js';
-import { renderChordDiagram } from '../../games/akkordTrainer/akkordSVG.js';
+import { renderChordDiagram } from '../../shared/rendering/chords/chordDiagramRenderer.js';
 
 const ROOT_ORDER = ['A', 'C', 'D', 'E', 'F', 'G', 'H'];
 const TYPE_ORDER = ['Dur', 'Moll', 'Dom7', 'Maj7', 'Min7', 'Dim', 'Sus', 'Add'];

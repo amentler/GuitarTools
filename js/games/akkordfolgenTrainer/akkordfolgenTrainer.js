@@ -5,7 +5,7 @@
  * to verify the correct chord is being played before marking it as done.
  */
 
-import { MetronomeLogic } from '../../tools/metronome/metronomeLogic.js';
+import { MetronomeLogic } from '../../shared/audio/metronomeLogic.js';
 import {
   buildProgression,
   generateRandomProgression,
@@ -13,10 +13,10 @@ import {
   PROGRESSIONS,
   MAJOR_KEYS,
 } from './akkordfolgenLogic.js';
-import { renderChordDiagram } from '../akkordTrainer/akkordSVG.js';
+import { renderChordDiagram } from '../../shared/rendering/chords/chordDiagramRenderer.js';
 import { CHORDS } from '../../data/akkordData.js';
-import { GUITAR_MIN_RMS, analyzeInputLevel } from '../../tools/guitarTuner/pitchLogic.js';
-import { detectPeaksFromSpectrum, identifyNotesFromPeaks } from '../../utils/chordDetectionUtils.js';
+import { GUITAR_MIN_RMS, analyzeInputLevel } from '../../shared/audio/inputLevel.js';
+import { detectPeaksFromSpectrum, identifyNotesFromPeaks } from '../../domain/chords/chordDetectionLogic.js';
 import { getExpectedNoteClasses, matchDetectedNotes } from './akkordfolgenChordMatcher.js';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
