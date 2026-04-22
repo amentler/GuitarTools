@@ -1,1 +1,1 @@
-Version 2026-04-22 20:32 UTC | fix chord-playing essentia UI fallback and add C-Dur e2e
+Version 2026-04-22 20:40 UTC | update chord recognition repair notes
