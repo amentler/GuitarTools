@@ -10,7 +10,7 @@ const mountSpy = vi.fn();
 
 vi.mock('../../js/components/index.js', () => ({}));
 vi.mock('../../js/tools/metronome/metronome.js', () => ({
-  createMetronomeExercise: () => ({
+  createMetronomeTool: () => ({
     mount: mountSpy,
     unmount: vi.fn(),
   }),
@@ -29,7 +29,7 @@ describe('Metronome page smoke', () => {
 
     const moduleScript = document.querySelector('script[type="module"]');
     expect(moduleScript?.getAttribute('src')).toBe('./bootstrap.js');
-    expect(html).not.toContain('createMetronomeExercise');
+    expect(html).not.toContain('createMetronomeTool');
 
     await import('../../pages/metronome/bootstrap.js');
 

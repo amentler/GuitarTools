@@ -1,1 +1,1 @@
-Version 2026-04-22 07:52 UTC | add metronome page reachability test
+Version 2026-04-22 07:52 UTC | standardize metronome tool bootstrap api
