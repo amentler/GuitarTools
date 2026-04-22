@@ -11,18 +11,20 @@ import {
 import { getRandomPitch, getPositionsForPitch } from './notePlayingLogic.js';
 import { renderNoteOnStaff, renderNotePositionsTab } from './notePlayingSVG.js';
 import { wireStringToggles, syncStringToggles, wireFretSlider, syncFretSlider } from '../../utils/settings.js';
+import { resolveNotePlayingUI } from './notePlayingUI.js';
+import {
+  createNotePlayingAudioSession,
+  openNotePlayingAudioSession,
+  closeNotePlayingAudioSession,
+} from './notePlayingAudioSession.js';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 const ANALYZE_INTERVAL_MS = 50; // matching-loop cadence
 
 export function createNotePlayingExercise() {
-  // Audio resources (per-instance)
-  let audioCtx   = null;
-  let analyser   = null;
-  let stream     = null;
   let intervalId = null;
   let settingsWired = false;
-  let currentFftSize = 0;
+  const audioSession = createNotePlayingAudioSession();
 
   // State (per-instance)
   let state = {
@@ -42,23 +44,6 @@ export function createNotePlayingExercise() {
   let ui = null;
   let rootElement = null;
 
-  function resolveUI() {
-    ui = {
-      permission:      rootElement?.querySelector('#note-play-permission'),
-      notation:        rootElement?.querySelector('#note-play-notation'),
-      targetNote:      rootElement?.querySelector('#note-play-target'),
-      tabContainer:    rootElement?.querySelector('#note-play-tab'),
-      hint1Btn:        rootElement?.querySelector('#note-play-hint1'),
-      hint2Btn:        rootElement?.querySelector('#note-play-hint2'),
-      skipBtn:         rootElement?.querySelector('#note-play-skip'),
-      detectedNote:    rootElement?.querySelector('#note-play-detected'),
-      feedback:        rootElement?.querySelector('#note-play-feedback'),
-      score:           rootElement?.querySelector('#score-value'),
-      slider:          rootElement?.querySelector('#note-play-fret-slider'),
-      sliderLabel:     rootElement?.querySelector('#note-play-fret-label'),
-    };
-  }
-
   // Tracks last rendered note to avoid unnecessary VexFlow re-renders.
   let lastRenderedDetected = null;
 
@@ -66,7 +51,7 @@ export function createNotePlayingExercise() {
 
   async function mount(root = document) {
     rootElement = root;
-    resolveUI();
+    ui = resolveNotePlayingUI(rootElement);
 
     // Cancel any in-flight advance timer
     if (state.advanceTimeout) {
@@ -102,7 +87,7 @@ export function createNotePlayingExercise() {
     ui.permission.textContent = 'Mikrofon-Zugriff wird benötigt…';
 
     try {
-      stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+      audioSession.stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
     } catch {
       ui.permission.textContent = 'Mikrofon nicht verfügbar. Bitte Zugriff erlauben.';
       return;
@@ -117,14 +102,8 @@ export function createNotePlayingExercise() {
     // heuristics. Sharing a single AnalyserNode would force one fftSize on both,
     // causing audio glitches and wrong latency/precision trade-offs.
     // See improvement.md §1.4 for the design rationale.
-    audioCtx = new AudioContext();
-    if (audioCtx.state === 'suspended') {
-      await audioCtx.resume();
-    }
-    analyser = audioCtx.createAnalyser();
-    currentFftSize = 0;
+    await openNotePlayingAudioSession(audioSession, audioSession.stream, AudioContext);
     applyTargetFftSize();
-    audioCtx.createMediaStreamSource(stream).connect(analyser);
 
     intervalId = setInterval(analyzeFrame, ANALYZE_INTERVAL_MS);
   }
@@ -138,18 +117,7 @@ export function createNotePlayingExercise() {
       state.advanceTimeout = null;
     }
 
-    if (stream) {
-      stream.getTracks().forEach(t => t.stop());
-      stream = null;
-    }
-
-    if (audioCtx) {
-      audioCtx.close();
-      audioCtx = null;
-      analyser = null;
-    }
-
-    currentFftSize = 0;
+    closeNotePlayingAudioSession(audioSession);
     state.isLocked = false;
     rootElement = null;
     ui = null;
@@ -160,12 +128,12 @@ export function createNotePlayingExercise() {
    * current target note.
    */
   function applyTargetFftSize() {
-    if (!analyser) return;
+    if (!audioSession.analyser) return;
     if (!state.targetNote) return;
-    const recommended = getRecommendedFftSize(state.targetNote, audioCtx?.sampleRate ?? 44100);
-    if (recommended !== currentFftSize) {
-      analyser.fftSize = recommended;
-      currentFftSize = recommended;
+    const recommended = getRecommendedFftSize(state.targetNote, audioSession.audioCtx?.sampleRate ?? 44100);
+    if (recommended !== audioSession.currentFftSize) {
+      audioSession.analyser.fftSize = recommended;
+      audioSession.currentFftSize = recommended;
     }
   }
 
@@ -202,7 +170,7 @@ export function createNotePlayingExercise() {
   function syncSettingsUI() {
     syncFretSlider(ui.slider, ui.sliderLabel, state.settings.maxFret);
     syncStringToggles(
-      rootElement.querySelectorAll('#note-play-string-toggles .btn-string'),
+      ui.stringButtons,
       state.settings.activeStrings,
     );
   }
@@ -225,13 +193,13 @@ export function createNotePlayingExercise() {
   // ── Pitch analysis frame ──────────────────────────────────────────────────
 
   function analyzeFrame() {
-    if (!analyser || state.isLocked) return;
+    if (!audioSession.analyser || state.isLocked) return;
     if (!state.targetNote) return;
 
-    const buffer = new Float32Array(analyser.fftSize);
-    analyser.getFloatTimeDomainData(buffer);
+    const buffer = new Float32Array(audioSession.analyser.fftSize);
+    audioSession.analyser.getFloatTimeDomainData(buffer);
 
-    const frameResult = classifyFrame(buffer, audioCtx.sampleRate, state.targetNote);
+    const frameResult = classifyFrame(buffer, audioSession.audioCtx.sampleRate, state.targetNote);
 
     updateDetectedNote(frameResult.detectedPitch);
 
