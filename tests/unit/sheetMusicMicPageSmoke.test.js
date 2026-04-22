@@ -10,7 +10,7 @@ const mountSpy = vi.fn();
 
 vi.mock('../../js/components/index.js', () => ({}));
 vi.mock('../../js/games/sheetMusicMic/sheetMusicMicExercise.js', () => ({
-  createSheetMusicMicExercise: () => ({
+  createSheetMusicMicFeature: () => ({
     mount: mountSpy,
     unmount: vi.fn(),
   }),
@@ -29,7 +29,7 @@ describe('Sheet music mic page smoke', () => {
 
     const moduleScript = document.querySelector('script[type="module"]');
     expect(moduleScript?.getAttribute('src')).toBe('./bootstrap.js');
-    expect(html).not.toContain('createSheetMusicMicExercise');
+    expect(html).not.toContain('createSheetMusicMicFeature');
 
     await import('../../pages/sheet-music-mic/bootstrap.js');
 

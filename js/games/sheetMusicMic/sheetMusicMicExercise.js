@@ -445,3 +445,5 @@ export function createSheetMusicMicExercise() {
     stopExercise: unmount,
   };
 }
+
+export const createSheetMusicMicFeature = createSheetMusicMicExercise;
