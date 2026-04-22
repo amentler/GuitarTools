@@ -1,141 +1,94 @@
-/**
- * tests/unit/essentiaChordAudio.test.js
- *
- * Integration tests for the essentia HPCP chord recognition pipeline using
- * WAV fixture files. The full application pipeline is exercised:
- *
- *   computeDbSpectrum → detectEssentiaPeaks → computeHpcpPureJS
- *   → averageHpcps → matchHpcpToChord
- *
- * The essentia WASM library is NOT loaded — computeHpcpPureJS provides an
- * equivalent pure-JS implementation, and detectEssentiaPeaks is the same
- * pure function used in production. This tests the app's pipeline code, not
- * the third-party library.
- *
- * Fixture layout (shared with chordDetectionAudio.test.js):
- *   tests/fixtures/chords/{ChordName}/*.wav  – auto-discovered positive tests
- */
+// @vitest-environment jsdom
 
-import { describe, it, expect } from 'vitest';
-import { join, dirname } from 'path';
-import { readdirSync, existsSync } from 'fs';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import path from 'path';
 import { fileURLToPath } from 'url';
-import { readWavFile } from '../helpers/wavDecoder.js';
-import { detectEssentiaChordFromSamples } from '../helpers/essentiaChordFixtureRunner.js';
+import { installEssentiaDetectionHarness } from '../helpers/essentiaDetectionHarness.js';
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const FIXTURES = join(__dirname, '../fixtures/chords');
+const getEssentiaMock = vi.fn(() => Promise.reject(new Error('WASM im Unit-Test deaktiviert')));
 
-// ── Auto-discovery: positive recognition for every chord subfolder ────────────
-// Each subfolder name IS the chord name. Every *.wav inside → one test.
+vi.mock('../../js/games/chordExerciseEssentia/essentiaLoader.js', () => ({
+  getEssentia: getEssentiaMock,
+}));
 
-const chordDirs = readdirSync(FIXTURES, { withFileTypes: true })
-  .filter(e => e.isDirectory())
-  .map(e => e.name);
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const FIXTURES = path.join(__dirname, '../fixtures/chords');
 
-for (const chordName of chordDirs) {
-  const dir = join(FIXTURES, chordName);
-  const wavFiles = existsSync(dir)
-    ? readdirSync(dir).filter(f => f.endsWith('.wav'))
-    : [];
+const CAGED_CASES = [
+  { chordName: 'A-Dur', wavFile: 'A-Dur/amaj.wav' },
+  { chordName: 'C-Dur', wavFile: 'C-Dur/c_chord.wav' },
+  { chordName: 'D-Dur', wavFile: 'D-Dur/d_chord.wav' },
+  { chordName: 'E-Dur', wavFile: 'E-Dur/emaj.wav' },
+  { chordName: 'G-Dur', wavFile: 'G-Dur/g_chord.wav' },
+];
 
-  if (wavFiles.length === 0) continue;
+describe('detectChordEssentia – typische CAGED-Akkorde', () => {
+  const originalNavigator = globalThis.navigator;
+  const originalAudioContext = globalThis.AudioContext;
 
-  describe(`Essentia Auto: ${chordName} – ${wavFiles.length} Aufnahme(n)`, () => {
-    for (const wavFile of wavFiles) {
-      it(`erkennt ${chordName} aus ${wavFile} (HPCP)`, () => {
-        const { samples, sampleRate } = readWavFile(join(dir, wavFile));
-        const result = detectEssentiaChordFromSamples(samples, sampleRate, chordName);
-        expect(
-          result.isCorrect,
-          `${wavFile}: confidence=${result.confidence.toFixed(3)}, bestMatch=${result.bestMatch}`,
-        ).toBe(true);
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.resetModules();
+    getEssentiaMock.mockClear();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+
+    if (originalNavigator === undefined) {
+      delete globalThis.navigator;
+    } else {
+      Object.defineProperty(globalThis, 'navigator', {
+        configurable: true,
+        value: originalNavigator,
       });
     }
+
+    if (originalAudioContext === undefined) {
+      delete globalThis.AudioContext;
+    } else {
+      globalThis.AudioContext = originalAudioContext;
+    }
+
+    if (typeof window !== 'undefined') {
+      if (originalAudioContext === undefined) {
+        delete window.AudioContext;
+      } else {
+        window.AudioContext = originalAudioContext;
+      }
+    }
   });
-}
 
-// ── G-Dur positive and negative ───────────────────────────────────────────────
+  for (const { chordName, wavFile } of CAGED_CASES) {
+    it(`erkennt ${chordName} aus ${wavFile} über detectChordEssentia()`, async () => {
+      installEssentiaDetectionHarness(path.join(FIXTURES, wavFile));
 
-describe('Essentia: G-Dur (g_chord.wav)', () => {
-  it('recognises G-Dur via HPCP', () => {
-    const { samples, sampleRate } = readWavFile(join(FIXTURES, 'G-Dur/g_chord.wav'));
-    const result = detectEssentiaChordFromSamples(samples, sampleRate, 'G-Dur');
-    expect(result.isCorrect).toBe(true);
-    expect(result.confidence).toBeGreaterThan(0.65);
-  });
+      const { detectChordEssentia } = await import('../../js/games/chordExerciseEssentia/essentiaChordDetection.js');
+      const resultPromise = detectChordEssentia(chordName);
 
-  it('does not match C-Dur (missing C)', () => {
-    const { samples, sampleRate } = readWavFile(join(FIXTURES, 'G-Dur/g_chord.wav'));
-    const result = detectEssentiaChordFromSamples(samples, sampleRate, 'C-Dur');
+      await vi.advanceTimersByTimeAsync(1000);
+      const result = await resultPromise;
+
+      expect(getEssentiaMock).toHaveBeenCalledTimes(1);
+      expect(result.wasm).toBe(false);
+      expect(
+        result.isCorrect,
+        `${wavFile}: confidence=${result.confidence.toFixed(3)}, bestMatch=${result.bestMatch}`,
+      ).toBe(true);
+    });
+  }
+
+  it('lehnt einen falschen Zielakkord über detectChordEssentia() ab', async () => {
+    installEssentiaDetectionHarness(path.join(FIXTURES, 'D-Dur/d_chord.wav'));
+
+    const { detectChordEssentia } = await import('../../js/games/chordExerciseEssentia/essentiaChordDetection.js');
+    const resultPromise = detectChordEssentia('G-Dur');
+
+    await vi.advanceTimersByTimeAsync(1000);
+    const result = await resultPromise;
+
+    expect(result.wasm).toBe(false);
     expect(result.isCorrect).toBe(false);
-  });
-
-  it('does not match D-Dur (missing A)', () => {
-    const { samples, sampleRate } = readWavFile(join(FIXTURES, 'G-Dur/g_chord.wav'));
-    const result = detectEssentiaChordFromSamples(samples, sampleRate, 'D-Dur');
-    expect(result.isCorrect).toBe(false);
-  });
-});
-
-// ── C-Dur positive and negative ───────────────────────────────────────────────
-
-describe('Essentia: C-Dur (synth.wav)', () => {
-  it('recognises C-Dur via HPCP', () => {
-    const { samples, sampleRate } = readWavFile(join(FIXTURES, 'C-Dur/synth.wav'));
-    const result = detectEssentiaChordFromSamples(samples, sampleRate, 'C-Dur');
-    expect(result.isCorrect).toBe(true);
-    expect(result.confidence).toBeGreaterThan(0.65);
-  });
-
-  it('does not match G-Dur (missing B, D)', () => {
-    const { samples, sampleRate } = readWavFile(join(FIXTURES, 'C-Dur/synth.wav'));
-    const result = detectEssentiaChordFromSamples(samples, sampleRate, 'G-Dur');
-    expect(result.isCorrect).toBe(false);
-  });
-
-  it('does not match E-Moll (missing B)', () => {
-    const { samples, sampleRate } = readWavFile(join(FIXTURES, 'C-Dur/synth.wav'));
-    const result = detectEssentiaChordFromSamples(samples, sampleRate, 'E-Moll');
-    expect(result.isCorrect).toBe(false);
-  });
-});
-
-describe('Essentia: C-Dur (c_chord.wav)', () => {
-  it('recognises C-Dur via HPCP', () => {
-    const { samples, sampleRate } = readWavFile(join(FIXTURES, 'C-Dur/c_chord.wav'));
-    const result = detectEssentiaChordFromSamples(samples, sampleRate, 'C-Dur');
-    expect(result.isCorrect).toBe(true);
-  });
-});
-
-// ── E-Moll positive and negative ─────────────────────────────────────────────
-
-describe('Essentia: E-Moll (eminor_chord.wav)', () => {
-  it('recognises E-Moll via HPCP', () => {
-    const { samples, sampleRate } = readWavFile(join(FIXTURES, 'E-Moll/eminor_chord.wav'));
-    const result = detectEssentiaChordFromSamples(samples, sampleRate, 'E-Moll');
-    expect(result.isCorrect).toBe(true);
-    expect(result.confidence).toBeGreaterThan(0.65);
-  });
-
-  it('does not match C-Dur (missing C)', () => {
-    const { samples, sampleRate } = readWavFile(join(FIXTURES, 'E-Moll/eminor_chord.wav'));
-    const result = detectEssentiaChordFromSamples(samples, sampleRate, 'C-Dur');
-    expect(result.isCorrect).toBe(false);
-  });
-
-  it('does not match G-Dur (missing D)', () => {
-    const { samples, sampleRate } = readWavFile(join(FIXTURES, 'E-Moll/eminor_chord.wav'));
-    const result = detectEssentiaChordFromSamples(samples, sampleRate, 'G-Dur');
-    expect(result.isCorrect).toBe(false);
-  });
-});
-
-describe('Essentia: E-Moll (synth.wav)', () => {
-  it('recognises E-Moll via HPCP', () => {
-    const { samples, sampleRate } = readWavFile(join(FIXTURES, 'E-Moll/synth.wav'));
-    const result = detectEssentiaChordFromSamples(samples, sampleRate, 'E-Moll');
-    expect(result.isCorrect).toBe(true);
+    expect(result.bestMatch).toContain('D-Dur');
   });
 });

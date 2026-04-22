@@ -1,1 +1,1 @@
-Version 2026-04-22 17:21 UTC | playwright e2e chord diagnosis
+Version 2026-04-22 20:12 UTC | rewrite essentia caged tests around detectChordEssentia
