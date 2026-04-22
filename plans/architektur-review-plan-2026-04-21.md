@@ -357,6 +357,7 @@ Optimierung:
 ### Phase 1: Architektur konsolidieren
 
 Priorität: P1
+Status: abgeschlossen am 2026-04-22
 
 1. Zielarchitektur festlegen: Multi-Page-App mit seitenlokalem JS-Bootstrap pro Seite.
 2. `exerciseRegistry` und übrig gebliebene SPA-Artefakte entfernen oder reaktivieren, aber nicht beides parallel betreiben.
