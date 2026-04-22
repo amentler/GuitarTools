@@ -20,6 +20,16 @@ import {
 } from './noteOnsetGate.js';
 import { renderScoreWithStatus } from './sheetMusicMicSVG.js';
 import { wireStringToggles, syncStringToggles, wireFretSlider, syncFretSlider } from '../../utils/settings.js';
+import {
+  resolveSheetMusicMicUI,
+  syncSheetMusicMicUI,
+  setMicListeningUI,
+} from './sheetMusicMicUI.js';
+import {
+  createSheetMusicMicAudioSession,
+  openSheetMusicMicAudioSession,
+  closeSheetMusicMicAudioSession,
+} from './sheetMusicMicAudioSession.js';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 const SUCCESS_PAUSE_MS      = 600; // pause after correct note before advancing
@@ -27,12 +37,8 @@ const WRONG_FEEDBACK_MS     = 900; // duration of wrong-note feedback in easy mo
 const ANALYZE_INTERVAL_MS   = 50;  // frame cadence for the matching loop
 
 export function createSheetMusicMicExercise() {
-  // Audio resources (per-instance)
-  let audioCtx   = null;
-  let analyser   = null;
-  let stream     = null;
   let intervalId = null;
-  let currentFftSize = 0;
+  const audioSession = createSheetMusicMicAudioSession();
 
   // State (per-instance)
   let state = {
@@ -53,23 +59,6 @@ export function createSheetMusicMicExercise() {
 
   let settingsWired = false;
   let ui = null;
-
-  // ── UI helpers ─────────────────────────────────────────────────────────────
-  function resolveUI() {
-    ui = {
-      permission:   document.getElementById('sheet-mic-permission'),
-      scoreEl:      document.getElementById('score-value'),
-      container:    document.getElementById('sheet-mic-score-container'),
-      startBtn:     document.getElementById('sheet-mic-start-btn'),
-      stopBtn:      document.getElementById('sheet-mic-stop-btn'),
-      newBarsBtn:   document.getElementById('sheet-mic-new-bars'),
-      feedback:     document.getElementById('sheet-mic-feedback'),
-      currentNote:  document.getElementById('sheet-mic-current-note'),
-      modeSelect:   document.getElementById('sheet-mic-mode'),
-      slider:       document.getElementById('sheet-mic-fret-slider'),
-      sliderLabel:  document.getElementById('sheet-mic-fret-label'),
-    };
-  }
 
   function getNotesPool() {
     return getFilteredNotes(state.settings.maxFret, state.settings.activeStrings);
@@ -163,14 +152,14 @@ export function createSheetMusicMicExercise() {
    * the current target note.
    */
   function applyTargetFftSize() {
-    if (!analyser) return;
+    if (!audioSession.analyser) return;
     const note = getCurrentNote();
     if (!note) return;
     const targetPitch = `${note.name}${note.octave}`;
-    const recommended = getRecommendedFftSize(targetPitch, audioCtx?.sampleRate ?? 44100);
-    if (recommended !== currentFftSize) {
-      analyser.fftSize = recommended;
-      currentFftSize = recommended;
+    const recommended = getRecommendedFftSize(targetPitch, audioSession.audioCtx?.sampleRate ?? 44100);
+    if (recommended !== audioSession.currentFftSize) {
+      audioSession.analyser.fftSize = recommended;
+      audioSession.currentFftSize = recommended;
     }
   }
 
@@ -214,6 +203,7 @@ export function createSheetMusicMicExercise() {
   // ── Audio pipeline ────────────────────────────────────────────────────────
   async function startListening() {
     if (state.isListening) return;
+    const activeUi = ui;
 
     state.matchState     = createMatchState();
     state.onsetGateState = createOnsetGateState();
@@ -223,7 +213,7 @@ export function createSheetMusicMicExercise() {
     ui.permission.textContent   = 'Mikrofon-Zugriff wird benötigt…';
 
     try {
-      stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+      audioSession.stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
     } catch {
       ui.permission.textContent = 'Mikrofon nicht verfügbar. Bitte Zugriff erlauben.';
       return;
@@ -238,57 +228,42 @@ export function createSheetMusicMicExercise() {
     // heuristics. Sharing a single AnalyserNode would force one fftSize on both,
     // causing audio glitches and wrong latency/precision trade-offs.
     // See improvement.md §1.4 for the design rationale.
-    audioCtx = new AudioContext();
-    if (audioCtx.state === 'suspended') {
-      await audioCtx.resume();
+    openSheetMusicMicAudioSession(audioSession, audioSession.stream, AudioContext);
+    if (ui !== activeUi || !ui) {
+      closeSheetMusicMicAudioSession(audioSession);
+      return;
     }
-    analyser = audioCtx.createAnalyser();
-    currentFftSize = 0;
     applyTargetFftSize();
-    audioCtx.createMediaStreamSource(stream).connect(analyser);
 
     state.isListening = true;
     intervalId = setInterval(analyzeFrame, ANALYZE_INTERVAL_MS);
 
-    ui.startBtn.style.display = 'none';
-    ui.stopBtn.style.display  = 'inline-block';
+    setMicListeningUI(ui, true);
     ui.feedback.textContent   = '';
   }
 
   function stopListening() {
     clearInterval(intervalId);
     intervalId = null;
-
-    if (stream) {
-      stream.getTracks().forEach(t => t.stop());
-      stream = null;
-    }
-
-    if (audioCtx) {
-      audioCtx.close();
-      audioCtx = null;
-      analyser = null;
-    }
-
-    currentFftSize = 0;
+    closeSheetMusicMicAudioSession(audioSession);
     state.isListening = false;
   }
 
   // ── Pitch analysis ────────────────────────────────────────────────────────
   function analyzeFrame() {
-    if (!analyser || state.isLocked) return;
+    if (!audioSession.analyser || state.isLocked) return;
 
     const targetNote = getCurrentNote();
     if (!targetNote) return;
 
-    const buffer = new Float32Array(analyser.fftSize);
-    analyser.getFloatTimeDomainData(buffer);
+    const buffer = new Float32Array(audioSession.analyser.fftSize);
+    audioSession.analyser.getFloatTimeDomainData(buffer);
 
     const gate = updateOnsetGate(state.onsetGateState, buffer);
     state.onsetGateState = gate.nextState;
 
     const targetPitch = `${targetNote.name}${targetNote.octave}`;
-    const frameResult = classifyFrame(buffer, audioCtx.sampleRate, targetPitch);
+    const frameResult = classifyFrame(buffer, audioSession.audioCtx.sampleRate, targetPitch);
 
     // In easy mode we discard wrong frames so they neither advance nor reject.
     let effective = state.mode === 'easy' && frameResult.status === 'wrong'
@@ -348,12 +323,7 @@ export function createSheetMusicMicExercise() {
 
   // ── Settings ──────────────────────────────────────────────────────────────
   function syncSettingsUI() {
-    syncFretSlider(ui.slider, ui.sliderLabel, state.settings.maxFret);
-    syncStringToggles(
-      document.querySelectorAll('#sheet-mic-string-toggles .btn-string'),
-      state.settings.activeStrings,
-    );
-    ui.modeSelect.value = state.mode;
+    syncSheetMusicMicUI(ui, state, syncFretSlider, syncStringToggles);
   }
 
   function wireSettings() {
@@ -365,14 +335,13 @@ export function createSheetMusicMicExercise() {
     });
 
     wireStringToggles(
-      document.querySelectorAll('#sheet-mic-string-toggles .btn-string'),
+      ui.stringButtons,
       state.settings.activeStrings,
       () => {
         syncSettingsUI();
         stopListening();
         generateNewBars();
-        ui.startBtn.style.display = 'inline-block';
-        ui.stopBtn.style.display  = 'none';
+        setMicListeningUI(ui, false);
       },
     );
 
@@ -383,8 +352,7 @@ export function createSheetMusicMicExercise() {
     ui.newBarsBtn.addEventListener('click', () => {
       stopListening();
       generateNewBars();
-      ui.startBtn.style.display = 'inline-block';
-      ui.stopBtn.style.display  = 'none';
+      setMicListeningUI(ui, false);
       ui.feedback.textContent   = '';
     });
 
@@ -398,14 +366,13 @@ export function createSheetMusicMicExercise() {
 
     ui.stopBtn.addEventListener('click', () => {
       stopListening();
-      ui.startBtn.style.display = 'inline-block';
-      ui.stopBtn.style.display  = 'none';
+      setMicListeningUI(ui, false);
     });
   }
 
   // ── Public API ────────────────────────────────────────────────────────────
   function mount() {
-    resolveUI();
+    ui = resolveSheetMusicMicUI(document);
 
     state = {
       bars:             [],
@@ -428,14 +395,14 @@ export function createSheetMusicMicExercise() {
     syncSettingsUI();
     generateNewBars();
 
-    ui.startBtn.style.display   = 'inline-block';
-    ui.stopBtn.style.display    = 'none';
+    setMicListeningUI(ui, false);
     ui.feedback.textContent     = '';
     ui.permission.style.display = 'none';
   }
 
   function unmount() {
     stopListening();
+    ui = null;
   }
 
   return {

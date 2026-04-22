@@ -6,11 +6,18 @@ import { renderScore, appendRow } from './sheetMusicSVG.js';
 import { PlaybackController } from './playbackController.js';
 import { PlaybackBar } from './playbackBar.js';
 import { wireStringToggles, syncStringToggles, wireFretSlider, syncFretSlider } from '../../utils/settings.js';
-
-const LS_BPM     = 'sheetMusic_bpm';
-const LS_TIMESIG = 'sheetMusic_timeSig';
-const LS_TAB     = 'sheetMusic_showTab';
-const LS_ENDLESS = 'sheetMusic_endless';
+import {
+  loadSheetMusicPrefs,
+  saveSheetMusicBpm,
+  saveSheetMusicTimeSig,
+  saveSheetMusicShowTab,
+  saveSheetMusicEndless,
+} from './sheetMusicReadingStorage.js';
+import {
+  resolveSheetMusicUI,
+  syncSheetMusicUI,
+  setPlaybackButtonState,
+} from './sheetMusicReadingUI.js';
 
 // Number of bars per rendered row (matches the 4-bar VexFlow layout).
 const BARS_PER_ROW = 4;
@@ -21,13 +28,15 @@ const MIN_POOL_SIZE = 3;
 
 export function createSheetMusicExercise() {
   let wired = false;
+  let ui = null;
+  const prefs = loadSheetMusicPrefs();
 
   let state = {
     bars:    [],
-    showTab: localStorage.getItem(LS_TAB) === 'true',
-    bpm:     parseInt(localStorage.getItem(LS_BPM), 10) || 80,
-    timeSig: localStorage.getItem(LS_TIMESIG) || '4/4',
-    endless: localStorage.getItem(LS_ENDLESS) === 'true',
+    showTab: prefs.showTab,
+    bpm: prefs.bpm,
+    timeSig: prefs.timeSig,
+    endless: prefs.endless,
     settings: {
       maxFret: 3,
       activeStrings: [0, 1, 2, 3, 4, 5],
@@ -55,7 +64,7 @@ export function createSheetMusicExercise() {
 
   // ── Pool warning ────────────────────────────────────────────────────────
   function updatePoolWarning() {
-    const el = document.getElementById('sheet-music-pool-warning');
+    const el = ui?.poolWarning;
     if (el) el.hidden = getNotesPool().length >= MIN_POOL_SIZE;
   }
 
@@ -66,7 +75,7 @@ export function createSheetMusicExercise() {
     state.bars = generateBars(BARS_PER_ROW, config.beatsPerBar, getNotesPool());
 
     const result = renderScore(
-      document.getElementById('score-container'),
+      ui.container,
       state.bars,
       state.showTab,
       state.timeSig,
@@ -82,7 +91,7 @@ export function createSheetMusicExercise() {
   // ── Endless mode helpers ────────────────────────────────────────────────
   function appendEndlessRow() {
     const bars      = endlessGen.nextBatch(BARS_PER_ROW);
-    const container = document.getElementById('score-container');
+    const container = ui.container;
     const { notationDiv, staveLayout, rowDiv, vw } = appendRow(
       container, bars, state.showTab, state.timeSig,
     );
@@ -100,7 +109,7 @@ export function createSheetMusicExercise() {
     allPlaybackBars = [];
     allStaveLayouts = [];
     endlessGen      = null;
-    const container = document.getElementById('score-container');
+    const container = ui?.container;
     if (container) {
       container.classList.remove('score-container--endless');
       container.scrollTop = 0;
@@ -112,11 +121,9 @@ export function createSheetMusicExercise() {
     const newBpm = Math.min(240, Math.max(40, state.bpm + delta));
     if (newBpm === state.bpm) return;
     state.bpm = newBpm;
-    const bpmSlider = document.getElementById('sheet-music-bpm-slider');
-    const bpmLabel  = document.getElementById('sheet-music-bpm-label');
-    if (bpmSlider) bpmSlider.value = String(newBpm);
-    if (bpmLabel)  bpmLabel.textContent = String(newBpm);
-    localStorage.setItem(LS_BPM, String(newBpm));
+    if (ui.bpmSlider) ui.bpmSlider.value = String(newBpm);
+    if (ui.bpmLabel) ui.bpmLabel.textContent = String(newBpm);
+    saveSheetMusicBpm(newBpm);
     playback.setBpm(newBpm);
   }
 
@@ -125,8 +132,7 @@ export function createSheetMusicExercise() {
     if (isPlaying) return;
     isPlaying = true;
 
-    const btn = document.getElementById('btn-sheet-play');
-    if (btn) { btn.textContent = '⏹ Stop'; btn.classList.add('active'); }
+    setPlaybackButtonState(ui.playBtn, true);
 
     const config     = getTimeSigConfig();
     const totalBeats = BARS_PER_ROW * config.beatsPerBar;
@@ -144,8 +150,7 @@ export function createSheetMusicExercise() {
     if (isPlaying) return;
     isPlaying = true;
 
-    const btn = document.getElementById('btn-sheet-play');
-    if (btn) { btn.textContent = '⏹ Stop'; btn.classList.add('active'); }
+    setPlaybackButtonState(ui.playBtn, true);
 
     const container = document.getElementById('score-container');
     container.innerHTML = '';
@@ -214,8 +219,7 @@ export function createSheetMusicExercise() {
       playbackBar.hide();
     }
 
-    const btn = document.getElementById('btn-sheet-play');
-    if (btn) { btn.textContent = '▶ Play'; btn.classList.remove('active'); }
+    setPlaybackButtonState(ui.playBtn, false);
   }
 
   function togglePlayback() {
@@ -230,52 +234,30 @@ export function createSheetMusicExercise() {
 
   // ── Settings sync ───────────────────────────────────────────────────────
   function syncSettingsUI() {
-    const slider = document.getElementById('sheet-music-fret-range-slider');
-    const label  = document.getElementById('sheet-music-fret-range-label');
-    syncFretSlider(slider, label, state.settings.maxFret);
-    syncStringToggles(
-      document.querySelectorAll('#sheet-music-string-toggles .btn-string'),
-      state.settings.activeStrings,
-    );
-
-    const bpmSlider = document.getElementById('sheet-music-bpm-slider');
-    const bpmLabel  = document.getElementById('sheet-music-bpm-label');
-    if (bpmSlider) bpmSlider.value = String(state.bpm);
-    if (bpmLabel)  bpmLabel.textContent = String(state.bpm);
-
-    const timeSigSel = document.getElementById('sheet-music-time-sig');
-    if (timeSigSel) timeSigSel.value = state.timeSig;
-
-    const showTabBtn = document.getElementById('btn-show-tab');
-    if (showTabBtn) showTabBtn.classList.toggle('active', state.showTab);
-
-    const endlessBtn = document.getElementById('btn-endless-mode');
-    if (endlessBtn) endlessBtn.classList.toggle('active', state.endless);
-
-    updatePoolWarning();
+    syncSheetMusicUI(ui, state, syncFretSlider, syncStringToggles, updatePoolWarning);
   }
 
   // ── Exercise lifecycle ──────────────────────────────────────────────────
   function mount() {
+    ui = resolveSheetMusicUI(document);
     regenerate();
 
     if (!wired) {
       // New bars
-      document.getElementById('btn-new-bars').addEventListener('click', () => {
+      ui.newBarsBtn.addEventListener('click', () => {
         stopPlayback();
         if (state.endless) cleanupEndlessState();
         regenerate();
       });
 
       // Tab toggle
-      document.getElementById('btn-show-tab').addEventListener('click', () => {
+      ui.showTabBtn.addEventListener('click', () => {
         state.showTab = !state.showTab;
-        localStorage.setItem(LS_TAB, String(state.showTab));
-        document.getElementById('btn-show-tab')
-          .classList.toggle('active', state.showTab);
+        saveSheetMusicShowTab(state.showTab);
+        ui.showTabBtn.classList.toggle('active', state.showTab);
         if (!isPlaying) {
           renderScore(
-            document.getElementById('score-container'),
+            ui.container,
             state.bars,
             state.showTab,
             state.timeSig,
@@ -284,42 +266,37 @@ export function createSheetMusicExercise() {
       });
 
       // Endless mode toggle
-      document.getElementById('btn-endless-mode').addEventListener('click', () => {
+      ui.endlessBtn.addEventListener('click', () => {
         stopPlayback();
         if (state.endless) cleanupEndlessState();
         state.endless = !state.endless;
-        localStorage.setItem(LS_ENDLESS, String(state.endless));
-        document.getElementById('btn-endless-mode')
-          .classList.toggle('active', state.endless);
+        saveSheetMusicEndless(state.endless);
+        ui.endlessBtn.classList.toggle('active', state.endless);
         regenerate();
       });
 
       // Play / Stop
-      document.getElementById('btn-sheet-play').addEventListener('click', togglePlayback);
+      ui.playBtn.addEventListener('click', togglePlayback);
 
       // BPM slider
-      const bpmSlider = document.getElementById('sheet-music-bpm-slider');
-      const bpmLabel  = document.getElementById('sheet-music-bpm-label');
-      bpmSlider.addEventListener('input', () => {
-        state.bpm = parseInt(bpmSlider.value, 10);
-        if (bpmLabel) bpmLabel.textContent = String(state.bpm);
-        localStorage.setItem(LS_BPM, String(state.bpm));
+      ui.bpmSlider.addEventListener('input', () => {
+        state.bpm = parseInt(ui.bpmSlider.value, 10);
+        if (ui.bpmLabel) ui.bpmLabel.textContent = String(state.bpm);
+        saveSheetMusicBpm(state.bpm);
         playback.setBpm(state.bpm);
       });
 
       // Time signature selector
-      document.getElementById('sheet-music-time-sig').addEventListener('change', e => {
+      ui.timeSigSelect.addEventListener('change', e => {
         state.timeSig = e.target.value;
-        localStorage.setItem(LS_TIMESIG, state.timeSig);
+        saveSheetMusicTimeSig(state.timeSig);
         stopPlayback();
         if (state.endless) cleanupEndlessState();
         regenerate();
       });
 
       // Fret range slider
-      const slider = document.getElementById('sheet-music-fret-range-slider');
-      const label  = document.getElementById('sheet-music-fret-range-label');
-      wireFretSlider(slider, label, state.settings, () => {
+      wireFretSlider(ui.fretSlider, ui.fretLabel, state.settings, () => {
         stopPlayback();
         if (state.endless) cleanupEndlessState();
         regenerate();
@@ -327,7 +304,7 @@ export function createSheetMusicExercise() {
 
       // String toggles
       wireStringToggles(
-        document.querySelectorAll('#sheet-music-string-toggles .btn-string'),
+        ui.stringButtons,
         state.settings.activeStrings,
         () => {
           syncSettingsUI();
@@ -339,7 +316,7 @@ export function createSheetMusicExercise() {
 
       // Keyboard shortcuts (scoped to active view)
       document.addEventListener('keydown', e => {
-        if (!document.getElementById('view-sheet-music')?.classList.contains('active')) return;
+        if (!ui.view?.classList.contains('active')) return;
         if (['INPUT', 'SELECT', 'TEXTAREA'].includes(e.target.tagName)) return;
         switch (e.code) {
           case 'Space':
@@ -383,6 +360,7 @@ export function createSheetMusicExercise() {
   function unmount() {
     stopPlayback();
     if (state.endless) cleanupEndlessState();
+    ui = null;
   }
 
   return {
