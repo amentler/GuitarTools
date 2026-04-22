@@ -1,1 +1,1 @@
-Version 2026-04-22 07:46 UTC | phase 1 page-local bootstrap rollout
+Version 2026-04-22 07:52 UTC | add metronome page reachability test
