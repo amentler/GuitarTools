@@ -135,12 +135,12 @@ describe('AkkordfolgenTrainer controller behavior', () => {
     feature.mount();
 
     document.getElementById('aft-start-btn').click();
-    await Promise.resolve();
-    await Promise.resolve();
+    await vi.waitFor(() => {
+      expect(metronomeSetBpm).toHaveBeenCalledWith(80);
+    });
 
     expect(navigator.mediaDevices.getUserMedia).toHaveBeenCalled();
     expect(metronomeInit).toHaveBeenCalled();
-    expect(metronomeSetBpm).toHaveBeenCalledWith(80);
     expect(metronomeSetBeatsPerMeasure).toHaveBeenCalledWith(4);
     expect(metronomeStart).toHaveBeenCalled();
     expect(document.getElementById('aft-active').style.display).toBe('flex');
@@ -151,6 +151,7 @@ describe('AkkordfolgenTrainer controller behavior', () => {
     const feature = createAkkordfolgenTrainer();
     feature.mount();
     document.getElementById('aft-start-btn').click();
+    await Promise.resolve();
     await Promise.resolve();
     await Promise.resolve();
 

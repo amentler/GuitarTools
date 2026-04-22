@@ -3,9 +3,12 @@
  * Follows the "Scheduling Web Audio with Precision" pattern.
  */
 
+import { createAudioContext } from './audioContextFactory.js';
+
 export class MetronomeLogic {
-  constructor() {
+  constructor({ audioContextFactory = () => createAudioContext() } = {}) {
     this.audioContext = null;
+    this.audioContextFactory = audioContextFactory;
     this.isPlaying = false;
     this.bpm = 120;
     this.beatsPerMeasure = 4;
@@ -20,7 +23,7 @@ export class MetronomeLogic {
 
   init() {
     if (!this.audioContext) {
-      this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      this.audioContext = this.audioContextFactory();
     }
   }
 

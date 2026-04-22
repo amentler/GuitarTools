@@ -93,7 +93,7 @@
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js', { updateViaCache: 'none' })
+        navigator.serviceWorker.register('./sw.js', { updateViaCache: 'none', type: 'module' })
           .then(registration => {
             // Trigger update checks while the page is open.
             const UPDATE_CHECK_INTERVAL_MS = 15 * 60 * 1000;

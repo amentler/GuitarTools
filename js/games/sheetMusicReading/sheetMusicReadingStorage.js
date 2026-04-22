@@ -1,29 +1,40 @@
+import { createStorageService } from '../../shared/storage/storageService.js';
+
 const LS_BPM = 'sheetMusic_bpm';
 const LS_TIMESIG = 'sheetMusic_timeSig';
 const LS_TAB = 'sheetMusic_showTab';
 const LS_ENDLESS = 'sheetMusic_endless';
 
-export function loadSheetMusicPrefs(storage = localStorage) {
+function getSheetMusicStorage(storage = globalThis.localStorage) {
+  return createStorageService({ storage });
+}
+
+export function loadSheetMusicPrefs(storage = globalThis.localStorage) {
+  const sharedStorage = getSheetMusicStorage(storage);
+
   return {
-    showTab: storage.getItem(LS_TAB) === 'true',
-    bpm: parseInt(storage.getItem(LS_BPM), 10) || 80,
-    timeSig: storage.getItem(LS_TIMESIG) || '4/4',
-    endless: storage.getItem(LS_ENDLESS) === 'true',
+    showTab: sharedStorage.getBoolean(LS_TAB, { defaultValue: false }),
+    bpm: sharedStorage.getNumber(LS_BPM, {
+      defaultValue: 80,
+      parse: value => parseInt(value, 10),
+    }),
+    timeSig: sharedStorage.getString(LS_TIMESIG, { defaultValue: '4/4' }),
+    endless: sharedStorage.getBoolean(LS_ENDLESS, { defaultValue: false }),
   };
 }
 
-export function saveSheetMusicBpm(value, storage = localStorage) {
-  storage.setItem(LS_BPM, String(value));
+export function saveSheetMusicBpm(value, storage = globalThis.localStorage) {
+  getSheetMusicStorage(storage).set(LS_BPM, value);
 }
 
-export function saveSheetMusicTimeSig(value, storage = localStorage) {
-  storage.setItem(LS_TIMESIG, value);
+export function saveSheetMusicTimeSig(value, storage = globalThis.localStorage) {
+  getSheetMusicStorage(storage).set(LS_TIMESIG, value);
 }
 
-export function saveSheetMusicShowTab(value, storage = localStorage) {
-  storage.setItem(LS_TAB, String(value));
+export function saveSheetMusicShowTab(value, storage = globalThis.localStorage) {
+  getSheetMusicStorage(storage).set(LS_TAB, value);
 }
 
-export function saveSheetMusicEndless(value, storage = localStorage) {
-  storage.setItem(LS_ENDLESS, String(value));
+export function saveSheetMusicEndless(value, storage = globalThis.localStorage) {
+  getSheetMusicStorage(storage).set(LS_ENDLESS, value);
 }

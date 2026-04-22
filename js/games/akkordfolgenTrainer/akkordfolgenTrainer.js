@@ -30,6 +30,7 @@ import {
   openAkkordfolgenAudioSession,
   closeAkkordfolgenAudioSession,
 } from './akkordfolgenAudioSession.js';
+import { requestMicrophoneStream } from '../../shared/audio/microphoneService.js';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -178,6 +179,7 @@ export function createAkkordfolgenTrainer() {
   // ── Exercise start / stop ─────────────────────────────────────────────────
 
   async function beginExercise() {
+    const activeUi = ui;
     state.progression = state.isRandom
       ? generateRandomProgression(state.key)
       : buildProgression(state.key, state.progressionIndex);
@@ -201,9 +203,10 @@ export function createAkkordfolgenTrainer() {
     // Initialise metronome AudioContext immediately (user gesture is still active here).
     metronome = new MetronomeLogic();
     metronome.init();
+    const activeMetronome = metronome;
 
     try {
-      audioSession.stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+      audioSession.stream = await requestMicrophoneStream();
     } catch {
       if (ui.permission) ui.permission.textContent = 'Mikrofon nicht verf\u00FCgbar. Bitte Zugriff erlauben.';
       state.isRunning = false;
@@ -211,15 +214,25 @@ export function createAkkordfolgenTrainer() {
       return;
     }
 
-    if (ui.permission) ui.permission.style.display = 'none';
+    if (!state.isRunning || ui !== activeUi || metronome !== activeMetronome) {
+      closeAkkordfolgenAudioSession(audioSession);
+      return;
+    }
+
+    if (activeUi?.permission) activeUi.permission.style.display = 'none';
 
     await openAkkordfolgenAudioSession(audioSession, audioSession.stream, AudioContext, FFT_SIZE);
 
-    metronome.setBpm(state.bpm);
-    metronome.setBeatsPerMeasure(state.beatsPerChord);
+    if (!state.isRunning || ui !== activeUi || metronome !== activeMetronome) {
+      closeAkkordfolgenAudioSession(audioSession);
+      return;
+    }
+
+    activeMetronome.setBpm(state.bpm);
+    activeMetronome.setBeatsPerMeasure(state.beatsPerChord);
 
     const beatSync = createBeatChordSync();
-    metronome.onBeat = beatNumber => {
+    activeMetronome.onBeat = beatNumber => {
       highlightBeat(beatNumber);
       if (!beatSync.onBeat(beatNumber) || !state.isRunning) return;
       if (!state.strummedThisChord) {
@@ -228,7 +241,7 @@ export function createAkkordfolgenTrainer() {
       }
       advanceChord();
     };
-    metronome.start();
+    activeMetronome.start();
 
     startStrumDetection();
     showChordAtIndex(0);

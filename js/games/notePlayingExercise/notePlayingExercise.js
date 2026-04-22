@@ -17,6 +17,7 @@ import {
   openNotePlayingAudioSession,
   closeNotePlayingAudioSession,
 } from './notePlayingAudioSession.js';
+import { requestMicrophoneStream } from '../../shared/audio/microphoneService.js';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 const ANALYZE_INTERVAL_MS = 50; // matching-loop cadence
@@ -87,7 +88,7 @@ export function createNotePlayingExercise() {
     ui.permission.textContent = 'Mikrofon-Zugriff wird benötigt…';
 
     try {
-      audioSession.stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+      audioSession.stream = await requestMicrophoneStream();
     } catch {
       ui.permission.textContent = 'Mikrofon nicht verfügbar. Bitte Zugriff erlauben.';
       return;

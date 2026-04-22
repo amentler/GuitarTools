@@ -5,8 +5,14 @@
 
 import { MetronomeLogic } from './metronomeLogic.js';
 import { MetronomeSVG } from './metronomeSVG.js';
+import { createStorageService } from '../../shared/storage/storageService.js';
 
-export function createMetronomeTool() {
+const METRONOME_BPM_KEY = 'metronome_bpm';
+const METRONOME_BEATS_KEY = 'metronome_beats';
+
+export function createMetronomeTool({
+  storageService = createStorageService(),
+} = {}) {
   let logic = null;
   let svg = null;
   let rootElement = null;
@@ -34,17 +40,25 @@ export function createMetronomeTool() {
       beatsSelector = rootElement.querySelector('#metronome-beats-select');
 
       // Restore state from localStorage
-      const savedBpm = localStorage.getItem('metronome_bpm');
-      if (savedBpm) {
-        logic.setBpm(parseInt(savedBpm));
-        bpmSlider.value = savedBpm;
-        bpmDisplay.textContent = savedBpm;
+      const savedBpm = storageService.getNumber(METRONOME_BPM_KEY, {
+        defaultValue: null,
+        parse: value => parseInt(value, 10),
+        validate: value => Number.isFinite(value),
+      });
+      if (savedBpm !== null) {
+        logic.setBpm(savedBpm);
+        bpmSlider.value = String(savedBpm);
+        bpmDisplay.textContent = String(savedBpm);
       }
 
-      const savedBeats = localStorage.getItem('metronome_beats');
-      if (savedBeats) {
-        logic.setBeatsPerMeasure(parseInt(savedBeats));
-        beatsSelector.value = savedBeats;
+      const savedBeats = storageService.getNumber(METRONOME_BEATS_KEY, {
+        defaultValue: null,
+        parse: value => parseInt(value, 10),
+        validate: value => Number.isFinite(value),
+      });
+      if (savedBeats !== null) {
+        logic.setBeatsPerMeasure(savedBeats);
+        beatsSelector.value = String(savedBeats);
       }
 
       // Set up callbacks
@@ -88,7 +102,7 @@ export function createMetronomeTool() {
       const beats = parseInt(e.target.value);
       logic.setBeatsPerMeasure(beats);
       svg.render(beats);
-      localStorage.setItem('metronome_beats', beats);
+      storageService.set(METRONOME_BEATS_KEY, beats);
     });
   }
 
@@ -96,7 +110,7 @@ export function createMetronomeTool() {
     logic.setBpm(bpm);
     bpmDisplay.textContent = bpm;
     bpmSlider.value = bpm;
-    localStorage.setItem('metronome_bpm', bpm);
+    storageService.set(METRONOME_BPM_KEY, bpm);
   }
 
   function adjustBpm(delta) {

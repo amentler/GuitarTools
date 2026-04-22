@@ -30,6 +30,7 @@ import {
   openSheetMusicMicAudioSession,
   closeSheetMusicMicAudioSession,
 } from './sheetMusicMicAudioSession.js';
+import { requestMicrophoneStream } from '../../shared/audio/microphoneService.js';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 const SUCCESS_PAUSE_MS      = 600; // pause after correct note before advancing
@@ -213,13 +214,18 @@ export function createSheetMusicMicExercise() {
     ui.permission.textContent   = 'Mikrofon-Zugriff wird benötigt…';
 
     try {
-      audioSession.stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+      audioSession.stream = await requestMicrophoneStream();
     } catch {
       ui.permission.textContent = 'Mikrofon nicht verfügbar. Bitte Zugriff erlauben.';
       return;
     }
 
-    ui.permission.style.display = 'none';
+    if (ui !== activeUi || !activeUi) {
+      closeSheetMusicMicAudioSession(audioSession);
+      return;
+    }
+
+    activeUi.permission.style.display = 'none';
 
     // NOTE: This exercise uses its own AudioContext and AnalyserNode, separate
     // from the tuner. The pitch-detection pipeline here is optimised for speed
@@ -238,8 +244,8 @@ export function createSheetMusicMicExercise() {
     state.isListening = true;
     intervalId = setInterval(analyzeFrame, ANALYZE_INTERVAL_MS);
 
-    setMicListeningUI(ui, true);
-    ui.feedback.textContent   = '';
+    setMicListeningUI(activeUi, true);
+    activeUi.feedback.textContent = '';
   }
 
   function stopListening() {

@@ -36,6 +36,7 @@ import {
   openAudioSession,
   closeAudioSession,
 } from './guitarTunerAudioSession.js';
+import { requestMicrophoneStream } from '../../shared/audio/microphoneService.js';
 import {
   startGuidedModeState,
   nextGuidedStepState,
@@ -115,7 +116,7 @@ export function createGuitarTunerTool() {
     permission.textContent = 'Mikrofon-Zugriff wird benötigt…';
 
     try {
-      audioSession.stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+      audioSession.stream = await requestMicrophoneStream();
     } catch {
       permission.textContent = 'Mikrofon nicht verfügbar. Bitte Zugriff erlauben.';
       return;

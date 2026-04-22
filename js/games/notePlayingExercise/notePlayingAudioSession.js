@@ -1,38 +1,25 @@
+import {
+  createAudioSessionState as createSharedAudioSessionState,
+  openAudioSession as openSharedAudioSession,
+  closeAudioSession as closeSharedAudioSession,
+} from '../../shared/audio/audioSessionService.js';
+
 export function createNotePlayingAudioSession() {
-  return {
-    audioCtx: null,
-    analyser: null,
-    stream: null,
-    currentFftSize: 0,
-  };
+  return createSharedAudioSessionState({ currentFftSize: 0 });
 }
 
 export async function openNotePlayingAudioSession(session, stream, AudioContextCtor) {
-  const audioCtx = new AudioContextCtor();
-  if (audioCtx.state === 'suspended') {
-    await audioCtx.resume();
-  }
-
-  const analyser = audioCtx.createAnalyser();
-  audioCtx.createMediaStreamSource(stream).connect(analyser);
-
-  session.audioCtx = audioCtx;
-  session.analyser = analyser;
-  session.stream = stream;
   session.currentFftSize = 0;
+  return openSharedAudioSession(session, {
+    stream,
+    AudioContextCtor,
+  });
 }
 
 export function closeNotePlayingAudioSession(session) {
-  if (session.stream) {
-    session.stream.getTracks().forEach(track => track.stop());
-    session.stream = null;
-  }
-
-  if (session.audioCtx) {
-    session.audioCtx.close();
-    session.audioCtx = null;
-    session.analyser = null;
-  }
-
-  session.currentFftSize = 0;
+  return closeSharedAudioSession(session, {
+    reset: currentSession => {
+      currentSession.currentFftSize = 0;
+    },
+  });
 }

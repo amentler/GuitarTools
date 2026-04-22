@@ -1,34 +1,17 @@
+import { PRECACHE_URLS } from './js/shared/pwa/precacheManifest.js';
+
 // GuitarTools Service Worker
 // Strategy mix:
 // - Cache First: large essentia WASM assets
 // - Network First: HTML/navigation and API
 // - Stale While Revalidate: most static runtime assets
 
-const CACHE_VERSION = 'v6';
+const CACHE_VERSION = 'v7';
 const CACHE_PREFIX = 'guitartools';
 const PRECACHE_NAME = `${CACHE_PREFIX}-precache-${CACHE_VERSION}`;
 const STATIC_CACHE_NAME = `${CACHE_PREFIX}-static-${CACHE_VERSION}`;
 const PAGE_CACHE_NAME = `${CACHE_PREFIX}-pages-${CACHE_VERSION}`;
 const API_CACHE_NAME = `${CACHE_PREFIX}-api-${CACHE_VERSION}`;
-
-// Relative paths (no leading /) so they resolve correctly regardless of the
-// GitHub Pages deployment base path (root / or subdirectory /GuitarTools/).
-const PRECACHE_URLS = [
-  'js/lib/essentia/essentia-wasm.web.js',
-  'js/lib/essentia/essentia-wasm.web.wasm',
-  'js/lib/essentia/essentia.js-core.umd.js',
-  'pages/exercises/ton-finder.html',
-  'pages/exercises/fretboard-tone-recognition.html',
-  'pages/exercises/sheet-music-reading.html',
-  'pages/exercises/akkord-trainer.html',
-  'pages/exercises/note-playing.html',
-  'pages/exercises/sheet-music-mic.html',
-  'pages/exercises/chord-playing-essentia.html',
-  'pages/exercises/akkordfolgen-trainer.html',
-  'pages/tools/guitar-tuner.html',
-  'pages/tools/metronome.html',
-  'pages/tools/akkord-uebersicht.html',
-];
 
 self.addEventListener('install', event => {
   self.skipWaiting();
