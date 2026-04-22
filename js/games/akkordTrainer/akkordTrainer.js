@@ -6,12 +6,13 @@
 import { getRandomChord, validateChord } from './akkordLogic.js';
 import { renderChordDiagram } from './akkordSVG.js';
 
-export function createAkkordExercise() {
+export function createAkkordTrainerFeature() {
   // State (per-instance)
   let currentChord = null;
   let userPositions = []; // Array<{string, fret, muted}>
   let feedback = null;
   let score = { correct: 0, total: 0 };
+  let rootElement = null;
   
   // Category mapping
   const CATEGORIES = {
@@ -24,7 +25,7 @@ export function createAkkordExercise() {
   function getActiveCategories() {
     const active = [];
     Object.keys(CATEGORIES).forEach(id => {
-      const cb = document.getElementById(id);
+      const cb = rootElement?.querySelector(`#${id}`);
       if (cb && cb.checked) {
         active.push(CATEGORIES[id]);
       }
@@ -40,14 +41,9 @@ export function createAkkordExercise() {
     }));
   }
 
-  // DOM Elements
-  const view = document.getElementById('view-akkord-trainer');
-  const chordNameDisplay = document.getElementById('chord-name-display');
-  const diagramContainer = document.getElementById('chord-diagram-container');
-  const btnCheck = document.getElementById('btn-chord-check');
-  const scoreCorrect = document.getElementById('score-correct');
-  const scoreTotal = document.getElementById('score-total');
-  const feedbackText = document.getElementById('chord-feedback-text');
+  function query(selector) {
+    return rootElement?.querySelector(selector) ?? null;
+  }
 
   function nextRound() {
     currentChord = getRandomChord(getActiveCategories());
@@ -55,17 +51,17 @@ export function createAkkordExercise() {
     feedback = null;
 
     // UI Update
-    chordNameDisplay.textContent = currentChord.name;
-    feedbackText.textContent = 'Trage den Akkord ein...';
-    feedbackText.className = 'feedback-text';
-    btnCheck.disabled = false;
+    query('#chord-name-display').textContent = currentChord.name;
+    query('#chord-feedback-text').textContent = 'Trage den Akkord ein...';
+    query('#chord-feedback-text').className = 'feedback-text';
+    query('#btn-chord-check').disabled = false;
 
     draw();
   }
 
   function draw() {
     renderChordDiagram(
-      diagramContainer,
+      query('#chord-diagram-container'),
       userPositions,
       currentChord ? currentChord.positions : null,
       feedback,
@@ -111,16 +107,16 @@ export function createAkkordExercise() {
 
     const isCorrect = validateChord(currentChord.name, userPositions);
     feedback = isCorrect ? 'correct' : 'wrong';
-    btnCheck.disabled = true;
+    query('#btn-chord-check').disabled = true;
 
     score.total++;
     if (isCorrect) {
       score.correct++;
-      feedbackText.textContent = 'Richtig! Gut gemacht.';
-      feedbackText.className = 'feedback-text feedback-correct';
+      query('#chord-feedback-text').textContent = 'Richtig! Gut gemacht.';
+      query('#chord-feedback-text').className = 'feedback-text feedback-correct';
     } else {
-      feedbackText.textContent = 'Nicht ganz richtig. Schau dir die Lösung an.';
-      feedbackText.className = 'feedback-text feedback-wrong';
+      query('#chord-feedback-text').textContent = 'Nicht ganz richtig. Schau dir die Lösung an.';
+      query('#chord-feedback-text').className = 'feedback-text feedback-wrong';
     }
 
     updateScoreUI();
@@ -128,32 +124,37 @@ export function createAkkordExercise() {
 
     // Wait before next round
     setTimeout(() => {
-      if (view.classList.contains('active')) {
+      if (rootElement?.classList.contains('active')) {
         nextRound();
       }
     }, isCorrect ? 1500 : 3000);
   }
 
   function updateScoreUI() {
+    const scoreCorrect = query('#score-correct');
+    const scoreTotal = query('#score-total');
     if (scoreCorrect) scoreCorrect.textContent = score.correct;
     if (scoreTotal) scoreTotal.textContent = score.total;
   }
 
-  function mount() {
+  function mount(root = document) {
+    rootElement = root;
     score = { correct: 0, total: 0 };
     updateScoreUI();
     nextRound();
+
+    const btnCheck = query('#btn-chord-check');
+    if (btnCheck && !btnCheck.dataset.gtBound) {
+      btnCheck.addEventListener('click', handleCheck);
+      btnCheck.dataset.gtBound = 'true';
+    }
   }
 
   function unmount() {
     currentChord = null;
     userPositions = [];
     feedback = null;
-  }
-
-  // Wire events
-  if (btnCheck) {
-    btnCheck.addEventListener('click', handleCheck);
+    rootElement = null;
   }
 
   return {
@@ -163,3 +164,5 @@ export function createAkkordExercise() {
     stopExercise: unmount,
   };
 }
+
+export const createAkkordExercise = createAkkordTrainerFeature;

@@ -1,1 +1,1 @@
-Version 2026-04-22 08:28 UTC | add akkord trainer page reachability test
+Version 2026-04-22 08:29 UTC | standardize akkord trainer feature bootstrap api

@@ -10,7 +10,7 @@ const mountSpy = vi.fn();
 
 vi.mock('../../js/components/index.js', () => ({}));
 vi.mock('../../js/games/akkordTrainer/akkordTrainer.js', () => ({
-  createAkkordExercise: () => ({
+  createAkkordTrainerFeature: () => ({
     mount: mountSpy,
     unmount: vi.fn(),
   }),
@@ -29,7 +29,7 @@ describe('Akkord trainer page smoke', () => {
 
     const moduleScript = document.querySelector('script[type="module"]');
     expect(moduleScript?.getAttribute('src')).toBe('./bootstrap.js');
-    expect(html).not.toContain('createAkkordExercise');
+    expect(html).not.toContain('createAkkordTrainerFeature');
 
     await import('../../pages/akkord-trainer/bootstrap.js');
 
