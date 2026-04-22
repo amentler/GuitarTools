@@ -15,24 +15,19 @@
     <div class="note-play-display">
       <p class="question-prompt">Spiele diesen Ton:</p>
 
-      <!-- Target note in sheet music -->
       <div id="note-play-notation" class="note-play-notation"></div>
 
-      <!-- Hint 1: note name (hidden until requested) -->
-      <p id="note-play-target" class="note-play-target-note" style="visibility:hidden">–</p>
+      <p id="note-play-target" class="note-play-target-note" style="visibility:hidden">-</p>
 
-      <!-- Hint 2: tab (hidden until requested) -->
       <div id="note-play-tab" class="note-play-tab" style="display:none"></div>
 
-      <!-- Hint buttons -->
       <div class="note-play-hints">
         <button id="note-play-hint1" class="btn-hint">Hilfe 1: Notenname</button>
         <button id="note-play-hint2" class="btn-hint">Hilfe 2: Tabs</button>
-        <button id="note-play-skip" class="btn-mode">Weiter →</button>
+        <button id="note-play-skip" class="btn-mode">Weiter -&gt;</button>
       </div>
 
-      <!-- Detected note in sheet music -->
-      <div class="note-play-detected-label">Gehört:</div>
+      <div class="note-play-detected-label">Gehoert:</div>
       <div id="note-play-detected" class="note-play-detected-notation"></div>
 
       <p id="note-play-feedback" class="feedback-text"></p>
@@ -41,7 +36,7 @@
     <div class="settings-panel">
       <div class="settings-row">
         <label for="note-play-fret-slider" class="settings-label">
-          Bünde: <span id="note-play-fret-label">0 – 5</span>
+          Buende: <span id="note-play-fret-label">0 - 5</span>
         </label>
         <input type="range" id="note-play-fret-slider" min="0" max="15" value="5" />
       </div>
@@ -59,12 +54,6 @@
     </div>
   </section>
 
-  <script type="module">
-    import { createNotePlayingExercise } from '../../js/games/notePlayingExercise/notePlayingExercise.js';
-    import '../../js/components/index.js';
-
-    const exercise = createNotePlayingExercise();
-    exercise.startExercise();
-  </script>
+  <script type="module" src="./bootstrap.js"></script>
 </body>
 </html>

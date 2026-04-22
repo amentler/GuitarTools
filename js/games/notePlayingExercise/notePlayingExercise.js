@@ -2,7 +2,6 @@
 // Shows a target note; listens via microphone to verify the user plays it.
 // Encapsulates all state in a factory function.
 
-import { registerExercise } from '../../exerciseRegistry.js';
 import {
   classifyFrame,
   createMatchState,
@@ -41,21 +40,22 @@ export function createNotePlayingExercise() {
 
   // DOM refs (per-instance)
   let ui = null;
+  let rootElement = null;
 
   function resolveUI() {
     ui = {
-      permission:      document.getElementById('note-play-permission'),
-      notation:        document.getElementById('note-play-notation'),
-      targetNote:      document.getElementById('note-play-target'),
-      tabContainer:    document.getElementById('note-play-tab'),
-      hint1Btn:        document.getElementById('note-play-hint1'),
-      hint2Btn:        document.getElementById('note-play-hint2'),
-      skipBtn:         document.getElementById('note-play-skip'),
-      detectedNote:    document.getElementById('note-play-detected'),
-      feedback:        document.getElementById('note-play-feedback'),
-      score:           document.getElementById('score-value'),
-      slider:          document.getElementById('note-play-fret-slider'),
-      sliderLabel:     document.getElementById('note-play-fret-label'),
+      permission:      rootElement?.querySelector('#note-play-permission'),
+      notation:        rootElement?.querySelector('#note-play-notation'),
+      targetNote:      rootElement?.querySelector('#note-play-target'),
+      tabContainer:    rootElement?.querySelector('#note-play-tab'),
+      hint1Btn:        rootElement?.querySelector('#note-play-hint1'),
+      hint2Btn:        rootElement?.querySelector('#note-play-hint2'),
+      skipBtn:         rootElement?.querySelector('#note-play-skip'),
+      detectedNote:    rootElement?.querySelector('#note-play-detected'),
+      feedback:        rootElement?.querySelector('#note-play-feedback'),
+      score:           rootElement?.querySelector('#score-value'),
+      slider:          rootElement?.querySelector('#note-play-fret-slider'),
+      sliderLabel:     rootElement?.querySelector('#note-play-fret-label'),
     };
   }
 
@@ -64,7 +64,8 @@ export function createNotePlayingExercise() {
 
   // ── Public API ────────────────────────────────────────────────────────────
 
-  async function startExercise() {
+  async function mount(root = document) {
+    rootElement = root;
     resolveUI();
 
     // Cancel any in-flight advance timer
@@ -128,7 +129,7 @@ export function createNotePlayingExercise() {
     intervalId = setInterval(analyzeFrame, ANALYZE_INTERVAL_MS);
   }
 
-  function stopExercise() {
+  function unmount() {
     clearInterval(intervalId);
     intervalId = null;
 
@@ -150,6 +151,8 @@ export function createNotePlayingExercise() {
 
     currentFftSize = 0;
     state.isLocked = false;
+    rootElement = null;
+    ui = null;
   }
 
   /**
@@ -172,7 +175,7 @@ export function createNotePlayingExercise() {
     wireFretSlider(ui.slider, ui.sliderLabel, state.settings, resetTargetNote);
 
     wireStringToggles(
-      document.querySelectorAll('#note-play-string-toggles .btn-string'),
+      rootElement.querySelectorAll('#note-play-string-toggles .btn-string'),
       state.settings.activeStrings,
       resetTargetNote,
     );
@@ -199,7 +202,7 @@ export function createNotePlayingExercise() {
   function syncSettingsUI() {
     syncFretSlider(ui.slider, ui.sliderLabel, state.settings.maxFret);
     syncStringToggles(
-      document.querySelectorAll('#note-play-string-toggles .btn-string'),
+      rootElement.querySelectorAll('#note-play-string-toggles .btn-string'),
       state.settings.activeStrings,
     );
   }
@@ -334,15 +337,10 @@ export function createNotePlayingExercise() {
     if (ui) ui.score.textContent = state.score.correct;
   }
 
-  return { startExercise, stopExercise };
+  return {
+    mount,
+    unmount,
+    startExercise: mount,
+    stopExercise: unmount,
+  };
 }
-
-// ── Self-registration ─────────────────────────────────────────────────────────
-const notePlayingExercise = createNotePlayingExercise();
-registerExercise('notePlaying', {
-  viewId: 'view-note-play',
-  btnStartId: 'btn-start-note-play',
-  btnBackId: 'btn-back-note-play',
-  start: notePlayingExercise.startExercise,
-  stop: notePlayingExercise.stopExercise,
-});

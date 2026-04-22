@@ -1,1 +1,1 @@
-Version 2026-04-22 07:30 UTC | align architecture plans with page-local bootstrap structure
+Version 2026-04-22 07:38 UTC | phase 1 note-playing reference migration
