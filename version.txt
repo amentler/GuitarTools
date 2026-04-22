@@ -1,1 +1,1 @@
-Version 2026-04-22 07:54 UTC | add chord overview page reachability test
+Version 2026-04-22 07:55 UTC | scope chord overview tool to page root

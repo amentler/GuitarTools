@@ -6,6 +6,7 @@ const TYPE_ORDER = ['Dur', 'Moll', 'Dom7', 'Maj7', 'Min7', 'Dim', 'Sus', 'Add'];
 
 const filter = { rootNote: '', chordType: '' };
 let initialized = false;
+let rootElement = null;
 
 function getFilteredChords() {
   return Object.keys(CHORDS)
@@ -25,7 +26,7 @@ function getFilteredChords() {
 }
 
 function renderGrid() {
-  const container = document.getElementById('akkord-uebersicht-container');
+  const container = rootElement?.querySelector('#akkord-uebersicht-container');
   if (!container) return;
   container.innerHTML = '';
 
@@ -69,7 +70,7 @@ function initFilters() {
   if (initialized) return;
 
   for (const [groupId, filterKey] of [['filter-root', 'rootNote'], ['filter-type', 'chordType']]) {
-    const group = document.getElementById(groupId);
+    const group = rootElement?.querySelector(`#${groupId}`);
     if (!group) continue;
     group.addEventListener('click', e => {
       const btn = e.target.closest('.akkord-filter-btn');
@@ -85,12 +86,15 @@ function initFilters() {
 }
 
 export function createAkkordUebersichtTool() {
-  function mount() {
+  function mount(root = document) {
+    rootElement = root;
     initFilters();
     renderGrid();
   }
 
-  function unmount() {}
+  function unmount() {
+    rootElement = null;
+  }
 
   return {
     mount,
