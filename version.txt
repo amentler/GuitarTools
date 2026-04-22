@@ -1,1 +1,1 @@
-Version 2026-04-22 08:30 UTC | standardize note playing feature bootstrap api
+Version 2026-04-22 08:31 UTC | add fretboard page reachability test
