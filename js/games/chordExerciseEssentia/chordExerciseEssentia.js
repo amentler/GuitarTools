@@ -8,6 +8,7 @@ import { getRandomChord } from '../../domain/chords/chordCatalog.js';
 import { renderChordDiagram } from '../../shared/rendering/chords/chordDiagramRenderer.js';
 import { detectChordEssentia, stopListeningEssentia } from './essentiaChordDetection.js';
 import { getEssentia } from './essentiaLoader.js';
+import { CHORDS, CHORD_CATEGORIES } from '../../data/akkordData.js';
 
 // ── Factory ───────────────────────────────────────────────────────────────────
 
@@ -32,6 +33,24 @@ export function createChordExerciseEssentia() {
       if (cb?.checked) active.push(CATEGORIES[id]);
     }
     return active.length ? active : ['simplified'];
+  }
+
+  function getForcedRoundConfig() {
+    if (typeof window === 'undefined') return null;
+
+    const params = new URLSearchParams(window.location.search);
+    const chord = params.get('chord');
+    if (!chord || !CHORDS[chord]) return null;
+
+    const categoriesParam = params.get('categories');
+    const categories = categoriesParam
+      ? categoriesParam
+        .split(',')
+        .map(v => v.trim())
+        .filter(v => CHORD_CATEGORIES[v])
+      : null;
+
+    return { chord, categories };
   }
 
   // ── DOM references ─────────────────────────────────────────────────────────
@@ -78,13 +97,28 @@ export function createChordExerciseEssentia() {
   function nextRound() {
     clearPendingTimer();
     isListening  = false;
-    currentChord = getRandomChord(getActiveCategories());
+    const forcedRound = getForcedRoundConfig();
+    if (forcedRound) {
+      currentChord = {
+        name: forcedRound.chord,
+        positions: CHORDS[forcedRound.chord],
+      };
+    } else {
+      currentChord = getRandomChord(getActiveCategories());
+    }
 
     if (ui.chordName)  ui.chordName.textContent = currentChord.name;
     if (ui.feedbackEl) { ui.feedbackEl.textContent = ''; ui.feedbackEl.className = 'feedback-text'; }
     if (ui.listenBtn)  {
       ui.listenBtn.textContent = '\uD83C\uDFA4 H\u00F6ren';
       ui.listenBtn.disabled = !essentiaReady;
+    }
+
+    if (forcedRound?.categories) {
+      for (const [id, category] of Object.entries(CATEGORIES)) {
+        const checkbox = document.getElementById(id);
+        if (checkbox) checkbox.checked = forcedRound.categories.includes(category);
+      }
     }
 
     drawChordDiagram();

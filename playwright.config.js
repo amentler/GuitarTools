@@ -3,7 +3,9 @@ import { fileURLToPath } from 'url';
 import { defineConfig, devices } from '@playwright/test';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const fakeAudioPath = path.resolve(__dirname, 'tests/fixtures/chords/E-Moll/emin.wav');
+const fakeAudioPath = process.env.PLAYWRIGHT_FAKE_AUDIO_PATH
+  ? path.resolve(__dirname, process.env.PLAYWRIGHT_FAKE_AUDIO_PATH)
+  : path.resolve(__dirname, 'tests/fixtures/chords/E-Moll/emin.wav');
 
 export default defineConfig({
   testDir: './tests/e2e',

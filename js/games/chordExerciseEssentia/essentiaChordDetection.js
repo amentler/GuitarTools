@@ -46,6 +46,7 @@ const CHORD_TEMPLATES = buildChordTemplates();
 let audioCtx = null;
 let analyser = null;
 let stream   = null;
+let essentiaHpcpAvailable = true;
 
 // ── Internal helpers ──────────────────────────────────────────────────────────
 
@@ -115,6 +116,9 @@ function detectPeaks(analyserNode, sampleRate) {
  */
 function computeHpcpEssentia(essentia, peakFreqs, peakMags, sampleRate) {
   if (!peakFreqs.length) return new Float32Array(12);
+  if (typeof essentia?.arrayToVector !== 'function' || typeof essentia?.vectorToArray !== 'function') {
+    throw new TypeError('EssentiaJS HPCP helpers are not available on this instance');
+  }
 
   const freqVec = essentia.arrayToVector(new Float32Array(peakFreqs));
   const magVec  = essentia.arrayToVector(new Float32Array(peakMags));
@@ -149,7 +153,13 @@ function computeHpcpEssentia(essentia, peakFreqs, peakMags, sampleRate) {
  */
 function computeHpcp(essentia, analyserNode, sampleRate) {
   const { peakFreqs, peakMags } = detectPeaks(analyserNode, sampleRate);
-  if (essentia) return computeHpcpEssentia(essentia, peakFreqs, peakMags, sampleRate);
+  if (essentia && essentiaHpcpAvailable) {
+    try {
+      return computeHpcpEssentia(essentia, peakFreqs, peakMags, sampleRate);
+    } catch {
+      essentiaHpcpAvailable = false;
+    }
+  }
   return computeHpcpPureJS(peakFreqs, peakMags, HPCP_REFERENCE_HZ);
 }
 
@@ -168,6 +178,7 @@ function computeHpcp(essentia, analyserNode, sampleRate) {
  */
 export async function detectChordEssentia(chordName) {
   let essentia = null;
+  essentiaHpcpAvailable = true;
 
   try {
     [essentia] = await Promise.all([getEssentia(), ensureMic()]);
@@ -184,7 +195,7 @@ export async function detectChordEssentia(chordName) {
 
   const rmsThreshold = RMS_SPIKE_FACTOR * GUITAR_MIN_RMS;
   const sampleRate   = audioCtx?.sampleRate ?? 44100;
-  const usingWasm    = essentia !== null;
+  const usingWasm    = essentia !== null && essentiaHpcpAvailable;
 
   return new Promise(resolve => {
     let strumDetected = false;
@@ -234,7 +245,10 @@ export async function detectChordEssentia(chordName) {
       if (!hpcps.length) { resolve({ isCorrect: false, confidence: 0, bestMatch: null }); return; }
 
       const avgHpcp = averageHpcps(hpcps);
-      resolve({ ...matchHpcpToChord(avgHpcp, chordName, CHORD_TEMPLATES), wasm: usingWasm });
+      resolve({
+        ...matchHpcpToChord(avgHpcp, chordName, CHORD_TEMPLATES),
+        wasm: essentia !== null && essentiaHpcpAvailable,
+      });
     }
   });
 }

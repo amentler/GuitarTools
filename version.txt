@@ -1,1 +1,1 @@
-Version 2026-04-22 20:12 UTC | rewrite essentia caged tests around detectChordEssentia
+Version 2026-04-22 20:32 UTC | fix chord-playing essentia UI fallback and add C-Dur e2e
