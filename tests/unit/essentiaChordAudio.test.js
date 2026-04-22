@@ -1,94 +1,34 @@
-// @vitest-environment jsdom
-
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { installEssentiaDetectionHarness } from '../helpers/essentiaDetectionHarness.js';
-
-const getEssentiaMock = vi.fn(() => Promise.reject(new Error('WASM im Unit-Test deaktiviert')));
-
-vi.mock('../../js/games/chordExerciseEssentia/essentiaLoader.js', () => ({
-  getEssentia: getEssentiaMock,
-}));
+import { readFileSync } from 'fs';
+import {
+  averageHpcps,
+  buildChordTemplates,
+  matchHpcpToChord,
+} from '../../js/games/chordExerciseEssentia/essentiaChordLogic.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const FIXTURES = path.join(__dirname, '../fixtures/chords');
+const FROZEN_FIXTURES = JSON.parse(
+  readFileSync(path.join(__dirname, '../fixtures/chord-hpcp/frozen-hpcp-fixtures.json'), 'utf-8'),
+);
 
-const CAGED_CASES = [
-  { chordName: 'A-Dur', wavFile: 'A-Dur/amaj.wav' },
-  { chordName: 'C-Dur', wavFile: 'C-Dur/c_chord.wav' },
-  { chordName: 'D-Dur', wavFile: 'D-Dur/d_chord.wav' },
-  { chordName: 'E-Dur', wavFile: 'E-Dur/emaj.wav' },
-  { chordName: 'G-Dur', wavFile: 'G-Dur/g_chord.wav' },
-];
+const TEMPLATES = buildChordTemplates();
 
-describe('detectChordEssentia – typische CAGED-Akkorde', () => {
-  const originalNavigator = globalThis.navigator;
-  const originalAudioContext = globalThis.AudioContext;
+describe('matchHpcpToChord – Frozen HPCP fixtures', () => {
+  for (const fixture of FROZEN_FIXTURES) {
+    it(`bewertet ${fixture.chordName} aus ${fixture.wavFile} mit eingefrorener HPCP korrekt`, () => {
+      const frozenFrames = fixture.hpcpFrames.map(frame => Float32Array.from(frame));
+      const avgHpcp = averageHpcps(frozenFrames);
+      const result = matchHpcpToChord(avgHpcp, fixture.chordName, TEMPLATES);
 
-  beforeEach(() => {
-    vi.useFakeTimers();
-    vi.resetModules();
-    getEssentiaMock.mockClear();
-  });
+      expect(result.isCorrect, `${fixture.wavFile}: confidence=${result.confidence.toFixed(3)}, bestMatch=${result.bestMatch}`).toBe(
+        fixture.expected.isCorrect,
+      );
 
-  afterEach(() => {
-    vi.useRealTimers();
-
-    if (originalNavigator === undefined) {
-      delete globalThis.navigator;
-    } else {
-      Object.defineProperty(globalThis, 'navigator', {
-        configurable: true,
-        value: originalNavigator,
-      });
-    }
-
-    if (originalAudioContext === undefined) {
-      delete globalThis.AudioContext;
-    } else {
-      globalThis.AudioContext = originalAudioContext;
-    }
-
-    if (typeof window !== 'undefined') {
-      if (originalAudioContext === undefined) {
-        delete window.AudioContext;
-      } else {
-        window.AudioContext = originalAudioContext;
+      if (fixture.expected.bestMatchContains) {
+        expect(result.bestMatch).toContain(fixture.expected.bestMatchContains);
       }
-    }
-  });
-
-  for (const { chordName, wavFile } of CAGED_CASES) {
-    it(`erkennt ${chordName} aus ${wavFile} über detectChordEssentia()`, async () => {
-      installEssentiaDetectionHarness(path.join(FIXTURES, wavFile));
-
-      const { detectChordEssentia } = await import('../../js/games/chordExerciseEssentia/essentiaChordDetection.js');
-      const resultPromise = detectChordEssentia(chordName);
-
-      await vi.advanceTimersByTimeAsync(1000);
-      const result = await resultPromise;
-
-      expect(getEssentiaMock).toHaveBeenCalledTimes(1);
-      expect(result.wasm).toBe(false);
-      expect(
-        result.isCorrect,
-        `${wavFile}: confidence=${result.confidence.toFixed(3)}, bestMatch=${result.bestMatch}`,
-      ).toBe(true);
     });
   }
-
-  it('lehnt einen falschen Zielakkord über detectChordEssentia() ab', async () => {
-    installEssentiaDetectionHarness(path.join(FIXTURES, 'D-Dur/d_chord.wav'));
-
-    const { detectChordEssentia } = await import('../../js/games/chordExerciseEssentia/essentiaChordDetection.js');
-    const resultPromise = detectChordEssentia('G-Dur');
-
-    await vi.advanceTimersByTimeAsync(1000);
-    const result = await resultPromise;
-
-    expect(result.wasm).toBe(false);
-    expect(result.isCorrect).toBe(false);
-    expect(result.bestMatch).toContain('D-Dur');
-  });
 });

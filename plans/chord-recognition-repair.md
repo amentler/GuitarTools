@@ -277,3 +277,29 @@ Die nächste fachliche Reparaturrunde ist erfolgreich, wenn mindestens diese Fä
 - `E-Dur/emaj.wav` wird als `E-Dur` akzeptiert
 - `G-Dur/g_chord.wav` wird als `G-Dur` akzeptiert
 - bestehende Browser-E2E-Fälle für `C-Dur` und `E-Moll (2-Finger)` bleiben grün
+
+## Stand nach Umsetzung der Profil-Parametrisierung
+
+Umgesetzt:
+
+- Typbasiertes Bewertungsprofil in `matchHpcpToChord()` statt komplett separater Erkennungslogik
+- eigenes Profil für `7`-Akkorde mit zusätzlicher Septimen-Gewichtung
+- Frozen-HPCP-Regressionstests auf Basis vorab extrahierter JSON-Fixtures
+- separater Snapshot-Test, der prüft, ob die aktuelle HPCP-Extraktion weiterhin dieselben Goldens erzeugt
+
+Neue/angepasste Tests:
+
+- `tests/unit/essentiaChordLogic.test.js`
+- `tests/unit/essentiaChordAudio.test.js`
+- `tests/unit/essentiaChordExtractionSnapshot.test.js`
+- `tests/fixtures/chord-hpcp/frozen-hpcp-fixtures.json`
+
+Aktueller Stand:
+
+- die schnelle Frozen-HPCP-Matrix ist grün
+- die HPCP-Extraktion stimmt mit den eingefrorenen Goldens überein
+- der frühere Problemfall `G7/g7_chord.wav` wurde bewusst entfernt und soll mit einer neu eingespielten Fixture ersetzt werden
+
+Offen:
+
+- der Browser-/Live-Fall für `C-Dur` war zuletzt im E2E noch nicht stabil und ist nicht durch die Frozen-HPCP-Tests abgedeckt

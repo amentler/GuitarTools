@@ -1,1 +1,1 @@
-Version 2026-04-22 20:47 UTC | document chord recognition improvement plan
+Version 2026-04-22 22:06 UTC | freeze chord hpcp fixtures and split sequence tests

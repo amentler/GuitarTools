@@ -12,6 +12,217 @@ import { getChordNotes } from '../../domain/chords/chordDetectionLogic.js';
 
 // Pitch-class bin: C=0, C#=1, D=2, D#=3, E=4, F=5, F#=6, G=7, G#=8, A=9, A#=10, B=11
 const NOTE_TO_BIN = { C: 0, 'C#': 1, D: 2, 'D#': 3, E: 4, F: 5, 'F#': 6, G: 7, 'G#': 8, A: 9, 'A#': 10, B: 11 };
+const GERMAN_TO_BIN = {
+  C: 0,
+  Cis: 1, Des: 1,
+  D: 2,
+  Dis: 3, Es: 3,
+  E: 4, Fes: 4,
+  Eis: 5,
+  F: 5,
+  Fis: 6, Ges: 6,
+  G: 7,
+  Gis: 8, As: 8,
+  A: 9,
+  Ais: 10, B: 10,
+  H: 11,
+};
+const TYPE_INTERVALS = {
+  Dur: [0, 4, 7],
+  Moll: [0, 3, 7],
+  dim: [0, 3, 6],
+  '7': [0, 4, 7, 10],
+  maj7: [0, 4, 7, 11],
+  m7: [0, 3, 7, 10],
+  sus2: [0, 2, 7],
+  sus4: [0, 5, 7],
+  add9: [0, 4, 7, 2],
+};
+
+const DEFAULT_PROFILE = {
+  weights: {
+    supportMean: 0.48,
+    root: 0.22,
+    fifth: 0.12,
+    expectedThird: 0.12,
+    expectedSeventh: 0,
+    leakageMean: 0.18,
+    competingThird: 0.04,
+  },
+  threshold: 0.5,
+  bestMatchTolerance: 0.12,
+  minRootEnergy: 0.2,
+  minFifthEnergy: 0.12,
+  minSupportMean: 0.32,
+  minSeventhEnergy: 0,
+};
+
+const CHORD_TYPE_PROFILES = {
+  '7': {
+    weights: {
+      supportMean: 0.42,
+      root: 0.18,
+      fifth: 0.08,
+      expectedThird: 0.1,
+      expectedSeventh: 0.22,
+      leakageMean: 0.12,
+      competingThird: 0.03,
+    },
+    threshold: 0.42,
+    bestMatchTolerance: 0.14,
+    minRootEnergy: 0.12,
+    minFifthEnergy: 0.04,
+    minSupportMean: 0.26,
+    minSeventhEnergy: 0.08,
+  },
+};
+
+function stripChordAnnotation(chordName) {
+  return chordName.replace(/\s*\([^)]*\)\s*$/, '').trim();
+}
+
+function parseChordDescriptor(chordName) {
+  if (!chordName || typeof chordName !== 'string') return null;
+
+  const cleaned = stripChordAnnotation(chordName);
+
+  const hyphenMatch = cleaned.match(/^([A-Z][a-z]*)-([A-Za-z0-9]+)$/);
+  if (hyphenMatch) {
+    const root = hyphenMatch[1];
+    const type = hyphenMatch[2];
+    if (GERMAN_TO_BIN[root] !== undefined && TYPE_INTERVALS[type] !== undefined) {
+      return { root, type };
+    }
+  }
+
+  const suffixes = ['maj7', 'm7', 'sus2', 'sus4', 'add9', 'dim'];
+  for (const suffix of suffixes) {
+    if (!cleaned.endsWith(suffix)) continue;
+    const root = cleaned.slice(0, -suffix.length);
+    if (GERMAN_TO_BIN[root] !== undefined) return { root, type: suffix };
+  }
+
+  const dom7Match = cleaned.match(/^([A-Z][a-z]*)7$/);
+  if (dom7Match) {
+    const root = dom7Match[1];
+    if (GERMAN_TO_BIN[root] !== undefined) {
+      return { root, type: '7' };
+    }
+  }
+
+  return null;
+}
+
+function getChordDescriptor(chordName) {
+  const parsed = parseChordDescriptor(chordName);
+  if (!parsed) return null;
+
+  const rootBin = GERMAN_TO_BIN[parsed.root];
+  const intervals = TYPE_INTERVALS[parsed.type];
+  if (rootBin === undefined || !intervals) return null;
+
+  const descriptor = {
+    type: parsed.type,
+    rootBin,
+    fifthBin: (rootBin + 7) % 12,
+    expectedThirdBin: null,
+    competingThirdBin: null,
+    expectedSeventhBin: null,
+  };
+
+  if (['Dur', '7', 'maj7', 'add9'].includes(parsed.type)) {
+    descriptor.expectedThirdBin = (rootBin + 4) % 12;
+    descriptor.competingThirdBin = (rootBin + 3) % 12;
+  } else if (['Moll', 'm7', 'dim'].includes(parsed.type)) {
+    descriptor.expectedThirdBin = (rootBin + 3) % 12;
+    descriptor.competingThirdBin = (rootBin + 4) % 12;
+  }
+
+  if (parsed.type === '7') {
+    descriptor.expectedSeventhBin = (rootBin + 10) % 12;
+  } else if (parsed.type === 'maj7') {
+    descriptor.expectedSeventhBin = (rootBin + 11) % 12;
+  } else if (parsed.type === 'm7') {
+    descriptor.expectedSeventhBin = (rootBin + 10) % 12;
+  }
+
+  return descriptor;
+}
+
+function getChordProfile(descriptor) {
+  if (!descriptor) return DEFAULT_PROFILE;
+  return CHORD_TYPE_PROFILES[descriptor.type] ?? DEFAULT_PROFILE;
+}
+
+function getMeanEnergy(hpcp, template, includeTemplateBins) {
+  let sum = 0;
+  let count = 0;
+  for (let i = 0; i < hpcp.length; i++) {
+    const isActive = template[i] > 0;
+    if (isActive !== includeTemplateBins) continue;
+    sum += hpcp[i];
+    count += 1;
+  }
+  return count > 0 ? sum / count : 0;
+}
+
+function clampConfidence(score) {
+  return Math.max(0, Math.min(1, score));
+}
+
+function scoreHpcpAgainstChord(hpcp, template, descriptor) {
+  const profile = getChordProfile(descriptor);
+  const weights = profile.weights;
+  const supportMean = getMeanEnergy(hpcp, template, true);
+  const leakageMean = getMeanEnergy(hpcp, template, false);
+  let rootEnergy = 0;
+  let fifthEnergy = 0;
+  let expectedThirdEnergy = 0;
+  let expectedSeventhEnergy = 0;
+  let competingThirdEnergy = 0;
+
+  if (descriptor) {
+    rootEnergy = hpcp[descriptor.rootBin];
+    fifthEnergy = hpcp[descriptor.fifthBin];
+    if (descriptor.expectedThirdBin !== null) {
+      expectedThirdEnergy = hpcp[descriptor.expectedThirdBin];
+    }
+    if (descriptor.competingThirdBin !== null) {
+      competingThirdEnergy = hpcp[descriptor.competingThirdBin];
+    }
+    if (descriptor.expectedSeventhBin !== null) {
+      expectedSeventhEnergy = hpcp[descriptor.expectedSeventhBin];
+    }
+  }
+
+  const rawScore =
+    weights.supportMean * supportMean +
+    weights.root * rootEnergy +
+    weights.fifth * fifthEnergy +
+    weights.expectedThird * expectedThirdEnergy +
+    weights.expectedSeventh * expectedSeventhEnergy -
+    weights.leakageMean * leakageMean -
+    weights.competingThird * competingThirdEnergy;
+  const maxPositiveScore =
+    weights.supportMean +
+    (descriptor ? weights.root + weights.fifth : 0) +
+    (descriptor && descriptor.expectedThirdBin !== null ? weights.expectedThird : 0) +
+    (descriptor && descriptor.expectedSeventhBin !== null ? weights.expectedSeventh : 0);
+  const normalizedScore = maxPositiveScore > 0 ? rawScore / maxPositiveScore : rawScore;
+
+  return {
+    profile,
+    supportMean,
+    leakageMean,
+    rootEnergy,
+    fifthEnergy,
+    expectedThirdEnergy,
+    expectedSeventhEnergy,
+    competingThirdEnergy,
+    rawScore,
+    score: clampConfidence(normalizedScore),
+  };
+}
 
 /**
  * Builds a 12-bin binary template for every chord in akkordData.
@@ -145,32 +356,44 @@ function isSubsetOf(subTemplate, superTemplate) {
  * @param {ArrayLike<number>} hpcp           12-bin HPCP vector
  * @param {string}            targetChordName chord to match against
  * @param {Object}            templates       map from chord name to template (from buildChordTemplates)
- * @param {number}            [threshold=0.65] minimum similarity for "correct"
+ * @param {number}            [thresholdOverride] minimum similarity override for "correct"
  * @returns {{ isCorrect: boolean, confidence: number, bestMatch: string|null, bestScore: number }}
  */
-export function matchHpcpToChord(hpcp, targetChordName, templates, threshold = 0.65) {
+export function matchHpcpToChord(hpcp, targetChordName, templates, thresholdOverride) {
   const targetTemplate = templates[targetChordName];
   if (!targetTemplate) {
     return { isCorrect: false, confidence: 0, bestMatch: null, bestScore: 0 };
   }
 
-  const confidence = cosineSimilarity(hpcp, targetTemplate);
+  const targetDescriptor = getChordDescriptor(targetChordName);
+  const targetEvidence = scoreHpcpAgainstChord(hpcp, targetTemplate, targetDescriptor);
+  const profile = targetEvidence.profile;
+  const confidence = targetEvidence.score;
 
   let bestMatch = null;
   let bestScore = -1;
   for (const [name, template] of Object.entries(templates)) {
-    const score = cosineSimilarity(hpcp, template);
+    const score = scoreHpcpAgainstChord(hpcp, template, getChordDescriptor(name)).score;
     if (score > bestScore) {
       bestScore = score;
       bestMatch = name;
     }
   }
 
-  const isCorrect = confidence >= threshold && (
-    bestMatch === targetChordName ||
-    bestScore - confidence <= 0.05 ||
-    isSubsetOf(templates[bestMatch], targetTemplate)
-  );
+  const threshold = thresholdOverride ?? profile.threshold;
+  const hasStrongRoot = !targetDescriptor || targetEvidence.rootEnergy >= profile.minRootEnergy;
+  const hasStrongFifth = !targetDescriptor || targetEvidence.fifthEnergy >= profile.minFifthEnergy;
+  const hasEnoughChordSupport = targetEvidence.supportMean >= profile.minSupportMean;
+  const hasExpectedSeventh = !targetDescriptor || targetEvidence.expectedSeventhEnergy >= profile.minSeventhEnergy;
+  const isCorrect = confidence >= threshold &&
+    hasStrongRoot &&
+    hasStrongFifth &&
+    hasExpectedSeventh &&
+    hasEnoughChordSupport && (
+      bestMatch === targetChordName ||
+      bestScore - confidence <= profile.bestMatchTolerance ||
+      isSubsetOf(templates[bestMatch], targetTemplate)
+    );
 
   return { isCorrect, confidence, bestMatch, bestScore };
 }

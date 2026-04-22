@@ -171,6 +171,34 @@ describe('matchHpcpToChord', () => {
     // strict may or may not pass depending on noise – just check it runs
     expect(typeof resultStrict.isCorrect).toBe('boolean');
   });
+
+  it('accepts E-Dur when extra non-chord energy is present but root, third and fifth remain strong', () => {
+    const hpcp = new Float32Array([0, 0, 0.046, 0.057, 0.509, 0.152, 0.228, 0, 0.302, 0, 0.95, 0.834]);
+    const result = matchHpcpToChord(hpcp, 'E-Dur', templates);
+    expect(result.isCorrect).toBe(true);
+    expect(result.confidence).toBeGreaterThanOrEqual(0.5);
+  });
+
+  it('accepts G-Dur despite competing minor-third energy when the major-triad support is still present', () => {
+    const hpcp = new Float32Array([0.001, 0, 0.198, 0.001, 0, 0, 0.018, 0.98, 0, 0.07, 0.565, 0.29]);
+    const result = matchHpcpToChord(hpcp, 'G-Dur', templates);
+    expect(result.isCorrect).toBe(true);
+    expect(result.confidence).toBeGreaterThanOrEqual(0.5);
+  });
+
+  it('accepts C7 when the dominant seventh is present but the voicing is less triad-like than a plain major chord', () => {
+    const hpcp = new Float32Array([0.92, 0, 0, 0, 0.34, 0.18, 0, 0.44, 0, 0, 0.63, 0]);
+    const result = matchHpcpToChord(hpcp, 'C7', templates);
+    expect(result.isCorrect).toBe(true);
+    expect(result.bestMatch).toBe('C7');
+  });
+
+  it('accepts G7 when the minor seventh is strong enough to distinguish it from diminished competitors', () => {
+    const hpcp = new Float32Array([0, 0, 0.55, 0, 0, 0.62, 0, 1, 0, 0, 0, 0.58]);
+    const result = matchHpcpToChord(hpcp, 'G7', templates);
+    expect(result.isCorrect).toBe(true);
+    expect(result.confidence).toBeGreaterThanOrEqual(0.42);
+  });
 });
 
 // ── computeHpcpPureJS ─────────────────────────────────────────────────────────
