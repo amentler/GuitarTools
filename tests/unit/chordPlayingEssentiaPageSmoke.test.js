@@ -10,7 +10,7 @@ const mountSpy = vi.fn();
 
 vi.mock('../../js/components/index.js', () => ({}));
 vi.mock('../../js/games/chordExerciseEssentia/chordExerciseEssentia.js', () => ({
-  createChordExerciseEssentia: () => ({
+  createChordPlayingFeature: () => ({
     mount: mountSpy,
     unmount: vi.fn(),
   }),
@@ -29,7 +29,7 @@ describe('Chord playing essentia page smoke', () => {
 
     const moduleScript = document.querySelector('script[type="module"]');
     expect(moduleScript?.getAttribute('src')).toBe('./bootstrap.js');
-    expect(html).not.toContain('createChordExerciseEssentia');
+    expect(html).not.toContain('createChordPlayingFeature');
 
     await import('../../pages/chord-playing-essentia/bootstrap.js');
 

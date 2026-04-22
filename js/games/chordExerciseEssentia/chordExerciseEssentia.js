@@ -213,3 +213,5 @@ export function createChordExerciseEssentia() {
     stopExercise: unmount,
   };
 }
+
+export const createChordPlayingFeature = createChordExerciseEssentia;
