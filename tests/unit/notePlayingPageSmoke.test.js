@@ -10,7 +10,7 @@ const mountSpy = vi.fn();
 
 vi.mock('../../js/components/index.js', () => ({}));
 vi.mock('../../js/games/notePlayingExercise/notePlayingExercise.js', () => ({
-  createNotePlayingExercise: () => ({
+  createNotePlayingFeature: () => ({
     mount: mountSpy,
     unmount: vi.fn(),
   }),
@@ -29,7 +29,7 @@ describe('Note-playing page smoke', () => {
 
     const moduleScript = document.querySelector('script[type="module"]');
     expect(moduleScript?.getAttribute('src')).toBe('./bootstrap.js');
-    expect(html).not.toContain('createNotePlayingExercise');
+    expect(html).not.toContain('createNotePlayingFeature');
 
     await import('../../pages/note-playing/bootstrap.js');
 

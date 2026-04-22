@@ -1,5 +1,5 @@
 import '../../js/components/index.js';
-import { createNotePlayingExercise } from '../../js/games/notePlayingExercise/notePlayingExercise.js';
+import { createNotePlayingFeature } from '../../js/games/notePlayingExercise/notePlayingExercise.js';
 
 const root = document.getElementById('view-note-play');
 
@@ -7,6 +7,6 @@ if (!root) {
   throw new Error('note-playing bootstrap: root element #view-note-play fehlt');
 }
 
-const feature = createNotePlayingExercise();
+const feature = createNotePlayingFeature();
 
 await feature.mount(root);

@@ -344,3 +344,5 @@ export function createNotePlayingExercise() {
     stopExercise: unmount,
   };
 }
+
+export const createNotePlayingFeature = createNotePlayingExercise;
