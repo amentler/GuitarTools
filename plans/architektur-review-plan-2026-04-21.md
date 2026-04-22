@@ -367,28 +367,202 @@ Status: abgeschlossen am 2026-04-22
 ### Phase 2: Schichtgrenzen sauber ziehen
 
 Priorität: P1
+Status: abgeschlossen am 2026-04-22
 
 1. Gemeinsame Fachlogik aus Feature-Ordnern in neutrale Shared-/Domain-Module verschieben.
 2. `components` von `games` entkoppeln.
 3. Rendering-Helfer, Audio-Helfer und Fretboard-/Chord-Domain zentralisieren.
 4. Import-Regeln etablieren und per ESLint absichern.
 
+Ergebnis:
+
+- `js/domain/` und `js/shared/` wurden als neutrale Schichten eingeführt.
+- Fretboard-, Pitch-, Chord-, Metronom- und Sheet-Music-Shared-Bausteine liegen nicht mehr nur in Feature-Ordnern.
+- `components` importiert keine Feature-Logik mehr direkt.
+- Kritische Cross-Feature-Abhängigkeiten wurden auf Shared-/Domain-Module umgestellt; Altpfade bestehen teilweise als Kompatibilitäts-Re-Exports.
+- Refactor-Sicherungen für die verschobenen Bausteine wurden ergänzt, damit Phase 3 auf stabilem Verhalten aufsetzt.
+
 ### Phase 3: Große Controller zerlegen
 
 Priorität: P1
+Status: geplant
 
-1. Zuerst diese Dateien schneiden:
-   - `js/tools/guitarTuner/guitarTuner.js`
-   - `js/games/sheetMusicReading/sheetMusicReading.js`
-   - `js/games/akkordfolgenTrainer/akkordfolgenTrainer.js`
-   - `js/games/sheetMusicMic/sheetMusicMicExercise.js`
-   - `js/games/notePlayingExercise/notePlayingExercise.js`
-2. Pro Feature trennen in:
-   - State
-   - UI-Adapter
-   - Audio-/Storage-Service
-   - Controller
-3. Globale Browser-Events und Timer systematisch teardown-fähig machen.
+Ziel:
+Die großen Controller sollen entlang klarer Verantwortungen zerlegt werden, ohne das Verhalten der Übungen und Werkzeuge zu verändern. Nach Phase 2 sind die wichtigsten Shared-Bausteine bereits ausgelagert; Phase 3 nutzt diese Vorarbeit, um die verbleibenden God-Objects in kleinere, testbarere Module zu schneiden.
+
+Aktueller Fokus:
+
+- `js/tools/guitarTuner/guitarTuner.js` mit 491 Zeilen
+- `js/games/akkordfolgenTrainer/akkordfolgenTrainer.js` mit 504 Zeilen
+- `js/games/sheetMusicMic/sheetMusicMicExercise.js` mit 449 Zeilen
+- `js/games/sheetMusicReading/sheetMusicReading.js` mit 396 Zeilen
+- `js/games/notePlayingExercise/notePlayingExercise.js` mit 348 Zeilen
+
+Zerlegungsprinzip:
+
+1. Ein Feature-Controller darf nur noch koordinieren.
+2. DOM-Resolution und DOM-Schreiben werden in UI-Adapter oder Presenter verschoben.
+3. Audio-, Timer-, Storage- und Browser-API-Zugriffe werden in kleine Services gekapselt.
+4. Zustandsübergänge werden, wo sinnvoll, als pure Funktionen oder state-nahe Module testbar gemacht.
+5. Jeder Controller erhält einen klaren `mount`-/`unmount`- bzw. `start`-/`stop`-Lebenszyklus mit vollständigem Teardown.
+
+Zielstruktur pro großem Feature:
+
+- `state`
+  - serialisierbarer, expliziter Laufzeitzustand
+- `uiAdapter` oder `view`
+  - `resolveUI(root)`
+  - DOM-Lese-/Schreibzugriffe
+- `audioSession` oder `inputService`
+  - Mikrofon, `AudioContext`, `AnalyserNode`, Intervalle
+- `storage`
+  - `localStorage` oder andere browsernahe Persistenz
+- `controller`
+  - Orchestrierung, Lebenszyklus, Seiteneffekte
+
+#### Phase 3A: Tuner zuerst schneiden
+
+Warum zuerst:
+
+- Der Tuner ist der größte einzelne Tool-Controller.
+- Er mischt Audio-Lifecycle, Signalbewertung, UI-Update, Guided-Tuning-Flow und DOM-Wiring.
+- Die reine Pitch- und Analysebasis wurde in Phase 2 bereits stabilisiert.
+
+Zielschnitt:
+
+- `guitarTunerState.js`
+- `guitarTunerUI.js`
+- `guitarTunerAudioSession.js`
+- `guitarTunerGuidedMode.js`
+- `guitarTuner.js` nur noch als dünner Controller
+
+Explizit zu trennen:
+
+- DOM-Queries und Button-Wiring
+- Guided-Mode-Status und Feedback-Rendering
+- Analyse-Loop und Mikrofon-Start/Stop
+- Kalibrierungs- und Glättungszustand
+
+Definition of Done:
+
+- `guitarTuner.js` ist primär Orchestrierung und deutlich kleiner als heute.
+- Audio-Ressourcen und Intervalle werden an genau einer Stelle erzeugt und aufgeräumt.
+- Guided-Tuning-Logik kann isoliert getestet werden, ohne die gesamte Tool-Datei zu importieren.
+
+#### Phase 3B: Reading- und Mic-Notation getrennt schneiden
+
+Ziel:
+`sheetMusicReading` und `sheetMusicMic` sollen nicht nur Shared-Logik wiederverwenden, sondern auch intern dieselben Verantwortungsgrenzen benutzen.
+
+Für `sheetMusicReading` trennen:
+
+- `sheetMusicReadingState.js`
+- `sheetMusicReadingUI.js`
+- `sheetMusicReadingStorage.js`
+- `sheetMusicReadingPlayback.js`
+- `sheetMusicReadingController.js` oder bestehende Datei als dünne Fassade
+
+Für `sheetMusicMic` trennen:
+
+- `sheetMusicMicState.js`
+- `sheetMusicMicUI.js`
+- `sheetMusicMicAudioSession.js`
+- `sheetMusicMicRoundController.js`
+- `sheetMusicMicExercise.js` als Orchestrator
+
+Explizit zu trennen:
+
+- `localStorage`-Zugriffe in `sheetMusicReading`
+- Scroll-/Endless-Mode-Steuerung
+- Audio-Initialisierung und Analyseintervalle in `sheetMusicMic`
+- Feedback-, Score- und Sequenznavigation
+
+Definition of Done:
+
+- `sheetMusicReading` und `sheetMusicMic` besitzen jeweils einen expliziten UI-Adapter.
+- Playback-, Scroll- und Endless-Mode-Zustand sind nicht mehr mit DOM-Zugriffen vermischt.
+- `sheetMusicMic` kann Audio-Lifecycle separat teardownen, ohne implizite Controller-Nebenwirkungen.
+
+#### Phase 3C: Akkordfolgen-Trainer schneiden
+
+Ziel:
+Der `akkordfolgenTrainer` soll von einem monolithischen Ablaufcontroller zu einem zusammengesetzten Feature mit klaren Laufzeitdiensten werden.
+
+Zielschnitt:
+
+- `akkordfolgenState.js`
+- `akkordfolgenUI.js`
+- `akkordfolgenAudioSession.js`
+- `akkordfolgenMetronomeController.js`
+- `akkordfolgenRoundController.js`
+- `akkordfolgenTrainer.js` als Einstieg
+
+Explizit zu trennen:
+
+- Setup-/Summary-/Active-Ansicht
+- Beat-Synchronisation und Metronom-Wiring
+- Strum-Erkennung und Analyse-Cooldowns
+- Score-Zustand und Rundenfortschritt
+
+Definition of Done:
+
+- Timer, Cooldowns und Analyse-Token werden zentral verwaltet und sauber beendet.
+- Die Progressionssteuerung kann ohne DOM-Mock isoliert verifiziert werden.
+- UI-Rendering und Audio-Analyse sind nicht mehr in denselben Methoden verschachtelt.
+
+#### Phase 3D: Note Playing zuletzt schneiden
+
+Warum zuletzt:
+
+- Die Datei ist kleiner als die anderen Kandidaten.
+- Sie profitiert von denselben Extraktionsmustern wie `sheetMusicMic` und der Tuner.
+
+Zielschnitt:
+
+- `notePlayingState.js`
+- `notePlayingUI.js`
+- `notePlayingAudioSession.js`
+- `notePlayingRoundController.js`
+- `notePlayingExercise.js` als dünner Einstieg
+
+Explizit zu trennen:
+
+- Mikrofonstart/-stopp
+- Trefferlogik und Rundenfortschritt
+- Hint-/Skip-/Feedback-UI
+- DOM-Resolution und Anzeigeupdates
+
+Definition of Done:
+
+- Die Übung besitzt getrennte Zustands-, UI- und Audio-Verantwortung.
+- Button-Wiring und Round-Flow sind getrennt testbar.
+
+#### Querschnittsanforderungen für alle Phase-3-Schnitte
+
+Vor jedem Refactor:
+
+- bestehende Smoke- und Integrationstests prüfen
+- fehlende Tests für den konkreten Controller-Schnitt ergänzen
+- nur dann schneiden, wenn das relevante Verhalten grün abgesichert ist
+
+Während des Refactors:
+
+- Dateien klein und reviewbar migrieren
+- nach Möglichkeit erst neue Module einführen, dann Aufrufe umstellen, erst am Schluss Altcode entfernen
+- öffentliche API des Features stabil halten, solange keine Phase-5-Konvention greift
+
+Nach jedem Feature-Schnitt:
+
+- Event-Listener, `setTimeout`, `setInterval`, `requestAnimationFrame`, Streams und `AudioContext` explizit teardownen
+- smoke-testen, dass `mount`/`unmount` mehrfach sicher aufgerufen werden können
+- Regressionstest für mindestens einen zentralen User-Flow ergänzen
+
+Abnahme für Phase 3 insgesamt:
+
+- Kein priorisierter Groß-Controller bleibt als monolithische Datei mit vermischten DOM-, State- und Audio-Verantwortungen bestehen.
+- Pro betroffenen Feature existiert mindestens ein explizites Zustands- oder Service-Modul und ein UI-Adapter.
+- Globale Browser-Events, Timer und Audio-Ressourcen sind teardown-fähig und testbar angebunden.
+- Die Features verhalten sich nach Smoke- und Integrationstests unverändert.
 
 ### Phase 4: Shared Infrastructure einführen
 
