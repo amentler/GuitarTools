@@ -1,1 +1,1 @@
-Version 2026-04-22 09:39 UTC | close out phase 1 architecture planning docs
+Version 2026-04-22 13:40 UTC | add detailed phase 2 layering plan
