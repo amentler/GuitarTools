@@ -10,7 +10,7 @@ const mountSpy = vi.fn();
 
 vi.mock('../../js/components/index.js', () => ({}));
 vi.mock('../../js/games/sheetMusicReading/sheetMusicReading.js', () => ({
-  createSheetMusicExercise: () => ({
+  createSheetMusicFeature: () => ({
     mount: mountSpy,
     unmount: vi.fn(),
   }),
@@ -29,7 +29,7 @@ describe('Sheet music reading page smoke', () => {
 
     const moduleScript = document.querySelector('script[type="module"]');
     expect(moduleScript?.getAttribute('src')).toBe('./bootstrap.js');
-    expect(html).not.toContain('createSheetMusicExercise');
+    expect(html).not.toContain('createSheetMusicFeature');
 
     await import('../../pages/sheet-music-reading/bootstrap.js');
 

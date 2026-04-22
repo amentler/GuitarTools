@@ -392,3 +392,5 @@ export function createSheetMusicExercise() {
     stopExercise: unmount,
   };
 }
+
+export const createSheetMusicFeature = createSheetMusicExercise;
