@@ -500,3 +500,5 @@ export function createAkkordfolgenTrainer() {
     stopExercise: unmount,
   };
 }
+
+export const createAkkordfolgenFeature = createAkkordfolgenTrainer;

@@ -1,1 +1,1 @@
-Version 2026-04-22 09:07 UTC | add akkordfolgen trainer page reachability test
+Version 2026-04-22 09:07 UTC | standardize chord progression feature bootstrap api
