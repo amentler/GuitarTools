@@ -1,8 +1,9 @@
 import { getAllPositions, getNotePool, evaluateRound, positionKey } from './tonFinderLogic.js';
 import { wireStringToggles, syncStringToggles, wireFretSlider, syncFretSlider } from '../../utils/settings.js';
 
-export function createTonFinderExercise() {
+export function createTonFinderFeature() {
   let settingsWired = false;
+  let rootElement = null;
   let state = {
     settings: {
       maxFret: 5,
@@ -21,20 +22,21 @@ export function createTonFinderExercise() {
 
   function resolveUI() {
     ui = {
-      fretboard: document.getElementById('ton-finder-svg'),
-      targetNote: document.getElementById('ton-finder-target-note'),
-      feedback: document.getElementById('ton-finder-feedback'),
-      scorePoints: document.getElementById('score-points'),
-      scoreRounds: document.getElementById('score-rounds'),
-      slider: document.getElementById('ton-finder-fret-range-slider'),
-      sliderLabel: document.getElementById('ton-finder-fret-range-label'),
-      finishButton: document.getElementById('btn-ton-finder-finish'),
-      nextButton: document.getElementById('btn-ton-finder-next'),
-      difficulty: document.getElementById('ton-finder-difficulty'),
+      fretboard: rootElement?.querySelector('#ton-finder-svg'),
+      targetNote: rootElement?.querySelector('#ton-finder-target-note'),
+      feedback: rootElement?.querySelector('#ton-finder-feedback'),
+      scorePoints: rootElement?.querySelector('#score-points'),
+      scoreRounds: rootElement?.querySelector('#score-rounds'),
+      slider: rootElement?.querySelector('#ton-finder-fret-range-slider'),
+      sliderLabel: rootElement?.querySelector('#ton-finder-fret-range-label'),
+      finishButton: rootElement?.querySelector('#btn-ton-finder-finish'),
+      nextButton: rootElement?.querySelector('#btn-ton-finder-next'),
+      difficulty: rootElement?.querySelector('#ton-finder-difficulty'),
     };
   }
 
-  function mount() {
+  function mount(root = document) {
+    rootElement = root;
     resolveUI();
     state = {
       settings: state.settings,
@@ -57,16 +59,14 @@ export function createTonFinderExercise() {
 
   function unmount() {
     state.locked = true;
+    rootElement = null;
   }
 
   function wireSettings() {
-    const slider = document.getElementById('ton-finder-fret-range-slider');
-    const sliderLabel = document.getElementById('ton-finder-fret-range-label');
-
-    wireFretSlider(slider, sliderLabel, state.settings, startNextRound);
+    wireFretSlider(ui.slider, ui.sliderLabel, state.settings, startNextRound);
 
     wireStringToggles(
-      document.querySelectorAll('#ton-finder-string-toggles .btn-string'),
+      rootElement.querySelectorAll('#ton-finder-string-toggles .btn-string'),
       state.settings.activeStrings,
       () => { syncSettingsUI(); startNextRound(); },
     );
@@ -89,7 +89,7 @@ export function createTonFinderExercise() {
     syncFretSlider(ui.slider, ui.sliderLabel, state.settings.maxFret);
     ui.difficulty.value = state.settings.difficulty;
     syncStringToggles(
-      document.querySelectorAll('#ton-finder-string-toggles .btn-string'),
+      rootElement.querySelectorAll('#ton-finder-string-toggles .btn-string'),
       state.settings.activeStrings,
     );
   }
@@ -188,3 +188,5 @@ export function createTonFinderExercise() {
     stopExercise: unmount,
   };
 }
+
+export const createTonFinderExercise = createTonFinderFeature;
