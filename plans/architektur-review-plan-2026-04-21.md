@@ -385,7 +385,7 @@ Ergebnis:
 ### Phase 3: Große Controller zerlegen
 
 Priorität: P1
-Status: geplant
+Status: abgeschlossen am 2026-04-22
 
 Ziel:
 Die großen Controller sollen entlang klarer Verantwortungen zerlegt werden, ohne das Verhalten der Übungen und Werkzeuge zu verändern. Nach Phase 2 sind die wichtigsten Shared-Bausteine bereits ausgelagert; Phase 3 nutzt diese Vorarbeit, um die verbleibenden God-Objects in kleinere, testbarere Module zu schneiden.
@@ -563,6 +563,13 @@ Abnahme für Phase 3 insgesamt:
 - Pro betroffenen Feature existiert mindestens ein explizites Zustands- oder Service-Modul und ein UI-Adapter.
 - Globale Browser-Events, Timer und Audio-Ressourcen sind teardown-fähig und testbar angebunden.
 - Die Features verhalten sich nach Smoke- und Integrationstests unverändert.
+
+Ergebnis:
+
+- `guitarTuner`, `sheetMusicReading`, `sheetMusicMic`, `akkordfolgenTrainer` und `notePlayingExercise` wurden entlang von UI-, Audio-/Session- und zustandsnahen Verantwortungen geschnitten.
+- Vor jedem Schnitt wurden gezielte Controller-Tests ergänzt; die Refactors liefen damit TDD-gestützt auf abgesichertem Verhalten.
+- Die früher großen Einstiegsmodule koordinieren jetzt primär Lebenszyklus und Orchestrierung statt DOM, Audio und Ablaufsteuerung gemeinsam zu tragen.
+- Für die umgestellten Features wurden relevante Unit-, Smoke- und Integrationspfade sowie Lint erfolgreich ausgeführt.
 
 ### Phase 4: Shared Infrastructure einführen
 
