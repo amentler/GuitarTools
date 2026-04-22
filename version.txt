@@ -1,1 +1,1 @@
-Version 2026-04-22 20:40 UTC | update chord recognition repair notes
+Version 2026-04-22 20:47 UTC | document chord recognition improvement plan
