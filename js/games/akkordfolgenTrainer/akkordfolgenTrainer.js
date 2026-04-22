@@ -18,6 +18,18 @@ import { CHORDS } from '../../data/akkordData.js';
 import { GUITAR_MIN_RMS, analyzeInputLevel } from '../../shared/audio/inputLevel.js';
 import { detectPeaksFromSpectrum, identifyNotesFromPeaks } from '../../domain/chords/chordDetectionLogic.js';
 import { getExpectedNoteClasses, matchDetectedNotes } from './akkordfolgenChordMatcher.js';
+import {
+  resolveAkkordfolgenUI,
+  showAkkordfolgenSetup,
+  showAkkordfolgenActive,
+  showAkkordfolgenSummary,
+  setAkkordfolgenFeedback,
+} from './akkordfolgenUI.js';
+import {
+  createAkkordfolgenAudioSession,
+  openAkkordfolgenAudioSession,
+  closeAkkordfolgenAudioSession,
+} from './akkordfolgenAudioSession.js';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -39,10 +51,7 @@ const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 // ── Factory ───────────────────────────────────────────────────────────────────
 
 export function createAkkordfolgenTrainer() {
-  // ── Audio state ─────────────────────────────────────────────────────────────
-  let audioCtx        = null;
-  let analyser        = null;
-  let stream          = null;
+  const audioSession   = createAkkordfolgenAudioSession();
   let listenIntervalId = null;
   let strumCooldown   = false;
   let strumCooldownId = null;
@@ -73,48 +82,14 @@ export function createAkkordfolgenTrainer() {
   // ── UI resolution ─────────────────────────────────────────────────────────
 
   function resolveUI() {
-    ui = {
-      view:               document.getElementById('view-akkordfolgen-trainer'),
-      setup:              document.getElementById('aft-setup'),
-      active:             document.getElementById('aft-active'),
-      summary:            document.getElementById('aft-summary'),
-
-      keySelect:          document.getElementById('aft-key-select'),
-      progressionList:    document.getElementById('aft-progression-list'),
-      randomBtn:          document.getElementById('aft-random-btn'),
-      bpmSlider:          document.getElementById('aft-bpm-slider'),
-      bpmLabel:           document.getElementById('aft-bpm-label'),
-      bpmMinus5:          document.getElementById('aft-bpm-minus5'),
-      bpmMinus1:          document.getElementById('aft-bpm-minus1'),
-      bpmPlus1:           document.getElementById('aft-bpm-plus1'),
-      bpmPlus5:           document.getElementById('aft-bpm-plus5'),
-      beatsSelect:        document.getElementById('aft-beats-select'),
-      startBtn:           document.getElementById('aft-start-btn'),
-
-      progressionDisplay: document.getElementById('aft-progression-display'),
-      currentChordName:   document.getElementById('aft-current-chord-name'),
-      currentNumeral:     document.getElementById('aft-current-numeral'),
-      chordDiagram:       document.getElementById('aft-chord-diagram'),
-      beatDots:           document.getElementById('aft-beat-dots'),
-      feedback:           document.getElementById('aft-feedback'),
-      stopBtn:            document.getElementById('aft-stop-btn'),
-
-      summaryTime:        document.getElementById('aft-summary-time'),
-      summaryPlayed:      document.getElementById('aft-summary-played'),
-      summaryMissed:      document.getElementById('aft-summary-missed'),
-      summaryRounds:      document.getElementById('aft-summary-rounds'),
-      againBtn:           document.getElementById('aft-again-btn'),
-      newBtn:             document.getElementById('aft-new-btn'),
-
-      permission:         document.getElementById('aft-permission'),
-    };
+    ui = resolveAkkordfolgenUI(document);
   }
 
   // ── Phase management ──────────────────────────────────────────────────────
 
-  function showSetup()   { ui.setup.style.display = 'flex';  ui.active.style.display = 'none';  ui.summary.style.display = 'none'; }
-  function showActive()  { ui.setup.style.display = 'none';  ui.active.style.display = 'flex';  ui.summary.style.display = 'none'; }
-  function showSummary() { ui.setup.style.display = 'none';  ui.active.style.display = 'none';  ui.summary.style.display = 'flex'; }
+  function showSetup()   { showAkkordfolgenSetup(ui); }
+  function showActive()  { showAkkordfolgenActive(ui); }
+  function showSummary() { showAkkordfolgenSummary(ui); }
 
   // ── Settings wiring ───────────────────────────────────────────────────────
 
@@ -228,7 +203,7 @@ export function createAkkordfolgenTrainer() {
     metronome.init();
 
     try {
-      stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+      audioSession.stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
     } catch {
       if (ui.permission) ui.permission.textContent = 'Mikrofon nicht verf\u00FCgbar. Bitte Zugriff erlauben.';
       state.isRunning = false;
@@ -238,13 +213,7 @@ export function createAkkordfolgenTrainer() {
 
     if (ui.permission) ui.permission.style.display = 'none';
 
-    audioCtx = new AudioContext();
-    if (audioCtx.state === 'suspended') {
-      await audioCtx.resume();
-    }
-    analyser = audioCtx.createAnalyser();
-    analyser.fftSize = FFT_SIZE;
-    audioCtx.createMediaStreamSource(stream).connect(analyser);
+    await openAkkordfolgenAudioSession(audioSession, audioSession.stream, AudioContext, FFT_SIZE);
 
     metronome.setBpm(state.bpm);
     metronome.setBeatsPerMeasure(state.beatsPerChord);
@@ -280,8 +249,7 @@ export function createAkkordfolgenTrainer() {
 
     if (metronome) { metronome.stop(); metronome = null; }
 
-    if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
-    if (audioCtx) { audioCtx.close().catch(() => {}); audioCtx = null; analyser = null; }
+    closeAkkordfolgenAudioSession(audioSession);
   }
 
   // ── Chord display ─────────────────────────────────────────────────────────
@@ -332,12 +300,12 @@ export function createAkkordfolgenTrainer() {
 
   function startStrumDetection() {
     strumCooldown = false;
-    const buffer       = new Float32Array(analyser.fftSize);
+    const buffer       = new Float32Array(audioSession.analyser.fftSize);
     const rmsThreshold = RMS_SPIKE_MULTIPLIER * GUITAR_MIN_RMS;
 
     listenIntervalId = setInterval(() => {
-      if (!analyser || strumCooldown || !state.isRunning) return;
-      analyser.getFloatTimeDomainData(buffer);
+      if (!audioSession.analyser || strumCooldown || !state.isRunning) return;
+      audioSession.analyser.getFloatTimeDomainData(buffer);
       const { rms } = analyzeInputLevel(buffer);
       if (rms > rmsThreshold) {
         strumCooldown = true;
@@ -348,16 +316,16 @@ export function createAkkordfolgenTrainer() {
 
   async function analyzeChordAfterStrum(token) {
     await delay(ATTACK_SETTLE_MS);
-    if (token !== analysisToken || !state.isRunning || !analyser || !audioCtx) return;
+    if (token !== analysisToken || !state.isRunning || !audioSession.analyser || !audioSession.audioCtx) return;
 
     const targetChord = state.progression[state.currentIndex];
-    const sampleRate  = audioCtx.sampleRate;
-    const freqBuffer  = new Float32Array(analyser.frequencyBinCount);
+    const sampleRate  = audioSession.audioCtx.sampleRate;
+    const freqBuffer  = new Float32Array(audioSession.analyser.frequencyBinCount);
     const detected    = new Set();
 
     for (let frame = 0; frame < ANALYSIS_FRAMES; frame++) {
-      if (token !== analysisToken || !state.isRunning || !analyser) break;
-      analyser.getFloatFrequencyData(freqBuffer);
+      if (token !== analysisToken || !state.isRunning || !audioSession.analyser) break;
+      audioSession.analyser.getFloatFrequencyData(freqBuffer);
       const peaks = detectPeaksFromSpectrum(
         freqBuffer, sampleRate,
         GUITAR_MIN_FREQUENCY, GUITAR_MAX_FREQUENCY, MIN_DB_THRESHOLD,
@@ -454,11 +422,7 @@ export function createAkkordfolgenTrainer() {
   // ── Feedback text ─────────────────────────────────────────────────────────
 
   function setFeedback(text, kind) {
-    if (!ui.feedback) return;
-    ui.feedback.textContent = text;
-    ui.feedback.className   = 'feedback-text';
-    if (kind === 'correct') ui.feedback.classList.add('feedback-correct');
-    else if (kind === 'wrong') ui.feedback.classList.add('feedback-wrong');
+    setAkkordfolgenFeedback(ui, text, kind);
   }
 
   // ── Summary ───────────────────────────────────────────────────────────────
