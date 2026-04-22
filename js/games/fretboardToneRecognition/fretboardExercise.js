@@ -13,6 +13,7 @@ const RESHUFFLE_INTERVAL = 5;
 export function createFretboardExercise() {
   // Module-level flags (per-instance)
   let settingsWired = false;
+  let rootElement = null;
 
   // State (per-instance)
   let state = {
@@ -37,6 +38,10 @@ export function createFretboardExercise() {
 
   // DOM refs (resolved when exercise starts)
   let svgContainer, noteButtonsEl, feedbackTextEl, scoreCorrectEl, scoreTotalEl, chancesDisplayEl;
+
+  function query(selector) {
+    return rootElement?.querySelector(selector) ?? null;
+  }
 
   // ── Utilities ─────────────────────────────────────────────────────────────
 
@@ -63,13 +68,14 @@ export function createFretboardExercise() {
 
   // ── Public API ────────────────────────────────────────────────────────────
 
-  function mount() {
-    svgContainer      = document.getElementById('fretboard-svg');
-    noteButtonsEl     = document.getElementById('note-buttons');
-    feedbackTextEl    = document.getElementById('feedback-text');
-    scoreCorrectEl    = document.getElementById('score-correct');
-    scoreTotalEl      = document.getElementById('score-total');
-    chancesDisplayEl  = document.getElementById('chances-display');
+  function mount(root = document) {
+    rootElement       = root;
+    svgContainer      = query('#fretboard-svg');
+    noteButtonsEl     = query('#note-buttons');
+    feedbackTextEl    = query('#feedback-text');
+    scoreCorrectEl    = query('#score-correct');
+    scoreTotalEl      = query('#score-total');
+    chancesDisplayEl  = query('#chances-display');
 
     if (state.feedbackTimeout) clearTimeout(state.feedbackTimeout);
 
@@ -108,23 +114,24 @@ export function createFretboardExercise() {
       clearTimeout(state.feedbackTimeout);
       state.feedbackTimeout = null;
     }
+    rootElement = null;
   }
 
   // ── Settings wiring ───────────────────────────────────────────────────────
 
   function wireSettings() {
-    const slider     = document.getElementById('fret-range-slider');
-    const rangeLabel = document.getElementById('fret-range-label');
+    const slider     = query('#fret-range-slider');
+    const rangeLabel = query('#fret-range-label');
 
     wireFretSlider(slider, rangeLabel, state.settings, resetAndAdvance);
 
     wireStringToggles(
-      document.querySelectorAll('.btn-string'),
+      rootElement.querySelectorAll('.btn-string'),
       state.settings.activeStrings,
       resetAndAdvance,
     );
 
-    const shuffleCheckbox = document.getElementById('shuffle-notes-checkbox');
+    const shuffleCheckbox = query('#shuffle-notes-checkbox');
     shuffleCheckbox.addEventListener('change', () => {
       state.settings.shuffleNotes = shuffleCheckbox.checked;
       state.noteOrder = makeNoteOrder(state.settings.shuffleNotes);
@@ -135,11 +142,11 @@ export function createFretboardExercise() {
   }
 
   function syncSettingsUI() {
-    const slider     = document.getElementById('fret-range-slider');
-    const rangeLabel = document.getElementById('fret-range-label');
+    const slider     = query('#fret-range-slider');
+    const rangeLabel = query('#fret-range-label');
     syncFretSlider(slider, rangeLabel, state.settings.maxFret);
-    syncStringToggles(document.querySelectorAll('.btn-string'), state.settings.activeStrings);
-    document.getElementById('shuffle-notes-checkbox').checked = state.settings.shuffleNotes;
+    syncStringToggles(rootElement.querySelectorAll('.btn-string'), state.settings.activeStrings);
+    query('#shuffle-notes-checkbox').checked = state.settings.shuffleNotes;
   }
 
   // ── Core rendering ────────────────────────────────────────────────────────
@@ -303,3 +310,5 @@ export function createFretboardExercise() {
     stopExercise: unmount,
   };
 }
+
+export const createFretboardFeature = createFretboardExercise;
