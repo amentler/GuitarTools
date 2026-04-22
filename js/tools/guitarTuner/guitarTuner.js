@@ -14,56 +14,47 @@ import {
   ATTACK_DAMPING_RATIO
 } from './tunerLogic.js';
 import { initTunerSVG, updateTunerDisplay } from './tunerSVG.js';
+import {
+  createTunerDisplayState,
+  createGuidedState,
+  createAnalysisRuntime,
+  resetForMount,
+  resetForUnmount,
+  NOISE_CALIBRATION_FRAMES,
+} from './guitarTunerState.js';
+import {
+  createRootQuery,
+  syncModeButtons,
+  resetGuidedPanels,
+  showGuidedActive,
+  showGuidedFinished,
+  renderGuidedStep,
+  renderGuidedFeedback,
+} from './guitarTunerUI.js';
+import {
+  createAudioSessionState,
+  openAudioSession,
+  closeAudioSession,
+} from './guitarTunerAudioSession.js';
+import {
+  startGuidedModeState,
+  nextGuidedStepState,
+  stopGuidedModeState,
+} from './guitarTunerGuidedMode.js';
 
 export function createGuitarTunerTool() {
-  // Audio resources (per-instance)
-  let audioCtx  = null;
-  let analyser  = null;
-  let stream    = null;
   let intervalId = null;
   let modeWired = false;
   let guidedWired = false;
   let rootElement = null;
+  const query = createRootQuery(() => rootElement);
+  const audioSession = createAudioSessionState();
+  const runtime = createAnalysisRuntime();
 
-  const freqHistory = [];
-  let noteSwitchStreak = 0;
-  let acceptedNoteKey = null;
-  let stableFrequency = null;
-  let validFramesStreak = 0;
-  let lastValidFrameTime = 0;
-
-  // V3: Outlier rejection
-  let outlierStreak = 0;
-
-  // V4: Adaptive noise gate
-  const NOISE_CALIBRATION_FRAMES = 10; // 10 × 50 ms = 500 ms
-  let noiseCalibrationFrames = 0;
-  let noiseCalibrationRms = [];
-  let adaptiveMinRms = 0.008; // GUITAR_MIN_RMS default until calibrated
-
-  // V9: EMA cents smoother
-  let smoothedCents = null;
-
-  let state = {
-    mode:    'standard', // 'standard' | 'chromatic'
-    note:    null,
-    octave:  null,
-    cents:   0,
-    isActive: false,
-  };
-
-  let guidedState = {
-    active:          false,
-    stepIndex:       0,
-    trendHistory:    [],
-    feedbackDisplay: null,
-  };
+  const state = createTunerDisplayState();
+  const guidedState = createGuidedState();
 
   // ── Public lifecycle ──────────────────────────────────────────────────────
-
-  function query(selector) {
-    return rootElement?.querySelector(selector) ?? null;
-  }
 
   async function mount(root = document) {
     rootElement = root;
@@ -75,37 +66,12 @@ export function createGuitarTunerTool() {
     // Build SVG gauge (idempotent – clears container first)
     initTunerSVG(display);
 
-    // Reset state (preserve mode)
-    freqHistory.length = 0;
-    noteSwitchStreak = 0;
-    acceptedNoteKey = null;
-    stableFrequency = null;
-    validFramesStreak = 0;
-    lastValidFrameTime = 0;
-    outlierStreak = 0;
-    noiseCalibrationFrames = 0;
-    noiseCalibrationRms = [];
-    adaptiveMinRms = 0.008;
-    smoothedCents = null;
-    state.note    = null;
-    state.octave  = null;
-    state.cents   = 0;
-    state.isActive = false;
+    resetForMount(state, guidedState, runtime);
 
     updateTunerDisplay({ cents: 0, note: null, octave: null, isActive: false, isInTune: false, isStandardNote: false });
 
-    // Reset guided mode to initial UI state
-    guidedState.active = false;
-    guidedState.stepIndex = 0;
-    guidedState.trendHistory = [];
-    guidedState.feedbackDisplay = null;
-    const elBtnStart  = query('#btn-start-guided');
-    const elActive    = query('#guided-active');
-    const elFinished  = query('#guided-finished');
-    if (elBtnStart)  elBtnStart.style.display  = '';
-    if (elActive)    elActive.style.display    = 'none';
-    if (elFinished)  elFinished.style.display  = 'none';
-    renderGuidedFeedback(null);
+    resetGuidedPanels(query);
+    renderGuidedFeedback(query, null);
 
     // Wire mode buttons once
     if (!modeWired) {
@@ -142,16 +108,14 @@ export function createGuitarTunerTool() {
       guidedWired = true;
     }
 
-    // Sync mode button UI to current state
-    query('#btn-mode-standard').classList.toggle('active', state.mode === 'standard');
-    query('#btn-mode-chromatic').classList.toggle('active', state.mode === 'chromatic');
+    syncModeButtons(query, state.mode);
 
     // Request microphone
     permission.style.display = 'block';
     permission.textContent = 'Mikrofon-Zugriff wird benötigt…';
 
     try {
-      stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+      audioSession.stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
     } catch {
       permission.textContent = 'Mikrofon nicht verfügbar. Bitte Zugriff erlauben.';
       return;
@@ -167,28 +131,7 @@ export function createGuitarTunerTool() {
     // fastNoteMatcher classifier). Sharing a single AnalyserNode would force
     // one fftSize on both, causing glitches and wrong trade-offs.
     // See improvement.md §1.4 for the design rationale.
-    audioCtx = new AudioContext();
-    if (audioCtx.state === 'suspended') {
-      await audioCtx.resume();
-    }
-    analyser = audioCtx.createAnalyser();
-    analyser.fftSize = getAdaptiveFftSize();
-
-    // V6: Hardware bandpass via two BiquadFilter nodes (12 dB/oct each).
-    const hpFilter = audioCtx.createBiquadFilter();
-    hpFilter.type = 'highpass';
-    hpFilter.frequency.value = 60;
-    hpFilter.Q.value = 0.7;
-
-    const lpFilter = audioCtx.createBiquadFilter();
-    lpFilter.type = 'lowpass';
-    lpFilter.frequency.value = 500;
-    lpFilter.Q.value = 0.7;
-
-    audioCtx.createMediaStreamSource(stream)
-      .connect(hpFilter)
-      .connect(lpFilter)
-      .connect(analyser);
+    await openAudioSession(audioSession, audioSession.stream, AudioContext, getAdaptiveFftSize());
 
     state.isActive = true;
     intervalId = setInterval(analyzeFrame, ANALYZE_INTERVAL_MS);
@@ -197,86 +140,54 @@ export function createGuitarTunerTool() {
   function unmount() {
     clearInterval(intervalId);
     intervalId = null;
-
-    if (stream) {
-      stream.getTracks().forEach(t => t.stop());
-      stream = null;
-    }
-
-    if (audioCtx) {
-      audioCtx.close();
-      audioCtx = null;
-      analyser = null;
-    }
-
-    state.isActive = false;
-    freqHistory.length = 0;
-    noteSwitchStreak = 0;
-    acceptedNoteKey = null;
-    stableFrequency = null;
-    validFramesStreak = 0;
-    lastValidFrameTime = 0;
-    outlierStreak = 0;
-    noiseCalibrationFrames = 0;
-    noiseCalibrationRms = [];
-    adaptiveMinRms = 0.008;
-    smoothedCents = null;
+    closeAudioSession(audioSession);
+    resetForUnmount(state, guidedState, runtime);
 
     updateTunerDisplay({ cents: 0, note: null, octave: null, isActive: false, isInTune: false, isStandardNote: false });
 
-    // Reset guided mode
-    guidedState.active = false;
-    guidedState.stepIndex = 0;
-    guidedState.trendHistory = [];
-    guidedState.feedbackDisplay = null;
-    const elBtnStart  = query('#btn-start-guided');
-    const elActive    = query('#guided-active');
-    const elFinished  = query('#guided-finished');
-    if (elBtnStart)  elBtnStart.style.display  = '';
-    if (elActive)    elActive.style.display    = 'none';
-    if (elFinished)  elFinished.style.display  = 'none';
-    renderGuidedFeedback(null);
+    resetGuidedPanels(query);
+    renderGuidedFeedback(query, null);
     rootElement = null;
   }
 
   // ── Pitch analysis frame ──────────────────────────────────────────────────
 
   function analyzeFrame() {
-    if (!analyser) return;
+    if (!audioSession.analyser) return;
 
     const guidedTargetHz = guidedState.active
       ? noteToFrequency(GUIDED_TUNING_STEPS[guidedState.stepIndex].note, GUIDED_TUNING_STEPS[guidedState.stepIndex].octave)
       : null;
     const referenceHz = guidedTargetHz ?? null;
     const targetFftSize = getAdaptiveFftSize(referenceHz);
-    if (analyser.fftSize !== targetFftSize) analyser.fftSize = targetFftSize;
+    if (audioSession.analyser.fftSize !== targetFftSize) audioSession.analyser.fftSize = targetFftSize;
 
-    const buffer = new Float32Array(analyser.fftSize);
-    analyser.getFloatTimeDomainData(buffer);
+    const buffer = new Float32Array(audioSession.analyser.fftSize);
+    audioSession.analyser.getFloatTimeDomainData(buffer);
 
     // V4: Noise-Kalibrierung (erste 10 Frames passiv im Hintergrund)
-    if (noiseCalibrationFrames < NOISE_CALIBRATION_FRAMES) {
+    if (runtime.noiseCalibrationFrames < NOISE_CALIBRATION_FRAMES) {
       const lvl = analyzeInputLevel(buffer);
-      noiseCalibrationRms.push(lvl.rms);
-      noiseCalibrationFrames++;
-      if (noiseCalibrationFrames === NOISE_CALIBRATION_FRAMES) {
-        const noiseFloor = estimateNoiseFloorRms(noiseCalibrationRms);
-        adaptiveMinRms = buildAdaptiveThreshold(noiseFloor);
+      runtime.noiseCalibrationRms.push(lvl.rms);
+      runtime.noiseCalibrationFrames++;
+      if (runtime.noiseCalibrationFrames === NOISE_CALIBRATION_FRAMES) {
+        const noiseFloor = estimateNoiseFloorRms(runtime.noiseCalibrationRms);
+        runtime.adaptiveMinRms = buildAdaptiveThreshold(noiseFloor);
       }
       return;
     }
 
     // V5: FFT-Magnitude-Spektrum für HPS
-    const freqData = new Float32Array(analyser.frequencyBinCount);
-    analyser.getFloatFrequencyData(freqData);
+    const freqData = new Float32Array(audioSession.analyser.frequencyBinCount);
+    audioSession.analyser.getFloatFrequencyData(freqData);
 
     const now = Date.now();
 
     // Pitch-Erkennung mit adaptiver Schwelle (V4) und FFT-HPS (V5)
-    const hz = detectPitch(buffer, audioCtx.sampleRate, {
+    const hz = detectPitch(buffer, audioSession.audioCtx.sampleRate, {
       referenceHz,
-      lastStableHz: stableFrequency,
-      minRms: adaptiveMinRms,
+      lastStableHz: runtime.stableFrequency,
+      minRms: runtime.adaptiveMinRms,
       magnitudes: freqData,
       applyFilters: true,
       dampingRatio: ATTACK_DAMPING_RATIO,
@@ -284,60 +195,60 @@ export function createGuitarTunerTool() {
 
     if (hz === null) {
       // V11: Automatischer Reset bei längerer Stille
-      if (lastValidFrameTime > 0 && now - lastValidFrameTime > SILENCE_RESET_THRESHOLD_MS) {
-        freqHistory.length = 0;
-        stableFrequency = null;
-        acceptedNoteKey = null;
-        validFramesStreak = 0;
-        outlierStreak = 0;
-        smoothedCents = null;
+      if (runtime.lastValidFrameTime > 0 && now - runtime.lastValidFrameTime > SILENCE_RESET_THRESHOLD_MS) {
+        runtime.freqHistory.length = 0;
+        runtime.stableFrequency = null;
+        runtime.acceptedNoteKey = null;
+        runtime.validFramesStreak = 0;
+        runtime.outlierStreak = 0;
+        runtime.smoothedCents = null;
       }
 
-      validFramesStreak = 0;
-      updateTunerDisplay({ cents: smoothedCents, note: null, octave: null, isActive: true, isInTune: false, isStandardNote: false });
+      runtime.validFramesStreak = 0;
+      updateTunerDisplay({ cents: runtime.smoothedCents, note: null, octave: null, isActive: true, isInTune: false, isStandardNote: false });
       if (guidedState.active) {
         guidedState.feedbackDisplay = updateFeedbackDisplay(guidedState.feedbackDisplay, { type: null }, now);
-        renderGuidedFeedback(guidedState.feedbackDisplay);
+        renderGuidedFeedback(query, guidedState.feedbackDisplay);
       }
       return;
     }
 
-    lastValidFrameTime = now;
+    runtime.lastValidFrameTime = now;
 
     // V10: Warm-up Streak
-    validFramesStreak++;
-    if (validFramesStreak < STABLE_CONFIRM_FRAMES) {
+    runtime.validFramesStreak++;
+    if (runtime.validFramesStreak < STABLE_CONFIRM_FRAMES) {
       updateTunerDisplay({ cents: null, note: null, octave: null, isActive: true, isInTune: false, isStandardNote: false });
       return;
     }
 
     // V3: Ausreißer-Rejection
-    const rejection = shouldRejectOutlier(stableFrequency, hz, outlierStreak);
-    outlierStreak = rejection.nextStreak;
+    const rejection = shouldRejectOutlier(runtime.stableFrequency, hz, runtime.outlierStreak);
+    runtime.outlierStreak = rejection.nextStreak;
     if (rejection.reject) return;
 
     // V11: Zeitbasierte Historie & Median
-    const medianHz = pushAndMedianTimed(freqHistory, hz, now);
-    stableFrequency = medianHz;
+    const medianHz = pushAndMedianTimed(runtime.freqHistory, hz, now);
+    runtime.stableFrequency = medianHz;
 
-    const candidate = frequencyToNote(stableFrequency);
+    const candidate = frequencyToNote(runtime.stableFrequency);
     const candidateKey = `${candidate.note}${candidate.octave}`;
 
-    const switched = applyNoteSwitchHysteresis(acceptedNoteKey, candidateKey, noteSwitchStreak);
-    noteSwitchStreak = switched.nextStreak;
-    acceptedNoteKey = switched.acceptedNoteKey;
+    const switched = applyNoteSwitchHysteresis(runtime.acceptedNoteKey, candidateKey, runtime.noteSwitchStreak);
+    runtime.noteSwitchStreak = switched.nextStreak;
+    runtime.acceptedNoteKey = switched.acceptedNoteKey;
 
     let note = candidate.note;
     let octave = candidate.octave;
     let cents = candidate.cents;
 
-    if (acceptedNoteKey !== candidateKey && acceptedNoteKey) {
-      const match = acceptedNoteKey.match(/^([A-G]#?)(-?\d+)$/);
+    if (runtime.acceptedNoteKey !== candidateKey && runtime.acceptedNoteKey) {
+      const match = runtime.acceptedNoteKey.match(/^([A-G]#?)(-?\d+)$/);
       if (match) {
         note = match[1];
         octave = Number(match[2]);
         const refHz = noteToFrequency(note, octave);
-        cents = getCentsToTarget(stableFrequency, refHz);
+        cents = getCentsToTarget(runtime.stableFrequency, refHz);
       }
     }
 
@@ -350,134 +261,43 @@ export function createGuitarTunerTool() {
     if (guidedState.active) {
       const step = GUIDED_TUNING_STEPS[guidedState.stepIndex];
       const targetFreq = noteToFrequency(step.note, step.octave);
-      const centsToTarget = getCentsToTarget(stableFrequency, targetFreq);
+      const centsToTarget = getCentsToTarget(runtime.stableFrequency, targetFreq);
       isInTune = Math.abs(centsToTarget) <= PERFECT_TOLERANCE_CENTS;
       pushGuidedHistory(guidedState.trendHistory, centsToTarget);
       const feedback = getGuidedFeedback(centsToTarget, guidedState.trendHistory);
       guidedState.feedbackDisplay = updateFeedbackDisplay(guidedState.feedbackDisplay, feedback, Date.now());
-      renderGuidedFeedback(guidedState.feedbackDisplay);
+      renderGuidedFeedback(query, guidedState.feedbackDisplay);
     }
 
     // V9: EMA-Glättung für flüssige Nadelanzeige
-    smoothedCents = smoothCents(smoothedCents, cents);
+    runtime.smoothedCents = smoothCents(runtime.smoothedCents, cents);
 
-    updateTunerDisplay({ cents: smoothedCents, note, octave, isActive: true, isInTune, isStandardNote });
+    updateTunerDisplay({ cents: runtime.smoothedCents, note, octave, isActive: true, isInTune, isStandardNote });
   }
 
   // ── Guided mode ───────────────────────────────────────────────────────────
 
   function startGuidedMode() {
-    guidedState.active = true;
-    guidedState.stepIndex = 0;
-    guidedState.trendHistory = [];
-    guidedState.feedbackDisplay = null;
-    freqHistory.length = 0;
-    noteSwitchStreak = 0;
-    acceptedNoteKey = null;
-    stableFrequency = null;
-    validFramesStreak = 0;
-    lastValidFrameTime = 0;
-    outlierStreak = 0;
-    smoothedCents = null;
-    query('#btn-start-guided').style.display = 'none';
-    query('#guided-active').style.display = '';
-    query('#guided-finished').style.display = 'none';
-    renderGuidedStep();
-    renderGuidedFeedback(null);
+    startGuidedModeState(guidedState, runtime);
+    showGuidedActive(query);
+    renderGuidedStep(query, GUIDED_TUNING_STEPS, guidedState.stepIndex);
+    renderGuidedFeedback(query, null);
   }
 
   function nextGuidedStep() {
-    guidedState.stepIndex += 1;
-    guidedState.trendHistory = [];
-    guidedState.feedbackDisplay = null;
-    freqHistory.length = 0;
-    noteSwitchStreak = 0;
-    acceptedNoteKey = null;
-    stableFrequency = null;
-    validFramesStreak = 0;
-    lastValidFrameTime = 0;
-    outlierStreak = 0;
-    smoothedCents = null;
-    if (guidedState.stepIndex >= GUIDED_TUNING_STEPS.length) {
-      guidedState.active = false;
-      query('#guided-active').style.display = 'none';
-      query('#guided-finished').style.display = '';
+    const result = nextGuidedStepState(guidedState, runtime, GUIDED_TUNING_STEPS.length);
+    if (result.finished) {
+      showGuidedFinished(query);
     } else {
-      renderGuidedStep();
-      renderGuidedFeedback(null);
+      renderGuidedStep(query, GUIDED_TUNING_STEPS, guidedState.stepIndex);
+      renderGuidedFeedback(query, null);
     }
   }
 
   function stopGuidedMode() {
-    guidedState.active = false;
-    guidedState.stepIndex = 0;
-    guidedState.trendHistory = [];
-    guidedState.feedbackDisplay = null;
-    noteSwitchStreak = 0;
-    acceptedNoteKey = null;
-    stableFrequency = null;
-    query('#btn-start-guided').style.display = '';
-    query('#guided-active').style.display = 'none';
-    query('#guided-finished').style.display = 'none';
-    renderGuidedFeedback(null);
-  }
-
-  function renderGuidedStep() {
-    const step = GUIDED_TUNING_STEPS[guidedState.stepIndex];
-    query('#guided-step-label').textContent =
-      `${step.stringNumber}. Saite`;
-    query('#guided-step-target').textContent =
-      `${step.note}${step.octave}`;
-
-    const progress = query('#guided-step-progress');
-    progress.innerHTML = '';
-    for (let i = 0; i < GUIDED_TUNING_STEPS.length; i++) {
-      const dot = document.createElement('span');
-      dot.className = 'guided-progress-dot'
-        + (i === guidedState.stepIndex ? ' active' : '')
-        + (i < guidedState.stepIndex ? ' done' : '');
-      progress.appendChild(dot);
-    }
-  }
-
-  function renderGuidedFeedback(display) {
-    const container = query('#guided-feedback');
-    if (!container) return;
-    container.innerHTML = '';
-
-    if (!display || display.type === null) return;
-
-    if (display.type === 'green') {
-      const okEl = document.createElement('div');
-      okEl.className = 'guided-ok';
-      okEl.textContent = '●';
-      container.appendChild(okEl);
-
-      const textEl = document.createElement('div');
-      textEl.className = 'guided-hint guided-hint--ok';
-      textEl.textContent = 'Perfekt';
-      container.appendChild(textEl);
-      return;
-    }
-
-    if (display.warning) {
-      const warnEl = document.createElement('div');
-      warnEl.className = 'guided-warning';
-      warnEl.textContent = '⚠ Falsche Richtung!';
-      container.appendChild(warnEl);
-    }
-
-    const arrowEl = document.createElement('div');
-    arrowEl.className = `guided-arrow ${display.arrowColor}`;
-    arrowEl.textContent = display.direction === 'up' ? '↑' : '↓';
-    container.appendChild(arrowEl);
-
-    const hintEl = document.createElement('div');
-    hintEl.className = 'guided-hint';
-    hintEl.textContent = display.direction === 'up'
-      ? 'Ton zu tief – höher stimmen'
-      : 'Ton zu hoch – tiefer stimmen';
-    container.appendChild(hintEl);
+    stopGuidedModeState(guidedState, runtime);
+    resetGuidedPanels(query);
+    renderGuidedFeedback(query, null);
   }
 
   return {
