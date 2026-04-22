@@ -11,14 +11,16 @@ Phase 1 bereinigt die widersprüchliche Laufzeitarchitektur und legt einen verbi
 
 ## Architekturentscheidung
 
-Für `GuitarTools` wird als Zielarchitektur eine Multi-Page-App mit dedizierten JavaScript-Bootstrap-Dateien pro HTML-Seite festgelegt.
+Für `GuitarTools` wird als Zielarchitektur eine Multi-Page-App mit seitenlokalen Bootstrap-Dateien pro Seite festgelegt.
 
 Das bedeutet konkret:
 
 - `pages/` bleibt die Quelle für die einzelnen Seiten.
-- Jede Seite lädt genau ein Bootstrap-Modul aus `js/bootstrap/`.
+- Jede Seite erhält ein eigenes Verzeichnis unter `pages/`.
+- In jedem Seitenverzeichnis liegen die seitenbezogenen Dateien zusammen, mindestens `index.html` und `bootstrap.js`.
 - Bootstrap-Dateien importieren Komponenten und starten genau ein Feature oder Tool.
 - Feature-Module exponieren eine einheitliche Lebenszyklus-Schnittstelle.
+- Gemeinsame Logik liegt nicht in `pages/`, sondern z. B. unter `js/shared/`, `js/games/` oder `js/tools/`.
 - Die bisherige Registry-/SPA-Idee wird in Phase 1 entfernt, sofern kein realer zentraler Router reaktiviert wird.
 
 ## Nicht-Ziele
@@ -39,7 +41,7 @@ Die aktuelle Codebasis arbeitet faktisch bereits als Multi-Page-App, aber mit Al
   - oft `create...Exercise()` mit `startExercise()` und `stopExercise()`
   - in Einzelfällen direkter Export wie `startExercise()`
 
-Betroffene zentrale Stellen:
+Betroffene zentrale Stellen im aktuellen Bestand:
 
 - `js/exerciseRegistry.js`
 - `js/app.js`
@@ -52,15 +54,17 @@ Betroffene zentrale Stellen:
 Nach Phase 1 gilt folgender Minimalstandard:
 
 - Keine Inline-Bootstraps mehr in `pages/`
-- Neues Verzeichnis `js/bootstrap/` mit einer Datei pro Seite
+- Jede Seite liegt in einem eigenen Verzeichnis unter `pages/`
+- Jedes Seitenverzeichnis enthält mindestens `index.html` und `bootstrap.js`
+- Optional liegen seitennahe UI-Dateien wie `styles.css` oder `page.js` ebenfalls im selben Verzeichnis
 - Ein Feature-/Tool-Modul liefert ein Objekt mit konsistenter API
-- Die Seite startet nur über ihr Bootstrap-Modul
+- Die Seite startet nur über ihr lokales Bootstrap-Modul
 - `exerciseRegistry` ist entfernt
 - `js/app.js` bleibt auf Menü-/Startseitenverhalten begrenzt oder wird klar als Startseitenmodul eingegrenzt
 
 ## Standard-Schnittstelle
 
-Für Phase 1 wird folgender gemeinsame Vertrag eingeführt:
+Für Phase 1 wird folgender gemeinsamer Vertrag eingeführt:
 
 ```js
 {
@@ -97,8 +101,9 @@ Aufgaben:
   - Root-Element
   - Lifecycle
 - Abgrenzung dokumentieren:
-  - `pages/` enthält Markup
-  - `js/bootstrap/` enthält Startlogik
+  - `pages/` enthält seitenbezogene UI-Dateien und Startlogik pro Seite
+  - `pages/<seite>/bootstrap.js` ist der Einstiegspunkt der Seite
+  - gemeinsame Logik lebt außerhalb von `pages/`, z. B. unter `js/shared/`
   - Feature-Ordner enthalten Implementierung, aber keine Inline-Page-Starts
 
 Ergebnis:
@@ -110,63 +115,67 @@ Abnahme:
 
 - Ein neues Teammitglied kann aus dem Dokument erkennen, wie eine neue Seite korrekt eingebunden wird
 
-### AP2: Bootstrap-Layer einführen
+### AP2: Seitenstruktur mit lokalem Bootstrap einführen
 
 Ziel:
-Alle Seiten starten über dedizierte Bootstrap-Dateien statt über Inline-Skripte in HTML.
+Alle Seiten starten über dedizierte Bootstrap-Dateien im jeweiligen Seitenverzeichnis statt über Inline-Skripte in HTML.
 
 Neue Zielstruktur:
 
 ```text
+pages/
+  tonspielen/
+    index.html
+    bootstrap.js
+    styles.css
+  metronome/
+    index.html
+    bootstrap.js
 js/
-  bootstrap/
-    exercises/
-      note-playing.bootstrap.js
-      sheet-music-reading.bootstrap.js
-      ...
-    tools/
-      guitar-tuner.bootstrap.js
-      metronome.bootstrap.js
-      ...
+  shared/
+  games/
+  tools/
 ```
 
 Aufgaben:
 
-- `js/bootstrap/exercises/` und `js/bootstrap/tools/` anlegen
-- Für jede HTML-Seite ein Bootstrap-Modul erzeugen
+- Für jede bestehende Seite ein eigenes Verzeichnis unter `pages/` anlegen oder die bestehende Struktur dorthin migrieren
+- Pro Seite mindestens `index.html` und `bootstrap.js` erzeugen
+- Optional seitennahe Dateien wie `styles.css` oder `page.js` ins selbe Seitenverzeichnis legen
 - In jedem Bootstrap-Modul:
-  - `../../components/index.js` importieren
+  - gemeinsame Komponenten importieren
   - Root-Element der Seite auflösen
   - passendes Feature importieren
   - `mount(root)` aufrufen
 - HTML-Seiten umstellen:
   - Inline-`<script type="module">` entfernen
-  - stattdessen genau ein externes Bootstrap-Script referenzieren
+  - stattdessen genau das lokale `bootstrap.js` referenzieren
 
 Betroffene Seiten:
 
-- `pages/exercises/akkord-trainer.html`
-- `pages/exercises/akkordfolgen-trainer.html`
-- `pages/exercises/chord-playing-essentia.html`
-- `pages/exercises/fretboard-tone-recognition.html`
-- `pages/exercises/note-playing.html`
-- `pages/exercises/sheet-music-mic.html`
-- `pages/exercises/sheet-music-reading.html`
-- `pages/exercises/ton-finder.html`
-- `pages/tools/akkord-uebersicht.html`
-- `pages/tools/guitar-tuner.html`
-- `pages/tools/metronome.html`
+- `pages/akkord-trainer/`
+- `pages/akkordfolgen-trainer/`
+- `pages/chord-playing-essentia/`
+- `pages/fretboard-tone-recognition/`
+- `pages/note-playing/`
+- `pages/sheet-music-mic/`
+- `pages/sheet-music-reading/`
+- `pages/ton-finder/`
+- `pages/akkord-uebersicht/`
+- `pages/guitar-tuner/`
+- `pages/metronome/`
 
 Ergebnis:
 
 - HTML wird deklarativer
-- Startlogik ist testbar und in JS auffindbar
+- Seitenbezogene UI-Dateien liegen zusammen
+- Startlogik ist testbar und direkt an der Seite auffindbar
 - Jede Seite hat genau einen technischen Einstiegspunkt
 
 Abnahme:
 
 - Keine Inline-Bootstraps mehr in `pages/`
-- Jede Seite referenziert genau ein Bootstrap-Modul
+- Jede Seite hat genau ein lokales `bootstrap.js`
 - Alle Seiten starten weiterhin funktionsfähig
 
 ### AP3: Gemeinsame Feature-API einziehen
@@ -186,7 +195,7 @@ Empfohlene Übergangsstrategie:
 
 - Phase 1 verändert nur die öffentliche Einstiegsschicht
 - Interne Controller-Methoden wie `startExercise()` und `stopExercise()` bleiben vorerst zulässig
-- Bootstrap-Dateien sprechen ausschließlich mit der neuen API
+- Bootstrap-Dateien in `pages/*` sprechen ausschließlich mit der neuen API
 
 Beispiel für Adapterrichtung:
 
@@ -207,7 +216,7 @@ export function createNotePlayingFeature() {
 Ergebnis:
 
 - Einheitlicher Start- und Stop-Vertrag
-- Bootstrap-Layer kennt keine historisch gewachsenen Sonderfälle
+- Die seitenlokale Einstiegsschicht kennt keine historisch gewachsenen Sonderfälle
 
 Abnahme:
 
@@ -287,10 +296,10 @@ Abnahme:
 ## Reihenfolge der Umsetzung
 
 1. Architekturstandard dokumentieren
-2. Bootstrap-Verzeichnis anlegen und Bootstrap-Muster festziehen
+2. Seitenverzeichnis-Muster mit lokalem Bootstrap festziehen
 3. Zwei Referenzseiten exemplarisch migrieren
 4. Feature-API-Adapter für alle übrigen Seiten einziehen
-5. Alle HTML-Seiten auf externe Bootstraps umstellen
+5. Alle Seiten auf lokales `bootstrap.js` umstellen
 6. Registry und Altkommentare entfernen
 7. Smoke-Checks und Lifecycle-Abnahme durchführen
 
@@ -298,9 +307,9 @@ Abnahme:
 
 Diese Reihenfolge minimiert Risiko und schafft früh ein belastbares Muster:
 
-1. `pages/exercises/note-playing.html`
+1. `pages/note-playing/`
    - repräsentiert ein Mikrofon-Feature mit überschaubarer Größe
-2. `pages/tools/metronome.html`
+2. `pages/metronome/`
    - repräsentiert ein Nicht-Mikrofon-Tool mit einfacherem Lifecycle
 3. danach restliche Exercises und Tools in Chargen
 
@@ -339,7 +348,7 @@ Komponentenregistrierung und Feature-Start könnten heute zufällig über Inline
 
 Gegenmaßnahme:
 
-- In jedem Bootstrap zuerst Komponenten importieren, dann Feature
+- In jedem seitenlokalen Bootstrap zuerst Komponenten importieren, dann Feature
 - Für alle Seiten dasselbe Bootstrap-Schema verwenden
 
 ### Risiko 4: Umfang driftet in Phase 2 oder 3
@@ -356,9 +365,10 @@ Gegenmaßnahme:
 
 Phase 1 ist abgeschlossen, wenn alle folgenden Punkte erfüllt sind:
 
-- Zielarchitektur Multi-Page + Bootstrap ist dokumentiert
+- Zielarchitektur Multi-Page + seitenlokaler Bootstrap ist dokumentiert
 - `pages/` enthält keine Inline-Bootstrap-Skripte mehr
-- `js/bootstrap/` enthält für jede Seite ein dediziertes Startmodul
+- Jede Seite liegt in einem eigenen Verzeichnis unter `pages/`
+- Jedes Seitenverzeichnis enthält mindestens `index.html` und `bootstrap.js`
 - Alle Seiten starten über `mount(root, deps?)`
 - Alle migrierten Features bieten `unmount()`
 - `registerExercise(...)` ist aus produktivem Code entfernt
@@ -369,9 +379,9 @@ Phase 1 ist abgeschlossen, wenn alle folgenden Punkte erfüllt sind:
 ## Konkrete Deliverables
 
 - neues Architektur-Dokument oder Abschnitt zur Zielarchitektur
-- neues Verzeichnis `js/bootstrap/`
-- 11 Bootstrap-Dateien für die bestehenden Seiten
-- angepasste HTML-Seiten ohne Inline-Bootstraps
+- 11 Seitenverzeichnisse unter `pages/` mit lokalem Bootstrap
+- 11 `bootstrap.js`-Dateien in den jeweiligen Seitenverzeichnissen
+- angepasste `index.html`-Dateien ohne Inline-Bootstraps
 - vereinheitlichte Einstiegsschicht in allen Feature-/Tool-Modulen
 - Entfernung der Registry-Artefakte
 - kurze Migrationsnotiz für Phase 2 und 3 mit offenen Lifecycle-Lücken
@@ -382,4 +392,4 @@ Nach Abschluss von Phase 1 ist die Codebasis bereit für Phase 2, weil dann:
 
 - die Einstiegsschicht eindeutig ist
 - Features nicht mehr gleichzeitig an zwei Laufzeitmodelle gebunden sind
-- Shared-/Domain-Extraktion auf einer stabilen Bootstrap- und Lifecycle-Struktur aufsetzen kann
+- Shared-/Domain-Extraktion auf einer stabilen Seiten- und Lifecycle-Struktur aufsetzen kann

@@ -88,8 +88,8 @@ Optimierung:
 
 - Entscheidung treffen: entweder echte Multi-Page-App oder echte zentrale SPA-Runtime.
 - Nicht gewählte Architektur konsequent entfernen.
-- Einen expliziten Composition Root einführen, z. B. `bootstrapPage({ componentRegistry, exerciseFactory, lifecycle })`.
-- Inline-Module in HTML durch dedizierte Bootstrap-Dateien ersetzen.
+- Einen expliziten Composition Root pro Seite einführen, z. B. über `pages/<seite>/bootstrap.js`.
+- Inline-Module in HTML durch seitenlokale Bootstrap-Dateien ersetzen.
 
 ### 2. Modularisierung und Abhängigkeitsrichtung
 
@@ -233,7 +233,7 @@ Konsequenz:
 Optimierung:
 
 - Pro Feature einen `resolveElements(root)`-Adapter oder `ViewAdapter` einführen.
-- HTML-Seiten nur noch deklarativ halten; Bootstrapping in JS-Dateien auslagern.
+- HTML-Seiten nur noch deklarativ halten; Bootstrapping in die jeweilige Seitenstruktur auslagern.
 - Global-Events zentral registrieren und dokumentieren.
 - Wiederkehrende UI-Bausteine stärker in Komponenten kapseln.
 
@@ -358,9 +358,9 @@ Optimierung:
 
 Priorität: P1
 
-1. Zielarchitektur festlegen: Multi-Page-App mit JS-Bootstrap pro Seite.
+1. Zielarchitektur festlegen: Multi-Page-App mit seitenlokalem JS-Bootstrap pro Seite.
 2. `exerciseRegistry` und übrig gebliebene SPA-Artefakte entfernen oder reaktivieren, aber nicht beides parallel betreiben.
-3. Für jede Seite dedizierte Bootstrap-Dateien anlegen statt Inline-Skripten in HTML.
+3. Für jede Seite ein eigenes Verzeichnis unter `pages/` mit mindestens `index.html` und `bootstrap.js` anlegen.
 4. Ein gemeinsames Feature-Interface definieren und für alle Übungen/Werkzeuge vereinheitlichen.
 
 ### Phase 2: Schichtgrenzen sauber ziehen
@@ -413,7 +413,7 @@ Priorität: P2
 
 1. Hängende oder sehr langsame Tests identifizieren und separieren.
 2. Test-Skripte nach Typ splitten.
-3. Smoke-Tests für Bootstrapping und Lifecycle ergänzen.
+3. Smoke-Tests für Seiten-Bootstrapping und Lifecycle ergänzen.
 4. Architekturkritische Regeln per Lint und Tests absichern.
 
 ## Empfohlene Reihenfolge der Umsetzung
@@ -427,8 +427,10 @@ Priorität: P2
 
 Angestrebtes Ziel ist eine klare, einfache Struktur:
 
-- `pages/` enthält nur deklarative HTML-Seiten.
-- `js/bootstrap/` startet Seiten und verdrahtet Features.
+- `pages/` enthält pro Seite ein eigenes Verzeichnis.
+- `pages/<seite>/index.html` ist die deklarative HTML-Seite.
+- `pages/<seite>/bootstrap.js` startet die Seite und verdrahtet das Feature.
+- Optionale seitennahe Dateien wie CSS oder UI-Glue liegen ebenfalls unter `pages/<seite>/`.
 - `js/features/` enthält konkrete Übungen/Werkzeuge.
 - `js/domain/` enthält fachliche Kernlogik ohne DOM.
 - `js/shared/` enthält Rendering, Storage, Audio und Infrastruktur.
