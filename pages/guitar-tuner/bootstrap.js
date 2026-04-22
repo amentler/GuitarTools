@@ -1,8 +1,8 @@
 import '../../js/components/index.js';
-import { createGuitarTunerExercise } from '../../js/tools/guitarTuner/guitarTuner.js';
+import { createGuitarTunerTool } from '../../js/tools/guitarTuner/guitarTuner.js';
 
 const root = document.getElementById('view-tuner');
 if (!root) throw new Error('guitar-tuner bootstrap: root element #view-tuner fehlt');
 
-const tool = createGuitarTunerExercise();
+const tool = createGuitarTunerTool();
 await tool.mount(root);

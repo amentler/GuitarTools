@@ -10,7 +10,7 @@ const mountSpy = vi.fn();
 
 vi.mock('../../js/components/index.js', () => ({}));
 vi.mock('../../js/tools/guitarTuner/guitarTuner.js', () => ({
-  createGuitarTunerExercise: () => ({
+  createGuitarTunerTool: () => ({
     mount: mountSpy,
     unmount: vi.fn(),
   }),

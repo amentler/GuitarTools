@@ -15,7 +15,7 @@ import {
 } from './tunerLogic.js';
 import { initTunerSVG, updateTunerDisplay } from './tunerSVG.js';
 
-export function createGuitarTunerExercise() {
+export function createGuitarTunerTool() {
   // Audio resources (per-instance)
   let audioCtx  = null;
   let analyser  = null;
@@ -23,6 +23,7 @@ export function createGuitarTunerExercise() {
   let intervalId = null;
   let modeWired = false;
   let guidedWired = false;
+  let rootElement = null;
 
   const freqHistory = [];
   let noteSwitchStreak = 0;
@@ -60,10 +61,16 @@ export function createGuitarTunerExercise() {
 
   // ── Public lifecycle ──────────────────────────────────────────────────────
 
-  async function mount() {
+  function query(selector) {
+    return rootElement?.querySelector(selector) ?? null;
+  }
+
+  async function mount(root = document) {
+    rootElement = root;
+
     // Resolve DOM
-    const display    = document.getElementById('tuner-display');
-    const permission = document.getElementById('tuner-permission');
+    const display    = query('#tuner-display');
+    const permission = query('#tuner-permission');
 
     // Build SVG gauge (idempotent – clears container first)
     initTunerSVG(display);
@@ -92,9 +99,9 @@ export function createGuitarTunerExercise() {
     guidedState.stepIndex = 0;
     guidedState.trendHistory = [];
     guidedState.feedbackDisplay = null;
-    const elBtnStart  = document.getElementById('btn-start-guided');
-    const elActive    = document.getElementById('guided-active');
-    const elFinished  = document.getElementById('guided-finished');
+    const elBtnStart  = query('#btn-start-guided');
+    const elActive    = query('#guided-active');
+    const elFinished  = query('#guided-finished');
     if (elBtnStart)  elBtnStart.style.display  = '';
     if (elActive)    elActive.style.display    = 'none';
     if (elFinished)  elFinished.style.display  = 'none';
@@ -102,8 +109,8 @@ export function createGuitarTunerExercise() {
 
     // Wire mode buttons once
     if (!modeWired) {
-      const btnStandard   = document.getElementById('btn-mode-standard');
-      const btnChromatic  = document.getElementById('btn-mode-chromatic');
+      const btnStandard   = query('#btn-mode-standard');
+      const btnChromatic  = query('#btn-mode-chromatic');
 
       btnStandard.addEventListener('click', () => {
         state.mode = 'standard';
@@ -122,22 +129,22 @@ export function createGuitarTunerExercise() {
 
     // Wire guided tuning buttons once
     if (!guidedWired) {
-      document.getElementById('btn-start-guided')
+      query('#btn-start-guided')
         .addEventListener('click', startGuidedMode);
-      document.getElementById('btn-guided-next')
+      query('#btn-guided-next')
         .addEventListener('click', nextGuidedStep);
-      document.getElementById('btn-guided-stop')
+      query('#btn-guided-stop')
         .addEventListener('click', stopGuidedMode);
-      document.getElementById('btn-guided-restart')
+      query('#btn-guided-restart')
         .addEventListener('click', startGuidedMode);
-      document.getElementById('btn-guided-done')
+      query('#btn-guided-done')
         .addEventListener('click', stopGuidedMode);
       guidedWired = true;
     }
 
     // Sync mode button UI to current state
-    document.getElementById('btn-mode-standard').classList.toggle('active', state.mode === 'standard');
-    document.getElementById('btn-mode-chromatic').classList.toggle('active', state.mode === 'chromatic');
+    query('#btn-mode-standard').classList.toggle('active', state.mode === 'standard');
+    query('#btn-mode-chromatic').classList.toggle('active', state.mode === 'chromatic');
 
     // Request microphone
     permission.style.display = 'block';
@@ -222,13 +229,14 @@ export function createGuitarTunerExercise() {
     guidedState.stepIndex = 0;
     guidedState.trendHistory = [];
     guidedState.feedbackDisplay = null;
-    const elBtnStart  = document.getElementById('btn-start-guided');
-    const elActive    = document.getElementById('guided-active');
-    const elFinished  = document.getElementById('guided-finished');
+    const elBtnStart  = query('#btn-start-guided');
+    const elActive    = query('#guided-active');
+    const elFinished  = query('#guided-finished');
     if (elBtnStart)  elBtnStart.style.display  = '';
     if (elActive)    elActive.style.display    = 'none';
     if (elFinished)  elFinished.style.display  = 'none';
     renderGuidedFeedback(null);
+    rootElement = null;
   }
 
   // ── Pitch analysis frame ──────────────────────────────────────────────────
@@ -371,9 +379,9 @@ export function createGuitarTunerExercise() {
     lastValidFrameTime = 0;
     outlierStreak = 0;
     smoothedCents = null;
-    document.getElementById('btn-start-guided').style.display = 'none';
-    document.getElementById('guided-active').style.display = '';
-    document.getElementById('guided-finished').style.display = 'none';
+    query('#btn-start-guided').style.display = 'none';
+    query('#guided-active').style.display = '';
+    query('#guided-finished').style.display = 'none';
     renderGuidedStep();
     renderGuidedFeedback(null);
   }
@@ -392,8 +400,8 @@ export function createGuitarTunerExercise() {
     smoothedCents = null;
     if (guidedState.stepIndex >= GUIDED_TUNING_STEPS.length) {
       guidedState.active = false;
-      document.getElementById('guided-active').style.display = 'none';
-      document.getElementById('guided-finished').style.display = '';
+      query('#guided-active').style.display = 'none';
+      query('#guided-finished').style.display = '';
     } else {
       renderGuidedStep();
       renderGuidedFeedback(null);
@@ -408,20 +416,20 @@ export function createGuitarTunerExercise() {
     noteSwitchStreak = 0;
     acceptedNoteKey = null;
     stableFrequency = null;
-    document.getElementById('btn-start-guided').style.display = '';
-    document.getElementById('guided-active').style.display = 'none';
-    document.getElementById('guided-finished').style.display = 'none';
+    query('#btn-start-guided').style.display = '';
+    query('#guided-active').style.display = 'none';
+    query('#guided-finished').style.display = 'none';
     renderGuidedFeedback(null);
   }
 
   function renderGuidedStep() {
     const step = GUIDED_TUNING_STEPS[guidedState.stepIndex];
-    document.getElementById('guided-step-label').textContent =
+    query('#guided-step-label').textContent =
       `${step.stringNumber}. Saite`;
-    document.getElementById('guided-step-target').textContent =
+    query('#guided-step-target').textContent =
       `${step.note}${step.octave}`;
 
-    const progress = document.getElementById('guided-step-progress');
+    const progress = query('#guided-step-progress');
     progress.innerHTML = '';
     for (let i = 0; i < GUIDED_TUNING_STEPS.length; i++) {
       const dot = document.createElement('span');
@@ -433,7 +441,7 @@ export function createGuitarTunerExercise() {
   }
 
   function renderGuidedFeedback(display) {
-    const container = document.getElementById('guided-feedback');
+    const container = query('#guided-feedback');
     if (!container) return;
     container.innerHTML = '';
 
@@ -479,3 +487,5 @@ export function createGuitarTunerExercise() {
     stopExercise: unmount,
   };
 }
+
+export const createGuitarTunerExercise = createGuitarTunerTool;
