@@ -2,7 +2,6 @@
 // Exports startExercise() and stopExercise() to match the app navigation contract.
 // Encapsulates all state in a factory function.
 
-import { registerExercise } from '../../exerciseRegistry.js';
 import {
   detectPitch, frequencyToNote, isStandardTuningNote,
   GUIDED_TUNING_STEPS, noteToFrequency, getCentsToTarget, PERFECT_TOLERANCE_CENTS,
@@ -61,7 +60,7 @@ export function createGuitarTunerExercise() {
 
   // ── Public lifecycle ──────────────────────────────────────────────────────
 
-  async function startExercise() {
+  async function mount() {
     // Resolve DOM
     const display    = document.getElementById('tuner-display');
     const permission = document.getElementById('tuner-permission');
@@ -188,7 +187,7 @@ export function createGuitarTunerExercise() {
     intervalId = setInterval(analyzeFrame, ANALYZE_INTERVAL_MS);
   }
 
-  function stopExercise() {
+  function unmount() {
     clearInterval(intervalId);
     intervalId = null;
 
@@ -473,15 +472,10 @@ export function createGuitarTunerExercise() {
     container.appendChild(hintEl);
   }
 
-  return { startExercise, stopExercise };
+  return {
+    mount,
+    unmount,
+    startExercise: mount,
+    stopExercise: unmount,
+  };
 }
-
-// ── Default instance & self-registration ──────────────────────────────────────
-const guitarTunerExercise = createGuitarTunerExercise();
-registerExercise('tuner', {
-  viewId: 'view-tuner',
-  btnStartId: 'btn-start-tuner',
-  btnBackId: 'btn-back-tuner',
-  start: guitarTunerExercise.startExercise,
-  stop: guitarTunerExercise.stopExercise,
-});

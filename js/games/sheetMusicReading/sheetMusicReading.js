@@ -1,4 +1,3 @@
-import { registerExercise } from '../../exerciseRegistry.js';
 import {
   generateBars, getFilteredNotes, getTimeSignatureConfig,
   EndlessBarGenerator, calcScrollTarget,
@@ -257,7 +256,7 @@ export function createSheetMusicExercise() {
   }
 
   // ── Exercise lifecycle ──────────────────────────────────────────────────
-  function startExercise() {
+  function mount() {
     regenerate();
 
     if (!wired) {
@@ -381,20 +380,15 @@ export function createSheetMusicExercise() {
     syncSettingsUI();
   }
 
-  function stopExercise() {
+  function unmount() {
     stopPlayback();
     if (state.endless) cleanupEndlessState();
   }
 
-  return { startExercise, stopExercise };
+  return {
+    mount,
+    unmount,
+    startExercise: mount,
+    stopExercise: unmount,
+  };
 }
-
-// ── Self-registration ─────────────────────────────────────────────────────────
-const sheetMusicExercise = createSheetMusicExercise();
-registerExercise('sheetMusic', {
-  viewId:    'view-sheet-music',
-  btnStartId: 'btn-start-sheet-music',
-  btnBackId:  'btn-back-sheet-music',
-  start: sheetMusicExercise.startExercise,
-  stop:  sheetMusicExercise.stopExercise,
-});

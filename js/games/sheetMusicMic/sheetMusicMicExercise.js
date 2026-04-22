@@ -5,7 +5,6 @@
 //   hard – any wrong note restarts the current sequence from the beginning
 // Encapsulates all state in a factory function.
 
-import { registerExercise } from '../../exerciseRegistry.js';
 import { generateBars, getFilteredNotes } from '../sheetMusicReading/sheetMusicLogic.js';
 import {
   classifyFrame,
@@ -405,7 +404,7 @@ export function createSheetMusicMicExercise() {
   }
 
   // ── Public API ────────────────────────────────────────────────────────────
-  function startExercise() {
+  function mount() {
     resolveUI();
 
     state = {
@@ -435,19 +434,14 @@ export function createSheetMusicMicExercise() {
     ui.permission.style.display = 'none';
   }
 
-  function stopExercise() {
+  function unmount() {
     stopListening();
   }
 
-  return { startExercise, stopExercise };
+  return {
+    mount,
+    unmount,
+    startExercise: mount,
+    stopExercise: unmount,
+  };
 }
-
-// ── Self-registration ─────────────────────────────────────────────────────────
-const sheetMusicMicExercise = createSheetMusicMicExercise();
-registerExercise('sheetMic', {
-  viewId: 'view-sheet-mic',
-  btnStartId: 'btn-start-sheet-mic',
-  btnBackId: 'btn-back-sheet-mic',
-  start: sheetMusicMicExercise.startExercise,
-  stop: sheetMusicMicExercise.stopExercise,
-});

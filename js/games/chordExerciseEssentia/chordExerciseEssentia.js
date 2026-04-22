@@ -4,7 +4,6 @@
  * same flow as chordExercise.js but uses HPCP-based recognition.
  */
 
-import { registerExercise } from '../../exerciseRegistry.js';
 import { getRandomChord } from '../akkordTrainer/akkordLogic.js';
 import { renderChordDiagram } from '../akkordTrainer/akkordSVG.js';
 import { detectChordEssentia, stopListeningEssentia } from './essentiaChordDetection.js';
@@ -166,7 +165,7 @@ export function createChordExerciseEssentia() {
 
   // ── Public API ─────────────────────────────────────────────────────────────
 
-  function startExercise() {
+  function mount() {
     resolveUI();
     score         = { correct: 0, total: 0 };
     essentiaReady = false;
@@ -201,23 +200,16 @@ export function createChordExerciseEssentia() {
     nextRound();
   }
 
-  function stopExercise() {
+  function unmount() {
     clearPendingTimer();
     isListening = false;
     stopListeningEssentia();
   }
 
-  return { startExercise, stopExercise };
+  return {
+    mount,
+    unmount,
+    startExercise: mount,
+    stopExercise: unmount,
+  };
 }
-
-// ── Self-registration ─────────────────────────────────────────────────────────
-
-const instance = createChordExerciseEssentia();
-
-registerExercise('chordExerciseEssentia', {
-  viewId:     'view-chord-exercise-essentia',
-  btnStartId: 'btn-start-chord-exercise-essentia',
-  btnBackId:  'btn-back-chord-exercise-essentia',
-  start:      instance.startExercise,
-  stop:       instance.stopExercise,
-});

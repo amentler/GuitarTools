@@ -3,7 +3,6 @@
  * Handles DOM events, state management, and persistence.
  */
 
-import { registerExercise } from '../../exerciseRegistry.js';
 import { MetronomeLogic } from './metronomeLogic.js';
 import { MetronomeSVG } from './metronomeSVG.js';
 
@@ -17,7 +16,7 @@ export function createMetronomeExercise() {
   let startStopBtn = null;
   let beatsSelector = null;
 
-  function startExercise() {
+  function mount() {
     if (!logic) {
       logic = new MetronomeLogic();
       svg = new MetronomeSVG('metronome-display');
@@ -57,7 +56,7 @@ export function createMetronomeExercise() {
     svg.render(logic.beatsPerMeasure);
   }
 
-  function stopExercise() {
+  function unmount() {
     if (logic && logic.isPlaying) {
       toggleMetronome();
     }
@@ -112,15 +111,10 @@ export function createMetronomeExercise() {
     }
   }
 
-  return { startExercise, stopExercise };
+  return {
+    mount,
+    unmount,
+    startExercise: mount,
+    stopExercise: unmount,
+  };
 }
-
-// ── Self-registration ─────────────────────────────────────────────────────────
-const metronomeExercise = createMetronomeExercise();
-registerExercise('metronome', {
-  viewId: 'view-metronome',
-  btnStartId: 'btn-start-metronome',
-  btnBackId: 'btn-back-metronome',
-  start: metronomeExercise.startExercise,
-  stop: metronomeExercise.stopExercise,
-});

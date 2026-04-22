@@ -5,7 +5,6 @@
  * to verify the correct chord is being played before marking it as done.
  */
 
-import { registerExercise } from '../../exerciseRegistry.js';
 import { MetronomeLogic } from '../../tools/metronome/metronomeLogic.js';
 import {
   buildProgression,
@@ -480,7 +479,7 @@ export function createAkkordfolgenTrainer() {
 
   // ── Public API ────────────────────────────────────────────────────────────
 
-  function startExercise() {
+  function mount() {
     resolveUI();
     populateKeySelect();
     populateProgressionList();
@@ -489,22 +488,15 @@ export function createAkkordfolgenTrainer() {
     showSetup();
   }
 
-  function stopExercise() {
+  function unmount() {
     if (state.isRunning) { state.isRunning = false; cleanup(); }
     if (ui) showSetup();
   }
 
-  return { startExercise, stopExercise };
+  return {
+    mount,
+    unmount,
+    startExercise: mount,
+    stopExercise: unmount,
+  };
 }
-
-// ── Self-registration ─────────────────────────────────────────────────────────
-
-const akkordfolgenTrainer = createAkkordfolgenTrainer();
-
-registerExercise('akkordfolgenTrainer', {
-  viewId:     'view-akkordfolgen-trainer',
-  btnStartId: 'btn-start-akkordfolgen-trainer',
-  btnBackId:  'btn-back-akkordfolgen-trainer',
-  start:      akkordfolgenTrainer.startExercise,
-  stop:       akkordfolgenTrainer.stopExercise,
-});

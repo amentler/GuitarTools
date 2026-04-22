@@ -1,4 +1,3 @@
-import { registerExercise } from '../../exerciseRegistry.js';
 import { getAllPositions, getNotePool, evaluateRound, positionKey } from './tonFinderLogic.js';
 import { wireStringToggles, syncStringToggles, wireFretSlider, syncFretSlider } from '../../utils/settings.js';
 
@@ -35,7 +34,7 @@ export function createTonFinderExercise() {
     };
   }
 
-  function startExercise() {
+  function mount() {
     resolveUI();
     state = {
       settings: state.settings,
@@ -56,7 +55,7 @@ export function createTonFinderExercise() {
     updateScore();
   }
 
-  function stopExercise() {
+  function unmount() {
     state.locked = true;
   }
 
@@ -182,15 +181,10 @@ export function createTonFinderExercise() {
     ui.scoreRounds.textContent = state.score.rounds;
   }
 
-  return { startExercise, stopExercise };
+  return {
+    mount,
+    unmount,
+    startExercise: mount,
+    stopExercise: unmount,
+  };
 }
-
-// ── Self-registration ─────────────────────────────────────────────────────────
-const tonFinderExercise = createTonFinderExercise();
-registerExercise('tonFinder', {
-  viewId: 'view-ton-finder',
-  btnStartId: 'btn-start-ton-finder',
-  btnBackId: 'btn-back-ton-finder',
-  start: tonFinderExercise.startExercise,
-  stop: tonFinderExercise.stopExercise,
-});

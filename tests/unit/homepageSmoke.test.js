@@ -29,9 +29,25 @@ describe('Homepage smoke', () => {
     expect(document.getElementById('view-menu')?.classList.contains('active')).toBe(true);
     expect(document.getElementById('app-version')?.textContent).toBe('Version test');
 
-    const notePlayingCard = Array.from(document.querySelectorAll('gt-menu-card'))
-      .find((card) => card.getAttribute('title') === 'Ton spielen');
+    const hrefByTitle = Object.fromEntries(
+      Array.from(document.querySelectorAll('gt-menu-card')).map((card) => [
+        card.getAttribute('title'),
+        card.getAttribute('href'),
+      ]),
+    );
 
-    expect(notePlayingCard?.getAttribute('href')).toBe('pages/note-playing/index.html');
+    expect(hrefByTitle).toMatchObject({
+      'Griffbrett': 'pages/fretboard-tone-recognition/index.html',
+      'Noten lesen': 'pages/sheet-music-reading/index.html',
+      'Akkord-Trainer': 'pages/akkord-trainer/index.html',
+      'Ton-Finder': 'pages/ton-finder/index.html',
+      'Ton spielen': 'pages/note-playing/index.html',
+      'Noten spielen': 'pages/sheet-music-mic/index.html',
+      'Akkord spielen': 'pages/chord-playing-essentia/index.html',
+      'Akkorde spielen': 'pages/akkordfolgen-trainer/index.html',
+      'Tuner': 'pages/guitar-tuner/index.html',
+      'Metronom': 'pages/metronome/index.html',
+      'Akkord Übersicht': 'pages/akkord-uebersicht/index.html',
+    });
   });
 });

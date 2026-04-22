@@ -1,4 +1,3 @@
-import { registerExercise } from '../../exerciseRegistry.js';
 import { CHORDS, CHORD_META } from '../../data/akkordData.js';
 import { renderChordDiagram } from '../../games/akkordTrainer/akkordSVG.js';
 
@@ -85,17 +84,18 @@ function initFilters() {
   initialized = true;
 }
 
-export function startExercise() {
-  initFilters();
-  renderGrid();
+export function createAkkordUebersichtTool() {
+  function mount() {
+    initFilters();
+    renderGrid();
+  }
+
+  function unmount() {}
+
+  return {
+    mount,
+    unmount,
+    startExercise: mount,
+    stopExercise: unmount,
+  };
 }
-
-export function stopExercise() {}
-
-registerExercise('akkordUebersicht', {
-  viewId:     'view-akkord-uebersicht',
-  btnStartId: 'btn-start-akkord-uebersicht',
-  btnBackId:  'btn-back-akkord-uebersicht',
-  start: startExercise,
-  stop:  stopExercise,
-});

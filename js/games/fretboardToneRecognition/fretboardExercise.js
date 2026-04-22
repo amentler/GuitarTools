@@ -1,7 +1,6 @@
 // Fretboard exercise – state management & DOM interaction
 // Encapsulates all state in a factory function for testability and isolation.
 
-import { registerExercise } from '../../exerciseRegistry.js';
 import { CHROMATIC_NOTES, getNoteAtPosition, getRandomPosition } from './fretboardLogic.js';
 import { renderFretboard } from './fretboardSVG.js';
 import { wireStringToggles, syncStringToggles, wireFretSlider, syncFretSlider } from '../../utils/settings.js';
@@ -64,7 +63,7 @@ export function createFretboardExercise() {
 
   // ── Public API ────────────────────────────────────────────────────────────
 
-  function startExercise() {
+  function mount() {
     svgContainer      = document.getElementById('fretboard-svg');
     noteButtonsEl     = document.getElementById('note-buttons');
     feedbackTextEl    = document.getElementById('feedback-text');
@@ -104,7 +103,7 @@ export function createFretboardExercise() {
     syncSettingsUI();
   }
 
-  function stopExercise() {
+  function unmount() {
     if (state.feedbackTimeout) {
       clearTimeout(state.feedbackTimeout);
       state.feedbackTimeout = null;
@@ -297,15 +296,10 @@ export function createFretboardExercise() {
     });
   }
 
-  return { startExercise, stopExercise };
+  return {
+    mount,
+    unmount,
+    startExercise: mount,
+    stopExercise: unmount,
+  };
 }
-
-// ── Default instance & self-registration ──────────────────────────────────────
-const fretboardExercise = createFretboardExercise();
-registerExercise('fretboard', {
-  viewId: 'view-fretboard',
-  btnStartId: 'btn-start-fretboard',
-  btnBackId: 'btn-back',
-  start: fretboardExercise.startExercise,
-  stop: fretboardExercise.stopExercise,
-});

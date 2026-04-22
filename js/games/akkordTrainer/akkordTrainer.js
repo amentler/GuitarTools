@@ -3,7 +3,6 @@
  * Main controller for the Chord Trainer game.
  */
 
-import { registerExercise } from '../../exerciseRegistry.js';
 import { getRandomChord, validateChord } from './akkordLogic.js';
 import { renderChordDiagram } from './akkordSVG.js';
 
@@ -140,13 +139,13 @@ export function createAkkordExercise() {
     if (scoreTotal) scoreTotal.textContent = score.total;
   }
 
-  function startExercise() {
+  function mount() {
     score = { correct: 0, total: 0 };
     updateScoreUI();
     nextRound();
   }
 
-  function stopExercise() {
+  function unmount() {
     currentChord = null;
     userPositions = [];
     feedback = null;
@@ -157,15 +156,10 @@ export function createAkkordExercise() {
     btnCheck.addEventListener('click', handleCheck);
   }
 
-  return { startExercise, stopExercise };
+  return {
+    mount,
+    unmount,
+    startExercise: mount,
+    stopExercise: unmount,
+  };
 }
-
-// ── Self-registration ─────────────────────────────────────────────────────────
-const akkordExercise = createAkkordExercise();
-registerExercise('akkord', {
-  viewId: 'view-akkord-trainer',
-  btnStartId: 'btn-start-akkord-trainer',
-  btnBackId: 'btn-back-akkord-trainer',
-  start: akkordExercise.startExercise,
-  stop: akkordExercise.stopExercise,
-});
