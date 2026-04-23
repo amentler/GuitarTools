@@ -7,18 +7,14 @@ COMMIT_MSG_FILE=$1
 COMMIT_SOURCE=$2
 
 # 1. Guard: Only update if version.txt is NOT already staged.
-if git diff --cached --name-only | grep -q "^version.txt$"; then
+# This avoids overwriting manual version bumps.
+if git diff --cached --name-only | grep -qx "version.txt"; then
     exit 0
 fi
 
 # 2. Extract current version number from version.txt
 # Expected format: "Version 0.1 | ..."
-CURRENT_VERSION_RAW=$(grep -oP "Version \d+\.\d+" version.txt)
-if [ -z "$CURRENT_VERSION_RAW" ]; then
-    CURRENT_VERSION="0.0"
-else
-    CURRENT_VERSION=$(echo "$CURRENT_VERSION_RAW" | awk '{print $2}')
-fi
+CURRENT_VERSION=$(grep -oP '(?<=Version )\d+\.\d+' version.txt || echo "0.0")
 
 # 3. Increment minor version
 MAJOR=$(echo "$CURRENT_VERSION" | cut -d. -f1)
@@ -39,6 +35,7 @@ HASH=$(git rev-parse --short HEAD 2>/dev/null || echo "initial")
 # 4. Extract title if possible
 TITLE=""
 if [ -n "$COMMIT_MSG_FILE" ] && [ -f "$COMMIT_MSG_FILE" ]; then
+    # Read the first non-comment line from the commit message file
     TITLE=$(grep -v '^#' "$COMMIT_MSG_FILE" | head -n 1 | xargs)
 fi
 
