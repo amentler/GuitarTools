@@ -28,6 +28,14 @@ export default [
     },
   },
   {
+    files: ['js/games/**/*.js'],
+    rules: {
+      'no-restricted-imports': ['error', {
+        patterns: ['**/tools/**', '**/games/**'],
+      }],
+    },
+  },
+  {
     files: ['js/tools/**/*.js'],
     rules: {
       'no-restricted-imports': ['error', {

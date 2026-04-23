@@ -14,7 +14,7 @@ import { getAudioFixtures } from '../helpers/audioFixtureRunner.js';
 import {
   classifyFrame,
   getRecommendedFftSize,
-} from '../../js/games/sheetMusicMic/fastNoteMatcher.js';
+} from '../../js/shared/audio/fastNoteMatcher.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname  = dirname(__filename);

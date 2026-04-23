@@ -7,7 +7,7 @@ import {
   createMatchState,
   updateMatchState,
   getRecommendedFftSize,
-} from '../sheetMusicMic/fastNoteMatcher.js';
+} from '../../shared/audio/fastNoteMatcher.js';
 import { getRandomPitch, getPositionsForPitch } from './notePlayingLogic.js';
 import { renderNoteOnStaff, renderNotePositionsTab } from './notePlayingSVG.js';
 import { wireStringToggles, syncStringToggles, wireFretSlider, syncFretSlider } from '../../utils/settings.js';

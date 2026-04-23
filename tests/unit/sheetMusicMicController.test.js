@@ -23,8 +23,8 @@ vi.mock('../../js/shared/music/sheetMusicLogic.js', async () => {
   };
 });
 
-vi.mock('../../js/games/sheetMusicMic/fastNoteMatcher.js', async () => {
-  const actual = await vi.importActual('../../js/games/sheetMusicMic/fastNoteMatcher.js');
+vi.mock('../../js/shared/audio/fastNoteMatcher.js', async () => {
+  const actual = await vi.importActual('../../js/shared/audio/fastNoteMatcher.js');
   return {
     ...actual,
     classifyFrame: vi.fn(() => ({ status: 'unsure' })),

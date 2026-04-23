@@ -11,7 +11,7 @@ import {
   createMatchState,
   updateMatchState,
   getRecommendedFftSize,
-} from './fastNoteMatcher.js';
+} from '../../shared/audio/fastNoteMatcher.js';
 import {
   createOnsetGateState,
   updateOnsetGate,

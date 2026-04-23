@@ -21,7 +21,7 @@ import {
   getMinSamplesFor,
   getRecommendedFftSize,
   parsePitch,
-} from '../../js/games/sheetMusicMic/fastNoteMatcher.js';
+} from '../../js/shared/audio/fastNoteMatcher.js';
 import { noteToFrequency } from '../../js/tools/guitarTuner/tunerLogic.js';
 
 // ── Synthetic signal helpers ──────────────────────────────────────────────────

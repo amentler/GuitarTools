@@ -7,7 +7,7 @@ import {
   createMatchState,
   updateMatchState,
   getRecommendedFftSize,
-} from '../../js/games/sheetMusicMic/fastNoteMatcher.js';
+} from '../../js/shared/audio/fastNoteMatcher.js';
 
 /**
  * Runs a full sequence simulation over a recording.

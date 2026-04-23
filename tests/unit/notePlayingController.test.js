@@ -16,8 +16,8 @@ vi.mock('../../js/utils/settings.js', () => ({
   syncFretSlider: vi.fn(),
 }));
 
-vi.mock('../../js/games/sheetMusicMic/fastNoteMatcher.js', async () => {
-  const actual = await vi.importActual('../../js/games/sheetMusicMic/fastNoteMatcher.js');
+vi.mock('../../js/shared/audio/fastNoteMatcher.js', async () => {
+  const actual = await vi.importActual('../../js/shared/audio/fastNoteMatcher.js');
   return {
     ...actual,
     classifyFrame: vi.fn(() => ({ status: 'unsure', detectedPitch: 'E4' })),
