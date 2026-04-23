@@ -5,6 +5,7 @@
   "scripts": {
     "test": "vitest run",
     "test:e2e": "playwright test",
+    "fixtures:chords:introduce": "node scripts/introduce-chord-fixture.mjs",
     "lint": "eslint .",
     "prepare": "husky"
   },
