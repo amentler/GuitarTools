@@ -22,13 +22,27 @@ function getFixtureAverageHpcp(chordName, wavFile) {
   return averageHpcps(fixture.hpcpFrames.map(frame => Float32Array.from(frame)));
 }
 
+function getMatchResult(chordName, wavFile, probeChordName) {
+  const avgHpcp = getFixtureAverageHpcp(chordName, wavFile);
+  const bassSupportByChord = extractBassSupportMapFromWav(wavFile, ALL_CHORD_NAMES);
+  return matchHpcpToChord(avgHpcp, probeChordName, TEMPLATES, undefined, { bassSupportByChord });
+}
+
 describe('Targeted chord regressions', () => {
+  it('erkennt A-Moll nicht fälschlich als E-Moll', () => {
+    for (const wavFile of ['A-Moll/amin.wav', 'A-Moll/amoll_steel.wav']) {
+      const aMinorResult = getMatchResult('A-Moll', wavFile, 'A-Moll');
+      const eMinorResult = getMatchResult('A-Moll', wavFile, 'E-Moll');
+
+      expect(aMinorResult.isCorrect, `${wavFile} sollte als A-Moll akzeptiert werden`).toBe(true);
+      expect(eMinorResult.isCorrect, `${wavFile} darf nicht als E-Moll akzeptiert werden`).toBe(false);
+    }
+  });
+
   it('erkennt A-Moll (2-Finger) nicht fälschlich als E-Moll', () => {
-    const avgHpcp = getFixtureAverageHpcp('A-Moll (2-Finger)', 'A-Moll (2-Finger)/01.wav');
-    const bassSupportByChord = extractBassSupportMapFromWav('A-Moll (2-Finger)/01.wav', ALL_CHORD_NAMES);
-    const targetResult = matchHpcpToChord(avgHpcp, 'A-Moll (2-Finger)', TEMPLATES, undefined, { bassSupportByChord });
-    const aMinorResult = matchHpcpToChord(avgHpcp, 'A-Moll', TEMPLATES, undefined, { bassSupportByChord });
-    const eMinorResult = matchHpcpToChord(avgHpcp, 'E-Moll', TEMPLATES, undefined, { bassSupportByChord });
+    const targetResult = getMatchResult('A-Moll (2-Finger)', 'A-Moll (2-Finger)/01.wav', 'A-Moll (2-Finger)');
+    const aMinorResult = getMatchResult('A-Moll (2-Finger)', 'A-Moll (2-Finger)/01.wav', 'A-Moll');
+    const eMinorResult = getMatchResult('A-Moll (2-Finger)', 'A-Moll (2-Finger)/01.wav', 'E-Moll');
 
     expect(targetResult.isCorrect).toBe(true);
     expect(targetResult.bestMatch).not.toBe('Esus2');
