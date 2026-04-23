@@ -17,7 +17,7 @@ import {
   updateOnsetGate,
   isOnsetGateOpen,
   consumeOnsetGate,
-} from './noteOnsetGate.js';
+} from '../../shared/audio/noteOnsetGate.js';
 import { renderScoreWithStatus } from './sheetMusicMicSVG.js';
 import { wireStringToggles, syncStringToggles, wireFretSlider, syncFretSlider } from '../../utils/settings.js';
 import {

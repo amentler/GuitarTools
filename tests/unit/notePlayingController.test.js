@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const renderNoteOnStaff = vi.fn();
 const renderNotePositionsTab = vi.fn();
+const classifyFrame = vi.fn(() => ({ status: 'unsure', detectedPitch: 'E4' }));
 
 vi.mock('../../js/games/notePlayingExercise/notePlayingSVG.js', () => ({
   renderNoteOnStaff,
@@ -20,9 +21,14 @@ vi.mock('../../js/shared/audio/fastNoteMatcher.js', async () => {
   const actual = await vi.importActual('../../js/shared/audio/fastNoteMatcher.js');
   return {
     ...actual,
-    classifyFrame: vi.fn(() => ({ status: 'unsure', detectedPitch: 'E4' })),
+    classifyFrame,
   };
 });
+
+vi.mock('../../js/games/notePlayingExercise/notePlayingLogic.js', () => ({
+  getRandomPitch: vi.fn(() => 'E4'),
+  getPositionsForPitch: vi.fn(() => [{ string: 0, fret: 0 }]),
+}));
 
 function buildDom() {
   document.body.innerHTML = `
@@ -72,6 +78,8 @@ describe('NotePlaying controller behavior', () => {
     buildDom();
     renderNoteOnStaff.mockClear();
     renderNotePositionsTab.mockClear();
+    classifyFrame.mockReset();
+    classifyFrame.mockReturnValue({ status: 'unsure', detectedPitch: 'E4' });
     mockTrack = { stop: vi.fn() };
     mockAudio = createMockAudioContext();
 
@@ -105,6 +113,11 @@ describe('NotePlaying controller behavior', () => {
   });
 
   it('hint and skip buttons update the visible state', async () => {
+    const logic = await import('../../js/games/notePlayingExercise/notePlayingLogic.js');
+    logic.getRandomPitch
+      .mockReturnValueOnce('E4')
+      .mockReturnValueOnce('F4');
+
     const feature = createNotePlayingExercise();
     await feature.mount(document.getElementById('view-note-play'));
 
@@ -117,6 +130,26 @@ describe('NotePlaying controller behavior', () => {
 
     document.getElementById('note-play-skip').click();
     expect(document.getElementById('note-play-target').textContent).not.toBe(firstTarget);
+  });
+
+  it('requires a new attack before repeated identical targets can score again', async () => {
+    classifyFrame.mockReturnValue({
+      status: 'correct',
+      detectedPitch: 'E4',
+      hz: 329.63,
+      cents: 0,
+    });
+    mockAudio.analyser.getFloatTimeDomainData.mockImplementation(buffer => buffer.fill(0.08));
+
+    const feature = createNotePlayingExercise();
+    await feature.mount(document.getElementById('view-note-play'));
+
+    vi.advanceTimersByTime(150);
+    expect(document.getElementById('score-value').textContent).toBe('1');
+
+    vi.advanceTimersByTime(2500);
+    expect(document.getElementById('score-value').textContent).toBe('1');
+    expect(document.getElementById('note-play-target').textContent).toBe('E4');
   });
 
   it('unmount tears down media tracks and audio context', async () => {

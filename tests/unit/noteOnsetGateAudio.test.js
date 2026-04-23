@@ -13,7 +13,7 @@ import {
   updateOnsetGate,
   isOnsetGateOpen,
   consumeOnsetGate,
-} from '../../js/games/sheetMusicMic/noteOnsetGate.js';
+} from '../../js/shared/audio/noteOnsetGate.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);

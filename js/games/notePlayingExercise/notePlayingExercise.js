@@ -8,6 +8,12 @@ import {
   updateMatchState,
   getRecommendedFftSize,
 } from '../../shared/audio/fastNoteMatcher.js';
+import {
+  createOnsetGateState,
+  updateOnsetGate,
+  isOnsetGateOpen,
+  consumeOnsetGate,
+} from '../../shared/audio/noteOnsetGate.js';
 import { getRandomPitch, getPositionsForPitch } from './notePlayingLogic.js';
 import { renderNoteOnStaff, renderNotePositionsTab } from './notePlayingSVG.js';
 import { wireStringToggles, syncStringToggles, wireFretSlider, syncFretSlider } from '../../utils/settings.js';
@@ -31,6 +37,7 @@ export function createNotePlayingExercise() {
   let state = {
     targetNote:   null,
     matchState:   createMatchState(),
+    onsetGateState: createOnsetGateState(),
     isLocked:     false,
     hintLevel:    0,      // 0 = no hint, 1 = note name shown, 2 = tabs shown
     score:        { correct: 0 },
@@ -63,6 +70,7 @@ export function createNotePlayingExercise() {
     state = {
       targetNote:     null,
       matchState:     createMatchState(),
+      onsetGateState: createOnsetGateState(),
       isLocked:       false,
       hintLevel:      0,
       score:          { correct: 0 },
@@ -183,6 +191,7 @@ export function createNotePlayingExercise() {
     }
     state.isLocked = false;
     state.matchState = createMatchState();
+    state.onsetGateState = consumeOnsetGate(state.onsetGateState);
     state.hintLevel = 0;
     state.targetNote = getRandomPitch(null, state.settings.maxFret, state.settings.activeStrings);
     applyTargetFftSize();
@@ -200,11 +209,17 @@ export function createNotePlayingExercise() {
     const buffer = new Float32Array(audioSession.analyser.fftSize);
     audioSession.analyser.getFloatTimeDomainData(buffer);
 
+    const gate = updateOnsetGate(state.onsetGateState, buffer);
+    state.onsetGateState = gate.nextState;
+
     const frameResult = classifyFrame(buffer, audioSession.audioCtx.sampleRate, state.targetNote);
+    const effective = isOnsetGateOpen(state.onsetGateState)
+      ? frameResult
+      : { ...frameResult, status: 'unsure' };
 
-    updateDetectedNote(frameResult.detectedPitch);
+    updateDetectedNote(effective.detectedPitch);
 
-    const { nextState, event } = updateMatchState(state.matchState, frameResult);
+    const { nextState, event } = updateMatchState(state.matchState, effective);
     state.matchState = nextState;
 
     if (event === 'accept') {
@@ -215,6 +230,7 @@ export function createNotePlayingExercise() {
   function handleSuccess() {
     state.isLocked   = true;
     state.matchState = createMatchState();
+    state.onsetGateState = consumeOnsetGate(state.onsetGateState);
     state.score.correct++;
     updateScore();
     // Always reveal the note name on success
@@ -242,6 +258,7 @@ export function createNotePlayingExercise() {
       state.settings.activeStrings
     );
     state.matchState = createMatchState();
+    state.onsetGateState = consumeOnsetGate(state.onsetGateState);
     state.isLocked = false;
     state.hintLevel = 0;
     applyTargetFftSize();

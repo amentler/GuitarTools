@@ -5,7 +5,7 @@ import {
   updateOnsetGate,
   isOnsetGateOpen,
   consumeOnsetGate,
-} from '../../js/games/sheetMusicMic/noteOnsetGate.js';
+} from '../../js/shared/audio/noteOnsetGate.js';
 
 function constantBuffer(value, length = 64) {
   return new Float32Array(length).fill(value);
