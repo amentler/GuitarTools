@@ -3,8 +3,8 @@
  * Microphone audio pipeline for HPCP-based chord detection.
  *
  * Pipeline:
- *   mic → AnalyserNode.getFloatFrequencyData (Web Audio FFT)
- *   → inline peak detection
+ *   mic channel 1 → AnalyserNode.getFloatFrequencyData (Web Audio FFT)
+ *   → peak-normalized spectrum → inline peak detection
  *   → essentia.HPCP (WASM, when available) or computeHpcpPureJS (fallback)
  *   → average over ANALYSIS_FRAMES → matchHpcpToChord
  *
@@ -36,6 +36,8 @@ const PEAK_NOISE_FLOOR  = -80;    // dBFS: bins quieter than this are ignored
 // NOTE_TO_BIN in essentiaChordLogic.js. Using 440 Hz (A4) would shift all bins
 // by +9, making C land on bin 3 and breaking template matching entirely.
 const HPCP_REFERENCE_HZ = 261.626;
+const MIN_NORMALIZED_PEAK_MAG = 1e-9;
+const NORMALIZED_SPECTRUM_PEAK_DB = 0;
 
 // ── Chord templates (built once at module load) ───────────────────────────────
 
@@ -46,6 +48,8 @@ const CHORD_TEMPLATES = buildChordTemplates();
 let audioCtx = null;
 let analyser = null;
 let stream   = null;
+let sourceNode = null;
+let channelSplitter = null;
 let essentiaHpcpAvailable = true;
 
 // ── Internal helpers ──────────────────────────────────────────────────────────
@@ -53,18 +57,33 @@ let essentiaHpcpAvailable = true;
 async function ensureMic() {
   if (audioCtx && analyser && stream) return;
   _tearDown();
-  stream   = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+  stream   = await navigator.mediaDevices.getUserMedia({
+    audio: { channelCount: { ideal: 1 } },
+    video: false,
+  });
   audioCtx = new AudioContext();
   if (audioCtx.state === 'suspended') {
     await audioCtx.resume();
   }
   analyser = audioCtx.createAnalyser();
   analyser.fftSize = FFT_SIZE;
-  audioCtx.createMediaStreamSource(stream).connect(analyser);
+  sourceNode = audioCtx.createMediaStreamSource(stream);
+
+  // Match WAV fixtures: use one mono source channel instead of averaging stereo.
+  // Fallback keeps older browser/test mocks working when ChannelSplitterNode is absent.
+  if (typeof audioCtx.createChannelSplitter === 'function') {
+    channelSplitter = audioCtx.createChannelSplitter(2);
+    sourceNode.connect(channelSplitter);
+    channelSplitter.connect(analyser, 0, 0);
+  } else {
+    sourceNode.connect(analyser);
+  }
 }
 
 function _tearDown() {
   if (stream)   { stream.getTracks().forEach(t => t.stop()); stream = null; }
+  sourceNode = null;
+  channelSplitter = null;
   if (audioCtx) { audioCtx.close().catch(() => {}); audioCtx = null; analyser = null; }
 }
 
@@ -103,11 +122,33 @@ export function detectEssentiaPeaks(freqData, sampleRate) {
   return { peakFreqs, peakMags };
 }
 
+export function normalizePeakMagnitudes(peakMags) {
+  if (!peakMags.length) return [];
+  const maxMagnitude = Math.max(...peakMags);
+  if (maxMagnitude <= MIN_NORMALIZED_PEAK_MAG) return peakMags.map(() => 0);
+  return peakMags.map(magnitude => magnitude / maxMagnitude);
+}
+
 /** Thin wrapper: reads AnalyserNode state and calls the pure detectEssentiaPeaks. */
 function detectPeaks(analyserNode, sampleRate) {
   const freqData = new Float32Array(analyserNode.frequencyBinCount);
   analyserNode.getFloatFrequencyData(freqData);
-  return detectEssentiaPeaks(freqData, sampleRate);
+  return detectEssentiaPeaks(normalizeFrequencyDataToPeak(freqData), sampleRate);
+}
+
+export function normalizeFrequencyDataToPeak(freqData) {
+  let maxDb = -Infinity;
+  for (const value of freqData) {
+    if (Number.isFinite(value) && value > maxDb) maxDb = value;
+  }
+  if (!Number.isFinite(maxDb)) return new Float32Array(freqData);
+
+  const offset = NORMALIZED_SPECTRUM_PEAK_DB - maxDb;
+  const normalized = new Float32Array(freqData.length);
+  for (let i = 0; i < freqData.length; i++) {
+    normalized[i] = Number.isFinite(freqData[i]) ? freqData[i] + offset : freqData[i];
+  }
+  return normalized;
 }
 
 /**
@@ -157,12 +198,13 @@ function computePureJsHpcp(peakFreqs, peakMags) {
  */
 function computeHpcp(essentia, analyserNode, sampleRate) {
   const { peakFreqs, peakMags } = detectPeaks(analyserNode, sampleRate);
-  const pureJsHpcp = computePureJsHpcp(peakFreqs, peakMags);
+  const normalizedPeakMags = normalizePeakMagnitudes(peakMags);
+  const pureJsHpcp = computePureJsHpcp(peakFreqs, normalizedPeakMags);
 
   if (essentia && essentiaHpcpAvailable) {
     try {
       return {
-        hpcp: computeHpcpEssentia(essentia, peakFreqs, peakMags, sampleRate),
+        hpcp: computeHpcpEssentia(essentia, peakFreqs, normalizedPeakMags, sampleRate),
         pureJsHpcp,
       };
     } catch {

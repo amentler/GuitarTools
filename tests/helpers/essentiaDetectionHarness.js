@@ -6,7 +6,7 @@ import {
 
 export function installEssentiaDetectionHarness(wavPath) {
   const { samples, sampleRate } = readWavFile(wavPath);
-  const frequencyFrames = buildFrequencyFrames(samples);
+  const frequencyFrames = buildFrequencyFrames(samples, CHORD_HPCP_FFT_SIZE, undefined, sampleRate);
   const stream = {
     getTracks() {
       return [{ stop() {} }];

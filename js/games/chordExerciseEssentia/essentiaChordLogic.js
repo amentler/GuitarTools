@@ -53,11 +53,17 @@ const DEFAULT_PROFILE = {
   bestMatchTolerance: 0.12,
   minRootEnergy: 0.2,
   minFifthEnergy: 0.12,
+  minExpectedThirdEnergy: 0.05,
   minSupportMean: 0.32,
   minSeventhEnergy: 0,
 };
 
 const CHORD_TYPE_PROFILES = {
+  add9: {
+    ...DEFAULT_PROFILE,
+    threshold: 0.6,
+    minSupportMean: 0.36,
+  },
   '7': {
     weights: {
       supportMean: 0.42,
@@ -68,12 +74,13 @@ const CHORD_TYPE_PROFILES = {
       leakageMean: 0.12,
       competingThird: 0.03,
     },
-    threshold: 0.42,
-    bestMatchTolerance: 0.14,
-    minRootEnergy: 0.12,
+    threshold: 0.26,
+    bestMatchTolerance: 0.2,
+    minRootEnergy: 0.1,
     minFifthEnergy: 0.04,
+    minExpectedThirdEnergy: 0.05,
     minSupportMean: 0.26,
-    minSeventhEnergy: 0.08,
+    minSeventhEnergy: 0.002,
   },
 };
 
@@ -401,20 +408,29 @@ export function matchHpcpToChord(hpcp, targetChordName, templates, thresholdOver
   const threshold = thresholdOverride ?? profile.threshold;
   const hasStrongRoot = !targetDescriptor || targetEvidence.rootEnergy >= profile.minRootEnergy;
   const hasStrongFifth = !targetDescriptor || targetEvidence.fifthEnergy >= profile.minFifthEnergy;
+  const hasExpectedThird = !targetDescriptor ||
+    targetDescriptor.expectedSeventhBin === null ||
+    targetDescriptor.expectedThirdBin === null ||
+    targetEvidence.expectedThirdEnergy >= profile.minExpectedThirdEnergy;
   const hasEnoughChordSupport = targetEvidence.supportMean >= profile.minSupportMean;
   const hasExpectedSeventh = !targetDescriptor || targetEvidence.expectedSeventhEnergy >= profile.minSeventhEnergy;
   const hasControlledAddedSecond = !targetDescriptor ||
     targetDescriptor.extensionSecondBin === null ||
     targetEvidence.fifthEnergy >= targetEvidence.extensionSecondEnergy;
-  const allowsCrossRootTolerance = !targetDescriptor || targetDescriptor.expectedSeventhBin === null;
+  const hasDominantSeventhEvidence = targetDescriptor?.expectedSeventhBin !== null &&
+    hasStrongRoot &&
+    hasExpectedThird &&
+    hasExpectedSeventh &&
+    targetEvidence.rootEnergy <= 0.15;
   const passesBestMatchTolerance = bestScore - confidence <= profile.bestMatchTolerance &&
-    (allowsCrossRootTolerance || sharesRoot(targetDescriptor, bestDescriptor));
+    (!targetDescriptor || sharesRoot(targetDescriptor, bestDescriptor) || hasDominantSeventhEvidence);
   const allowsCrossRootSubset = !targetDescriptor || targetDescriptor.expectedSeventhBin === null;
   const passesSubsetAcceptance = isSubsetOf(templates[bestMatch], targetTemplate) &&
     (allowsCrossRootSubset || sharesRoot(targetDescriptor, bestDescriptor));
   const isCorrect = confidence >= threshold &&
     hasStrongRoot &&
     hasStrongFifth &&
+    hasExpectedThird &&
     hasExpectedSeventh &&
     hasControlledAddedSecond &&
     hasEnoughChordSupport && (

@@ -1,5 +1,9 @@
 import { readWavFile } from './wavDecoder.js';
-import { detectEssentiaPeaks } from '../../js/games/chordExerciseEssentia/essentiaChordDetection.js';
+import {
+  detectEssentiaPeaks,
+  normalizeFrequencyDataToPeak,
+  normalizePeakMagnitudes,
+} from '../../js/games/chordExerciseEssentia/essentiaChordDetection.js';
 import {
   averageHpcps,
   computeHpcpPureJS,
@@ -7,8 +11,13 @@ import {
 
 export const CHORD_HPCP_FFT_SIZE = 4096;
 export const CHORD_HPCP_ANALYSIS_FRAMES = 6;
+export const CHORD_HPCP_ATTACK_SETTLE_MS = 150;
+export const CHORD_HPCP_FRAME_INTERVAL_MS = 80;
 const SILENCE_DB = -200;
 const HPCP_REFERENCE_HZ = 261.626;
+const RMS_SPIKE_FACTOR = 3;
+const GUITAR_MIN_RMS = 0.008;
+const ONSET_PEAK_RATIO = 0.08;
 
 function fftInPlace(re, im) {
   const n = re.length;
@@ -81,13 +90,38 @@ function computeDbSpectrum(samples, fftSize = CHORD_HPCP_FFT_SIZE) {
   return spectrum;
 }
 
-export function buildFrequencyFrames(samples, fftSize = CHORD_HPCP_FFT_SIZE, frameCount = CHORD_HPCP_ANALYSIS_FRAMES) {
-  const totalWindow = fftSize * frameCount;
-  const centerStart = Math.max(0, Math.floor((samples.length - totalWindow) / 2));
+function computeRms(samples, start = 0, size = samples.length) {
+  let sum = 0;
+  const end = Math.min(samples.length, start + size);
+  for (let i = start; i < end; i++) sum += samples[i] * samples[i];
+  return Math.sqrt(sum / Math.max(1, end - start));
+}
+
+export function findStrumOnsetSample(samples, sampleRate, fftSize = CHORD_HPCP_FFT_SIZE) {
+  let peak = 0;
+  for (const sample of samples) peak = Math.max(peak, Math.abs(sample));
+  const threshold = Math.max(RMS_SPIKE_FACTOR * GUITAR_MIN_RMS, peak * ONSET_PEAK_RATIO);
+  const hopSize = Math.max(1, Math.floor(sampleRate * 0.05));
+
+  for (let start = 0; start < samples.length; start += hopSize) {
+    if (computeRms(samples, start, fftSize) > threshold) return start;
+  }
+
+  return 0;
+}
+
+export function buildFrequencyFrames(samples, fftSize = CHORD_HPCP_FFT_SIZE, frameCount = CHORD_HPCP_ANALYSIS_FRAMES, sampleRate = 44100) {
+  const onsetStart = findStrumOnsetSample(samples, sampleRate, fftSize);
+  const attackSettleSamples = Math.floor(sampleRate * CHORD_HPCP_ATTACK_SETTLE_MS / 1000);
+  const frameIntervalSamples = Math.floor(sampleRate * CHORD_HPCP_FRAME_INTERVAL_MS / 1000);
+  const firstFrameStart = Math.min(
+    Math.max(0, onsetStart + attackSettleSamples),
+    Math.max(0, samples.length - fftSize),
+  );
   const frames = [];
 
   for (let i = 0; i < frameCount; i++) {
-    const start = Math.min(centerStart + i * fftSize, Math.max(0, samples.length - fftSize));
+    const start = Math.min(firstFrameStart + i * frameIntervalSamples, Math.max(0, samples.length - fftSize));
     const frame = samples.slice(start, start + fftSize);
     frames.push(computeDbSpectrum(frame, fftSize));
   }
@@ -96,10 +130,10 @@ export function buildFrequencyFrames(samples, fftSize = CHORD_HPCP_FFT_SIZE, fra
 }
 
 export function extractHpcpAnalysisFromSamples(samples, sampleRate) {
-  const frames = buildFrequencyFrames(samples);
+  const frames = buildFrequencyFrames(samples, CHORD_HPCP_FFT_SIZE, CHORD_HPCP_ANALYSIS_FRAMES, sampleRate);
   const hpcpFrames = frames.map(frame => {
-    const { peakFreqs, peakMags } = detectEssentiaPeaks(frame, sampleRate);
-    return computeHpcpPureJS(peakFreqs, peakMags, HPCP_REFERENCE_HZ);
+    const { peakFreqs, peakMags } = detectEssentiaPeaks(normalizeFrequencyDataToPeak(frame), sampleRate);
+    return computeHpcpPureJS(peakFreqs, normalizePeakMagnitudes(peakMags), HPCP_REFERENCE_HZ);
   });
 
   return {
@@ -116,4 +150,3 @@ export function extractHpcpAnalysisFromWav(wavPath) {
     ...analysis,
   };
 }
-

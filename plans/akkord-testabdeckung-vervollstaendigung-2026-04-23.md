@@ -19,10 +19,11 @@ Diese Akkorde sind bereits in `CHORDS` vorhanden und werden von Progressions erz
 
 Umsetzungsstand 2026-04-23:
 
-- Neue WAVs sind unter `tests/fixtures/chords/<Akkord>/` einsortiert, bereinigt und im HPCP-Fixture-Katalog registriert.
-- 9 von 10 geplanten Prioritaet-0-Akkorden werden mit den bereinigten Fixtures aktuell als Zielakkord akzeptiert.
-- `F7/01.wav` bleibt als Fixture registriert, wird vom aktuellen Matcher aber als `Fsus2` naeher bewertet und ist deshalb als erwarteter Negativfall dokumentiert. Hier ist ein neuer Take oder eine gezielte Matcher-Verbesserung noetig.
-- Der zusaetzliche Take `G7/02-alt.wav` ist einsortiert, aber nicht als positiver G7-Fall geeignet.
+- Neue rohe WAVs sind unter `tests/fixtures/chords/<Akkord>/` einsortiert und im HPCP-Fixture-Katalog registriert.
+- Alle 10 geplanten Prioritaet-0-Akkorde werden mit den rohen Fixtures ueber die Live-aehnliche Erkennungspipeline aktuell als Zielakkord akzeptiert; fuer `F7` und `G7` sind jetzt jeweils vier positive Takes vorhanden.
+- Die frueher geloeschte Akkordaufnahme `tests/fixtures/chords/G7/g7_chord.wav` wurde aus der Git-Historie wiederhergestellt und als rohe Aufnahme `tests/fixtures/chords/G7/04.wav` erneut als positiver Testfall aufgenommen.
+- Korrektur: Die WAV-Dateien selbst sollen rohe Mikrofonaufnahmen bleiben. Die Onset-/Pegel-/Mono-Vorverarbeitung wurde in die normale Erkennungs-/Testextraktionspipeline verlagert; der temporaere WAV-Cleanup-Skill wurde entfernt.
+- Die zuvor ungeeignete Variante `G7/02-alt.wav` wurde durch die positiven Takes `G7/02.wav` und `G7/03.wav` ersetzt.
 
 | Akkord | Tab | Empfohlene WAV |
 | --- | --- | --- |

@@ -1,4 +1,0 @@
-interface:
-  display_name: "WAV Fixture Cleanup"
-  short_description: "Clean and normalize WAV fixtures for audio recognition tests."
-  default_prompt: "Clean and normalize WAV fixture files using the repository's audio-test conventions."
