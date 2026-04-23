@@ -1,1 +1,1 @@
-Version 2026-04-23 16:26 UTC | raw chord fixture pipeline
+Version 2026-04-23 16:38 UTC | Akkord spielen Auto-Aufnahme und Weiter-Flow

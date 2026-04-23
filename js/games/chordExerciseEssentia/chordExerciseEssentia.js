@@ -16,8 +16,13 @@ export function createChordExerciseEssentia() {
   let currentChord   = null;
   let score          = { correct: 0, total: 0 };
   let pendingTimer   = null;
+  let autoListenTimer = null;
   let isListening    = false;
   let essentiaReady  = false;
+  let flowToken      = 0;
+
+  const SUCCESS_ADVANCE_DELAY_MS = 500;
+  const RETRY_DELAY_MS = 250;
 
   const CATEGORIES = {
     'ece-cat-simplified': 'simplified',
@@ -94,8 +99,26 @@ export function createChordExerciseEssentia() {
     if (pendingTimer !== null) { clearTimeout(pendingTimer); pendingTimer = null; }
   }
 
-  function nextRound() {
+  function clearAutoListenTimer() {
+    if (autoListenTimer !== null) { clearTimeout(autoListenTimer); autoListenTimer = null; }
+  }
+
+  function scheduleAutoListen(token, delay = 0) {
+    clearAutoListenTimer();
+    if (!essentiaReady || !currentChord || !ui.view?.classList.contains('active')) return;
+
+    autoListenTimer = setTimeout(() => {
+      autoListenTimer = null;
+      handleListen(token);
+    }, delay);
+  }
+
+  function nextRound({ cancelActive = false } = {}) {
     clearPendingTimer();
+    clearAutoListenTimer();
+    flowToken++;
+    const token = flowToken;
+    if (cancelActive && isListening) stopListeningEssentia();
     isListening  = false;
     const forcedRound = getForcedRoundConfig();
     if (forcedRound) {
@@ -110,8 +133,8 @@ export function createChordExerciseEssentia() {
     if (ui.chordName)  ui.chordName.textContent = currentChord.name;
     if (ui.feedbackEl) { ui.feedbackEl.textContent = ''; ui.feedbackEl.className = 'feedback-text'; }
     if (ui.listenBtn)  {
-      ui.listenBtn.textContent = '\uD83C\uDFA4 H\u00F6ren';
-      ui.listenBtn.disabled = !essentiaReady;
+      ui.listenBtn.textContent = 'Weiter';
+      ui.listenBtn.disabled = false;
     }
 
     if (forcedRound?.categories) {
@@ -122,15 +145,16 @@ export function createChordExerciseEssentia() {
     }
 
     drawChordDiagram();
+    scheduleAutoListen(token);
   }
 
   // ── Listening flow ─────────────────────────────────────────────────────────
 
-  async function handleListen() {
-    if (isListening || !currentChord) return;
+  async function handleListen(token = flowToken) {
+    if (token !== flowToken || isListening || !currentChord) return;
     isListening = true;
 
-    if (ui.listenBtn) { ui.listenBtn.textContent = '\u23F3 Warte auf Anschlag\u2026'; ui.listenBtn.disabled = true; }
+    if (ui.statusEl) setStatus('Warte auf Anschlag\u2026');
     if (ui.feedbackEl) { ui.feedbackEl.textContent = ''; ui.feedbackEl.className = 'feedback-text'; }
 
     let result;
@@ -140,20 +164,22 @@ export function createChordExerciseEssentia() {
       result = { isCorrect: false, confidence: 0, bestMatch: null, essentiaError: true };
     }
 
+    if (token !== flowToken) return;
     isListening = false;
     if (!ui.view?.classList.contains('active')) return;
 
-    showFeedback(result);
+    showFeedback(result, token);
   }
 
-  function showFeedback(result) {
+  function showFeedback(result, token = flowToken) {
+    setStatus('');
+
     // Essentia unavailable — show error but do not count as attempt
     if (result.essentiaError) {
       if (ui.feedbackEl) {
         ui.feedbackEl.textContent = 'Essentia nicht verf\u00FCgbar. Bitte Seite neu laden.';
         ui.feedbackEl.className   = 'feedback-text feedback-wrong';
       }
-      if (ui.listenBtn) { ui.listenBtn.textContent = '\uD83C\uDFA4 Nochmal'; ui.listenBtn.disabled = false; }
       return;
     }
 
@@ -165,7 +191,7 @@ export function createChordExerciseEssentia() {
         ui.feedbackEl.textContent = 'Kein Anschlag erkannt. Versuche es nochmal.';
         ui.feedbackEl.className   = 'feedback-text feedback-wrong';
       }
-      if (ui.listenBtn) { ui.listenBtn.textContent = '\uD83C\uDFA4 Nochmal'; ui.listenBtn.disabled = false; }
+      scheduleAutoListen(token, RETRY_DELAY_MS);
       return;
     }
 
@@ -173,13 +199,13 @@ export function createChordExerciseEssentia() {
       score.correct++;
       updateScoreUI();
       if (ui.feedbackEl) {
-        ui.feedbackEl.textContent = '\u2705 Richtig!';
+        ui.feedbackEl.textContent = 'Erfolg!';
         ui.feedbackEl.className   = 'feedback-text feedback-correct';
       }
       pendingTimer = setTimeout(() => {
         pendingTimer = null;
         if (ui.view?.classList.contains('active')) nextRound();
-      }, 1500);
+      }, SUCCESS_ADVANCE_DELAY_MS);
     } else {
       const pct = Math.round((result.confidence ?? 0) * 100);
       const hint = result.bestMatch && result.bestMatch !== currentChord.name
@@ -189,11 +215,7 @@ export function createChordExerciseEssentia() {
         ui.feedbackEl.textContent = `\u274C Nicht erkannt \u2013 \u00DCbereinstimmung: ${pct}%${hint}`;
         ui.feedbackEl.className   = 'feedback-text feedback-wrong';
       }
-      if (ui.listenBtn) { ui.listenBtn.textContent = '\uD83C\uDFA4 Nochmal'; ui.listenBtn.disabled = false; }
-      pendingTimer = setTimeout(() => {
-        pendingTimer = null;
-        if (ui.view?.classList.contains('active')) nextRound();
-      }, 3500);
+      scheduleAutoListen(token, RETRY_DELAY_MS);
     }
   }
 
@@ -209,8 +231,9 @@ export function createChordExerciseEssentia() {
       const fresh = ui.listenBtn.cloneNode(true);
       ui.listenBtn.replaceWith(fresh);
       ui.listenBtn = fresh;
-      ui.listenBtn.addEventListener('click', handleListen);
-      ui.listenBtn.disabled = true; // stay disabled until essentia is ready
+      ui.listenBtn.addEventListener('click', () => nextRound({ cancelActive: true }));
+      ui.listenBtn.textContent = 'Weiter';
+      ui.listenBtn.disabled = false;
     }
 
     // Pre-warm essentia WASM. Enable "Hören" regardless of outcome:
@@ -221,14 +244,14 @@ export function createChordExerciseEssentia() {
         if (!ui.view?.classList.contains('active')) return;
         essentiaReady = true;
         setStatus('');
-        if (ui.listenBtn && !isListening) ui.listenBtn.disabled = false;
+        scheduleAutoListen(flowToken);
       })
       .catch(err => {
         if (!ui.view?.classList.contains('active')) return;
         essentiaReady = true; // pure-JS fallback is active
         const reason = err?.message ? `: ${err.message}` : '';
         setStatus(`Basis-Modus (WASM nicht verf\u00FCgbar${reason}).`);
-        if (ui.listenBtn && !isListening) ui.listenBtn.disabled = false;
+        scheduleAutoListen(flowToken);
       });
 
     nextRound();
@@ -236,6 +259,8 @@ export function createChordExerciseEssentia() {
 
   function unmount() {
     clearPendingTimer();
+    clearAutoListenTimer();
+    flowToken++;
     isListening = false;
     stopListeningEssentia();
   }
