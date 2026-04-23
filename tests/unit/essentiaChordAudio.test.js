@@ -43,4 +43,16 @@ describe('matchHpcpToChord – Frozen HPCP fixtures', () => {
         `0_strum.wav -> ${chordName}: confidence=${result.confidence.toFixed(3)}, bestMatch=${result.bestMatch}`,
       ).toBe(false);
     });
+
+  it('akzeptiert A-Moll (2-Finger) als explizite Sonderregel trotz sus2-artiger Evidenz', () => {
+    const fixture = FROZEN_FIXTURES.find(entry => entry.wavFile === 'A-Moll (2-Finger)/01.wav');
+    const avgHpcp = averageHpcps(fixture.hpcpFrames.map(frame => Float32Array.from(frame)));
+
+    const simplifiedResult = matchHpcpToChord(avgHpcp, 'A-Moll (2-Finger)', TEMPLATES);
+    const standardResult = matchHpcpToChord(avgHpcp, 'A-Moll', TEMPLATES);
+
+    expect(simplifiedResult.isCorrect).toBe(true);
+    expect(['A-Moll (2-Finger)', 'Asus2']).toContain(simplifiedResult.bestMatch);
+    expect(standardResult.isCorrect).toBe(false);
+  });
 });

@@ -33,8 +33,13 @@ const PRIORITY_0_FIXTURES = [
   { chordName: 'H7 (B7)', wavFile: 'H7 (B7)/01.wav', expectedIsCorrect: true },
 ];
 
+const SIMPLIFIED_FIXTURES = [
+  { chordName: 'A-Moll (2-Finger)', wavFile: 'A-Moll (2-Finger)/01.wav', expectedIsCorrect: true },
+];
+
 const PULLED_ROOT_WAVS = [
   'a7.wav',
+  'amoll 2 finger.wav',
   'cmoll.wav',
   'e7.wav',
   'f7.wav',
@@ -65,7 +70,7 @@ function allProgressionChordNames() {
 
 describe('Priorität 0 Akkord-Fixture-Abdeckung', () => {
   it('sortiert die neu gepullten WAVs in Akkord-Unterordner ein', () => {
-    for (const fixture of PRIORITY_0_FIXTURES) {
+    for (const fixture of [...PRIORITY_0_FIXTURES, ...SIMPLIFIED_FIXTURES]) {
       expect(
         existsSync(path.join(CHORD_FIXTURE_DIR, fixture.wavFile)),
         `${fixture.wavFile} fehlt unter tests/fixtures/chords`,
@@ -81,7 +86,7 @@ describe('Priorität 0 Akkord-Fixture-Abdeckung', () => {
   });
 
   it('registriert jede neue WAV im HPCP-Fixture-Katalog mit aktueller Matcher-Erwartung', () => {
-    for (const fixture of PRIORITY_0_FIXTURES) {
+    for (const fixture of [...PRIORITY_0_FIXTURES, ...SIMPLIFIED_FIXTURES]) {
       const catalogEntry = catalogEntryFor(fixture.wavFile);
 
       expect(catalogEntry, `${fixture.wavFile} fehlt in CHORD_HPCP_FIXTURE_CASES`).toBeDefined();

@@ -8,6 +8,7 @@ export const CHORD_HPCP_FIXTURE_CASES = [
   { chordName: 'C-Dur (1-Finger)', wavFile: 'C-Dur (1-Finger)/csimp.wav', expected: { isCorrect: true } },
   { chordName: 'G-Dur (1-Finger)', wavFile: 'G-Dur (1-Finger)/gsimp.wav', expected: { isCorrect: true } },
   { chordName: 'A-Moll', wavFile: 'A-Moll/amin.wav', expected: { isCorrect: true } },
+  { chordName: 'A-Moll (2-Finger)', wavFile: 'A-Moll (2-Finger)/01.wav', expected: { isCorrect: true } },
   { chordName: 'D-Moll', wavFile: 'D-Moll/dmin.wav', expected: { isCorrect: true } },
   { chordName: 'E-Moll', wavFile: 'E-Moll/emin.wav', expected: { isCorrect: true } },
   { chordName: 'E-Moll', wavFile: 'E-Moll/eminor_chord.wav', expected: { isCorrect: true } },

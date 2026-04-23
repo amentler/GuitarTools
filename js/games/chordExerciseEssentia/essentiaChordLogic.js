@@ -161,6 +161,13 @@ function getChordDescriptor(chordName) {
   return descriptor;
 }
 
+const CHORD_MATCH_SPECIAL_CASES = {
+  'A-Moll (2-Finger)': {
+    acceptedBestMatches: ['A-Moll (2-Finger)', 'Asus2'],
+    allowAddedSecond: true,
+  },
+};
+
 function getChordProfile(descriptor) {
   if (!descriptor) return DEFAULT_PROFILE;
   return CHORD_TYPE_PROFILES[descriptor.type] ?? DEFAULT_PROFILE;
@@ -395,9 +402,11 @@ export function matchHpcpToChord(hpcp, targetChordName, templates, thresholdOver
   let bestMatch = null;
   let bestScore = -1;
   let bestDescriptor = null;
+  const scoreByChordName = new Map();
   for (const [name, template] of Object.entries(templates)) {
     const descriptor = getChordDescriptor(name);
     const score = scoreHpcpAgainstChord(hpcp, template, descriptor).score;
+    scoreByChordName.set(name, score);
     if (score > bestScore) {
       bestScore = score;
       bestMatch = name;
@@ -427,17 +436,46 @@ export function matchHpcpToChord(hpcp, targetChordName, templates, thresholdOver
   const allowsCrossRootSubset = !targetDescriptor || targetDescriptor.expectedSeventhBin === null;
   const passesSubsetAcceptance = isSubsetOf(templates[bestMatch], targetTemplate) &&
     (allowsCrossRootSubset || sharesRoot(targetDescriptor, bestDescriptor));
-  const isCorrect = confidence >= threshold &&
+  const specialCase = CHORD_MATCH_SPECIAL_CASES[targetChordName];
+  let bestAcceptedAliasName = null;
+  let bestAcceptedAliasScore = -1;
+  if (specialCase) {
+    for (const name of specialCase.acceptedBestMatches) {
+      const score = scoreByChordName.get(name) ?? -1;
+      if (score > bestAcceptedAliasScore) {
+        bestAcceptedAliasScore = score;
+        bestAcceptedAliasName = name;
+      }
+    }
+  }
+  const passesSpecialCaseAcceptance = Boolean(
+    specialCase &&
+    bestAcceptedAliasScore >= threshold &&
+    hasStrongRoot &&
+    hasStrongFifth &&
+    hasExpectedSeventh &&
+    (specialCase.allowAddedSecond || hasControlledAddedSecond) &&
+    hasEnoughChordSupport,
+  );
+  const passesCoreEvidence = confidence >= threshold &&
     hasStrongRoot &&
     hasStrongFifth &&
     hasExpectedThird &&
     hasExpectedSeventh &&
     hasControlledAddedSecond &&
-    hasEnoughChordSupport && (
+    hasEnoughChordSupport;
+  const isCorrect = passesSpecialCaseAcceptance || (
+    passesCoreEvidence && (
       bestMatch === targetChordName ||
       passesBestMatchTolerance ||
       passesSubsetAcceptance
-    );
+    )
+  );
 
-  return { isCorrect, confidence, bestMatch, bestScore };
+  return {
+    isCorrect,
+    confidence,
+    bestMatch: passesSpecialCaseAcceptance ? bestAcceptedAliasName : bestMatch,
+    bestScore: passesSpecialCaseAcceptance ? bestAcceptedAliasScore : bestScore,
+  };
 }
