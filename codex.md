@@ -32,6 +32,7 @@ Qualitätsmanagement (Ist):
 - Lokal verifiziert am 2026-04-21:
   - `npm run lint` erfolgreich
   - `npm test` erfolgreich: 31 Testdateien, 677 Tests grün, 1 Test übersprungen
+- Hinweis vom 2026-04-23: Die vollständige Vitest-Suite (`npm test`) kann lokal mehrere Minuten laufen, vor allem wegen Audio-/Fixture-Tests. Bei längerer Pause ohne Ausgabe nicht vorschnell als Hänger abbrechen; für schnelle Iteration gezielte `npx vitest run <testdatei>`-Aufrufe verwenden.
 
 ## 3) Dokumentations- und Agentenstatus
 

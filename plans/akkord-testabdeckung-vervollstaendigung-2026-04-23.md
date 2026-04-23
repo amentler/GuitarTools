@@ -17,6 +17,13 @@ Tab-Notation in diesem Dokument: `E A D G H e` von tiefer E-Saite bis hoher e-Sa
 
 Diese Akkorde sind bereits in `CHORDS` vorhanden und werden von Progressions erzeugt, haben aber noch keine WAV-Fixture. Diese Liste sollte zuerst aufgenommen werden, weil sie ohne neue Griffdaten sofort testbar ist.
 
+Umsetzungsstand 2026-04-23:
+
+- Neue WAVs sind unter `tests/fixtures/chords/<Akkord>/` einsortiert, bereinigt und im HPCP-Fixture-Katalog registriert.
+- 9 von 10 geplanten Prioritaet-0-Akkorden werden mit den bereinigten Fixtures aktuell als Zielakkord akzeptiert.
+- `F7/01.wav` bleibt als Fixture registriert, wird vom aktuellen Matcher aber als `Fsus2` naeher bewertet und ist deshalb als erwarteter Negativfall dokumentiert. Hier ist ein neuer Take oder eine gezielte Matcher-Verbesserung noetig.
+- Der zusaetzliche Take `G7/02-alt.wav` ist einsortiert, aber nicht als positiver G7-Fall geeignet.
+
 | Akkord | Tab | Empfohlene WAV |
 | --- | --- | --- |
 | A7 | `x 0 2 0 2 0` | `tests/fixtures/chords/A7/01.wav` |
