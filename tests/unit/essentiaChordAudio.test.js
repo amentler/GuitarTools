@@ -14,6 +14,9 @@ const FROZEN_FIXTURES = JSON.parse(
 );
 
 const TEMPLATES = buildChordTemplates();
+const EMPTY_STRUM_FIXTURE = FROZEN_FIXTURES.find(fixture => fixture.wavFile === '0_strum.wav');
+const EMPTY_STRUM_HPCP = averageHpcps(EMPTY_STRUM_FIXTURE.hpcpFrames.map(frame => Float32Array.from(frame)));
+const ALL_CHORD_NAMES = Object.keys(TEMPLATES);
 
 describe('matchHpcpToChord – Frozen HPCP fixtures', () => {
   for (const fixture of FROZEN_FIXTURES) {
@@ -31,4 +34,13 @@ describe('matchHpcpToChord – Frozen HPCP fixtures', () => {
       }
     });
   }
+
+  it.each(ALL_CHORD_NAMES)('bewertet leeres Strumming nicht als %s', (chordName) => {
+      const result = matchHpcpToChord(EMPTY_STRUM_HPCP, chordName, TEMPLATES);
+
+      expect(
+        result.isCorrect,
+        `0_strum.wav -> ${chordName}: confidence=${result.confidence.toFixed(3)}, bestMatch=${result.bestMatch}`,
+      ).toBe(false);
+    });
 });

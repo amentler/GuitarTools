@@ -147,20 +147,32 @@ function computeHpcpEssentia(essentia, peakFreqs, peakMags, sampleRate) {
   return result;
 }
 
+function computePureJsHpcp(peakFreqs, peakMags) {
+  return computeHpcpPureJS(peakFreqs, peakMags, HPCP_REFERENCE_HZ);
+}
+
 /**
  * Computes a 12-bin HPCP vector from the current AnalyserNode state.
  * Uses essentia WASM when available, otherwise falls back to pure-JS.
  */
 function computeHpcp(essentia, analyserNode, sampleRate) {
   const { peakFreqs, peakMags } = detectPeaks(analyserNode, sampleRate);
+  const pureJsHpcp = computePureJsHpcp(peakFreqs, peakMags);
+
   if (essentia && essentiaHpcpAvailable) {
     try {
-      return computeHpcpEssentia(essentia, peakFreqs, peakMags, sampleRate);
+      return {
+        hpcp: computeHpcpEssentia(essentia, peakFreqs, peakMags, sampleRate),
+        pureJsHpcp,
+      };
     } catch {
       essentiaHpcpAvailable = false;
     }
   }
-  return computeHpcpPureJS(peakFreqs, peakMags, HPCP_REFERENCE_HZ);
+  return {
+    hpcp: pureJsHpcp,
+    pureJsHpcp,
+  };
 }
 
 // ── Public API ────────────────────────────────────────────────────────────────
@@ -195,7 +207,6 @@ export async function detectChordEssentia(chordName) {
 
   const rmsThreshold = RMS_SPIKE_FACTOR * GUITAR_MIN_RMS;
   const sampleRate   = audioCtx?.sampleRate ?? 44100;
-  const usingWasm    = essentia !== null && essentiaHpcpAvailable;
 
   return new Promise(resolve => {
     let strumDetected = false;
@@ -231,11 +242,14 @@ export async function detectChordEssentia(chordName) {
       if (!analyser) { resolveWith({ isCorrect: false, confidence: 0, bestMatch: null }); return; }
 
       const hpcps = [];
+      const pureJsHpcps = [];
       for (let i = 0; i < ANALYSIS_FRAMES; i++) {
         if (i > 0) await new Promise(r => setTimeout(r, FRAME_INTERVAL_MS));
         if (!analyser) break;
         try {
-          hpcps.push(computeHpcp(essentia, analyser, sampleRate));
+          const frameResult = computeHpcp(essentia, analyser, sampleRate);
+          hpcps.push(frameResult.hpcp);
+          pureJsHpcps.push(frameResult.pureJsHpcp);
         } catch {
           // single frame failure is non-fatal
         }
@@ -245,9 +259,25 @@ export async function detectChordEssentia(chordName) {
       if (!hpcps.length) { resolve({ isCorrect: false, confidence: 0, bestMatch: null }); return; }
 
       const avgHpcp = averageHpcps(hpcps);
+      const avgPureJsHpcp = averageHpcps(pureJsHpcps);
+      const result = matchHpcpToChord(avgHpcp, chordName, CHORD_TEMPLATES);
+      const pureJsResult = matchHpcpToChord(avgPureJsHpcp, chordName, CHORD_TEMPLATES);
+      const usingWasmNow = essentia !== null && essentiaHpcpAvailable;
+
+      // The Pure-JS HPCP path is covered by frozen regression fixtures.
+      // When WASM disagrees with that baseline, prefer the stricter outcome
+      // to avoid silence/noise false positives in the live browser path.
+      if (usingWasmNow && result.isCorrect && !pureJsResult.isCorrect) {
+        resolve({
+          ...pureJsResult,
+          wasm: true,
+        });
+        return;
+      }
+
       resolve({
-        ...matchHpcpToChord(avgHpcp, chordName, CHORD_TEMPLATES),
-        wasm: essentia !== null && essentiaHpcpAvailable,
+        ...result,
+        wasm: usingWasmNow,
       });
     }
   });

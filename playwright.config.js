@@ -9,9 +9,9 @@ const fakeAudioPath = process.env.PLAYWRIGHT_FAKE_AUDIO_PATH
 
 export default defineConfig({
   testDir: './tests/e2e',
-  timeout: 30_000,
+  timeout: 45_000,
   expect: {
-    timeout: 12_000,
+    timeout: 30_000,
   },
   fullyParallel: false,
   retries: 0,

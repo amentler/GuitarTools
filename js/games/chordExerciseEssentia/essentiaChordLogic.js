@@ -128,6 +128,7 @@ function getChordDescriptor(chordName) {
     expectedThirdBin: null,
     competingThirdBin: null,
     expectedSeventhBin: null,
+    extensionSecondBin: null,
   };
 
   if (['Dur', '7', 'maj7', 'add9'].includes(parsed.type)) {
@@ -146,12 +147,21 @@ function getChordDescriptor(chordName) {
     descriptor.expectedSeventhBin = (rootBin + 10) % 12;
   }
 
+  if (!intervals.includes(2)) {
+    descriptor.extensionSecondBin = (rootBin + 2) % 12;
+  }
+
   return descriptor;
 }
 
 function getChordProfile(descriptor) {
   if (!descriptor) return DEFAULT_PROFILE;
   return CHORD_TYPE_PROFILES[descriptor.type] ?? DEFAULT_PROFILE;
+}
+
+function sharesRoot(descriptorA, descriptorB) {
+  if (!descriptorA || !descriptorB) return false;
+  return descriptorA.rootBin === descriptorB.rootBin;
 }
 
 function getMeanEnergy(hpcp, template, includeTemplateBins) {
@@ -180,6 +190,7 @@ function scoreHpcpAgainstChord(hpcp, template, descriptor) {
   let expectedThirdEnergy = 0;
   let expectedSeventhEnergy = 0;
   let competingThirdEnergy = 0;
+  let extensionSecondEnergy = 0;
 
   if (descriptor) {
     rootEnergy = hpcp[descriptor.rootBin];
@@ -192,6 +203,9 @@ function scoreHpcpAgainstChord(hpcp, template, descriptor) {
     }
     if (descriptor.expectedSeventhBin !== null) {
       expectedSeventhEnergy = hpcp[descriptor.expectedSeventhBin];
+    }
+    if (descriptor.extensionSecondBin !== null) {
+      extensionSecondEnergy = hpcp[descriptor.extensionSecondBin];
     }
   }
 
@@ -219,6 +233,7 @@ function scoreHpcpAgainstChord(hpcp, template, descriptor) {
     expectedThirdEnergy,
     expectedSeventhEnergy,
     competingThirdEnergy,
+    extensionSecondEnergy,
     rawScore,
     score: clampConfidence(normalizedScore),
   };
@@ -372,11 +387,14 @@ export function matchHpcpToChord(hpcp, targetChordName, templates, thresholdOver
 
   let bestMatch = null;
   let bestScore = -1;
+  let bestDescriptor = null;
   for (const [name, template] of Object.entries(templates)) {
-    const score = scoreHpcpAgainstChord(hpcp, template, getChordDescriptor(name)).score;
+    const descriptor = getChordDescriptor(name);
+    const score = scoreHpcpAgainstChord(hpcp, template, descriptor).score;
     if (score > bestScore) {
       bestScore = score;
       bestMatch = name;
+      bestDescriptor = descriptor;
     }
   }
 
@@ -385,14 +403,24 @@ export function matchHpcpToChord(hpcp, targetChordName, templates, thresholdOver
   const hasStrongFifth = !targetDescriptor || targetEvidence.fifthEnergy >= profile.minFifthEnergy;
   const hasEnoughChordSupport = targetEvidence.supportMean >= profile.minSupportMean;
   const hasExpectedSeventh = !targetDescriptor || targetEvidence.expectedSeventhEnergy >= profile.minSeventhEnergy;
+  const hasControlledAddedSecond = !targetDescriptor ||
+    targetDescriptor.extensionSecondBin === null ||
+    targetEvidence.fifthEnergy >= targetEvidence.extensionSecondEnergy;
+  const allowsCrossRootTolerance = !targetDescriptor || targetDescriptor.expectedSeventhBin === null;
+  const passesBestMatchTolerance = bestScore - confidence <= profile.bestMatchTolerance &&
+    (allowsCrossRootTolerance || sharesRoot(targetDescriptor, bestDescriptor));
+  const allowsCrossRootSubset = !targetDescriptor || targetDescriptor.expectedSeventhBin === null;
+  const passesSubsetAcceptance = isSubsetOf(templates[bestMatch], targetTemplate) &&
+    (allowsCrossRootSubset || sharesRoot(targetDescriptor, bestDescriptor));
   const isCorrect = confidence >= threshold &&
     hasStrongRoot &&
     hasStrongFifth &&
     hasExpectedSeventh &&
+    hasControlledAddedSecond &&
     hasEnoughChordSupport && (
       bestMatch === targetChordName ||
-      bestScore - confidence <= profile.bestMatchTolerance ||
-      isSubsetOf(templates[bestMatch], targetTemplate)
+      passesBestMatchTolerance ||
+      passesSubsetAcceptance
     );
 
   return { isCorrect, confidence, bestMatch, bestScore };
