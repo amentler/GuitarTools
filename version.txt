@@ -1,1 +1,1 @@
-Version 0.3 | 2026-04-24 00:19 | 454957b | Improve: increment version number in auto-update hook
+Version 0.4 | 2026-04-24 00:20 | d21dc47 | Debug: test hook execution
