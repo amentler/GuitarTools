@@ -20,6 +20,7 @@ import {
   averageHpcps,
   computeHpcpPureJS,
 } from './essentiaChordLogic.js';
+import { buildBassSupportByChord } from './essentiaBassScore.js';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -38,6 +39,7 @@ const PEAK_NOISE_FLOOR  = -80;    // dBFS: bins quieter than this are ignored
 const HPCP_REFERENCE_HZ = 261.626;
 const MIN_NORMALIZED_PEAK_MAG = 1e-9;
 const NORMALIZED_SPECTRUM_PEAK_DB = 0;
+const BASS_SCORE_FFT_SIZE = 16384;
 
 // ── Chord templates (built once at module load) ───────────────────────────────
 
@@ -283,6 +285,18 @@ export async function detectChordEssentia(chordName) {
     async function collectAndResolve() {
       if (!analyser) { resolveWith({ isCorrect: false, confidence: 0, bestMatch: null }); return; }
 
+      let bassSupportByChord;
+      try {
+        const previousFftSize = analyser.fftSize;
+        analyser.fftSize = BASS_SCORE_FFT_SIZE;
+        const bassSpectrum = new Float32Array(analyser.frequencyBinCount);
+        analyser.getFloatFrequencyData(bassSpectrum);
+        bassSupportByChord = buildBassSupportByChord(bassSpectrum, sampleRate, Object.keys(CHORD_TEMPLATES));
+        analyser.fftSize = previousFftSize;
+      } catch {
+        bassSupportByChord = null;
+      }
+
       const hpcps = [];
       const pureJsHpcps = [];
       for (let i = 0; i < ANALYSIS_FRAMES; i++) {
@@ -302,8 +316,8 @@ export async function detectChordEssentia(chordName) {
 
       const avgHpcp = averageHpcps(hpcps);
       const avgPureJsHpcp = averageHpcps(pureJsHpcps);
-      const result = matchHpcpToChord(avgHpcp, chordName, CHORD_TEMPLATES);
-      const pureJsResult = matchHpcpToChord(avgPureJsHpcp, chordName, CHORD_TEMPLATES);
+      const result = matchHpcpToChord(avgHpcp, chordName, CHORD_TEMPLATES, undefined, { bassSupportByChord });
+      const pureJsResult = matchHpcpToChord(avgPureJsHpcp, chordName, CHORD_TEMPLATES, undefined, { bassSupportByChord });
       const usingWasmNow = essentia !== null && essentiaHpcpAvailable;
 
       // The Pure-JS HPCP path is covered by frozen regression fixtures.

@@ -10,6 +10,8 @@
 import { CHORDS } from '../../data/akkordData.js';
 import { getChordNotes } from '../../domain/chords/chordDetectionLogic.js';
 
+const BASS_SCORE_WEIGHT = 0.18;
+
 // Pitch-class bin: C=0, C#=1, D=2, D#=3, E=4, F=5, F#=6, G=7, G#=8, A=9, A#=10, B=11
 const NOTE_TO_BIN = { C: 0, 'C#': 1, D: 2, 'D#': 3, E: 4, F: 5, 'F#': 6, G: 7, 'G#': 8, A: 9, 'A#': 10, B: 11 };
 const GERMAN_TO_BIN = {
@@ -388,7 +390,7 @@ function isSubsetOf(subTemplate, superTemplate) {
  * @param {number}            [thresholdOverride] minimum similarity override for "correct"
  * @returns {{ isCorrect: boolean, confidence: number, bestMatch: string|null, bestScore: number }}
  */
-export function matchHpcpToChord(hpcp, targetChordName, templates, thresholdOverride) {
+export function matchHpcpToChord(hpcp, targetChordName, templates, thresholdOverride, options = {}) {
   const targetTemplate = templates[targetChordName];
   if (!targetTemplate) {
     return { isCorrect: false, confidence: 0, bestMatch: null, bestScore: 0 };
@@ -397,7 +399,11 @@ export function matchHpcpToChord(hpcp, targetChordName, templates, thresholdOver
   const targetDescriptor = getChordDescriptor(targetChordName);
   const targetEvidence = scoreHpcpAgainstChord(hpcp, targetTemplate, targetDescriptor);
   const profile = targetEvidence.profile;
+  const bassSupportByChord = options.bassSupportByChord ?? null;
+  const targetBassSupport = bassSupportByChord?.[targetChordName] ?? null;
+  const targetBassBonus = targetBassSupport ? targetBassSupport.margin * BASS_SCORE_WEIGHT : 0;
   const confidence = targetEvidence.score;
+  const effectiveConfidence = clampConfidence(confidence + targetBassBonus);
 
   let bestMatch = null;
   let bestScore = -1;
@@ -406,9 +412,11 @@ export function matchHpcpToChord(hpcp, targetChordName, templates, thresholdOver
   for (const [name, template] of Object.entries(templates)) {
     const descriptor = getChordDescriptor(name);
     const score = scoreHpcpAgainstChord(hpcp, template, descriptor).score;
-    scoreByChordName.set(name, score);
-    if (score > bestScore) {
-      bestScore = score;
+    const bassSupport = bassSupportByChord?.[name] ?? null;
+    const effectiveScore = score + (bassSupport ? bassSupport.margin * BASS_SCORE_WEIGHT : 0);
+    scoreByChordName.set(name, effectiveScore);
+    if (effectiveScore > bestScore) {
+      bestScore = effectiveScore;
       bestMatch = name;
       bestDescriptor = descriptor;
     }
@@ -431,8 +439,13 @@ export function matchHpcpToChord(hpcp, targetChordName, templates, thresholdOver
     hasExpectedThird &&
     hasExpectedSeventh &&
     targetEvidence.rootEnergy <= 0.15;
-  const passesBestMatchTolerance = bestScore - confidence <= profile.bestMatchTolerance &&
-    (!targetDescriptor || sharesRoot(targetDescriptor, bestDescriptor) || hasDominantSeventhEvidence);
+  const allowsBassDrivenTolerance = Boolean(
+    targetBassSupport &&
+    targetBassSupport.margin > 0.05 &&
+    bestScore - effectiveConfidence <= profile.bestMatchTolerance,
+  );
+  const passesBestMatchTolerance = bestScore - effectiveConfidence <= profile.bestMatchTolerance &&
+    (!targetDescriptor || sharesRoot(targetDescriptor, bestDescriptor) || hasDominantSeventhEvidence || allowsBassDrivenTolerance);
   const allowsCrossRootSubset = !targetDescriptor || targetDescriptor.expectedSeventhBin === null;
   const passesSubsetAcceptance = isSubsetOf(templates[bestMatch], targetTemplate) &&
     (allowsCrossRootSubset || sharesRoot(targetDescriptor, bestDescriptor));
@@ -457,7 +470,7 @@ export function matchHpcpToChord(hpcp, targetChordName, templates, thresholdOver
     (specialCase.allowAddedSecond || hasControlledAddedSecond) &&
     hasEnoughChordSupport,
   );
-  const passesCoreEvidence = confidence >= threshold &&
+  const passesCoreEvidence = effectiveConfidence >= threshold &&
     hasStrongRoot &&
     hasStrongFifth &&
     hasExpectedThird &&
@@ -475,7 +488,9 @@ export function matchHpcpToChord(hpcp, targetChordName, templates, thresholdOver
   return {
     isCorrect,
     confidence,
+    effectiveConfidence,
     bestMatch: passesSpecialCaseAcceptance ? bestAcceptedAliasName : bestMatch,
     bestScore: passesSpecialCaseAcceptance ? bestAcceptedAliasScore : bestScore,
+    bassSupport: targetBassSupport,
   };
 }

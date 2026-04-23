@@ -66,7 +66,7 @@ function fftInPlace(re, im) {
   }
 }
 
-function computeDbSpectrum(samples, fftSize = CHORD_HPCP_FFT_SIZE) {
+export function computeDbSpectrum(samples, fftSize = CHORD_HPCP_FFT_SIZE) {
   const re = new Float64Array(fftSize);
   const im = new Float64Array(fftSize);
   const n = Math.min(samples.length, fftSize);

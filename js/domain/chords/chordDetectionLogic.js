@@ -1,5 +1,5 @@
 import { CHORDS } from '../../data/akkordData.js';
-import { NOTE_NAMES, frequencyToNote } from '../pitch/pitchCore.js';
+import { NOTE_NAMES, frequencyToNote, noteToFrequency } from '../pitch/pitchCore.js';
 
 // Open string MIDI numbers for strings 1–6 (index 0 = string 1 = high e = E4).
 const OPEN_STRING_MIDI = [64, 59, 55, 50, 45, 40];
@@ -27,6 +27,27 @@ export function getChordNotes(chordName) {
       const { note, octave } = midiToNote(midi);
       return { note, octave, string: pos.string, fret: pos.fret };
     });
+}
+
+export function getChordBassNote(chordName) {
+  const notes = getChordNotes(chordName);
+  if (!notes.length) return null;
+
+  let bassNote = null;
+  let bassFrequency = Infinity;
+
+  for (const noteEntry of notes) {
+    const frequency = noteToFrequency(noteEntry.note, noteEntry.octave);
+    if (frequency < bassFrequency) {
+      bassFrequency = frequency;
+      bassNote = {
+        ...noteEntry,
+        frequency,
+      };
+    }
+  }
+
+  return bassNote;
 }
 
 /**
