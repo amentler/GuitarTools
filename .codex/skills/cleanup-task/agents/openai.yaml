@@ -1,0 +1,4 @@
+interface:
+  display_name: "Task aufraeumen"
+  short_description: "Verschiebt erledigte Tasks nach old"
+  default_prompt: "Nutze $cleanup-task, um erledigte Plan-Dateien nach der Umsetzung ins old-Verzeichnis zu verschieben."

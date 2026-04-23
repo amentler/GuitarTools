@@ -1,0 +1,4 @@
+interface:
+  display_name: "Aufgabenplaner"
+  short_description: "Plant Aufgaben vor der Umsetzung"
+  default_prompt: "Nutze $task-planner, um vor der Umsetzung einen fachlichen Plan zu erstellen."

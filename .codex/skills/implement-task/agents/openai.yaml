@@ -1,0 +1,4 @@
+interface:
+  display_name: "Task umsetzen"
+  short_description: "Implementiert geplante Aufgaben sauber"
+  default_prompt: "Nutze $implement-task, um den freigegebenen Plan sauber zu implementieren."

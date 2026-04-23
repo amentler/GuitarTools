@@ -1,0 +1,4 @@
+interface:
+  display_name: "Sync"
+  short_description: "Run tests/version/commit/pull/merge/push workflow"
+  default_prompt: "Use this skill to synchronize a git branch: verify tests, update version file, commit, pull, merge, and push safely."
