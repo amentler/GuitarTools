@@ -69,10 +69,9 @@ describe('Targeted chord regressions', () => {
     expect(gMinorResult.isCorrect).toBe(false);
   });
 
-  it.fails('verwechselt G-Moll nicht mit G-Dur', () => {
-    const avgHpcp = getFixtureAverageHpcp('G-Moll', 'G-Moll/01.wav');
-    const gMinorResult = matchHpcpToChord(avgHpcp, 'G-Moll', TEMPLATES);
-    const gMajorResult = matchHpcpToChord(avgHpcp, 'G-Dur', TEMPLATES);
+  it('verwechselt G-Moll nicht mit G-Dur', () => {
+    const gMinorResult = getMatchResult('G-Moll', 'G-Moll/01.wav', 'G-Moll');
+    const gMajorResult = getMatchResult('G-Moll', 'G-Moll/01.wav', 'G-Dur');
 
     expect(gMinorResult.isCorrect).toBe(true);
     expect(gMajorResult.isCorrect).toBe(false);

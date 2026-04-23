@@ -83,6 +83,7 @@ const CHORD_TYPE_PROFILES = {
     minSeventhEnergy: 0.002,
   },
 };
+const MIN_TRIAD_THIRD_SEPARATION = 0.05;
 
 function stripChordAnnotation(chordName) {
   return chordName.replace(/\s*\([^)]*\)\s*$/, '').trim();
@@ -176,6 +177,11 @@ function getChordProfile(descriptor) {
 function sharesRoot(descriptorA, descriptorB) {
   if (!descriptorA || !descriptorB) return false;
   return descriptorA.rootBin === descriptorB.rootBin;
+}
+
+function isTriadModeSensitive(descriptor) {
+  if (!descriptor) return false;
+  return descriptor.type === 'Dur' || descriptor.type === 'Moll';
 }
 
 function getMeanEnergy(hpcp, template, includeTemplateBins) {
@@ -423,6 +429,8 @@ export function matchHpcpToChord(hpcp, targetChordName, templates, thresholdOver
     targetDescriptor.expectedSeventhBin === null ||
     targetDescriptor.expectedThirdBin === null ||
     targetEvidence.expectedThirdEnergy >= profile.minExpectedThirdEnergy;
+  const hasSeparatedTriadThird = !isTriadModeSensitive(targetDescriptor) ||
+    targetEvidence.expectedThirdEnergy > targetEvidence.competingThirdEnergy + MIN_TRIAD_THIRD_SEPARATION;
   const hasEnoughChordSupport = targetEvidence.supportMean >= profile.minSupportMean;
   const hasExpectedSeventh = !targetDescriptor || targetEvidence.expectedSeventhEnergy >= profile.minSeventhEnergy;
   const hasControlledAddedSecond = !targetDescriptor ||
@@ -465,6 +473,7 @@ export function matchHpcpToChord(hpcp, targetChordName, templates, thresholdOver
     hasStrongRoot &&
     hasStrongFifth &&
     hasExpectedThird &&
+    hasSeparatedTriadThird &&
     hasExpectedSeventh &&
     hasExpectedBass &&
     hasControlledAddedSecond &&

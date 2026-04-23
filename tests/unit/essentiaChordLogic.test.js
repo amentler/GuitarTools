@@ -179,8 +179,8 @@ describe('matchHpcpToChord', () => {
     expect(result.confidence).toBeGreaterThanOrEqual(0.5);
   });
 
-  it('accepts G-Dur despite competing minor-third energy when the major-triad support is still present', () => {
-    const hpcp = new Float32Array([0.001, 0, 0.198, 0.001, 0, 0, 0.018, 0.98, 0, 0.07, 0.565, 0.29]);
+  it('accepts G-Dur when competing minor-third energy is present but the major third remains stronger', () => {
+    const hpcp = new Float32Array([0.001, 0, 0.198, 0.001, 0, 0, 0.018, 0.98, 0, 0.07, 0.29, 0.565]);
     const result = matchHpcpToChord(hpcp, 'G-Dur', templates);
     expect(result.isCorrect).toBe(true);
     expect(result.confidence).toBeGreaterThanOrEqual(0.5);
@@ -198,6 +198,33 @@ describe('matchHpcpToChord', () => {
     const result = matchHpcpToChord(hpcp, 'G7', templates);
     expect(result.isCorrect).toBe(true);
     expect(result.confidence).toBeGreaterThanOrEqual(0.42);
+  });
+
+  it('rejects G-Dur when the same-root minor third is stronger in a synthetic G-Moll voicing', () => {
+    const hpcp = new Float32Array([0, 0, 0.85, 0, 0, 0.08, 0.02, 0.92, 0, 0.04, 0.2, 0.14]);
+    const gMinorResult = matchHpcpToChord(hpcp, 'G-Moll', templates);
+    const gMajorResult = matchHpcpToChord(hpcp, 'G-Dur', templates);
+
+    expect(gMinorResult.isCorrect).toBe(true);
+    expect(gMajorResult.isCorrect).toBe(false);
+  });
+
+  it('rejects G-Moll when the same-root major third is stronger in a synthetic G-Dur voicing', () => {
+    const hpcp = new Float32Array([0, 0, 0.85, 0, 0, 0.02, 0.02, 0.92, 0, 0.04, 0.14, 0.2]);
+    const gMajorResult = matchHpcpToChord(hpcp, 'G-Dur', templates);
+    const gMinorResult = matchHpcpToChord(hpcp, 'G-Moll', templates);
+
+    expect(gMajorResult.isCorrect).toBe(true);
+    expect(gMinorResult.isCorrect).toBe(false);
+  });
+
+  it('rejects both A-Dur and A-Moll when the same-root third is ambiguous', () => {
+    const hpcp = new Float32Array([0.18, 0.18, 0, 0.18, 0.75, 0, 0, 0, 0, 0.88, 0, 0]);
+    const aMajorResult = matchHpcpToChord(hpcp, 'A-Dur', templates);
+    const aMinorResult = matchHpcpToChord(hpcp, 'A-Moll', templates);
+
+    expect(aMajorResult.isCorrect).toBe(false);
+    expect(aMinorResult.isCorrect).toBe(false);
   });
 });
 
