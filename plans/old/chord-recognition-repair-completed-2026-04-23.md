@@ -1,0 +1,156 @@
+# Archiv: Chord Recognition Repair - Erledigter Teil
+
+Quelle: `plans/chord-recognition-repair.md`
+Archiviert: 2026-04-23
+Grund: UI-/WASM-Reparatur, erste Frozen-HPCP-Regressionen und zugehörige Diagnose sind umgesetzt; nur fachliche Restfälle bleiben aktiv.
+
+## Archivierter Abschnitt
+
+### Ausgangslage
+
+Es gibt jetzt zwei Playwright-E2E-Tests für das Einspielen einzelner Akkorde:
+
+- `tests/e2e/chord-playing-emoll.spec.js`
+- `tests/e2e/chord-playing-cdur.spec.js`
+
+Die Tests öffnen `pages/chord-playing-essentia/index.html`, erzwingen deterministisch den Zielakkord per URL-Parameter, speisen per Chromium-Fake-Mikrofon eine passende WAV-Datei ein und erwarten `✅ Richtig!`.
+
+Aktueller Browser-Status:
+
+- `E-Moll (2-Finger)` mit `tests/fixtures/chords/E-Moll/emin.wav` ist grün
+- `C-Dur` mit `tests/fixtures/chords/C-Dur/c_chord.wav` ist grün
+
+Vor der Reparatur war das beobachtete UI-Verhalten:
+
+- Statt `✅ Richtig!` erscheint `❌ Nicht erkannt – Übereinstimmung: 0%`
+
+### Diagnose
+
+Die Ursache liegt nicht am Playwright-Setup:
+
+- Das Fake-Mikrofon liefert im Browser klaren Pegel.
+- `getUserMedia()` funktioniert.
+- Die WAV-Datei ist plausibel und hat ausreichende Lautstärke.
+
+Die Ursache liegt auch nicht an den Akkord-Templates:
+
+- `E-Moll`
+- `E-Moll (2-Finger)`
+
+beide Templates existieren und enthalten die erwarteten aktiven Bins.
+
+Die Fixture selbst wird in der reinen Erkennungslogik korrekt erkannt:
+
+- `detectEssentiaChordFromSamples(..., 'E-Moll')` ist korrekt
+- `detectEssentiaChordFromSamples(..., 'E-Moll (2-Finger)')` ist ebenfalls korrekt
+
+Damit bleibt als Fehlerquelle der Live-Erkennungspfad in der Browser-App.
+
+### Primäre Ursache
+
+In `js/games/chordExerciseEssentia/essentiaChordDetection.js` verwendet `computeHpcpEssentia()` die Methoden:
+
+- `essentia.arrayToVector(...)`
+- `essentia.vectorToArray(...)`
+
+Konkrete Fundstellen:
+
+- `js/games/chordExerciseEssentia/essentiaChordDetection.js:119`
+- `js/games/chordExerciseEssentia/essentiaChordDetection.js:141`
+
+`getEssentia()` liefert aber in `js/games/chordExerciseEssentia/essentiaLoader.js` eine `EssentiaJS`-Instanz zurück:
+
+- `js/games/chordExerciseEssentia/essentiaLoader.js:72`
+
+Im Browser ist reproduzierbar:
+
+```text
+TypeError: essentia.arrayToVector is not a function
+```
+
+Damit ist der WASM-HPCP-Pfad aktuell defekt.
+
+### Sekundäres Problem
+
+Der eigentliche Fehler wurde in `detectChordEssentia()` maskiert.
+
+In der Frame-Sammelschleife werden Fehler absichtlich geschluckt:
+
+- `js/games/chordExerciseEssentia/essentiaChordDetection.js:226`
+- `js/games/chordExerciseEssentia/essentiaChordDetection.js:228`
+
+Dadurch wurden fehlerhafte Frames einfach verworfen. Wenn alle Frames scheitern, bleibt `hpcps.length === 0` und die Funktion endet mit:
+
+```js
+{ isCorrect: false, confidence: 0, bestMatch: null }
+```
+
+Für die UI wirkte das wie eine normale Nicht-Erkennung statt wie ein technischer Fehler.
+
+### Zusätzliche Beobachtung
+
+Wenn der Pure-JS-HPCP-Pfad direkt auf den im Browser gemessenen Peaks ausgeführt wird, entstehen verwertbare Daten. Das heißt:
+
+- Mikrofonpfad lebt
+- Onset wird erkannt
+- Peaks werden gefunden
+- das Problem sitzt spezifisch im WASM-HPCP-Zweig
+
+### Schlussfolgerung
+
+Die ursprüngliche Live-Akkorderkennung scheiterte primär daran, dass der Essentia-WASM-Pfad mit einer nicht passenden API aufgerufen wurde.
+
+Der damalige rote Playwright-Test war damit sinnvoll und korrekt: er traf einen echten Produktionsfehler.
+
+### Umgesetzte Reparatur
+
+Umgesetzt wurde ein pragmatischer UI-Fix:
+
+1. `computeHpcpEssentia()` prüft jetzt, ob die erwarteten Essentia-Helfer überhaupt vorhanden sind.
+2. Wenn der WASM-HPCP-Zweig zur Laufzeit scheitert, wird dieser Pfad für den aktuellen Durchlauf deaktiviert.
+3. Die Live-Erkennung fällt dann auf den bestehenden Pure-JS-HPCP-Pfad zurück.
+4. Der Browser läuft dadurch nicht mehr in `0%`-Falscherkennung, wenn nur der WASM-HPCP-Zweig inkompatibel ist.
+
+Betroffene Datei:
+
+- `js/games/chordExerciseEssentia/essentiaChordDetection.js`
+
+Zusätzlich wurde die Seite für reproduzierbare E2E-Tests deterministisch gemacht:
+
+- `pages/chord-playing-essentia/index.html?chord=C-Dur&categories=standard`
+- `pages/chord-playing-essentia/index.html?chord=E-Moll%20(2-Finger)&categories=simplified`
+
+Betroffene Datei:
+
+- `js/games/chordExerciseEssentia/chordExerciseEssentia.js`
+
+### Verifikation
+
+Diese Browser-Tests sind jetzt grün:
+
+```bash
+npm run test:e2e -- tests/e2e/chord-playing-emoll.spec.js
+PLAYWRIGHT_FAKE_AUDIO_PATH='tests/fixtures/chords/C-Dur/c_chord.wav' npm run test:e2e -- tests/e2e/chord-playing-cdur.spec.js
+```
+
+### Stand nach Umsetzung der Profil-Parametrisierung
+
+Umgesetzt:
+
+- Typbasiertes Bewertungsprofil in `matchHpcpToChord()` statt komplett separater Erkennungslogik
+- eigenes Profil für `7`-Akkorde mit zusätzlicher Septimen-Gewichtung
+- Frozen-HPCP-Regressionstests auf Basis vorab extrahierter JSON-Fixtures
+- separater Snapshot-Test, der prüft, ob die aktuelle HPCP-Extraktion weiterhin dieselben Goldens erzeugt
+
+Neue/angepasste Tests:
+
+- `tests/unit/essentiaChordLogic.test.js`
+- `tests/unit/essentiaChordAudio.test.js`
+- `tests/unit/essentiaChordExtractionSnapshot.test.js`
+- `tests/fixtures/chord-hpcp/frozen-hpcp-fixtures.json`
+
+Aktueller Stand:
+
+- die schnelle Frozen-HPCP-Matrix ist grün
+- die HPCP-Extraktion stimmt mit den eingefrorenen Goldens überein
+- der frühere Problemfall `G7/g7_chord.wav` wurde bewusst entfernt und soll mit einer neu eingespielten Fixture ersetzt werden
