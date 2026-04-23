@@ -1,1 +1,1 @@
-Version 2026-04-23 06:32 UTC | tighten chord false-positive regression coverage
+Version 2026-04-23 08:12 UTC | equalize homepage menu card sizing
