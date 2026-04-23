@@ -64,6 +64,28 @@ const CHORD_TYPE_PROFILES = {
     threshold: 0.6,
     minSupportMean: 0.36,
   },
+  maj7: {
+    ...DEFAULT_PROFILE,
+    threshold: 0.54,
+    minSupportMean: 0.34,
+    minSeventhEnergy: 0.18,
+  },
+  m7: {
+    ...DEFAULT_PROFILE,
+    threshold: 0.54,
+    minSupportMean: 0.34,
+    minSeventhEnergy: 0.12,
+  },
+  sus2: {
+    ...DEFAULT_PROFILE,
+    threshold: 0.58,
+    minSupportMean: 0.34,
+  },
+  sus4: {
+    ...DEFAULT_PROFILE,
+    threshold: 0.58,
+    minSupportMean: 0.34,
+  },
   '7': {
     weights: {
       supportMean: 0.42,
@@ -84,6 +106,13 @@ const CHORD_TYPE_PROFILES = {
   },
 };
 const MIN_TRIAD_THIRD_SEPARATION = 0.05;
+const MIN_SUSPENSION_ENERGY = 0.18;
+const MIN_ADD9_ENERGY = 0.18;
+const MIN_MAJOR_TRIAD_DOMINANT_SEVENTH_LEAKAGE = 0.08;
+const MIN_MAJOR_SEVENTH_RATIO = 0.6;
+const MIN_MINOR_SEVENTH_RATIO = 0.25;
+const MIN_DOMINANT_VARIANT_SEVENTH_ENERGY = 0.09;
+const MIN_SUSPENSION_TO_THIRD_RATIO = 0.6;
 
 function stripChordAnnotation(chordName) {
   return chordName.replace(/\s*\([^)]*\)\s*$/, '').trim();
@@ -134,6 +163,8 @@ function getChordDescriptor(chordName) {
     rootBin,
     fifthBin: (rootBin + 7) % 12,
     expectedThirdBin: null,
+    expectedSecondBin: null,
+    expectedFourthBin: null,
     competingThirdBin: null,
     expectedSeventhBin: null,
     extensionSecondBin: null,
@@ -153,6 +184,13 @@ function getChordDescriptor(chordName) {
     descriptor.expectedSeventhBin = (rootBin + 11) % 12;
   } else if (parsed.type === 'm7') {
     descriptor.expectedSeventhBin = (rootBin + 10) % 12;
+  }
+
+  if (parsed.type === 'sus2' || parsed.type === 'add9') {
+    descriptor.expectedSecondBin = (rootBin + 2) % 12;
+  }
+  if (parsed.type === 'sus4') {
+    descriptor.expectedFourthBin = (rootBin + 5) % 12;
   }
 
   if (!intervals.includes(2)) {
@@ -184,6 +222,13 @@ function isTriadModeSensitive(descriptor) {
   return descriptor.type === 'Dur' || descriptor.type === 'Moll';
 }
 
+function isAnnotatedVariant(chordName) {
+  const annotation = chordName.match(/\(([^)]*)\)/)?.[1]?.trim();
+  if (!annotation) return false;
+
+  return /finger|rock|klein/i.test(annotation);
+}
+
 function getMeanEnergy(hpcp, template, includeTemplateBins) {
   let sum = 0;
   let count = 0;
@@ -208,6 +253,8 @@ function scoreHpcpAgainstChord(hpcp, template, descriptor) {
   let rootEnergy = 0;
   let fifthEnergy = 0;
   let expectedThirdEnergy = 0;
+  let expectedSecondEnergy = 0;
+  let expectedFourthEnergy = 0;
   let expectedSeventhEnergy = 0;
   let competingThirdEnergy = 0;
   let extensionSecondEnergy = 0;
@@ -217,6 +264,12 @@ function scoreHpcpAgainstChord(hpcp, template, descriptor) {
     fifthEnergy = hpcp[descriptor.fifthBin];
     if (descriptor.expectedThirdBin !== null) {
       expectedThirdEnergy = hpcp[descriptor.expectedThirdBin];
+    }
+    if (descriptor.expectedSecondBin !== null) {
+      expectedSecondEnergy = hpcp[descriptor.expectedSecondBin];
+    }
+    if (descriptor.expectedFourthBin !== null) {
+      expectedFourthEnergy = hpcp[descriptor.expectedFourthBin];
     }
     if (descriptor.competingThirdBin !== null) {
       competingThirdEnergy = hpcp[descriptor.competingThirdBin];
@@ -251,6 +304,8 @@ function scoreHpcpAgainstChord(hpcp, template, descriptor) {
     rootEnergy,
     fifthEnergy,
     expectedThirdEnergy,
+    expectedSecondEnergy,
+    expectedFourthEnergy,
     expectedSeventhEnergy,
     competingThirdEnergy,
     extensionSecondEnergy,
@@ -434,8 +489,13 @@ export function matchHpcpToChord(hpcp, targetChordName, templates, thresholdOver
   const hasEnoughChordSupport = targetEvidence.supportMean >= profile.minSupportMean;
   const hasExpectedSeventh = !targetDescriptor || targetEvidence.expectedSeventhEnergy >= profile.minSeventhEnergy;
   const hasControlledAddedSecond = !targetDescriptor ||
+    targetDescriptor.type === '7' ||
     targetDescriptor.extensionSecondBin === null ||
     targetEvidence.fifthEnergy >= targetEvidence.extensionSecondEnergy;
+  const hasControlledDominantSecondLeakage = !targetDescriptor ||
+    targetDescriptor.type !== '7' ||
+    targetEvidence.fifthEnergy >= targetEvidence.extensionSecondEnergy ||
+    targetEvidence.expectedSeventhEnergy >= targetEvidence.extensionSecondEnergy;
   const hasExpectedBass = !targetBassSupport || targetBassSupport.isLocallyDominant;
   const hasDominantSeventhEvidence = targetDescriptor?.expectedSeventhBin !== null &&
     hasStrongRoot &&
@@ -448,6 +508,49 @@ export function matchHpcpToChord(hpcp, targetChordName, templates, thresholdOver
   const passesSubsetAcceptance = isSubsetOf(templates[bestMatch], targetTemplate) &&
     (allowsCrossRootSubset || sharesRoot(targetDescriptor, bestDescriptor));
   const specialCase = CHORD_MATCH_SPECIAL_CASES[targetChordName];
+  const requiresExactAnnotatedMatch = isAnnotatedVariant(targetChordName) && !specialCase;
+  const hasExactAnnotatedMatch = !requiresExactAnnotatedMatch || bestMatch === targetChordName;
+  const hasSuspensionEvidence = !targetDescriptor ||
+    (targetDescriptor.type !== 'sus2' && targetDescriptor.type !== 'sus4') ||
+    (
+      (targetDescriptor.type === 'sus2'
+        ? targetEvidence.expectedSecondEnergy
+        : targetEvidence.expectedFourthEnergy) >= MIN_SUSPENSION_ENERGY &&
+      (targetDescriptor.type === 'sus2'
+        ? targetEvidence.expectedSecondEnergy
+        : targetEvidence.expectedFourthEnergy) >= targetEvidence.expectedThirdEnergy * MIN_SUSPENSION_TO_THIRD_RATIO &&
+      (targetDescriptor.type === 'sus2'
+        ? targetEvidence.expectedSecondEnergy
+        : targetEvidence.expectedFourthEnergy) > targetEvidence.competingThirdEnergy
+    );
+  const hasAdd9Evidence = !targetDescriptor ||
+    targetDescriptor.type !== 'add9' ||
+    (
+      targetEvidence.expectedSecondEnergy >= MIN_ADD9_ENERGY &&
+      targetEvidence.expectedSecondEnergy >= targetEvidence.expectedThirdEnergy * 0.4
+    );
+  const hasMajorSeventhEvidence = !targetDescriptor ||
+    targetDescriptor.type !== 'maj7' ||
+    (
+      targetEvidence.expectedSeventhEnergy >= profile.minSeventhEnergy &&
+      targetEvidence.expectedSeventhEnergy >= targetEvidence.expectedThirdEnergy * MIN_MAJOR_SEVENTH_RATIO
+    );
+  const hasMinorSeventhEvidence = !targetDescriptor ||
+    targetDescriptor.type !== 'm7' ||
+    (
+      targetEvidence.expectedSeventhEnergy >= profile.minSeventhEnergy &&
+      targetEvidence.expectedSeventhEnergy >= targetEvidence.expectedThirdEnergy * MIN_MINOR_SEVENTH_RATIO
+    );
+  const hasControlledDominantSeventhLeakage = !targetDescriptor ||
+    targetDescriptor.type !== 'Dur' ||
+    hpcp[(targetDescriptor.rootBin + 10) % 12] < MIN_MAJOR_TRIAD_DOMINANT_SEVENTH_LEAKAGE;
+  const passesDominantSeventhVariantAcceptance = Boolean(
+    targetDescriptor?.type === '7' &&
+    bestDescriptor &&
+    sharesRoot(targetDescriptor, bestDescriptor) &&
+    targetEvidence.expectedSeventhEnergy >= MIN_DOMINANT_VARIANT_SEVENTH_ENERGY &&
+    confidence >= profile.threshold,
+  );
   let bestAcceptedAliasName = null;
   let bestAcceptedAliasScore = -1;
   if (specialCase) {
@@ -466,6 +569,13 @@ export function matchHpcpToChord(hpcp, targetChordName, templates, thresholdOver
     hasStrongFifth &&
     hasExpectedSeventh &&
     hasExpectedBass &&
+    hasExactAnnotatedMatch &&
+    hasSuspensionEvidence &&
+    hasAdd9Evidence &&
+    hasMajorSeventhEvidence &&
+    hasMinorSeventhEvidence &&
+    hasControlledDominantSeventhLeakage &&
+    hasControlledDominantSecondLeakage &&
     (specialCase.allowAddedSecond || hasControlledAddedSecond) &&
     hasEnoughChordSupport,
   );
@@ -476,13 +586,21 @@ export function matchHpcpToChord(hpcp, targetChordName, templates, thresholdOver
     hasSeparatedTriadThird &&
     hasExpectedSeventh &&
     hasExpectedBass &&
+    hasExactAnnotatedMatch &&
+    hasSuspensionEvidence &&
+    hasAdd9Evidence &&
+    hasMajorSeventhEvidence &&
+    hasMinorSeventhEvidence &&
+    hasControlledDominantSeventhLeakage &&
+    hasControlledDominantSecondLeakage &&
     hasControlledAddedSecond &&
     hasEnoughChordSupport;
   const isCorrect = passesSpecialCaseAcceptance || (
     passesCoreEvidence && (
       bestMatch === targetChordName ||
       passesBestMatchTolerance ||
-      passesSubsetAcceptance
+      passesSubsetAcceptance ||
+      passesDominantSeventhVariantAcceptance
     )
   );
 

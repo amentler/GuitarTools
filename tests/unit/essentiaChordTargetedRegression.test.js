@@ -60,6 +60,13 @@ describe('Targeted chord regressions', () => {
     expect(h7Result.isCorrect).toBe(false);
   });
 
+  it('akzeptiert H7 (B7) trotz Alias-Klammer als echten Dominantseptakkord', () => {
+    for (const wavFile of ['H7 (B7)/01.wav', 'H7 (B7)/h7_steel.wav']) {
+      const h7Result = getMatchResult('H7 (B7)', wavFile, 'H7 (B7)');
+      expect(h7Result.isCorrect, `${wavFile} sollte als H7 (B7) akzeptiert werden`).toBe(true);
+    }
+  });
+
   it('verwechselt G-Dur nicht mit G-Moll', () => {
     const avgHpcp = getFixtureAverageHpcp('G-Dur', 'G-Dur/g_chord.wav');
     const gMajorResult = matchHpcpToChord(avgHpcp, 'G-Dur', TEMPLATES);
@@ -75,5 +82,39 @@ describe('Targeted chord regressions', () => {
 
     expect(gMinorResult.isCorrect).toBe(true);
     expect(gMajorResult.isCorrect).toBe(false);
+  });
+
+  it('akzeptiert C-Dur nicht zusätzlich als Cmaj7 oder sus-Varianten', () => {
+    const cMajorResult = getMatchResult('C-Dur', 'C-Dur/c_chord.wav', 'C-Dur');
+    const cMaj7Result = getMatchResult('C-Dur', 'C-Dur/c_chord.wav', 'Cmaj7');
+    const cSus2Result = getMatchResult('C-Dur', 'C-Dur/c_chord.wav', 'Csus2');
+    const cSus4Result = getMatchResult('C-Dur', 'C-Dur/c_chord.wav', 'Csus4');
+
+    expect(cMajorResult.isCorrect).toBe(true);
+    expect(cMaj7Result.isCorrect).toBe(false);
+    expect(cSus2Result.isCorrect).toBe(false);
+    expect(cSus4Result.isCorrect).toBe(false);
+  });
+
+  it('akzeptiert E-Dur nicht zusätzlich als Esus2', () => {
+    const eMajorResult = getMatchResult('E-Dur', 'E-Dur/emaj.wav', 'E-Dur');
+    const eSus2Result = getMatchResult('E-Dur', 'E-Dur/emaj.wav', 'Esus2');
+
+    expect(eMajorResult.isCorrect).toBe(true);
+    expect(eSus2Result.isCorrect).toBe(false);
+  });
+
+  it('akzeptiert G7 nicht zusätzlich als G-Dur- oder Gmaj7-Variante', () => {
+    const g7Result = getMatchResult('G7', 'G7/01.wav', 'G7');
+    const gMajorResult = getMatchResult('G7', 'G7/01.wav', 'G-Dur');
+    const gMajorSimplifiedResult = getMatchResult('G7', 'G7/01.wav', 'G-Dur (1-Finger)');
+    const gMaj7Result = getMatchResult('G7', 'G7/01.wav', 'Gmaj7');
+    const gAdd9Result = getMatchResult('G7', 'G7/01.wav', 'Gadd9');
+
+    expect(g7Result.isCorrect).toBe(true);
+    expect(gMajorResult.isCorrect).toBe(false);
+    expect(gMajorSimplifiedResult.isCorrect).toBe(false);
+    expect(gMaj7Result.isCorrect).toBe(false);
+    expect(gAdd9Result.isCorrect).toBe(false);
   });
 });
