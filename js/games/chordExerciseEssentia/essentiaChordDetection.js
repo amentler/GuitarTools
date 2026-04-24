@@ -21,6 +21,12 @@ import {
   computeHpcpPureJS,
 } from './essentiaChordLogic.js';
 import { buildBassSupportByChord } from './essentiaBassScore.js';
+import {
+  closeAudioSession,
+  createAudioSessionState,
+  openAudioSession,
+} from '../../shared/audio/audioSessionService.js';
+import { requestMicrophoneStream } from '../../shared/audio/microphoneService.js';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -47,46 +53,54 @@ const CHORD_TEMPLATES = buildChordTemplates();
 
 // ── Module-level audio state ──────────────────────────────────────────────────
 
-let audioCtx = null;
-let analyser = null;
-let stream   = null;
-let sourceNode = null;
-let channelSplitter = null;
+const audioSession = createAudioSessionState({
+  sourceNode: null,
+  channelSplitter: null,
+});
 let essentiaHpcpAvailable = true;
 
 // ── Internal helpers ──────────────────────────────────────────────────────────
 
 async function ensureMic() {
-  if (audioCtx && analyser && stream) return;
-  _tearDown();
-  stream   = await navigator.mediaDevices.getUserMedia({
-    audio: { channelCount: { ideal: 1 } },
-    video: false,
-  });
-  audioCtx = new AudioContext();
-  if (audioCtx.state === 'suspended') {
-    await audioCtx.resume();
-  }
-  analyser = audioCtx.createAnalyser();
-  analyser.fftSize = FFT_SIZE;
-  sourceNode = audioCtx.createMediaStreamSource(stream);
+  if (audioSession.audioCtx && audioSession.analyser && audioSession.stream) return;
 
-  // Match WAV fixtures: use one mono source channel instead of averaging stereo.
-  // Fallback keeps older browser/test mocks working when ChannelSplitterNode is absent.
-  if (typeof audioCtx.createChannelSplitter === 'function') {
-    channelSplitter = audioCtx.createChannelSplitter(2);
-    sourceNode.connect(channelSplitter);
-    channelSplitter.connect(analyser, 0, 0);
-  } else {
-    sourceNode.connect(analyser);
-  }
+  await tearDownAudioSession();
+
+  const stream = await requestMicrophoneStream({
+    constraints: {
+      audio: { channelCount: { ideal: 1 } },
+      video: false,
+    },
+  });
+
+  await openAudioSession(audioSession, {
+    stream,
+    fftSize: FFT_SIZE,
+    connectSource: ({ audioCtx, analyser, source }) => {
+      audioSession.sourceNode = source;
+
+      // Match WAV fixtures: use one mono source channel instead of averaging stereo.
+      // Fallback keeps older browser/test mocks working when ChannelSplitterNode is absent.
+      if (typeof audioCtx.createChannelSplitter === 'function') {
+        const channelSplitter = audioCtx.createChannelSplitter(2);
+        source.connect(channelSplitter);
+        channelSplitter.connect(analyser, 0, 0);
+        audioSession.channelSplitter = channelSplitter;
+        return;
+      }
+
+      source.connect(analyser);
+    },
+  });
 }
 
-function _tearDown() {
-  if (stream)   { stream.getTracks().forEach(t => t.stop()); stream = null; }
-  sourceNode = null;
-  channelSplitter = null;
-  if (audioCtx) { audioCtx.close().catch(() => {}); audioCtx = null; analyser = null; }
+async function tearDownAudioSession() {
+  await closeAudioSession(audioSession, {
+    reset: currentSession => {
+      currentSession.sourceNode = null;
+      currentSession.channelSplitter = null;
+    },
+  });
 }
 
 function computeRms(buf) {
@@ -250,7 +264,7 @@ export async function detectChordEssentia(chordName) {
   }
 
   const rmsThreshold = RMS_SPIKE_FACTOR * GUITAR_MIN_RMS;
-  const sampleRate   = audioCtx?.sampleRate ?? 44100;
+  const sampleRate   = audioSession.audioCtx?.sampleRate ?? 44100;
 
   return new Promise(resolve => {
     let strumDetected = false;
@@ -272,9 +286,9 @@ export async function detectChordEssentia(chordName) {
     }, LISTEN_TIMEOUT_MS);
 
     pollId = setInterval(() => {
-      if (!analyser || strumDetected) return;
+      if (!audioSession.analyser || strumDetected) return;
       const buf = new Float32Array(FFT_SIZE);
-      analyser.getFloatTimeDomainData(buf);
+      audioSession.analyser.getFloatTimeDomainData(buf);
       if (computeRms(buf) > rmsThreshold) {
         strumDetected = true;
         clearInterval(pollId);
@@ -283,16 +297,16 @@ export async function detectChordEssentia(chordName) {
     }, 50);
 
     async function collectAndResolve() {
-      if (!analyser) { resolveWith({ isCorrect: false, confidence: 0, bestMatch: null }); return; }
+      if (!audioSession.analyser) { resolveWith({ isCorrect: false, confidence: 0, bestMatch: null }); return; }
 
       let bassSupportByChord;
       try {
-        const previousFftSize = analyser.fftSize;
-        analyser.fftSize = BASS_SCORE_FFT_SIZE;
-        const bassSpectrum = new Float32Array(analyser.frequencyBinCount);
-        analyser.getFloatFrequencyData(bassSpectrum);
+        const previousFftSize = audioSession.analyser.fftSize;
+        audioSession.analyser.fftSize = BASS_SCORE_FFT_SIZE;
+        const bassSpectrum = new Float32Array(audioSession.analyser.frequencyBinCount);
+        audioSession.analyser.getFloatFrequencyData(bassSpectrum);
         bassSupportByChord = buildBassSupportByChord(bassSpectrum, sampleRate, Object.keys(CHORD_TEMPLATES));
-        analyser.fftSize = previousFftSize;
+        audioSession.analyser.fftSize = previousFftSize;
       } catch {
         bassSupportByChord = null;
       }
@@ -301,9 +315,9 @@ export async function detectChordEssentia(chordName) {
       const pureJsHpcps = [];
       for (let i = 0; i < ANALYSIS_FRAMES; i++) {
         if (i > 0) await new Promise(r => setTimeout(r, FRAME_INTERVAL_MS));
-        if (!analyser) break;
+        if (!audioSession.analyser) break;
         try {
-          const frameResult = computeHpcp(essentia, analyser, sampleRate);
+          const frameResult = computeHpcp(essentia, audioSession.analyser, sampleRate);
           hpcps.push(frameResult.hpcp);
           pureJsHpcps.push(frameResult.pureJsHpcp);
         } catch {
@@ -341,5 +355,5 @@ export async function detectChordEssentia(chordName) {
 
 /** Tears down microphone and AudioContext. Safe to call multiple times. */
 export function stopListeningEssentia() {
-  _tearDown();
+  void tearDownAudioSession();
 }
