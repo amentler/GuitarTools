@@ -1,1 +1,1 @@
-Version 2026-04-24 17:07 UTC | move open strum fixtures into dedicated folder
+Version 2026-04-24 17:10 UTC | introduce esus2 chord fixtures

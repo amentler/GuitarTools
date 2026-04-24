@@ -58,6 +58,7 @@ const ROOT_FILE_ALIASES = new Map([
   ['e7', 'E7'],
   ['edur', 'E-Dur'],
   ['emoll', 'E-Moll'],
+  ['esus2', 'Esus2'],
   ['f7', 'F7'],
   ['fdur', 'F-Dur'],
   ['fmoll', 'F-Moll'],
