@@ -51,7 +51,7 @@ Location: `js/components/fretboard/gt-fretboard.js`
 - ✅ Phase 1: `tonFinder` migrated to `<gt-fretboard>`
 - ✅ Phase 2: `chordExercise` (old FFT version) removed in favor of `chordExerciseEssentia`
 - ✅ Phase 2.5: Feedback visibility in `chordExerciseEssentia` improved (3s persistence)
-- ⬜ Phase 3: `fretboardToneRecognition` migration
+- ✅ Phase 3: `fretboardToneRecognition` migrated to `<gt-fretboard>`
 - ⬜ Phase 4: Shared controls extraction
 
 ## Current Modules

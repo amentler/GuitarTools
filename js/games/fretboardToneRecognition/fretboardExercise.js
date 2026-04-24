@@ -1,8 +1,7 @@
 // Fretboard exercise – state management & DOM interaction
 // Encapsulates all state in a factory function for testability and isolation.
 
-import { CHROMATIC_NOTES, getNoteAtPosition, getRandomPosition } from '../../domain/fretboard/fretboardLogic.js';
-import { renderFretboard } from './fretboardSVG.js';
+import { CHROMATIC_NOTES, getNoteAtPosition, getRandomPosition, initGameState, evaluateAnswer } from './fretboardLogic.js';
 import { wireStringToggles, syncStringToggles, wireFretSlider, syncFretSlider } from '../../utils/settings.js';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -80,21 +79,18 @@ export function createFretboardExercise() {
     if (state.feedbackTimeout) clearTimeout(state.feedbackTimeout);
 
     // Preserve settings across restarts, reset everything else
-    state = {
-      targetPosition: getRandomPosition(null, state.settings),
-      feedbackState:  null,
-      score: { correct: 0, total: 0 },
-      feedbackTimeout: null,
-      isDisabled: false,
-      settings: state.settings,
-      chancesLeft:  3,
-      wrongAnswers: [],
-      selectedNote: null,
-      correctNote:  null,
-      noteOrder: makeNoteOrder(state.settings.shuffleNotes),
-      exercisesAnswered: 0,
-      noteOrderDirty: false,
-    };
+    const oldSettings = state.settings;
+    state = initGameState(oldSettings);
+    state.targetPosition = getRandomPosition(null, state.settings);
+    state.noteOrder = makeNoteOrder(state.settings.shuffleNotes);
+    state.exercisesAnswered = 0;
+    state.noteOrderDirty = false;
+    state.feedbackTimeout = null;
+
+    if (svgContainer) {
+      svgContainer.setAttribute('frets', state.settings.maxFret);
+      svgContainer.activeStrings = state.settings.activeStrings;
+    }
 
     buildNoteButtons();
     updateScore();
@@ -152,13 +148,13 @@ export function createFretboardExercise() {
   // ── Core rendering ────────────────────────────────────────────────────────
 
   function render() {
-    renderFretboard(
-      svgContainer,
-      state.targetPosition.string,
-      state.targetPosition.fret,
-      state.feedbackState,
-      state.settings.maxFret
-    );
+    if (svgContainer) {
+      svgContainer.positions = [{
+        stringIndex: state.targetPosition.string,
+        fret: state.targetPosition.fret,
+        state: state.feedbackState || 'default'
+      }];
+    }
     updateNoteButtons();
     updateFeedbackText();
   }
@@ -182,43 +178,22 @@ export function createFretboardExercise() {
     if (state.wrongAnswers.includes(note)) return;
 
     const correctNote = getNoteAtPosition(state.targetPosition.string, state.targetPosition.fret);
-    const isCorrect   = note === correctNote;
+    const { isCorrect, newState } = evaluateAnswer(state, note, correctNote);
 
+    state = newState;
     state.selectedNote = note;
     state.correctNote  = correctNote;
 
-    if (isCorrect) {
-      state.isDisabled  = true;
-      state.feedbackState = 'correct';
-      state.score.correct += 1;
-      state.score.total   += 1;
+    if (isCorrect || state.chancesLeft === 0) {
       updateScore();
       render();
+      updateChancesDisplay();
       maybeReshuffleNotes();
       state.feedbackTimeout = setTimeout(advanceToNextPosition, 1200);
-
     } else {
-      state.wrongAnswers.push(note);
-      state.chancesLeft -= 1;
-
-      if (state.chancesLeft > 0) {
-        // Partial feedback – keep other buttons active
-        state.feedbackState = 'wrong';
-        updateNoteButtons();
-        updateChancesDisplay();
-        updateFeedbackText();
-
-      } else {
-        // No chances left – reveal answer and advance
-        state.isDisabled    = true;
-        state.feedbackState = 'wrong';
-        state.score.total  += 1;
-        updateScore();
-        render();
-        updateChancesDisplay();
-        maybeReshuffleNotes();
-        state.feedbackTimeout = setTimeout(advanceToNextPosition, 1200);
-      }
+      updateNoteButtons();
+      updateChancesDisplay();
+      updateFeedbackText();
     }
   }
 
@@ -241,8 +216,16 @@ export function createFretboardExercise() {
     updateChancesDisplay();
   }
 
+  function applySettingsToComponent() {
+    if (svgContainer) {
+      svgContainer.setAttribute('frets', state.settings.maxFret);
+      svgContainer.activeStrings = state.settings.activeStrings;
+    }
+  }
+
   function resetAndAdvance() {
     if (state.feedbackTimeout) clearTimeout(state.feedbackTimeout);
+    applySettingsToComponent();
     advanceToNextPosition();
   }
 
