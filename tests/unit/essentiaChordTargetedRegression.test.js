@@ -39,6 +39,36 @@ describe('Targeted chord regressions', () => {
     }
   });
 
+  it('erkennt die neuen E-Moll-Fixtures als E-Moll', () => {
+    for (const wavFile of ['E-Moll/emoll_3.wav', 'E-Moll/emoll_4.wav']) {
+      const eMinorResult = getMatchResult('E-Moll', wavFile, 'E-Moll');
+      const eMajorResult = getMatchResult('E-Moll', wavFile, 'E-Dur');
+
+      expect(eMinorResult.isCorrect, `${wavFile} sollte als E-Moll akzeptiert werden`).toBe(true);
+      expect(eMajorResult.isCorrect, `${wavFile} darf nicht als E-Dur akzeptiert werden`).toBe(false);
+    }
+  });
+
+  it('akzeptiert E-Moll-Fixtures auch als E-Moll (2-Finger)', () => {
+    for (const wavFile of [
+      'E-Moll/emin.wav',
+      'E-Moll/eminor_chord.wav',
+      'E-Moll/emoll_3.wav',
+      'E-Moll/emoll_4.wav',
+      'E-Moll/synth.wav',
+      'E-Moll/emoll_steel2.wav',
+    ]) {
+      const standardResult = getMatchResult('E-Moll', wavFile, 'E-Moll');
+      const simplifiedResult = getMatchResult('E-Moll', wavFile, 'E-Moll (2-Finger)');
+
+      expect(standardResult.isCorrect, `${wavFile} sollte als E-Moll akzeptiert werden`).toBe(true);
+      expect(
+        simplifiedResult.isCorrect,
+        `${wavFile} sollte wegen identischem Griffbild auch als E-Moll (2-Finger) akzeptiert werden`,
+      ).toBe(true);
+    }
+  });
+
   it('erkennt A-Moll (2-Finger) nicht fälschlich als E-Moll', () => {
     const targetResult = getMatchResult('A-Moll (2-Finger)', 'A-Moll (2-Finger)/01.wav', 'A-Moll (2-Finger)');
     const aMinorResult = getMatchResult('A-Moll (2-Finger)', 'A-Moll (2-Finger)/01.wav', 'A-Moll');

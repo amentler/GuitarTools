@@ -1,1 +1,1 @@
-Version 0.4 | 2026-04-24 00:20 | d21dc47 | Debug: test hook execution
+Version 2026-04-24 16:38 UTC | split chord matcher pipeline and emoll alias regression

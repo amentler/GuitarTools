@@ -1,6 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import { CHORD_HPCP_FIXTURE_CASES } from '../helpers/chordHpcpFixtureCatalog.js';
-import { extractBassScoreForChordFromWav } from '../helpers/chordBassExtraction.js';
+import {
+  extractBassScoreForChordFromWav,
+  extractBassSupportMapFromWav,
+} from '../helpers/chordBassExtraction.js';
 
 function formatBassScores(result) {
   return [
@@ -28,5 +31,23 @@ describe('Bass score for chord fixtures', () => {
       bassScore.expected.score,
       `${wavFile}: bass neighborhood=${formatBassScores(bassScore)}`,
     ).toBeGreaterThan(bassScore.upperNeighbor.score);
+  });
+
+  it('erkennt bei 0_strum den lokalen Bass für E-basierte Akkorde als E', () => {
+    const bassSupportByChord = extractBassSupportMapFromWav('0_strum.wav', ['E-Dur', 'E-Moll', 'E7']);
+
+    for (const chordName of ['E-Dur', 'E-Moll', 'E7']) {
+      const bassScore = bassSupportByChord[chordName];
+      expect(bassScore, `${chordName}: kein Bass-Score für 0_strum.wav`).toBeDefined();
+      expect(bassScore.expected.label, `${chordName}: erwarteter Bass sollte E2 sein`).toBe('E2');
+      expect(
+        bassScore.expected.score,
+        `${chordName}: bass neighborhood=${formatBassScores(bassScore)}`,
+      ).toBeGreaterThan(bassScore.lowerNeighbor.score);
+      expect(
+        bassScore.expected.score,
+        `${chordName}: bass neighborhood=${formatBassScores(bassScore)}`,
+      ).toBeGreaterThan(bassScore.upperNeighbor.score);
+    }
   });
 });

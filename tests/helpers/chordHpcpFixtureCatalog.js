@@ -26,6 +26,8 @@ export const CHORD_HPCP_FIXTURE_CASES = [
   { chordName: 'E-Dur', wavFile: 'E-Dur/emaj.wav', expected: { isCorrect: true } },
   { chordName: 'E-Moll', wavFile: 'E-Moll/emin.wav', expected: { isCorrect: true } },
   { chordName: 'E-Moll', wavFile: 'E-Moll/eminor_chord.wav', expected: { isCorrect: true } },
+  { chordName: 'E-Moll', wavFile: 'E-Moll/emoll_3.wav', expected: { isCorrect: true } },
+  { chordName: 'E-Moll', wavFile: 'E-Moll/emoll_4.wav', expected: { isCorrect: true } },
   { chordName: 'E-Moll', wavFile: 'E-Moll/emoll_steel1.wav', expected: { isCorrect: false } },
   { chordName: 'E-Moll', wavFile: 'E-Moll/emoll_steel2.wav', expected: { isCorrect: true } },
   { chordName: 'E-Moll', wavFile: 'E-Moll/synth.wav', expected: { isCorrect: true } },

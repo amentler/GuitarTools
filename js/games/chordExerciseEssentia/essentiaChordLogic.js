@@ -206,6 +206,13 @@ const CHORD_MATCH_SPECIAL_CASES = {
     allowAddedSecond: true,
   },
 };
+const CHORD_MATCH_EQUIVALENT_TARGETS = {
+  'E-Moll (2-Finger)': 'E-Moll',
+};
+
+function getEffectiveTargetChordName(chordName) {
+  return CHORD_MATCH_EQUIVALENT_TARGETS[chordName] ?? chordName;
+}
 
 function getChordProfile(descriptor) {
   if (!descriptor) return DEFAULT_PROFILE;
@@ -312,6 +319,238 @@ function scoreHpcpAgainstChord(hpcp, template, descriptor) {
     rawScore,
     score: clampConfidence(normalizedScore),
   };
+}
+
+function scoreChordCandidates(hpcp, templates) {
+  let bestMatch = null;
+  let bestScore = -1;
+  let bestDescriptor = null;
+  const scoreByChordName = new Map();
+
+  for (const [name, template] of Object.entries(templates)) {
+    const descriptor = getChordDescriptor(name);
+    const score = scoreHpcpAgainstChord(hpcp, template, descriptor).score;
+    scoreByChordName.set(name, score);
+    if (score > bestScore) {
+      bestScore = score;
+      bestMatch = name;
+      bestDescriptor = descriptor;
+    }
+  }
+
+  return {
+    bestMatch,
+    bestScore,
+    bestDescriptor,
+    scoreByChordName,
+  };
+}
+
+function evaluateRootAndBassEvidence(targetDescriptor, targetEvidence, profile, targetBassSupport) {
+  const hasStrongRoot = !targetDescriptor || targetEvidence.rootEnergy >= profile.minRootEnergy;
+  const hasStrongFifth = !targetDescriptor || targetEvidence.fifthEnergy >= profile.minFifthEnergy;
+  const hasExpectedBass = !targetBassSupport || targetBassSupport.isLocallyDominant;
+
+  return {
+    hasStrongRoot,
+    hasStrongFifth,
+    hasExpectedBass,
+  };
+}
+
+function evaluateTriadQualityEvidence(targetDescriptor, targetEvidence, profile) {
+  const hasExpectedThird = !targetDescriptor ||
+    targetDescriptor.expectedSeventhBin === null ||
+    targetDescriptor.expectedThirdBin === null ||
+    targetEvidence.expectedThirdEnergy >= profile.minExpectedThirdEnergy;
+  const hasSeparatedTriadThird = !isTriadModeSensitive(targetDescriptor) ||
+    targetEvidence.expectedThirdEnergy > targetEvidence.competingThirdEnergy + MIN_TRIAD_THIRD_SEPARATION;
+
+  return {
+    hasExpectedThird,
+    hasSeparatedTriadThird,
+  };
+}
+
+function evaluateChordExtensionEvidence(targetDescriptor, targetEvidence, profile, hpcp) {
+  const hasExpectedSeventh = !targetDescriptor || targetEvidence.expectedSeventhEnergy >= profile.minSeventhEnergy;
+  const hasControlledAddedSecond = !targetDescriptor ||
+    targetDescriptor.type === '7' ||
+    targetDescriptor.extensionSecondBin === null ||
+    targetEvidence.fifthEnergy >= targetEvidence.extensionSecondEnergy;
+  const hasControlledDominantSecondLeakage = !targetDescriptor ||
+    targetDescriptor.type !== '7' ||
+    targetEvidence.fifthEnergy >= targetEvidence.extensionSecondEnergy ||
+    targetEvidence.expectedSeventhEnergy >= targetEvidence.extensionSecondEnergy;
+  const hasSuspensionEvidence = !targetDescriptor ||
+    (targetDescriptor.type !== 'sus2' && targetDescriptor.type !== 'sus4') ||
+    (
+      (targetDescriptor.type === 'sus2'
+        ? targetEvidence.expectedSecondEnergy
+        : targetEvidence.expectedFourthEnergy) >= MIN_SUSPENSION_ENERGY &&
+      (targetDescriptor.type === 'sus2'
+        ? targetEvidence.expectedSecondEnergy
+        : targetEvidence.expectedFourthEnergy) >= targetEvidence.expectedThirdEnergy * MIN_SUSPENSION_TO_THIRD_RATIO &&
+      (targetDescriptor.type === 'sus2'
+        ? targetEvidence.expectedSecondEnergy
+        : targetEvidence.expectedFourthEnergy) > targetEvidence.competingThirdEnergy
+    );
+  const hasAdd9Evidence = !targetDescriptor ||
+    targetDescriptor.type !== 'add9' ||
+    (
+      targetEvidence.expectedSecondEnergy >= MIN_ADD9_ENERGY &&
+      targetEvidence.expectedSecondEnergy >= targetEvidence.expectedThirdEnergy * 0.4
+    );
+  const hasMajorSeventhEvidence = !targetDescriptor ||
+    targetDescriptor.type !== 'maj7' ||
+    (
+      targetEvidence.expectedSeventhEnergy >= profile.minSeventhEnergy &&
+      targetEvidence.expectedSeventhEnergy >= targetEvidence.expectedThirdEnergy * MIN_MAJOR_SEVENTH_RATIO
+    );
+  const hasMinorSeventhEvidence = !targetDescriptor ||
+    targetDescriptor.type !== 'm7' ||
+    (
+      targetEvidence.expectedSeventhEnergy >= profile.minSeventhEnergy &&
+      targetEvidence.expectedSeventhEnergy >= targetEvidence.expectedThirdEnergy * MIN_MINOR_SEVENTH_RATIO
+    );
+  const hasControlledDominantSeventhLeakage = !targetDescriptor ||
+    targetDescriptor.type !== 'Dur' ||
+    hpcp[(targetDescriptor.rootBin + 10) % 12] < MIN_MAJOR_TRIAD_DOMINANT_SEVENTH_LEAKAGE;
+
+  return {
+    hasExpectedSeventh,
+    hasControlledAddedSecond,
+    hasControlledDominantSecondLeakage,
+    hasSuspensionEvidence,
+    hasAdd9Evidence,
+    hasMajorSeventhEvidence,
+    hasMinorSeventhEvidence,
+    hasControlledDominantSeventhLeakage,
+  };
+}
+
+function evaluateAnnotatedTargetAcceptance(targetChordName, effectiveTargetChordName, specialCase, bestMatch) {
+  const requiresExactAnnotatedMatch = isAnnotatedVariant(effectiveTargetChordName) && !specialCase;
+  const hasExactAnnotatedMatch = !requiresExactAnnotatedMatch || bestMatch === effectiveTargetChordName;
+
+  return {
+    requiresExactAnnotatedMatch,
+    hasExactAnnotatedMatch,
+  };
+}
+
+function evaluateBestMatchCompatibility({
+  targetDescriptor,
+  bestDescriptor,
+  targetEvidence,
+  profile,
+  bestScore,
+  confidence,
+  bestMatch,
+  targetTemplate,
+  templates,
+}) {
+  const hasDominantSeventhEvidence = targetDescriptor?.expectedSeventhBin !== null &&
+    targetEvidence.rootEnergy <= 0.15;
+  const passesBestMatchTolerance = bestScore - confidence <= profile.bestMatchTolerance &&
+    (!targetDescriptor || sharesRoot(targetDescriptor, bestDescriptor) || hasDominantSeventhEvidence);
+  const allowsCrossRootSubset = !targetDescriptor || targetDescriptor.expectedSeventhBin === null;
+  const passesSubsetAcceptance = isSubsetOf(templates[bestMatch], targetTemplate) &&
+    (allowsCrossRootSubset || sharesRoot(targetDescriptor, bestDescriptor));
+  const passesDominantSeventhVariantAcceptance = Boolean(
+    targetDescriptor?.type === '7' &&
+    bestDescriptor &&
+    sharesRoot(targetDescriptor, bestDescriptor) &&
+    targetEvidence.expectedSeventhEnergy >= MIN_DOMINANT_VARIANT_SEVENTH_ENERGY &&
+    confidence >= profile.threshold,
+  );
+
+  return {
+    hasDominantSeventhEvidence,
+    passesBestMatchTolerance,
+    passesSubsetAcceptance,
+    passesDominantSeventhVariantAcceptance,
+  };
+}
+
+function findBestAcceptedAlias(specialCase, scoreByChordName) {
+  let bestAcceptedAliasName = null;
+  let bestAcceptedAliasScore = -1;
+
+  if (!specialCase) {
+    return {
+      bestAcceptedAliasName,
+      bestAcceptedAliasScore,
+    };
+  }
+
+  for (const name of specialCase.acceptedBestMatches) {
+    const score = scoreByChordName.get(name) ?? -1;
+    if (score > bestAcceptedAliasScore) {
+      bestAcceptedAliasScore = score;
+      bestAcceptedAliasName = name;
+    }
+  }
+
+  return {
+    bestAcceptedAliasName,
+    bestAcceptedAliasScore,
+  };
+}
+
+function passesSpecialCaseAcceptance({
+  specialCase,
+  bestAcceptedAliasScore,
+  threshold,
+  rootAndBassEvidence,
+  chordExtensionEvidence,
+  annotatedTargetAcceptance,
+  hasEnoughChordSupport,
+}) {
+  return Boolean(
+    specialCase &&
+    bestAcceptedAliasScore >= threshold &&
+    rootAndBassEvidence.hasStrongRoot &&
+    rootAndBassEvidence.hasStrongFifth &&
+    chordExtensionEvidence.hasExpectedSeventh &&
+    rootAndBassEvidence.hasExpectedBass &&
+    annotatedTargetAcceptance.hasExactAnnotatedMatch &&
+    chordExtensionEvidence.hasSuspensionEvidence &&
+    chordExtensionEvidence.hasAdd9Evidence &&
+    chordExtensionEvidence.hasMajorSeventhEvidence &&
+    chordExtensionEvidence.hasMinorSeventhEvidence &&
+    chordExtensionEvidence.hasControlledDominantSeventhLeakage &&
+    chordExtensionEvidence.hasControlledDominantSecondLeakage &&
+    (specialCase.allowAddedSecond || chordExtensionEvidence.hasControlledAddedSecond) &&
+    hasEnoughChordSupport
+  );
+}
+
+function passesCoreEvidence({
+  confidence,
+  threshold,
+  rootAndBassEvidence,
+  triadQualityEvidence,
+  chordExtensionEvidence,
+  annotatedTargetAcceptance,
+  hasEnoughChordSupport,
+}) {
+  return confidence >= threshold &&
+    rootAndBassEvidence.hasStrongRoot &&
+    rootAndBassEvidence.hasStrongFifth &&
+    triadQualityEvidence.hasExpectedThird &&
+    triadQualityEvidence.hasSeparatedTriadThird &&
+    chordExtensionEvidence.hasExpectedSeventh &&
+    rootAndBassEvidence.hasExpectedBass &&
+    annotatedTargetAcceptance.hasExactAnnotatedMatch &&
+    chordExtensionEvidence.hasSuspensionEvidence &&
+    chordExtensionEvidence.hasAdd9Evidence &&
+    chordExtensionEvidence.hasMajorSeventhEvidence &&
+    chordExtensionEvidence.hasMinorSeventhEvidence &&
+    chordExtensionEvidence.hasControlledDominantSeventhLeakage &&
+    chordExtensionEvidence.hasControlledDominantSecondLeakage &&
+    chordExtensionEvidence.hasControlledAddedSecond &&
+    hasEnoughChordSupport;
 }
 
 /**
@@ -450,165 +689,78 @@ function isSubsetOf(subTemplate, superTemplate) {
  * @returns {{ isCorrect: boolean, confidence: number, bestMatch: string|null, bestScore: number }}
  */
 export function matchHpcpToChord(hpcp, targetChordName, templates, thresholdOverride, options = {}) {
-  const targetTemplate = templates[targetChordName];
+  const effectiveTargetChordName = getEffectiveTargetChordName(targetChordName);
+  const targetTemplate = templates[effectiveTargetChordName];
   if (!targetTemplate) {
     return { isCorrect: false, confidence: 0, bestMatch: null, bestScore: 0 };
   }
 
-  const targetDescriptor = getChordDescriptor(targetChordName);
+  const targetDescriptor = getChordDescriptor(effectiveTargetChordName);
   const targetEvidence = scoreHpcpAgainstChord(hpcp, targetTemplate, targetDescriptor);
   const profile = targetEvidence.profile;
   const bassSupportByChord = options.bassSupportByChord ?? null;
-  const targetBassSupport = bassSupportByChord?.[targetChordName] ?? null;
+  const targetBassSupport = bassSupportByChord?.[effectiveTargetChordName] ?? bassSupportByChord?.[targetChordName] ?? null;
   const confidence = targetEvidence.score;
-
-  let bestMatch = null;
-  let bestScore = -1;
-  let bestDescriptor = null;
-  const scoreByChordName = new Map();
-  for (const [name, template] of Object.entries(templates)) {
-    const descriptor = getChordDescriptor(name);
-    const score = scoreHpcpAgainstChord(hpcp, template, descriptor).score;
-    scoreByChordName.set(name, score);
-    if (score > bestScore) {
-      bestScore = score;
-      bestMatch = name;
-      bestDescriptor = descriptor;
-    }
-  }
+  const candidateScores = scoreChordCandidates(hpcp, templates);
+  const { bestMatch, bestScore, bestDescriptor, scoreByChordName } = candidateScores;
 
   const threshold = thresholdOverride ?? profile.threshold;
-  const hasStrongRoot = !targetDescriptor || targetEvidence.rootEnergy >= profile.minRootEnergy;
-  const hasStrongFifth = !targetDescriptor || targetEvidence.fifthEnergy >= profile.minFifthEnergy;
-  const hasExpectedThird = !targetDescriptor ||
-    targetDescriptor.expectedSeventhBin === null ||
-    targetDescriptor.expectedThirdBin === null ||
-    targetEvidence.expectedThirdEnergy >= profile.minExpectedThirdEnergy;
-  const hasSeparatedTriadThird = !isTriadModeSensitive(targetDescriptor) ||
-    targetEvidence.expectedThirdEnergy > targetEvidence.competingThirdEnergy + MIN_TRIAD_THIRD_SEPARATION;
   const hasEnoughChordSupport = targetEvidence.supportMean >= profile.minSupportMean;
-  const hasExpectedSeventh = !targetDescriptor || targetEvidence.expectedSeventhEnergy >= profile.minSeventhEnergy;
-  const hasControlledAddedSecond = !targetDescriptor ||
-    targetDescriptor.type === '7' ||
-    targetDescriptor.extensionSecondBin === null ||
-    targetEvidence.fifthEnergy >= targetEvidence.extensionSecondEnergy;
-  const hasControlledDominantSecondLeakage = !targetDescriptor ||
-    targetDescriptor.type !== '7' ||
-    targetEvidence.fifthEnergy >= targetEvidence.extensionSecondEnergy ||
-    targetEvidence.expectedSeventhEnergy >= targetEvidence.extensionSecondEnergy;
-  const hasExpectedBass = !targetBassSupport || targetBassSupport.isLocallyDominant;
-  const hasDominantSeventhEvidence = targetDescriptor?.expectedSeventhBin !== null &&
-    hasStrongRoot &&
-    hasExpectedThird &&
-    hasExpectedSeventh &&
-    targetEvidence.rootEnergy <= 0.15;
-  const passesBestMatchTolerance = bestScore - confidence <= profile.bestMatchTolerance &&
-    (!targetDescriptor || sharesRoot(targetDescriptor, bestDescriptor) || hasDominantSeventhEvidence);
-  const allowsCrossRootSubset = !targetDescriptor || targetDescriptor.expectedSeventhBin === null;
-  const passesSubsetAcceptance = isSubsetOf(templates[bestMatch], targetTemplate) &&
-    (allowsCrossRootSubset || sharesRoot(targetDescriptor, bestDescriptor));
-  const specialCase = CHORD_MATCH_SPECIAL_CASES[targetChordName];
-  const requiresExactAnnotatedMatch = isAnnotatedVariant(targetChordName) && !specialCase;
-  const hasExactAnnotatedMatch = !requiresExactAnnotatedMatch || bestMatch === targetChordName;
-  const hasSuspensionEvidence = !targetDescriptor ||
-    (targetDescriptor.type !== 'sus2' && targetDescriptor.type !== 'sus4') ||
-    (
-      (targetDescriptor.type === 'sus2'
-        ? targetEvidence.expectedSecondEnergy
-        : targetEvidence.expectedFourthEnergy) >= MIN_SUSPENSION_ENERGY &&
-      (targetDescriptor.type === 'sus2'
-        ? targetEvidence.expectedSecondEnergy
-        : targetEvidence.expectedFourthEnergy) >= targetEvidence.expectedThirdEnergy * MIN_SUSPENSION_TO_THIRD_RATIO &&
-      (targetDescriptor.type === 'sus2'
-        ? targetEvidence.expectedSecondEnergy
-        : targetEvidence.expectedFourthEnergy) > targetEvidence.competingThirdEnergy
-    );
-  const hasAdd9Evidence = !targetDescriptor ||
-    targetDescriptor.type !== 'add9' ||
-    (
-      targetEvidence.expectedSecondEnergy >= MIN_ADD9_ENERGY &&
-      targetEvidence.expectedSecondEnergy >= targetEvidence.expectedThirdEnergy * 0.4
-    );
-  const hasMajorSeventhEvidence = !targetDescriptor ||
-    targetDescriptor.type !== 'maj7' ||
-    (
-      targetEvidence.expectedSeventhEnergy >= profile.minSeventhEnergy &&
-      targetEvidence.expectedSeventhEnergy >= targetEvidence.expectedThirdEnergy * MIN_MAJOR_SEVENTH_RATIO
-    );
-  const hasMinorSeventhEvidence = !targetDescriptor ||
-    targetDescriptor.type !== 'm7' ||
-    (
-      targetEvidence.expectedSeventhEnergy >= profile.minSeventhEnergy &&
-      targetEvidence.expectedSeventhEnergy >= targetEvidence.expectedThirdEnergy * MIN_MINOR_SEVENTH_RATIO
-    );
-  const hasControlledDominantSeventhLeakage = !targetDescriptor ||
-    targetDescriptor.type !== 'Dur' ||
-    hpcp[(targetDescriptor.rootBin + 10) % 12] < MIN_MAJOR_TRIAD_DOMINANT_SEVENTH_LEAKAGE;
-  const passesDominantSeventhVariantAcceptance = Boolean(
-    targetDescriptor?.type === '7' &&
-    bestDescriptor &&
-    sharesRoot(targetDescriptor, bestDescriptor) &&
-    targetEvidence.expectedSeventhEnergy >= MIN_DOMINANT_VARIANT_SEVENTH_ENERGY &&
-    confidence >= profile.threshold,
+  const specialCase = CHORD_MATCH_SPECIAL_CASES[effectiveTargetChordName] ?? CHORD_MATCH_SPECIAL_CASES[targetChordName];
+  const rootAndBassEvidence = evaluateRootAndBassEvidence(targetDescriptor, targetEvidence, profile, targetBassSupport);
+  const triadQualityEvidence = evaluateTriadQualityEvidence(targetDescriptor, targetEvidence, profile);
+  const chordExtensionEvidence = evaluateChordExtensionEvidence(targetDescriptor, targetEvidence, profile, hpcp);
+  const annotatedTargetAcceptance = evaluateAnnotatedTargetAcceptance(
+    targetChordName,
+    effectiveTargetChordName,
+    specialCase,
+    bestMatch,
   );
-  let bestAcceptedAliasName = null;
-  let bestAcceptedAliasScore = -1;
-  if (specialCase) {
-    for (const name of specialCase.acceptedBestMatches) {
-      const score = scoreByChordName.get(name) ?? -1;
-      if (score > bestAcceptedAliasScore) {
-        bestAcceptedAliasScore = score;
-        bestAcceptedAliasName = name;
-      }
-    }
-  }
-  const passesSpecialCaseAcceptance = Boolean(
-    specialCase &&
-    bestAcceptedAliasScore >= threshold &&
-    hasStrongRoot &&
-    hasStrongFifth &&
-    hasExpectedSeventh &&
-    hasExpectedBass &&
-    hasExactAnnotatedMatch &&
-    hasSuspensionEvidence &&
-    hasAdd9Evidence &&
-    hasMajorSeventhEvidence &&
-    hasMinorSeventhEvidence &&
-    hasControlledDominantSeventhLeakage &&
-    hasControlledDominantSecondLeakage &&
-    (specialCase.allowAddedSecond || hasControlledAddedSecond) &&
+  const bestMatchCompatibility = evaluateBestMatchCompatibility({
+    targetDescriptor,
+    bestDescriptor,
+    targetEvidence,
+    profile,
+    bestScore,
+    confidence,
+    bestMatch,
+    targetTemplate,
+    templates,
+  });
+  const { bestAcceptedAliasName, bestAcceptedAliasScore } = findBestAcceptedAlias(specialCase, scoreByChordName);
+  const acceptsSpecialCase = passesSpecialCaseAcceptance({
+    specialCase,
+    bestAcceptedAliasScore,
+    threshold,
+    rootAndBassEvidence,
+    chordExtensionEvidence,
+    annotatedTargetAcceptance,
     hasEnoughChordSupport,
-  );
-  const passesCoreEvidence = confidence >= threshold &&
-    hasStrongRoot &&
-    hasStrongFifth &&
-    hasExpectedThird &&
-    hasSeparatedTriadThird &&
-    hasExpectedSeventh &&
-    hasExpectedBass &&
-    hasExactAnnotatedMatch &&
-    hasSuspensionEvidence &&
-    hasAdd9Evidence &&
-    hasMajorSeventhEvidence &&
-    hasMinorSeventhEvidence &&
-    hasControlledDominantSeventhLeakage &&
-    hasControlledDominantSecondLeakage &&
-    hasControlledAddedSecond &&
-    hasEnoughChordSupport;
-  const isCorrect = passesSpecialCaseAcceptance || (
-    passesCoreEvidence && (
+  });
+  const acceptsCoreEvidence = passesCoreEvidence({
+    confidence,
+    threshold,
+    rootAndBassEvidence,
+    triadQualityEvidence,
+    chordExtensionEvidence,
+    annotatedTargetAcceptance,
+    hasEnoughChordSupport,
+  });
+  const isCorrect = acceptsSpecialCase || (
+    acceptsCoreEvidence && (
       bestMatch === targetChordName ||
-      passesBestMatchTolerance ||
-      passesSubsetAcceptance ||
-      passesDominantSeventhVariantAcceptance
+      bestMatch === effectiveTargetChordName ||
+      bestMatchCompatibility.passesBestMatchTolerance ||
+      bestMatchCompatibility.passesSubsetAcceptance ||
+      bestMatchCompatibility.passesDominantSeventhVariantAcceptance
     )
   );
 
   return {
     isCorrect,
     confidence,
-    bestMatch: passesSpecialCaseAcceptance ? bestAcceptedAliasName : bestMatch,
-    bestScore: passesSpecialCaseAcceptance ? bestAcceptedAliasScore : bestScore,
+    bestMatch: acceptsSpecialCase ? bestAcceptedAliasName : bestMatch,
+    bestScore: acceptsSpecialCase ? bestAcceptedAliasScore : bestScore,
     bassSupport: targetBassSupport,
   };
 }
