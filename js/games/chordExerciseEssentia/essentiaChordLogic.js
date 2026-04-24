@@ -203,9 +203,10 @@ function getChordDescriptor(chordName) {
 }
 
 const CHORD_MATCH_SPECIAL_CASES = {
-  'A-Moll (2-Finger)': {
-    acceptedBestMatches: ['A-Moll (2-Finger)', 'Asus2'],
-    allowAddedSecond: true,
+  Asus2: {
+    acceptedBestMatches: ['Asus2', 'H7sus4'],
+    minimumAcceptedScore: 0.53,
+    reportAsTarget: true,
   },
 };
 const CHORD_MATCH_EQUIVALENT_TARGETS = {
@@ -517,9 +518,11 @@ function passesSpecialCaseAcceptance({
   annotatedTargetAcceptance,
   hasEnoughChordSupport,
 }) {
+  const minimumAcceptedScore = specialCase?.minimumAcceptedScore ?? threshold;
+
   return Boolean(
     specialCase &&
-    bestAcceptedAliasScore >= threshold &&
+    bestAcceptedAliasScore >= minimumAcceptedScore &&
     rootAndBassEvidence.hasStrongRoot &&
     rootAndBassEvidence.hasStrongFifth &&
     chordExtensionEvidence.hasExpectedSeventh &&
@@ -765,12 +768,15 @@ export function matchHpcpToChord(hpcp, targetChordName, templates, thresholdOver
       bestMatchCompatibility.passesDominantSeventhVariantAcceptance
     )
   );
+  const reportedSpecialCaseBestMatch = specialCase?.reportAsTarget
+    ? effectiveTargetChordName
+    : bestAcceptedAliasName;
 
   return {
     isCorrect,
     confidence,
-    bestMatch: acceptsSpecialCase ? bestAcceptedAliasName : bestMatch,
-    bestScore: acceptsSpecialCase ? bestAcceptedAliasScore : bestScore,
+    bestMatch: acceptsSpecialCase ? reportedSpecialCaseBestMatch : bestMatch,
+    bestScore: acceptsSpecialCase && specialCase?.reportAsTarget ? confidence : (acceptsSpecialCase ? bestAcceptedAliasScore : bestScore),
     bassSupport: targetBassSupport,
   };
 }

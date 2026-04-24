@@ -16,12 +16,9 @@ const FROZEN_FIXTURES = JSON.parse(
 const ALL_TEMPLATES = buildChordTemplates();
 const ALL_CHORD_NAMES = Object.keys(ALL_TEMPLATES);
 const STRICT_ACCURACY_THRESHOLD = 0.95;
-const WAVE_BASED_FROZEN_FIXTURES = FROZEN_FIXTURES.filter(fixture =>
-  fixture.expected.isCorrect &&
-  !fixture.wavFile.includes('synth'),
-);
+const POSITIVE_FROZEN_FIXTURES = FROZEN_FIXTURES.filter(fixture => fixture.expected.isCorrect);
 
-const STRICT_MATRIX_CASES = WAVE_BASED_FROZEN_FIXTURES.flatMap(fixture => {
+const STRICT_MATRIX_CASES = POSITIVE_FROZEN_FIXTURES.flatMap(fixture => {
   const avgHpcp = averageHpcps(fixture.hpcpFrames.map(frame => Float32Array.from(frame)));
 
   return ALL_CHORD_NAMES.map(probeChordName => ({
@@ -43,8 +40,8 @@ function evaluateStrictMatrix() {
   });
 }
 
-describe('matchHpcpToChord – Frozen HPCP wave-fixture strict matrix', () => {
-  it('erreicht eine ausreichende strikte Erkennungsquote über alle Wave-basierten Frozen-HPCP-Fixtures', () => {
+describe('matchHpcpToChord – Frozen HPCP positive-fixture strict matrix', () => {
+  it('erreicht eine ausreichende strikte Erkennungsquote über alle positiven Frozen-HPCP-Fixtures', () => {
     const rows = evaluateStrictMatrix();
     const correct = rows.filter(row => row.passed).length;
     const total = rows.length;

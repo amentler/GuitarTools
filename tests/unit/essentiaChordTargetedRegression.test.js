@@ -69,13 +69,13 @@ describe('Targeted chord regressions', () => {
     }
   });
 
-  it('erkennt A-Moll (2-Finger) nicht fälschlich als E-Moll', () => {
-    const targetResult = getMatchResult('A-Moll (2-Finger)', 'A-Moll (2-Finger)/01.wav', 'A-Moll (2-Finger)');
-    const aMinorResult = getMatchResult('A-Moll (2-Finger)', 'A-Moll (2-Finger)/01.wav', 'A-Moll');
-    const eMinorResult = getMatchResult('A-Moll (2-Finger)', 'A-Moll (2-Finger)/01.wav', 'E-Moll');
+  it('erkennt die bisherige A-Moll-(2-Finger)-Fixture als Asus2 und nicht als Moll-Akkord', () => {
+    const targetResult = getMatchResult('Asus2', 'Asus2/01.wav', 'Asus2');
+    const aMinorResult = getMatchResult('Asus2', 'Asus2/01.wav', 'A-Moll');
+    const eMinorResult = getMatchResult('Asus2', 'Asus2/01.wav', 'E-Moll');
 
     expect(targetResult.isCorrect).toBe(true);
-    expect(targetResult.bestMatch).not.toBe('Esus2');
+    expect(targetResult.bestMatch).toBe('Asus2');
     expect(aMinorResult.isCorrect).toBe(false);
     expect(eMinorResult.isCorrect).toBe(false);
   });

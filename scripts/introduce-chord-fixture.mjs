@@ -2,6 +2,7 @@ import { promises as fs } from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { extractHpcpAnalysisFromWav } from '../tests/helpers/chordHpcpExtraction.js';
+import { extractBassSupportMapFromWav } from '../tests/helpers/chordBassExtraction.js';
 import {
   buildChordTemplates,
   matchHpcpToChord,
@@ -46,19 +47,36 @@ const EXTRA_NEGATIVE_CASES = [
 ];
 
 const ROOT_FILE_ALIASES = new Map([
+  ['aadd9', 'Aadd9'],
   ['a7', 'A7'],
   ['adur', 'A-Dur'],
+  ['adim', 'Adim'],
+  ['am7', 'Am7'],
+  ['amaj7', 'Amaj7'],
   ['amoll', 'A-Moll'],
+  ['asus2', 'Asus2'],
+  ['asus4', 'Asus4'],
   ['c7', 'C7'],
+  ['cadd9', 'Cadd9'],
   ['cdur', 'C-Dur'],
+  ['cdim', 'Cdim'],
+  ['cmaj7', 'Cmaj7'],
+  ['cm7', 'Cm7'],
   ['cmoll', 'C-Moll'],
+  ['csus2', 'Csus2'],
+  ['csus4', 'Csus4'],
   ['d7', 'D7'],
   ['ddur', 'D-Dur'],
   ['dmoll', 'D-Moll'],
+  ['eadd9', 'Eadd9'],
   ['e7', 'E7'],
   ['edur', 'E-Dur'],
+  ['edim', 'Edim'],
+  ['em7', 'Em7'],
+  ['emaj7', 'Emaj7'],
   ['emoll', 'E-Moll'],
   ['esus2', 'Esus2'],
+  ['esus4', 'Esus4'],
   ['f7', 'F7'],
   ['fdur', 'F-Dur'],
   ['fmoll', 'F-Moll'],
@@ -159,7 +177,10 @@ async function collectPositiveFolderFixtures() {
     for (const fileName of files) {
       const wavFile = `${chordName}/${fileName}`;
       const analysis = extractHpcpAnalysisFromWav(path.join(CHORD_FIXTURES_DIR, wavFile));
-      const match = matchHpcpToChord(analysis.averageHpcp, chordName, CHORD_TEMPLATES);
+      const bassSupportByChord = extractBassSupportMapFromWav(wavFile, Object.keys(CHORD_TEMPLATES));
+      const match = matchHpcpToChord(analysis.averageHpcp, chordName, CHORD_TEMPLATES, undefined, {
+        bassSupportByChord,
+      });
 
       fixtures.push({
         chordName,

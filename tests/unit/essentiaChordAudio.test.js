@@ -52,16 +52,16 @@ describe('matchHpcpToChord – Frozen HPCP fixtures', () => {
     ).toBe(false);
   });
 
-  it('akzeptiert A-Moll (2-Finger) als explizite Sonderregel trotz sus2-artiger Evidenz', () => {
-    const fixture = FROZEN_FIXTURES.find(entry => entry.wavFile === 'A-Moll (2-Finger)/01.wav');
+  it('akzeptiert die umgehängte A-Moll-(2-Finger)-Fixture als Asus2', () => {
+    const fixture = FROZEN_FIXTURES.find(entry => entry.wavFile === 'Asus2/01.wav');
     const avgHpcp = averageHpcps(fixture.hpcpFrames.map(frame => Float32Array.from(frame)));
     const bassSupportByChord = extractBassSupportMapFromWav(fixture.wavFile, ALL_CHORD_NAMES);
 
-    const simplifiedResult = matchHpcpToChord(avgHpcp, 'A-Moll (2-Finger)', TEMPLATES, undefined, { bassSupportByChord });
-    const standardResult = matchHpcpToChord(avgHpcp, 'A-Moll', TEMPLATES, undefined, { bassSupportByChord });
+    const sus2Result = matchHpcpToChord(avgHpcp, 'Asus2', TEMPLATES, undefined, { bassSupportByChord });
+    const aMinorResult = matchHpcpToChord(avgHpcp, 'A-Moll', TEMPLATES, undefined, { bassSupportByChord });
 
-    expect(simplifiedResult.isCorrect).toBe(true);
-    expect(['A-Moll (2-Finger)', 'Asus2']).toContain(simplifiedResult.bestMatch);
-    expect(standardResult.isCorrect).toBe(false);
+    expect(sus2Result.isCorrect).toBe(true);
+    expect(sus2Result.bestMatch).toBe('Asus2');
+    expect(aMinorResult.isCorrect).toBe(false);
   });
 });
