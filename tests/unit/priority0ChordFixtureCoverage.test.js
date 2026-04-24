@@ -13,7 +13,8 @@ import { CHORD_HPCP_FIXTURE_CASES } from '../helpers/chordHpcpFixtureCatalog.js'
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(__dirname, '../..');
 const CHORD_FIXTURE_DIR = path.join(REPO_ROOT, 'tests/fixtures/chords');
-const ROOT_NEGATIVE_FIXTURES = new Set(['0_strum.wav', 'd_chord_wrong.wav']);
+const OPEN_STRUMS_DIR = 'open-strums';
+const ROOT_NEGATIVE_FIXTURES = new Set(['d_chord_wrong.wav']);
 
 function catalogEntryFor(wavFile) {
   return CHORD_HPCP_FIXTURE_CASES.find(fixture => fixture.wavFile === wavFile);
@@ -40,6 +41,13 @@ function getPositiveFolderFixtures() {
     .sort((a, b) => a.wavFile.localeCompare(b.wavFile, 'de'));
 }
 
+function getOpenStrumFixtures() {
+  return readdirSync(path.join(CHORD_FIXTURE_DIR, OPEN_STRUMS_DIR), { withFileTypes: true })
+    .filter(entry => entry.isFile() && entry.name.endsWith('.wav'))
+    .map(entry => `${OPEN_STRUMS_DIR}/${entry.name}`)
+    .sort((a, b) => a.localeCompare(b, 'de'));
+}
+
 function allProgressionChordNames() {
   const chordNames = new Set();
   for (const key of MAJOR_KEYS) {
@@ -61,7 +69,7 @@ describe('Priorität 0 Akkord-Fixture-Abdeckung', () => {
   });
 
   it('registriert jede positive Folder-Fixture im HPCP-Katalog mit korrektem Akkordnamen', () => {
-    for (const fixture of getPositiveFolderFixtures()) {
+    for (const fixture of getPositiveFolderFixtures().filter(fixture => fixture.chordName !== OPEN_STRUMS_DIR)) {
       expect(
         existsSync(path.join(CHORD_FIXTURE_DIR, fixture.wavFile)),
         `${fixture.wavFile} fehlt unter tests/fixtures/chords`,
@@ -71,6 +79,14 @@ describe('Priorität 0 Akkord-Fixture-Abdeckung', () => {
       expect(catalogEntry, `${fixture.wavFile} fehlt in CHORD_HPCP_FIXTURE_CASES`).toBeDefined();
       expect(catalogEntry.chordName).toBe(fixture.chordName);
       expect(typeof catalogEntry.expected.isCorrect).toBe('boolean');
+    }
+  });
+
+  it('registriert Open-Strums als explizite Negativfixtures im Katalog', () => {
+    for (const wavFile of getOpenStrumFixtures()) {
+      const catalogEntry = catalogEntryFor(wavFile);
+      expect(catalogEntry, `${wavFile} fehlt in CHORD_HPCP_FIXTURE_CASES`).toBeDefined();
+      expect(catalogEntry.expected.isCorrect, `${wavFile} muss als Negativfixture katalogisiert sein`).toBe(false);
     }
   });
 

@@ -12,13 +12,37 @@ const REPO_ROOT = path.resolve(__dirname, '..');
 const CHORD_FIXTURES_DIR = path.join(REPO_ROOT, 'tests/fixtures/chords');
 const CATALOG_FILE = path.join(REPO_ROOT, 'tests/helpers/chordHpcpFixtureCatalog.js');
 const GOLDEN_FILE = path.join(REPO_ROOT, 'tests/fixtures/chord-hpcp/frozen-hpcp-fixtures.json');
+const OPEN_STRUMS_FOLDER = 'open-strums';
 
-const ROOT_NEGATIVE_FIXTURES = new Set(['0_strum.wav', 'd_chord_wrong.wav']);
+const ROOT_NEGATIVE_CASES = [
+  { chordName: 'C-Dur', wavFile: 'd_chord_wrong.wav', expected: { isCorrect: false } },
+];
+const ROOT_NEGATIVE_FIXTURES = new Set(ROOT_NEGATIVE_CASES.map(fixture => fixture.wavFile));
+const OPEN_STRUM_NEGATIVE_CASES = [
+  '0_strum.wav',
+  '0_strum_alt.wav',
+  '1_strum.wav',
+  '1_strum_alt.wav',
+  '1_strum_alt1.wav',
+  '1_strum_alt3.wav',
+  '2_strum.wav',
+  '2_strum_alt.wav',
+  '3_strum.wav',
+  '3_strum_alt.wav',
+  '4_strum.wav',
+  '4_strum_alt.wav',
+  '5_strum.wav',
+  '5_strum_alt.wav',
+].map(fileName => ({
+  chordName: 'C-Dur',
+  wavFile: `${OPEN_STRUMS_FOLDER}/${fileName}`,
+  expected: { isCorrect: false },
+}));
 const CHORD_TEMPLATES = buildChordTemplates();
 const EXTRA_NEGATIVE_CASES = [
   { chordName: 'G-Dur', wavFile: 'D-Dur/d_chord.wav', expected: { isCorrect: false, bestMatchContains: 'D-Dur' } },
-  { chordName: 'C-Dur', wavFile: '0_strum.wav', expected: { isCorrect: false } },
-  { chordName: 'C-Dur', wavFile: 'd_chord_wrong.wav', expected: { isCorrect: false } },
+  ...OPEN_STRUM_NEGATIVE_CASES,
+  ...ROOT_NEGATIVE_CASES,
 ];
 
 const ROOT_FILE_ALIASES = new Map([
@@ -62,6 +86,10 @@ function normalizeVector(vector) {
   return Array.from(vector, normalizeNumber);
 }
 
+function isOpenStrumFixture(fileName) {
+  return /^\d_strum(?:_alt\d*)?\.wav$/i.test(fileName);
+}
+
 function inferChordFolder(fileName) {
   const stem = path.basename(fileName, path.extname(fileName)).toLowerCase();
   const aliases = [...ROOT_FILE_ALIASES.keys()].sort((a, b) => b.length - a.length);
@@ -87,6 +115,16 @@ async function moveLooseRootFixtures() {
     .sort(compareStrings);
 
   for (const fileName of looseWavs) {
+    if (isOpenStrumFixture(fileName)) {
+      const targetDir = path.join(CHORD_FIXTURES_DIR, OPEN_STRUMS_FOLDER);
+      const sourcePath = path.join(CHORD_FIXTURES_DIR, fileName);
+      const targetPath = path.join(targetDir, fileName);
+
+      await ensureDirectory(targetDir);
+      await fs.rename(sourcePath, targetPath);
+      continue;
+    }
+
     const targetFolder = inferChordFolder(fileName);
     if (!targetFolder) {
       throw new Error(`Keine Zielzuordnung für loses Chord-Fixture: ${fileName}`);
@@ -104,7 +142,7 @@ async function moveLooseRootFixtures() {
 async function collectPositiveFolderFixtures() {
   const entries = await fs.readdir(CHORD_FIXTURES_DIR, { withFileTypes: true });
   const chordDirs = entries
-    .filter(entry => entry.isDirectory())
+    .filter(entry => entry.isDirectory() && entry.name !== OPEN_STRUMS_FOLDER)
     .map(entry => entry.name)
     .sort(compareStrings);
 

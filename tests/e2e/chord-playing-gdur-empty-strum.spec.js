@@ -3,7 +3,7 @@ import { fileURLToPath } from 'url';
 import { test, expect } from '@playwright/test';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const emptyStrumAudioPath = path.resolve(__dirname, '../fixtures/chords/0_strum.wav');
+const emptyStrumAudioPath = path.resolve(__dirname, '../fixtures/chords/open-strums/0_strum.wav');
 
 test.use({
   launchOptions: {

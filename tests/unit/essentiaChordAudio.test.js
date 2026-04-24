@@ -15,13 +15,15 @@ const FROZEN_FIXTURES = JSON.parse(
 );
 
 const TEMPLATES = buildChordTemplates();
-const EMPTY_STRUM_FIXTURE = FROZEN_FIXTURES.find(fixture => fixture.wavFile === '0_strum.wav');
-const EMPTY_STRUM_HPCP = averageHpcps(EMPTY_STRUM_FIXTURE.hpcpFrames.map(frame => Float32Array.from(frame)));
 const ALL_CHORD_NAMES = Object.keys(TEMPLATES);
-const EMPTY_STRUM_BASS_SUPPORT = extractBassSupportMapFromWav('0_strum.wav', ALL_CHORD_NAMES);
+const EMPTY_STRUM_FIXTURES = FROZEN_FIXTURES.filter(fixture => /^open-strums\/\d_strum(?:_alt\d*)?\.wav$/.test(fixture.wavFile));
+const ZERO_STRUM_WAV = 'open-strums/0_strum.wav';
+const ZERO_STRUM_FIXTURE = EMPTY_STRUM_FIXTURES.find(fixture => fixture.wavFile === ZERO_STRUM_WAV);
+const EMPTY_STRUM_BASS_SUPPORT = extractBassSupportMapFromWav(ZERO_STRUM_WAV, ALL_CHORD_NAMES);
+const MATCHER_FIXTURES = FROZEN_FIXTURES.filter(fixture => !fixture.wavFile.startsWith('open-strums/'));
 
 describe('matchHpcpToChord – Frozen HPCP fixtures', () => {
-  for (const fixture of FROZEN_FIXTURES) {
+  for (const fixture of MATCHER_FIXTURES) {
     it(`bewertet ${fixture.chordName} aus ${fixture.wavFile} mit eingefrorener HPCP korrekt`, () => {
       const frozenFrames = fixture.hpcpFrames.map(frame => Float32Array.from(frame));
       const avgHpcp = averageHpcps(frozenFrames);
@@ -38,16 +40,17 @@ describe('matchHpcpToChord – Frozen HPCP fixtures', () => {
     });
   }
 
-  it.each(ALL_CHORD_NAMES)('bewertet leeres Strumming nicht als %s', (chordName) => {
-      const result = matchHpcpToChord(EMPTY_STRUM_HPCP, chordName, TEMPLATES, undefined, {
-        bassSupportByChord: EMPTY_STRUM_BASS_SUPPORT,
-      });
-
-      expect(
-        result.isCorrect,
-        `0_strum.wav -> ${chordName}: confidence=${result.confidence.toFixed(3)}, bestMatch=${result.bestMatch}`,
-      ).toBe(false);
+  it.each(ALL_CHORD_NAMES)('bewertet open-strums/0_strum.wav nicht als %s', (chordName) => {
+    const zeroStrumHpcp = averageHpcps(ZERO_STRUM_FIXTURE.hpcpFrames.map(frame => Float32Array.from(frame)));
+    const result = matchHpcpToChord(zeroStrumHpcp, chordName, TEMPLATES, undefined, {
+      bassSupportByChord: EMPTY_STRUM_BASS_SUPPORT,
     });
+
+    expect(
+      result.isCorrect,
+      `${ZERO_STRUM_WAV} -> ${chordName}: confidence=${result.confidence.toFixed(3)}, bestMatch=${result.bestMatch}`,
+    ).toBe(false);
+  });
 
   it('akzeptiert A-Moll (2-Finger) als explizite Sonderregel trotz sus2-artiger Evidenz', () => {
     const fixture = FROZEN_FIXTURES.find(entry => entry.wavFile === 'A-Moll (2-Finger)/01.wav');

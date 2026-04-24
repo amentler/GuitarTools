@@ -33,12 +33,12 @@ describe('Bass score for chord fixtures', () => {
     ).toBeGreaterThan(bassScore.upperNeighbor.score);
   });
 
-  it('erkennt bei 0_strum den lokalen Bass für E-basierte Akkorde als E', () => {
-    const bassSupportByChord = extractBassSupportMapFromWav('0_strum.wav', ['E-Dur', 'E-Moll', 'E7']);
+  it('erkennt bei open-strums/0_strum den lokalen Bass für E-basierte Akkorde als E', () => {
+    const bassSupportByChord = extractBassSupportMapFromWav('open-strums/0_strum.wav', ['E-Dur', 'E-Moll', 'E7']);
 
     for (const chordName of ['E-Dur', 'E-Moll', 'E7']) {
       const bassScore = bassSupportByChord[chordName];
-      expect(bassScore, `${chordName}: kein Bass-Score für 0_strum.wav`).toBeDefined();
+      expect(bassScore, `${chordName}: kein Bass-Score für open-strums/0_strum.wav`).toBeDefined();
       expect(bassScore.expected.label, `${chordName}: erwarteter Bass sollte E2 sein`).toBe('E2');
       expect(
         bassScore.expected.score,

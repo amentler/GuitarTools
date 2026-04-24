@@ -1,1 +1,1 @@
-Version 2026-04-24 16:38 UTC | split chord matcher pipeline and emoll alias regression
+Version 2026-04-24 17:07 UTC | move open strum fixtures into dedicated folder
