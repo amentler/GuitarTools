@@ -1,1 +1,1 @@
-Version 2026-04-24 17:10 UTC | introduce esus2 chord fixtures
+Version 2026-04-24 17:21 UTC | improve major vs dominant seventh separation

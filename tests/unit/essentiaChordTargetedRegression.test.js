@@ -134,6 +134,32 @@ describe('Targeted chord regressions', () => {
     expect(eSus2Result.isCorrect).toBe(false);
   });
 
+  it('akzeptiert Dur-Fixtures nicht zusätzlich als Dominantseptakkorde derselben Tonika', () => {
+    const cases = [
+      ['A-Dur', 'A-Dur/adur_steel.wav', 'A7'],
+      ['A-Dur', 'A-Dur/amaj.wav', 'A7'],
+      ['C-Dur', 'C-Dur/cdur_steel.wav', 'C7'],
+      ['D-Dur', 'D-Dur/d_chord.wav', 'D7'],
+      ['D-Dur', 'D-Dur/ddur_steel.wav', 'D7'],
+      ['E-Dur', 'E-Dur/edur_steel.wav', 'E7'],
+      ['E-Dur', 'E-Dur/edur_steel1.wav', 'E7'],
+      ['E-Dur', 'E-Dur/emaj.wav', 'E7'],
+      ['G-Dur', 'G-Dur/g_chord.wav', 'G7'],
+      ['H-Dur', 'H-Dur/01.wav', 'H7 (B7)'],
+    ];
+
+    for (const [chordName, wavFile, dominantChordName] of cases) {
+      const majorResult = getMatchResult(chordName, wavFile, chordName);
+      const dominantResult = getMatchResult(chordName, wavFile, dominantChordName);
+
+      expect(majorResult.isCorrect, `${wavFile} sollte als ${chordName} akzeptiert werden`).toBe(true);
+      expect(
+        dominantResult.isCorrect,
+        `${wavFile} darf nicht zusätzlich als ${dominantChordName} akzeptiert werden`,
+      ).toBe(false);
+    }
+  });
+
   it('akzeptiert G7 nicht zusätzlich als G-Dur- oder Gmaj7-Variante', () => {
     const g7Result = getMatchResult('G7', 'G7/01.wav', 'G7');
     const gMajorResult = getMatchResult('G7', 'G7/01.wav', 'G-Dur');

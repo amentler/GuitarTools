@@ -102,7 +102,7 @@ const CHORD_TYPE_PROFILES = {
     minFifthEnergy: 0.04,
     minExpectedThirdEnergy: 0.05,
     minSupportMean: 0.26,
-    minSeventhEnergy: 0.002,
+    minSeventhEnergy: 0.05,
   },
 };
 const MIN_TRIAD_THIRD_SEPARATION = 0.05;
@@ -112,6 +112,8 @@ const MIN_MAJOR_TRIAD_DOMINANT_SEVENTH_LEAKAGE = 0.08;
 const MIN_MAJOR_SEVENTH_RATIO = 0.6;
 const MIN_MINOR_SEVENTH_RATIO = 0.25;
 const MIN_DOMINANT_VARIANT_SEVENTH_ENERGY = 0.09;
+const MAX_SPARSE_DOMINANT_THIRD_ENERGY = 0.3;
+const MIN_SPARSE_DOMINANT_FIFTH_ENERGY = 0.8;
 const MIN_SUSPENSION_TO_THIRD_RATIO = 0.6;
 
 function stripChordAnnotation(chordName) {
@@ -373,7 +375,14 @@ function evaluateTriadQualityEvidence(targetDescriptor, targetEvidence, profile)
 }
 
 function evaluateChordExtensionEvidence(targetDescriptor, targetEvidence, profile, hpcp) {
-  const hasExpectedSeventh = !targetDescriptor || targetEvidence.expectedSeventhEnergy >= profile.minSeventhEnergy;
+  const hasSparseDominantTriadEvidence = Boolean(
+    targetDescriptor?.type === '7' &&
+    targetEvidence.expectedThirdEnergy <= MAX_SPARSE_DOMINANT_THIRD_ENERGY &&
+    targetEvidence.fifthEnergy >= MIN_SPARSE_DOMINANT_FIFTH_ENERGY
+  );
+  const hasExpectedSeventh = !targetDescriptor ||
+    targetEvidence.expectedSeventhEnergy >= profile.minSeventhEnergy ||
+    hasSparseDominantTriadEvidence;
   const hasControlledAddedSecond = !targetDescriptor ||
     targetDescriptor.type === '7' ||
     targetDescriptor.extensionSecondBin === null ||
@@ -419,6 +428,7 @@ function evaluateChordExtensionEvidence(targetDescriptor, targetEvidence, profil
 
   return {
     hasExpectedSeventh,
+    hasSparseDominantTriadEvidence,
     hasControlledAddedSecond,
     hasControlledDominantSecondLeakage,
     hasSuspensionEvidence,
