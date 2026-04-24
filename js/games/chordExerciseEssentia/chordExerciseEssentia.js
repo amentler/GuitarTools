@@ -17,12 +17,14 @@ export function createChordExerciseEssentia() {
   let score          = { correct: 0, total: 0 };
   let pendingTimer   = null;
   let autoListenTimer = null;
+  let feedbackClearTimer = null;
   let isListening    = false;
   let essentiaReady  = false;
   let flowToken      = 0;
 
   const SUCCESS_ADVANCE_DELAY_MS = 500;
   const RETRY_DELAY_MS = 250;
+  const FEEDBACK_VISIBLE_MS = 3000;
 
   const CATEGORIES = {
     'ece-cat-simplified': 'simplified',
@@ -103,6 +105,10 @@ export function createChordExerciseEssentia() {
     if (autoListenTimer !== null) { clearTimeout(autoListenTimer); autoListenTimer = null; }
   }
 
+  function clearFeedbackTimer() {
+    if (feedbackClearTimer !== null) { clearTimeout(feedbackClearTimer); feedbackClearTimer = null; }
+  }
+
   function scheduleAutoListen(token, delay = 0) {
     clearAutoListenTimer();
     if (!essentiaReady || !currentChord || !ui.view?.classList.contains('active')) return;
@@ -116,6 +122,7 @@ export function createChordExerciseEssentia() {
   function nextRound({ cancelActive = false } = {}) {
     clearPendingTimer();
     clearAutoListenTimer();
+    clearFeedbackTimer();
     flowToken++;
     const token = flowToken;
     if (cancelActive && isListening) stopListeningEssentia();
@@ -155,7 +162,6 @@ export function createChordExerciseEssentia() {
     isListening = true;
 
     if (ui.statusEl) setStatus('Warte auf Anschlag\u2026');
-    if (ui.feedbackEl) { ui.feedbackEl.textContent = ''; ui.feedbackEl.className = 'feedback-text'; }
 
     let result;
     try {
@@ -173,6 +179,18 @@ export function createChordExerciseEssentia() {
 
   function showFeedback(result, token = flowToken) {
     setStatus('');
+    clearFeedbackTimer();
+
+    // Helper to start the auto-clear timer
+    const startClearTimer = () => {
+      feedbackClearTimer = setTimeout(() => {
+        feedbackClearTimer = null;
+        if (ui.feedbackEl) {
+          ui.feedbackEl.textContent = '';
+          ui.feedbackEl.className = 'feedback-text';
+        }
+      }, FEEDBACK_VISIBLE_MS);
+    };
 
     // Essentia unavailable — show error but do not count as attempt
     if (result.essentiaError) {
@@ -191,6 +209,7 @@ export function createChordExerciseEssentia() {
         ui.feedbackEl.textContent = 'Kein Anschlag erkannt. Versuche es nochmal.';
         ui.feedbackEl.className   = 'feedback-text feedback-wrong';
       }
+      startClearTimer();
       scheduleAutoListen(token, RETRY_DELAY_MS);
       return;
     }
@@ -202,6 +221,7 @@ export function createChordExerciseEssentia() {
         ui.feedbackEl.textContent = 'Erfolg!';
         ui.feedbackEl.className   = 'feedback-text feedback-correct';
       }
+      // No startClearTimer here, because nextRound() will clear it anyway after success delay
       pendingTimer = setTimeout(() => {
         pendingTimer = null;
         if (ui.view?.classList.contains('active')) nextRound();
@@ -215,6 +235,7 @@ export function createChordExerciseEssentia() {
         ui.feedbackEl.textContent = `\u274C Nicht erkannt \u2013 \u00DCbereinstimmung: ${pct}%${hint}`;
         ui.feedbackEl.className   = 'feedback-text feedback-wrong';
       }
+      startClearTimer();
       scheduleAutoListen(token, RETRY_DELAY_MS);
     }
   }
@@ -260,6 +281,7 @@ export function createChordExerciseEssentia() {
   function unmount() {
     clearPendingTimer();
     clearAutoListenTimer();
+    clearFeedbackTimer();
     flowToken++;
     isListening = false;
     stopListeningEssentia();
