@@ -1,1 +1,1 @@
-Version 0.3 | 2026-04-25 17:24 | f613d69 | fix: resolve PWA issues (cache sync, precache coverage, centralized SW registration)
+Version 0.5 | 2026-04-26 01:14 | d81ae11 | ui: improve fretboard layout and update cache version

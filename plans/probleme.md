@@ -24,3 +24,11 @@ Fortlaufende Liste gefundener Probleme mit kurzer Einordnung und Beleg.
 - Schwere: hoch
 - Status: ✅ Gelöst (2026-04-25)
 - Lösung: SW-Registrierung und Reload-Logik in `js/shared/pwa/sw-client.js` zentralisiert und in alle `bootstrap.js` sowie `js/app.js` integriert.
+
+## 2026-04-25
+
+### 5. Fretboard-Hintergrund in der Web-Komponente <gt-fretboard> zu niedrig
+- Schwere: niedrig (visueller Bug)
+- Status: ✅ Gelöst (2026-04-25)
+- Beleg: Die Positions-Kreise (Radius 15) ragten über den braunen Hintergrund (Wood) hinaus.
+- Lösung: Vertikales Padding des Fretboard-Hintergrunds von 10px auf 20px erhöht und Labels neu positioniert.

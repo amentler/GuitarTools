@@ -6,10 +6,11 @@ const VB_H = 290;
 const NUT_X = 8;
 const RIGHT_X = 632;
 const FRETBOARD_W = RIGHT_X - NUT_X;
-const TOP_Y = 40;
-const BOTTOM_Y = 250;
+const TOP_Y = 55;
+const BOTTOM_Y = 265;
 const STRING_SPACING = (BOTTOM_Y - TOP_Y) / 5;
 const INLAY_FRETS = [3, 5, 7, 9];
+const WOOD_PADDING = 20;
 
 const STRING_PROPS = [
   { stroke: '#d4a017', width: '3.5' }, // 0 low E
@@ -95,8 +96,8 @@ export function renderFretboard(container, options = {}) {
 
   // Fretboard background
   svg.appendChild(el('rect', {
-    x: NUT_X, y: TOP_Y - 10,
-    width: FRETBOARD_W, height: BOTTOM_Y - TOP_Y + 20,
+    x: NUT_X, y: TOP_Y - WOOD_PADDING,
+    width: FRETBOARD_W, height: BOTTOM_Y - TOP_Y + (2 * WOOD_PADDING),
     fill: '#5c2e0a', rx: '4',
   }));
 
@@ -110,16 +111,16 @@ export function renderFretboard(container, options = {}) {
 
   // Nut
   svg.appendChild(el('rect', {
-    x: NUT_X, y: TOP_Y - 10,
-    width: '7', height: BOTTOM_Y - TOP_Y + 20,
+    x: NUT_X, y: TOP_Y - WOOD_PADDING,
+    width: '7', height: BOTTOM_Y - TOP_Y + (2 * WOOD_PADDING),
     fill: '#f5e6c8', rx: '2',
   }));
 
   // Fret wires
   for (let f = 1; f <= maxFret; f++) {
     svg.appendChild(el('line', {
-      x1: fretWireX[f], y1: TOP_Y - 10,
-      x2: fretWireX[f], y2: BOTTOM_Y + 10,
+      x1: fretWireX[f], y1: TOP_Y - WOOD_PADDING,
+      x2: fretWireX[f], y2: BOTTOM_Y + WOOD_PADDING,
       stroke: '#d4a843', 'stroke-width': '3', 'stroke-linecap': 'round',
     }));
   }
@@ -141,7 +142,7 @@ export function renderFretboard(container, options = {}) {
   const fretLabels = ['Leer', ...Array.from({ length: maxFret }, (_, i) => String(i + 1))];
   for (let f = 0; f <= maxFret; f++) {
     svg.appendChild(txt(fretLabels[f], {
-      x: fretCenterX[f], y: TOP_Y - 18,
+      x: fretCenterX[f], y: TOP_Y - 35,
       'text-anchor': 'middle', 'dominant-baseline': 'middle',
       fill: '#8a7a6a', 'font-size': '12', 'font-family': 'sans-serif',
     }));
