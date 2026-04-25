@@ -1,1 +1,1 @@
-Version 0.5 | 2026-04-26 01:14 | d81ae11 | ui: improve fretboard layout and update cache version
+Version 0.6 | 2026-04-26 01:19 | c897baa | chore: sync sw.js cache version to 0.5
