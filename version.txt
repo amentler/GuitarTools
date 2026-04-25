@@ -1,1 +1,1 @@
-Version 2026-04-25 12:03 | plan architecture phase 4 shared controls extraction
+Version 0.3 | 2026-04-25 17:24 | f613d69 | fix: resolve PWA issues (cache sync, precache coverage, centralized SW registration)
