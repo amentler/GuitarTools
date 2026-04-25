@@ -11,16 +11,27 @@ const CORE_PRECACHED_URLS = [
 
 const PAGE_PRECACHED_URLS = [
   'pages/akkord-trainer/index.html',
+  'pages/akkord-trainer/bootstrap.js',
   'pages/akkord-uebersicht/index.html',
+  'pages/akkord-uebersicht/bootstrap.js',
   'pages/akkordfolgen-trainer/index.html',
+  'pages/akkordfolgen-trainer/bootstrap.js',
   'pages/chord-playing-essentia/index.html',
+  'pages/chord-playing-essentia/bootstrap.js',
   'pages/fretboard-tone-recognition/index.html',
+  'pages/fretboard-tone-recognition/bootstrap.js',
   'pages/guitar-tuner/index.html',
+  'pages/guitar-tuner/bootstrap.js',
   'pages/metronome/index.html',
+  'pages/metronome/bootstrap.js',
   'pages/note-playing/index.html',
+  'pages/note-playing/bootstrap.js',
   'pages/sheet-music-mic/index.html',
+  'pages/sheet-music-mic/bootstrap.js',
   'pages/sheet-music-reading/index.html',
+  'pages/sheet-music-reading/bootstrap.js',
   'pages/ton-finder/index.html',
+  'pages/ton-finder/bootstrap.js',
 ];
 
 const REQUIRED_URLS = [

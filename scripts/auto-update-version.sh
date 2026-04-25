@@ -42,37 +42,49 @@ bump_version() {
 COMMIT_MSG_FILE=$1
 COMMIT_SOURCE=$2
 
-# 1. Guard: Only update if version.txt is NOT already staged.
+# 1. Guard: Only update version.txt if it is NOT already staged.
 # This avoids overwriting manual version bumps.
-if git diff --cached --name-only | grep -qx "version.txt"; then
-    exit 0
+if ! git diff --cached --name-only | grep -qx "version.txt"; then
+    # 2. Extract current version number from version.txt or, if necessary,
+    # recover the last valid numeric version from git history.
+    CURRENT_VERSION=$(extract_current_version "version.txt")
+
+    # 3. Increment the numeric version by exactly 0.1.
+    NEW_VERSION=$(bump_version "$CURRENT_VERSION")
+
+    TIMESTAMP=$(date "+%Y-%m-%d %H:%M")
+    HASH=$(git rev-parse --short HEAD 2>/dev/null || echo "initial")
+
+    # 4. Extract title if possible
+    TITLE=""
+    if [ -n "$COMMIT_MSG_FILE" ] && [ -f "$COMMIT_MSG_FILE" ]; then
+        # Read the first non-comment line from the commit message file
+        TITLE=$(grep -v '^#' "$COMMIT_MSG_FILE" | head -n 1 | xargs)
+    fi
+
+    if [ -z "$TITLE" ]; then
+        TITLE="Update"
+    fi
+
+    # 5. Update the file
+    echo "Version $NEW_VERSION | $TIMESTAMP | $HASH | $TITLE" > version.txt
+
+    # 6. Stage the change
+    git add version.txt
+
+    echo "Auto-updated version.txt to $NEW_VERSION"
 fi
 
-# 2. Extract current version number from version.txt or, if necessary,
-# recover the last valid numeric version from git history.
-CURRENT_VERSION=$(extract_current_version "version.txt")
-
-# 3. Increment the numeric version by exactly 0.1.
-NEW_VERSION=$(bump_version "$CURRENT_VERSION")
-
-TIMESTAMP=$(date "+%Y-%m-%d %H:%M")
-HASH=$(git rev-parse --short HEAD 2>/dev/null || echo "initial")
-
-# 4. Extract title if possible
-TITLE=""
-if [ -n "$COMMIT_MSG_FILE" ] && [ -f "$COMMIT_MSG_FILE" ]; then
-    # Read the first non-comment line from the commit message file
-    TITLE=$(grep -v '^#' "$COMMIT_MSG_FILE" | head -n 1 | xargs)
+# 7. Sync sw.js CACHE_VERSION with version.txt
+if [ -f "sw.js" ] && [ -f "version.txt" ]; then
+    CURRENT_VERSION_STRING=$(head -n 1 version.txt)
+    # Extract version identifier (e.g., "0.3" or "2026-04-25-12-03")
+    VERSION_SLUG=$(echo "$CURRENT_VERSION_STRING" | grep -oE 'Version [^|]+' | sed 's/Version //' | xargs | tr ' ' '-' | tr ':' '-')
+    
+    if [ -n "$VERSION_SLUG" ]; then
+        # Update sw.js CACHE_VERSION
+        sed -i "s/const CACHE_VERSION = '.*';/const CACHE_VERSION = '$VERSION_SLUG';/" sw.js
+        git add sw.js
+        echo "Synced sw.js CACHE_VERSION to $VERSION_SLUG"
+    fi
 fi
-
-if [ -z "$TITLE" ]; then
-    TITLE="Update"
-fi
-
-# 5. Update the file
-echo "Version $NEW_VERSION | $TIMESTAMP | $HASH | $TITLE" > version.txt
-
-# 6. Stage the change
-git add version.txt
-
-echo "Auto-updated version.txt to $NEW_VERSION"

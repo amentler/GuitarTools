@@ -1,3 +1,5 @@
+import { registerServiceWorker } from "../../js/shared/pwa/sw-client.js";
+registerServiceWorker();
 import '../../js/components/index.js';
 import { createAkkordfolgenFeature } from '../../js/games/akkordfolgenTrainer/akkordfolgenTrainer.js';
 
