@@ -1,1 +1,1 @@
-Version 0.6 | 2026-04-26 01:19 | c897baa | chore: sync sw.js cache version to 0.5
+Version 2026-04-26 11:24 | Griffbrett Tonanzeige Fix

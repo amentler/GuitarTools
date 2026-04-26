@@ -152,7 +152,7 @@ export function createFretboardExercise() {
       svgContainer.positions = [{
         stringIndex: state.targetPosition.string,
         fret: state.targetPosition.fret,
-        state: state.feedbackState || 'default'
+        state: state.feedbackState || 'selected'
       }];
     }
     updateNoteButtons();
