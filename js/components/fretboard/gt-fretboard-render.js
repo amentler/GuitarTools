@@ -1,15 +1,15 @@
-// Pure SVG fretboard rendering – unified "nice" style
+// Pure SVG fretboard rendering – unified "clean" style
 // Supports dynamic fret counts, string labels, and chord markers.
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 
-// Dimensions & Spacing
+// Dimensions & Spacing – adjusted for "larger" content area
 const VB_W = 640;
-const VB_H = 290;
-const MARGIN_LEFT = 70; // Room for string labels
-const MARGIN_TOP = 40;
-const MARGIN_BOTTOM = 40;
-const MARGIN_RIGHT = 20;
+const VB_H = 260; // Slightly shorter viewbox to reduce empty vertical space
+const MARGIN_LEFT = 45; // Reduced from 70
+const MARGIN_TOP = 25;  // Reduced from 40
+const MARGIN_BOTTOM = 40; // Space for fret numbers
+const MARGIN_RIGHT = 15;
 
 const DIAGRAM_W = VB_W - MARGIN_LEFT - MARGIN_RIGHT;
 const DIAGRAM_H = VB_H - MARGIN_TOP - MARGIN_BOTTOM;
@@ -22,7 +22,6 @@ const COLOR_STRING = '#d4a017';
 const COLOR_FRET = '#d4a843';
 const COLOR_NUT = '#f5e6c8';
 const COLOR_TEXT = '#8a7a6a';
-const COLOR_WOOD = '#5c2e0a';
 const COLOR_MARKER_DEFAULT = '#ff6b35';
 const COLOR_CORRECT = '#2ecc71';
 const COLOR_WRONG = '#e74c3c';
@@ -80,12 +79,7 @@ export function renderFretboard(container, options = {}) {
     style: 'width: 100%; height: auto; display: block; margin: 0 auto;',
   });
 
-  // Background Wood
-  svg.appendChild(el('rect', {
-    x: MARGIN_LEFT, y: MARGIN_TOP - 10,
-    width: DIAGRAM_W, height: DIAGRAM_H + 20,
-    fill: COLOR_WOOD, rx: '4', opacity: '0.1'
-  }));
+  // No wood background rect here – keep it clean.
 
   // Strings & Labels
   for (let s = 0; s < NUM_STRINGS; s++) {
@@ -107,7 +101,7 @@ export function renderFretboard(container, options = {}) {
     // Label
     if (showLabels) {
       svg.appendChild(txt(STRING_LABELS[s], {
-        x: MARGIN_LEFT - 35,
+        x: MARGIN_LEFT - 25, // Moved closer
         y: y + 5,
         'text-anchor': 'middle',
         fill: COLOR_TEXT,
@@ -143,20 +137,10 @@ export function renderFretboard(container, options = {}) {
         fill: COLOR_TEXT,
         'font-size': '14',
       }));
-    } else {
-       svg.appendChild(txt('0', {
-        x: x - 20,
-        y: MARGIN_TOP + DIAGRAM_H + 30,
-        'text-anchor': 'middle',
-        fill: COLOR_TEXT,
-        'font-size': '14',
-      }));
     }
   }
 
   // Interactive Zones & Position placeholders for Testing
-  // We draw circles for ALL active positions if interactive, but keep them transparent unless they have a state.
-  // This satisfies Playwright tests looking for circle[data-fret].
   for (const stringIndex of activeStrings) {
     const sIdx = 5 - stringIndex;
     const y = stringY(sIdx);
@@ -165,10 +149,10 @@ export function renderFretboard(container, options = {}) {
       const x = f === 0 ? MARGIN_LEFT - 20 : MARGIN_LEFT + (f - 0.5) * FRET_SPACING;
 
       // Clickable area
-      const zone = el(f === 0 ? 'rect' : 'rect', {
-        x: f === 0 ? MARGIN_LEFT - 50 : MARGIN_LEFT + (f - 1) * FRET_SPACING,
+      const zone = el('rect', {
+        x: f === 0 ? MARGIN_LEFT - 40 : MARGIN_LEFT + (f - 1) * FRET_SPACING,
         y: y - STRING_SPACING / 2,
-        width: f === 0 ? 50 : FRET_SPACING,
+        width: f === 0 ? 40 : FRET_SPACING,
         height: STRING_SPACING,
         fill: 'transparent',
         style: interactive ? 'cursor:pointer;' : '',
@@ -181,16 +165,14 @@ export function renderFretboard(container, options = {}) {
       }
       svg.appendChild(zone);
 
-      // We still need the circles for tests that expect circle[data-fret]
-      // In the previous version, all circles were rendered.
-      // Let's render transparent circles for all active positions to maintain test compatibility.
+      // Placeholder circle for tests
       const circle = el('circle', {
         cx: x, cy: y, r: f === 0 ? '8' : '14',
         fill: 'transparent',
         stroke: 'none',
         'data-string': String(stringIndex),
         'data-fret': String(f),
-        'pointer-events': 'none', // clicks go to the rect zone
+        'pointer-events': 'none',
       });
       svg.appendChild(circle);
     }

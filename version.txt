@@ -1,1 +1,1 @@
-Version 2026-04-26 12:01 | Fretboard Unification & Visual Upgrade
+Version 2026-04-26 12:10 | Fretboard Style Clean Up

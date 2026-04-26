@@ -6,7 +6,7 @@ import { PRECACHE_URLS } from './js/shared/pwa/precacheManifest.js';
 // - Network First: HTML/navigation and API
 // - Stale While Revalidate: most static runtime assets
 
-const CACHE_VERSION = '0.7';
+const CACHE_VERSION = '2026-04-26-12-01';
 const CACHE_PREFIX = 'guitartools';
 const PRECACHE_NAME = `${CACHE_PREFIX}-precache-${CACHE_VERSION}`;
 const STATIC_CACHE_NAME = `${CACHE_PREFIX}-static-${CACHE_VERSION}`;
