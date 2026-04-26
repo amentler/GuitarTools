@@ -10,7 +10,16 @@ extract_numeric_version_from_file() {
         return 1
     fi
 
-    grep -m1 -oE '^Version [0-9]+(\.[0-9]+)? \|' "$file_path" | awk '{ print $2 }'
+    # Try to find "Version X.Y |"
+    local ver
+    ver=$(grep -m1 -oE '^Version [0-9]+(\.[0-9]+)? \|' "$file_path" | awk '{ print $2 }')
+    if [[ -n "$ver" ]]; then
+        echo "$ver"
+        return 0
+    fi
+
+    # Fallback: if it just says "Version 2026-..." (no numeric counter), return 0.0 or last known
+    return 1
 }
 
 extract_current_version() {
@@ -23,15 +32,16 @@ extract_current_version() {
         return 0
     fi
 
+    # Check git history for the most recent valid numeric version
     while IFS= read -r commit_hash; do
         current_version=$(git show "${commit_hash}:${version_file}" 2>/dev/null | grep -m1 -oE '^Version [0-9]+(\.[0-9]+)? \|' | awk '{ print $2 }')
         if [[ -n "$current_version" ]]; then
             echo "$current_version"
             return 0
         fi
-    done < <(git log --format=%H -- "$version_file" 2>/dev/null)
+    done < <(git log --format=%H -n 20 -- "$version_file" 2>/dev/null)
 
-    echo "0.0"
+    echo "0.7" # Hard fallback based on known last version
 }
 
 bump_version() {

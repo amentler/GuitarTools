@@ -1,1 +1,1 @@
-Version 2026-04-26 12:10 | Fretboard Style Clean Up
+Version 0.8 | 2026-04-26 12:13 | 47375d8 | fix: restore version counter format
