@@ -6,8 +6,8 @@ const SVG_NS = 'http://www.w3.org/2000/svg';
 // Dimensions & Spacing – adjusted for "larger" content area
 const VB_W = 640;
 const VB_H = 260; // Slightly shorter viewbox to reduce empty vertical space
-const MARGIN_LEFT = 45; // Reduced from 70
-const MARGIN_TOP = 25;  // Reduced from 40
+const MARGIN_LEFT = 60; // Increased from 45 to avoid overlap
+const MARGIN_TOP = 25;
 const MARGIN_BOTTOM = 40; // Space for fret numbers
 const MARGIN_RIGHT = 15;
 
@@ -101,7 +101,7 @@ export function renderFretboard(container, options = {}) {
     // Label
     if (showLabels) {
       svg.appendChild(txt(STRING_LABELS[s], {
-        x: MARGIN_LEFT - 25, // Moved closer
+        x: MARGIN_LEFT - 42, // Moved further left to avoid markers
         y: y + 5,
         'text-anchor': 'middle',
         fill: COLOR_TEXT,
@@ -150,9 +150,9 @@ export function renderFretboard(container, options = {}) {
 
       // Clickable area
       const zone = el('rect', {
-        x: f === 0 ? MARGIN_LEFT - 40 : MARGIN_LEFT + (f - 1) * FRET_SPACING,
+        x: f === 0 ? MARGIN_LEFT - 55 : MARGIN_LEFT + (f - 1) * FRET_SPACING,
         y: y - STRING_SPACING / 2,
-        width: f === 0 ? 40 : FRET_SPACING,
+        width: f === 0 ? 55 : FRET_SPACING,
         height: STRING_SPACING,
         fill: 'transparent',
         style: interactive ? 'cursor:pointer;' : '',
