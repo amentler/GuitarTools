@@ -13,7 +13,6 @@ import {
   PROGRESSIONS,
   MAJOR_KEYS,
 } from './akkordfolgenLogic.js';
-import { renderChordDiagram } from '../../shared/rendering/chords/chordDiagramRenderer.js';
 import { CHORDS } from '../../data/akkordData.js';
 import { GUITAR_MIN_RMS, analyzeInputLevel } from '../../shared/audio/inputLevel.js';
 import { detectPeaksFromSpectrum, identifyNotesFromPeaks } from '../../domain/chords/chordDetectionLogic.js';
@@ -285,10 +284,15 @@ export function createAkkordfolgenTrainer() {
     const positions = CHORDS[chord.name];
     if (positions && ui.chordDiagram) {
       ui.chordDiagram.style.display = 'block';
-      renderChordDiagram(ui.chordDiagram, positions, positions, null, () => {}, true);
+      ui.chordDiagram.positions = positions.map(p => ({
+        stringIndex: p.string - 1,
+        fret: p.muted ? 0 : p.fret,
+        state: p.muted ? 'muted' : 'selected',
+        label: p.finger ? String(p.finger) : null
+      }));
     } else if (ui.chordDiagram) {
       ui.chordDiagram.style.display = 'none';
-      ui.chordDiagram.innerHTML = '';
+      ui.chordDiagram.positions = [];
     }
   }
 

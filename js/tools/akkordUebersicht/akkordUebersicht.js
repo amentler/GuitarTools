@@ -1,5 +1,4 @@
 import { CHORDS, CHORD_META } from '../../data/akkordData.js';
-import { renderChordDiagram } from '../../shared/rendering/chords/chordDiagramRenderer.js';
 
 const ROOT_ORDER = ['A', 'C', 'D', 'E', 'F', 'G', 'H'];
 const TYPE_ORDER = ['Dur', 'Moll', 'Dom7', 'Maj7', 'Min7', 'Dim', 'Sus', 'Add'];
@@ -57,7 +56,16 @@ function renderGrid() {
 
     const diagramEl = document.createElement('div');
     diagramEl.className = 'akkord-uebersicht-diagram';
-    renderChordDiagram(diagramEl, positions, null, null, () => {}, true);
+    
+    const fretboard = document.createElement('gt-fretboard');
+    fretboard.setAttribute('frets', '5');
+    fretboard.positions = positions.map(p => ({
+      stringIndex: p.string - 1,
+      fret: p.muted ? 0 : p.fret,
+      state: p.muted ? 'muted' : 'selected',
+      label: p.finger ? String(p.finger) : null
+    }));
+    diagramEl.appendChild(fretboard);
     card.appendChild(diagramEl);
 
     grid.appendChild(card);

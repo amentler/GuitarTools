@@ -27,7 +27,7 @@ export class GtFretboard extends HTMLElement {
   }
 
   static get observedAttributes() {
-    return ['frets', 'interactive'];
+    return ['frets', 'interactive', 'show-labels'];
   }
 
   // ── Reflected attributes ────────────────────────────────────────────────────
@@ -48,6 +48,15 @@ export class GtFretboard extends HTMLElement {
   set interactive(val) {
     if (val) this.setAttribute('interactive', '');
     else this.removeAttribute('interactive');
+  }
+
+  get showLabels() {
+    return !this.hasAttribute('show-labels') || this.getAttribute('show-labels') !== 'false';
+  }
+
+  set showLabels(val) {
+    if (val) this.removeAttribute('show-labels');
+    else this.setAttribute('show-labels', 'false');
   }
 
   // ── JS-only properties ──────────────────────────────────────────────────────
@@ -88,6 +97,7 @@ export class GtFretboard extends HTMLElement {
       activeStrings: this._activeStrings,
       positions: this._positions,
       interactive: this.interactive,
+      showLabels: this.showLabels,
       onSelect: (stringIndex, fret) => {
         const note = getNoteAtPosition(stringIndex, fret);
         this.dispatchEvent(new CustomEvent('fret-select', {

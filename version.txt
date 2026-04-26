@@ -1,1 +1,1 @@
-Version 2026-04-26 11:24 | Griffbrett Tonanzeige Fix
+Version 2026-04-26 12:01 | Fretboard Unification & Visual Upgrade

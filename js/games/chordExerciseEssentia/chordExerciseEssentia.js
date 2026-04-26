@@ -5,7 +5,6 @@
  */
 
 import { getRandomChord } from '../../domain/chords/chordCatalog.js';
-import { renderChordDiagram } from '../../shared/rendering/chords/chordDiagramRenderer.js';
 import { detectChordEssentia, stopListeningEssentia } from './essentiaChordDetection.js';
 import { getEssentia } from './essentiaLoader.js';
 import { CHORDS, CHORD_CATEGORIES } from '../../data/akkordData.js';
@@ -67,7 +66,7 @@ export function createChordExerciseEssentia() {
   function resolveUI() {
     ui = {
       chordName:    document.getElementById('ece-chord-name'),
-      diagramEl:    document.getElementById('ece-chord-diagram'),
+      diagramEl:    document.getElementById('ece-chord-fretboard'),
       feedbackEl:   document.getElementById('feedback-text'),
       statusEl:     document.getElementById('ece-essentia-status'),
       listenBtn:    document.getElementById('btn-ece-listen'),
@@ -81,7 +80,12 @@ export function createChordExerciseEssentia() {
 
   function drawChordDiagram() {
     if (!currentChord || !ui.diagramEl) return;
-    renderChordDiagram(ui.diagramEl, currentChord.positions, currentChord.positions, null, () => {}, true);
+    ui.diagramEl.positions = currentChord.positions.map(p => ({
+      stringIndex: p.string - 1,
+      fret: p.muted ? 0 : p.fret,
+      state: p.muted ? 'muted' : 'selected',
+      label: p.finger ? String(p.finger) : null
+    }));
   }
 
   function updateScoreUI() {

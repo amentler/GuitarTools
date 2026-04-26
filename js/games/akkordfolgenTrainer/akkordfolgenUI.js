@@ -20,7 +20,7 @@ export function resolveAkkordfolgenUI() {
     progressionDisplay: document.getElementById('aft-progression-display'),
     currentChordName: document.getElementById('aft-current-chord-name'),
     currentNumeral: document.getElementById('aft-current-numeral'),
-    chordDiagram: document.getElementById('aft-chord-diagram'),
+    chordDiagram: document.getElementById('aft-chord-fretboard'),
     beatDots: document.getElementById('aft-beat-dots'),
     feedback: document.getElementById('aft-feedback'),
     stopBtn: document.getElementById('aft-stop-btn'),

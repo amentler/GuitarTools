@@ -1,10 +1,10 @@
 /**
  * akkordTrainer.js
  * Main controller for the Chord Trainer game.
+ * Uses <gt-fretboard> component.
  */
 
 import { getRandomChord, validateChord } from './akkordLogic.js';
-import { renderChordDiagram } from './akkordSVG.js';
 
 export function createAkkordTrainerFeature() {
   // State (per-instance)
@@ -60,25 +60,53 @@ export function createAkkordTrainerFeature() {
   }
 
   function draw() {
-    renderChordDiagram(
-      query('#chord-diagram-container'),
-      userPositions,
-      currentChord ? currentChord.positions : null,
-      feedback,
-      handleTogglePosition
-    );
+    const fretboard = query('#chord-fretboard');
+    if (!fretboard) return;
+
+    const positions = [];
+    
+    // Convert user positions to component format
+    userPositions.forEach(pos => {
+      const state = feedback || 'selected';
+      positions.push({
+        stringIndex: pos.string - 1,
+        fret: pos.muted ? 0 : pos.fret,
+        state: pos.muted ? 'muted' : state
+      });
+    });
+
+    // If wrong, overlay reference positions as "missed" if they aren't in userPositions
+    if (feedback === 'wrong' && currentChord) {
+      currentChord.positions.forEach(ref => {
+        const alreadyShown = userPositions.some(up => 
+          up.string === ref.string && 
+          up.fret === ref.fret && 
+          up.muted === ref.muted
+        );
+        if (!alreadyShown) {
+          positions.push({
+            stringIndex: ref.string - 1,
+            fret: ref.muted ? 0 : ref.fret,
+            state: ref.muted ? 'muted' : 'missed'
+          });
+        }
+      });
+    }
+
+    fretboard.positions = positions;
   }
 
   /**
    * Handles clicking on the diagram to place/remove markers.
    */
-  function handleTogglePosition(string, fret, isMuteToggle) {
+  function handleTogglePosition(stringIndex, fret) {
     if (feedback) return; // Disable interaction during feedback phase
-
+    
+    const string = stringIndex + 1;
     const existingIdx = userPositions.findIndex(p => p.string === string);
     if (existingIdx < 0) return;
 
-    if (isMuteToggle) {
+    if (fret === 0) {
       const pos = userPositions[existingIdx];
       if (pos.muted) {
         // Switch from Muted to Open
@@ -141,13 +169,22 @@ export function createAkkordTrainerFeature() {
     rootElement = root;
     score = { correct: 0, total: 0 };
     updateScoreUI();
-    nextRound();
+    
+    const fretboard = query('#chord-fretboard');
+    if (fretboard && !fretboard.dataset.gtBound) {
+      fretboard.addEventListener('fret-select', (e) => {
+        handleTogglePosition(e.detail.stringIndex, e.detail.fret);
+      });
+      fretboard.dataset.gtBound = 'true';
+    }
 
     const btnCheck = query('#btn-chord-check');
     if (btnCheck && !btnCheck.dataset.gtBound) {
       btnCheck.addEventListener('click', handleCheck);
       btnCheck.dataset.gtBound = 'true';
     }
+
+    nextRound();
   }
 
   function unmount() {
