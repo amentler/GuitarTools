@@ -51,11 +51,11 @@ js/
 The app has four layers:
 
 1. **Navigation**: Standard HTML links between `index.html` and `pages/exercises/*.html` or `pages/tools/*.html`. `js/app.js` initializes the menu and version info.
-2. **Games/Tools** (`js/games/*`, `js/tools/*`): State + flow control. Each exercise/tool has its own HTML page that loads the necessary logic and components.
-3. **UI Components** (`js/components/*`): Reusable Web Components (custom elements) for shared UI elements like the fretboard.
-4. **Logic** (`*Logic.js`): Pure functions with no DOM/audio dependencies; fully unit-tested.
+2. **Games/Tools** (`js/games/*`, `js/tools/*`): State + flow control. Standardized factory pattern: `export function create[FeatureName]Feature()`.
+3. **UI Components** (`js/components/*`): Reusable Web Components (custom elements).
+4. **Logic** (`*Logic.js`): Pure functions; fully unit-tested (100% coverage goal).
 
-Navigation between menu and exercises is handled via standard `<a>` tags. Browser back-button works natively.
+Detailed architecture rules are in [docs/architecture.md](docs/architecture.md).
 
 ## `<gt-fretboard>` Web Component
 
@@ -95,8 +95,10 @@ board.addEventListener('fret-select', e => {
 | Phase | Feature migrated |
 |-------|-----------------|
 | ✅ Phase 1 | `tonFinder` |
-| ⬜ Phase 2 | `fretboardToneRecognition` |
-| ⬜ Phase 3 | Shared controls (`gt-toggle-group`, `gt-slider`) |
+| ✅ Phase 2 | `chordExerciseEssentia` |
+| ✅ Phase 3 | `fretboardToneRecognition` |
+| ✅ Phase 4 | Shared controls extraction & Fretboard Unification |
+| ✅ Phase 5 | [Sharpening Conventions](plans/old/phase-5-conventions-plan-2026-04-26.md) |
 
 ## Runtime Settings
 

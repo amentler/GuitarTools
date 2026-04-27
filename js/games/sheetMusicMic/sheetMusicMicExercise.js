@@ -37,7 +37,7 @@ const SUCCESS_PAUSE_MS      = 600; // pause after correct note before advancing
 const WRONG_FEEDBACK_MS     = 900; // duration of wrong-note feedback in easy mode
 const ANALYZE_INTERVAL_MS   = 50;  // frame cadence for the matching loop
 
-export function createSheetMusicMicExercise() {
+export function createSheetMusicMicFeature() {
   let intervalId = null;
   const audioSession = createSheetMusicMicAudioSession();
 
@@ -126,8 +126,8 @@ export function createSheetMusicMicExercise() {
     updateCurrentNoteDisplay();
     ui.feedback.textContent  = `Alle Noten gespielt! ${state.score.correct}/${state.score.total} richtig. 🎉`;
     ui.feedback.className    = 'feedback-text correct';
-    ui.startBtn.style.display = 'inline-block';
-    ui.stopBtn.style.display  = 'none';
+    ui.startBtn.classList.remove('u-hidden');
+    ui.stopBtn.classList.add('u-hidden');
   }
 
   function restartSequence() {
@@ -210,7 +210,7 @@ export function createSheetMusicMicExercise() {
     state.onsetGateState = createOnsetGateState();
     state.isLocked       = false;
 
-    ui.permission.style.display = 'block';
+    ui.permission.classList.remove('u-hidden');
     ui.permission.textContent   = 'Mikrofon-Zugriff wird benötigt…';
 
     try {
@@ -225,7 +225,7 @@ export function createSheetMusicMicExercise() {
       return;
     }
 
-    activeUi.permission.style.display = 'none';
+    activeUi.permission.classList.add('u-hidden');
 
     // NOTE: This exercise uses its own AudioContext and AnalyserNode, separate
     // from the tuner. The pitch-detection pipeline here is optimised for speed
@@ -336,8 +336,8 @@ export function createSheetMusicMicExercise() {
     wireFretSlider(ui.slider, ui.sliderLabel, state.settings, () => {
       stopListening();
       generateNewBars();
-      ui.startBtn.style.display = 'inline-block';
-      ui.stopBtn.style.display  = 'none';
+      ui.startBtn.classList.remove('u-hidden');
+      ui.stopBtn.classList.add('u-hidden');
     });
 
     wireStringToggles(
@@ -403,7 +403,7 @@ export function createSheetMusicMicExercise() {
 
     setMicListeningUI(ui, false);
     ui.feedback.textContent     = '';
-    ui.permission.style.display = 'none';
+    ui.permission.classList.add('u-hidden');
   }
 
   function unmount() {
@@ -418,5 +418,3 @@ export function createSheetMusicMicExercise() {
     stopExercise: unmount,
   };
 }
-
-export const createSheetMusicMicFeature = createSheetMusicMicExercise;

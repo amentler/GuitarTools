@@ -93,7 +93,7 @@ function initFilters() {
   initialized = true;
 }
 
-export function createAkkordUebersichtTool() {
+export function createAkkordUebersichtFeature() {
   function mount(root = document) {
     rootElement = root;
     initFilters();

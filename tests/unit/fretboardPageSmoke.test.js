@@ -10,7 +10,7 @@ const mountSpy = vi.fn();
 
 vi.mock('../../js/components/index.js', () => ({}));
 vi.mock('../../js/games/fretboardToneRecognition/fretboardExercise.js', () => ({
-  createFretboardFeature: () => ({
+  createFretboardToneRecognitionFeature: () => ({
     mount: mountSpy,
     unmount: vi.fn(),
   }),
@@ -29,7 +29,7 @@ describe('Fretboard page smoke', () => {
 
     const moduleScript = document.querySelector('script[type="module"]');
     expect(moduleScript?.getAttribute('src')).toBe('./bootstrap.js');
-    expect(html).not.toContain('createFretboardFeature');
+    expect(html).not.toContain('createFretboardToneRecognitionFeature');
 
     await import('../../pages/fretboard-tone-recognition/bootstrap.js');
 

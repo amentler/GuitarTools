@@ -91,7 +91,7 @@ function buildDom() {
 }
 
 describe('SheetMusicReading controller behavior', () => {
-  let createSheetMusicExercise;
+  let createSheetMusicReadingFeature;
 
   beforeEach(async () => {
     vi.resetModules();
@@ -109,7 +109,7 @@ describe('SheetMusicReading controller behavior', () => {
     playbackBarShow.mockClear();
     playbackBarMoveToBeat.mockClear();
     playbackBarDestroy.mockClear();
-    ({ createSheetMusicExercise } = await import('../../js/games/sheetMusicReading/sheetMusicReading.js'));
+    ({ createSheetMusicReadingFeature } = await import('../../js/games/sheetMusicReading/sheetMusicReading.js'));
   });
 
   afterEach(() => {
@@ -122,7 +122,7 @@ describe('SheetMusicReading controller behavior', () => {
     localStorage.setItem('sheetMusic_bpm', '92');
     localStorage.setItem('sheetMusic_timeSig', '3/4');
 
-    const feature = createSheetMusicExercise();
+    const feature = createSheetMusicReadingFeature();
     feature.mount();
 
     expect(renderScore).toHaveBeenCalled();
@@ -133,7 +133,7 @@ describe('SheetMusicReading controller behavior', () => {
   });
 
   it('play button toggles playback state and stop text', () => {
-    const feature = createSheetMusicExercise();
+    const feature = createSheetMusicReadingFeature();
     feature.mount();
 
     document.getElementById('btn-sheet-play').click();
@@ -146,7 +146,7 @@ describe('SheetMusicReading controller behavior', () => {
   });
 
   it('unmount stops active playback', () => {
-    const feature = createSheetMusicExercise();
+    const feature = createSheetMusicReadingFeature();
     feature.mount();
     document.getElementById('btn-sheet-play').click();
 

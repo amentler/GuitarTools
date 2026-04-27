@@ -20,6 +20,7 @@ As an AI agent working on this project, you MUST adhere to the following rules:
 - **PWA Ready:** Keep the Service Worker (`sw.js`) and manifest updated if new assets are added.
 - **Service-Worker Asset-Liste ist Pflicht:** Neue oder umbenannte lokale Assets/Module müssen immer in `sw.js` in `ASSETS` ergänzt werden, damit Reloads keinen veralteten Stand liefern.
 - **Testing:** Run `npm test` to execute unit tests. Run `npm run lint` for ESLint checks. Add tests in `tests/unit/` for any logic in `*Logic.js` files.
+- **Architecture:** Follow the rules defined in [docs/architecture.md](docs/architecture.md).
 - **Pre-Commit Mandate:** You MUST run `npm run lint` and `npm test` BEFORE committing any changes; if lint reports errors, fix them before committing. Committing code with failing tests is strictly prohibited.
 - **Note-Recognition Fix:** Fixed ID mismatches for feedback elements in `sheetMusicMic`, `notePlaying`, and `akkordTrainer`. Added `audioCtx.resume()` to all audio-based exercises to ensure compatibility with standalone page loads.
 - **Unit-Test Scope (current):** `fretboardLogic`, `tunerLogic`, `tonFinderLogic`, `akkordLogic`, `sheetMusicLogic`, `metronomeLogic`, `notePlayingLogic`, `appNavigationHistory`, `exerciseHeader`, `sheetMusicMicIntegration` (677 passing tests)

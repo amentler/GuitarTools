@@ -9,7 +9,7 @@ const RESHUFFLE_INTERVAL = 5;
 
 // ── Factory ───────────────────────────────────────────────────────────────────
 
-export function createFretboardExercise() {
+export function createFretboardToneRecognitionFeature() {
   // Module-level flags (per-instance)
   let settingsWired = false;
   let rootElement = null;
@@ -293,5 +293,3 @@ export function createFretboardExercise() {
     stopExercise: unmount,
   };
 }
-
-export const createFretboardFeature = createFretboardExercise;

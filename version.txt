@@ -1,1 +1,1 @@
-Version 0.9 | 2026-04-26 12:13 | a968b3e | chore: sync sw.js cache version
+Version 2026-04-27 12:48 | architecture cleanup and naming conventions phase 5

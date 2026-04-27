@@ -11,7 +11,7 @@ import { CHORDS, CHORD_CATEGORIES } from '../../data/akkordData.js';
 
 // ── Factory ───────────────────────────────────────────────────────────────────
 
-export function createChordExerciseEssentia() {
+export function createChordExerciseEssentiaFeature() {
   let currentChord   = null;
   let score          = { correct: 0, total: 0 };
   let pendingTimer   = null;
@@ -298,5 +298,3 @@ export function createChordExerciseEssentia() {
     stopExercise: unmount,
   };
 }
-
-export const createChordPlayingFeature = createChordExerciseEssentia;

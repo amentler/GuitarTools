@@ -10,7 +10,7 @@ const mountSpy = vi.fn();
 
 vi.mock('../../js/components/index.js', () => ({}));
 vi.mock('../../js/tools/akkordUebersicht/akkordUebersicht.js', () => ({
-  createAkkordUebersichtTool: () => ({
+  createAkkordUebersichtFeature: () => ({
     mount: mountSpy,
     unmount: vi.fn(),
   }),

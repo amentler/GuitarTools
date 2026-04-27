@@ -26,7 +26,7 @@ const LOOKAHEAD_ROWS = 2;
 // Minimum notes in the pool before showing the "too few notes" warning.
 const MIN_POOL_SIZE = 3;
 
-export function createSheetMusicExercise() {
+export function createSheetMusicReadingFeature() {
   let wired = false;
   let ui = null;
   const prefs = loadSheetMusicPrefs();
@@ -370,5 +370,3 @@ export function createSheetMusicExercise() {
     stopExercise: unmount,
   };
 }
-
-export const createSheetMusicFeature = createSheetMusicExercise;

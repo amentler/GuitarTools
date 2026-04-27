@@ -61,14 +61,14 @@ async function advance(ms = 1) {
 }
 
 describe('chordExerciseEssentia controller', () => {
-  let createChordExerciseEssentia;
+  let createChordExerciseEssentiaFeature;
 
   beforeEach(async () => {
     vi.useFakeTimers();
     vi.resetAllMocks();
     setupDom();
     getEssentia.mockResolvedValue({});
-    ({ createChordExerciseEssentia } = await import('../../js/games/chordExerciseEssentia/chordExerciseEssentia.js'));
+    ({ createChordExerciseEssentiaFeature } = await import('../../js/games/chordExerciseEssentia/chordExerciseEssentia.js'));
   });
 
   afterEach(() => {
@@ -86,7 +86,7 @@ describe('chordExerciseEssentia controller', () => {
       .mockReturnValueOnce(chordA)
       .mockReturnValueOnce(chordB);
 
-    const feature = createChordExerciseEssentia();
+    const feature = createChordExerciseEssentiaFeature();
     feature.mount();
 
     await letPromisesSettle();
@@ -117,7 +117,7 @@ describe('chordExerciseEssentia controller', () => {
       .mockReturnValueOnce(retryDetection.promise);
     getRandomChord.mockReturnValue(chordA);
 
-    const feature = createChordExerciseEssentia();
+    const feature = createChordExerciseEssentiaFeature();
     feature.mount();
 
     await letPromisesSettle();
@@ -145,7 +145,7 @@ describe('chordExerciseEssentia controller', () => {
       .mockReturnValueOnce(chordA)
       .mockReturnValueOnce(chordB);
 
-    const feature = createChordExerciseEssentia();
+    const feature = createChordExerciseEssentiaFeature();
     feature.mount();
 
     await letPromisesSettle();

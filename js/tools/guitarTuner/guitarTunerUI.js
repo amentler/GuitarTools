@@ -10,23 +10,20 @@ export function syncModeButtons(query, mode) {
 }
 
 export function resetGuidedPanels(query) {
-  const elBtnStart = query('#btn-start-guided');
-  const elActive = query('#guided-active');
-  const elFinished = query('#guided-finished');
-  if (elBtnStart) elBtnStart.style.display = '';
-  if (elActive) elActive.style.display = 'none';
-  if (elFinished) elFinished.style.display = 'none';
+  query('#btn-start-guided')?.classList.remove('u-hidden');
+  query('#guided-active')?.classList.add('u-hidden');
+  query('#guided-finished')?.classList.add('u-hidden');
 }
 
 export function showGuidedActive(query) {
-  query('#btn-start-guided').style.display = 'none';
-  query('#guided-active').style.display = '';
-  query('#guided-finished').style.display = 'none';
+  query('#btn-start-guided')?.classList.add('u-hidden');
+  query('#guided-active')?.classList.remove('u-hidden');
+  query('#guided-finished')?.classList.add('u-hidden');
 }
 
 export function showGuidedFinished(query) {
-  query('#guided-active').style.display = 'none';
-  query('#guided-finished').style.display = '';
+  query('#guided-active')?.classList.add('u-hidden');
+  query('#guided-finished')?.classList.remove('u-hidden');
 }
 
 export function renderGuidedStep(query, steps, stepIndex) {

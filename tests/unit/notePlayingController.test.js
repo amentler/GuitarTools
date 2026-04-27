@@ -68,7 +68,7 @@ function createMockAudioContext() {
 }
 
 describe('NotePlaying controller behavior', () => {
-  let createNotePlayingExercise;
+  let createNotePlayingExerciseFeature;
   let mockTrack;
   let mockAudio;
 
@@ -94,7 +94,7 @@ describe('NotePlaying controller behavior', () => {
       },
     });
 
-    ({ createNotePlayingExercise } = await import('../../js/games/notePlayingExercise/notePlayingExercise.js'));
+    ({ createNotePlayingExerciseFeature } = await import('../../js/games/notePlayingExercise/notePlayingExercise.js'));
   });
 
   afterEach(() => {
@@ -103,7 +103,7 @@ describe('NotePlaying controller behavior', () => {
   });
 
   it('mount initializes target display and requests microphone access', async () => {
-    const feature = createNotePlayingExercise();
+    const feature = createNotePlayingExerciseFeature();
 
     await feature.mount(document.getElementById('view-note-play'));
 
@@ -118,7 +118,7 @@ describe('NotePlaying controller behavior', () => {
       .mockReturnValueOnce('E4')
       .mockReturnValueOnce('F4');
 
-    const feature = createNotePlayingExercise();
+    const feature = createNotePlayingExerciseFeature();
     await feature.mount(document.getElementById('view-note-play'));
 
     const firstTarget = document.getElementById('note-play-target').textContent;
@@ -141,7 +141,7 @@ describe('NotePlaying controller behavior', () => {
     });
     mockAudio.analyser.getFloatTimeDomainData.mockImplementation(buffer => buffer.fill(0.08));
 
-    const feature = createNotePlayingExercise();
+    const feature = createNotePlayingExerciseFeature();
     await feature.mount(document.getElementById('view-note-play'));
 
     vi.advanceTimersByTime(150);
@@ -153,7 +153,7 @@ describe('NotePlaying controller behavior', () => {
   });
 
   it('unmount tears down media tracks and audio context', async () => {
-    const feature = createNotePlayingExercise();
+    const feature = createNotePlayingExerciseFeature();
     await feature.mount(document.getElementById('view-note-play'));
 
     feature.unmount();

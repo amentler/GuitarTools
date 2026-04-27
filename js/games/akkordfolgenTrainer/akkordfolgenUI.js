@@ -37,21 +37,21 @@ export function resolveAkkordfolgenUI() {
 }
 
 export function showAkkordfolgenSetup(ui) {
-  ui.setup.style.display = 'flex';
-  ui.active.style.display = 'none';
-  ui.summary.style.display = 'none';
+  ui.setup.classList.remove('u-hidden');
+  ui.active.classList.add('u-hidden');
+  ui.summary.classList.add('u-hidden');
 }
 
 export function showAkkordfolgenActive(ui) {
-  ui.setup.style.display = 'none';
-  ui.active.style.display = 'flex';
-  ui.summary.style.display = 'none';
+  ui.setup.classList.add('u-hidden');
+  ui.active.classList.remove('u-hidden');
+  ui.summary.classList.add('u-hidden');
 }
 
 export function showAkkordfolgenSummary(ui) {
-  ui.setup.style.display = 'none';
-  ui.active.style.display = 'none';
-  ui.summary.style.display = 'flex';
+  ui.setup.classList.add('u-hidden');
+  ui.active.classList.add('u-hidden');
+  ui.summary.classList.remove('u-hidden');
 }
 
 export function setAkkordfolgenFeedback(ui, text, kind) {

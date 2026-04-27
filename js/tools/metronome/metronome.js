@@ -10,7 +10,7 @@ import { createStorageService } from '../../shared/storage/storageService.js';
 const METRONOME_BPM_KEY = 'metronome_bpm';
 const METRONOME_BEATS_KEY = 'metronome_beats';
 
-export function createMetronomeTool({
+export function createMetronomeFeature({
   storageService = createStorageService(),
 } = {}) {
   let logic = null;
@@ -137,5 +137,3 @@ export function createMetronomeTool({
     stopExercise: unmount,
   };
 }
-
-export const createMetronomeExercise = createMetronomeTool;

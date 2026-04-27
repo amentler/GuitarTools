@@ -50,7 +50,7 @@ const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 
 // ── Factory ───────────────────────────────────────────────────────────────────
 
-export function createAkkordfolgenTrainer() {
+export function createAkkordfolgenTrainerFeature() {
   const audioSession   = createAkkordfolgenAudioSession();
   let listenIntervalId = null;
   let strumCooldown   = false;
@@ -195,9 +195,10 @@ export function createAkkordfolgenTrainer() {
     renderBeatDots();
 
     if (ui.permission) {
-      ui.permission.style.display = 'block';
-      ui.permission.textContent = 'Mikrofon-Zugriff wird ben\u00F6tigt\u2026';
+      ui.permission.classList.remove('u-hidden');
+      ui.permission.textContent = 'Mikrofon-Zugriff wird benötigt…';
     }
+
 
     // Initialise metronome AudioContext immediately (user gesture is still active here).
     metronome = new MetronomeLogic();
@@ -218,7 +219,7 @@ export function createAkkordfolgenTrainer() {
       return;
     }
 
-    if (activeUi?.permission) activeUi.permission.style.display = 'none';
+    if (activeUi?.permission) activeUi.permission.classList.add('u-hidden');
 
     await openAkkordfolgenAudioSession(audioSession, audioSession.stream, AudioContext, FFT_SIZE);
 
@@ -283,7 +284,7 @@ export function createAkkordfolgenTrainer() {
     // Chord diagram – only when the chord name exists verbatim in the database
     const positions = CHORDS[chord.name];
     if (positions && ui.chordDiagram) {
-      ui.chordDiagram.style.display = 'block';
+      ui.chordDiagram.classList.remove('u-hidden');
       ui.chordDiagram.positions = positions.map(p => ({
         stringIndex: p.string - 1,
         fret: p.muted ? 0 : p.fret,
@@ -291,7 +292,7 @@ export function createAkkordfolgenTrainer() {
         label: p.finger ? String(p.finger) : null
       }));
     } else if (ui.chordDiagram) {
-      ui.chordDiagram.style.display = 'none';
+      ui.chordDiagram.classList.add('u-hidden');
       ui.chordDiagram.positions = [];
     }
   }
@@ -481,5 +482,3 @@ export function createAkkordfolgenTrainer() {
     stopExercise: unmount,
   };
 }
-
-export const createAkkordfolgenFeature = createAkkordfolgenTrainer;

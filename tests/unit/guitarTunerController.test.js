@@ -103,8 +103,8 @@ function createMockAudioContext() {
   return { audioContext, analyser };
 }
 
-describe('createGuitarTunerTool controller behavior', () => {
-  let createGuitarTunerTool;
+describe('createGuitarTunerFeature controller behavior', () => {
+  let createGuitarTunerFeature;
   let mockTrack;
   let mockStream;
   let audioFactory;
@@ -130,7 +130,7 @@ describe('createGuitarTunerTool controller behavior', () => {
     }
     vi.stubGlobal('AudioContext', MockAudioContext);
 
-    ({ createGuitarTunerTool } = await import('../../js/tools/guitarTuner/guitarTuner.js'));
+    ({ createGuitarTunerFeature } = await import('../../js/tools/guitarTuner/guitarTuner.js'));
   });
 
   afterEach(() => {
@@ -139,13 +139,13 @@ describe('createGuitarTunerTool controller behavior', () => {
   });
 
   it('mount initializes tuner UI and requests microphone access', async () => {
-    const tool = createGuitarTunerTool();
+    const tool = createGuitarTunerFeature();
 
     await tool.mount(document.getElementById('view-tuner'));
 
     expect(initTunerSVG).toHaveBeenCalledWith(document.getElementById('tuner-display'));
     expect(navigator.mediaDevices.getUserMedia).toHaveBeenCalledWith({ audio: true, video: false });
-    expect(document.getElementById('tuner-permission').style.display).toBe('none');
+    expect(document.getElementById('tuner-permission').classList.contains('u-hidden')).toBe(true);
     expect(updateTunerDisplay).toHaveBeenCalledWith({
       cents: 0,
       note: null,
@@ -157,7 +157,7 @@ describe('createGuitarTunerTool controller behavior', () => {
   });
 
   it('mode buttons toggle active class after mount', async () => {
-    const tool = createGuitarTunerTool();
+    const tool = createGuitarTunerFeature();
     await tool.mount(document.getElementById('view-tuner'));
 
     const standard = document.getElementById('btn-mode-standard');
@@ -173,12 +173,12 @@ describe('createGuitarTunerTool controller behavior', () => {
   });
 
   it('guided mode start, advance and stop update the guided UI', async () => {
-    const tool = createGuitarTunerTool();
+    const tool = createGuitarTunerFeature();
     await tool.mount(document.getElementById('view-tuner'));
 
     document.getElementById('btn-start-guided').click();
-    expect(document.getElementById('btn-start-guided').style.display).toBe('none');
-    expect(document.getElementById('guided-active').style.display).toBe('');
+    expect(document.getElementById('btn-start-guided').classList.contains('u-hidden')).toBe(true);
+    expect(document.getElementById('guided-active').classList.contains('u-hidden')).toBe(false);
     expect(document.getElementById('guided-step-label').textContent).toBe('6. Saite');
     expect(document.getElementById('guided-step-target').textContent).toBe('E2');
     expect(document.querySelectorAll('#guided-step-progress .guided-progress-dot')).toHaveLength(3);
@@ -188,13 +188,13 @@ describe('createGuitarTunerTool controller behavior', () => {
     expect(document.getElementById('guided-step-target').textContent).toBe('A2');
 
     document.getElementById('btn-guided-stop').click();
-    expect(document.getElementById('btn-start-guided').style.display).toBe('');
-    expect(document.getElementById('guided-active').style.display).toBe('none');
-    expect(document.getElementById('guided-finished').style.display).toBe('none');
+    expect(document.getElementById('btn-start-guided').classList.contains('u-hidden')).toBe(false);
+    expect(document.getElementById('guided-active').classList.contains('u-hidden')).toBe(true);
+    expect(document.getElementById('guided-finished').classList.contains('u-hidden')).toBe(true);
   });
 
   it('unmount tears down timers, media tracks and audio context', async () => {
-    const tool = createGuitarTunerTool();
+    const tool = createGuitarTunerFeature();
     await tool.mount(document.getElementById('view-tuner'));
     document.getElementById('btn-start-guided').click();
 

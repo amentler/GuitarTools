@@ -28,7 +28,7 @@ import { requestMicrophoneStream } from '../../shared/audio/microphoneService.js
 // ── Constants ─────────────────────────────────────────────────────────────────
 const ANALYZE_INTERVAL_MS = 50; // matching-loop cadence
 
-export function createNotePlayingExercise() {
+export function createNotePlayingExerciseFeature() {
   let intervalId = null;
   let settingsWired = false;
   const audioSession = createNotePlayingAudioSession();
@@ -92,7 +92,7 @@ export function createNotePlayingExercise() {
     updateScore();
 
     // Request microphone access
-    ui.permission.style.display = 'block';
+    ui.permission.classList.remove('u-hidden');
     ui.permission.textContent = 'Mikrofon-Zugriff wird benötigt…';
 
     try {
@@ -102,7 +102,7 @@ export function createNotePlayingExercise() {
       return;
     }
 
-    ui.permission.style.display = 'none';
+    ui.permission.classList.add('u-hidden');
 
     // NOTE: This exercise uses its own AudioContext and AnalyserNode, separate
     // from the tuner. The pitch-detection pipeline here is optimised for speed
@@ -274,8 +274,8 @@ export function createNotePlayingExercise() {
     renderNoteOnStaff(ui.notation, state.targetNote);
     // Reset hints
     ui.targetNote.textContent      = state.targetNote ?? '–';
-    ui.targetNote.style.visibility = 'hidden';
-    ui.tabContainer.style.display  = 'none';
+    ui.targetNote.classList.add('u-invisible');
+    ui.tabContainer.classList.add('u-hidden');
     ui.tabContainer.innerHTML      = '';
     // Disable hint 2 until hint 1 is shown
     ui.hint1Btn.disabled = false;
@@ -286,7 +286,7 @@ export function createNotePlayingExercise() {
   function updateHintDisplay() {
     if (!ui) return;
     if (state.hintLevel >= 1) {
-      ui.targetNote.style.visibility = 'visible';
+      ui.targetNote.classList.remove('u-invisible');
       ui.hint2Btn.disabled = false;
     }
     if (state.hintLevel >= 2) {
@@ -296,7 +296,7 @@ export function createNotePlayingExercise() {
         state.settings.activeStrings,
       );
       renderNotePositionsTab(ui.tabContainer, positions);
-      ui.tabContainer.style.display = 'block';
+      ui.tabContainer.classList.remove('u-hidden');
     }
   }
 
@@ -330,5 +330,3 @@ export function createNotePlayingExercise() {
     stopExercise: unmount,
   };
 }
-
-export const createNotePlayingFeature = createNotePlayingExercise;

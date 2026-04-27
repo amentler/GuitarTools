@@ -22,6 +22,6 @@ export function syncSheetMusicMicUI(ui, state, syncFretSlider, syncStringToggles
 }
 
 export function setMicListeningUI(ui, isListening) {
-  ui.startBtn.style.display = isListening ? 'none' : 'inline-block';
-  ui.stopBtn.style.display = isListening ? 'inline-block' : 'none';
+  ui.startBtn.classList.toggle('u-hidden', isListening);
+  ui.stopBtn.classList.toggle('u-hidden', !isListening);
 }

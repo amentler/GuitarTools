@@ -1,4 +1,4 @@
-# Plan: Phase 5 – Konventionen schärfen (Sharpening Conventions)
+# Plan: Phase 5 – Konventionen schärfen (Sharpening Conventions) [COMPLETED]
 
 ## Goal
 Establish and enforce project-wide technical and stylistic conventions to ensure a consistent, maintainable, and professional codebase.

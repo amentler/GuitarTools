@@ -80,8 +80,8 @@ describe('Metronome controller persistence', () => {
     localStorage.setItem('metronome_bpm', '96');
     localStorage.setItem('metronome_beats', '3');
 
-    const { createMetronomeTool } = await import('../../js/tools/metronome/metronome.js');
-    const tool = createMetronomeTool();
+    const { createMetronomeFeature } = await import('../../js/tools/metronome/metronome.js');
+    const tool = createMetronomeFeature();
     tool.mount(document.getElementById('view-metronome'));
 
     expect(initMock).toHaveBeenCalledTimes(1);
@@ -92,8 +92,8 @@ describe('Metronome controller persistence', () => {
   });
 
   it('persists bpm and beats updates through the shared storage service', async () => {
-    const { createMetronomeTool } = await import('../../js/tools/metronome/metronome.js');
-    const tool = createMetronomeTool();
+    const { createMetronomeFeature } = await import('../../js/tools/metronome/metronome.js');
+    const tool = createMetronomeFeature();
     tool.mount(document.getElementById('view-metronome'));
 
     const slider = document.getElementById('metronome-bpm-slider');

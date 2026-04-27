@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { createSheetMusicMicExercise } from '../../js/games/sheetMusicMic/sheetMusicMicExercise.js';
+import { createSheetMusicMicFeature } from '../../js/games/sheetMusicMic/sheetMusicMicExercise.js';
 
 // Mock the dependencies that use external imports or complex DOM
 vi.mock('../../js/games/sheetMusicMic/sheetMusicMicSVG.js', () => ({
@@ -63,7 +63,7 @@ describe('SheetMusicMic Exercise Basic Integration', () => {
       </section>
     `;
 
-    exercise = createSheetMusicMicExercise();
+    exercise = createSheetMusicMicFeature();
   });
 
   afterEach(() => {

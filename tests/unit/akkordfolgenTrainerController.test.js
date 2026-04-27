@@ -84,7 +84,7 @@ function createMockAudioContext() {
 }
 
 describe('AkkordfolgenTrainer controller behavior', () => {
-  let createAkkordfolgenTrainer;
+  let createAkkordfolgenTrainerFeature;
   let mockTrack;
   let mockAudio;
 
@@ -113,7 +113,7 @@ describe('AkkordfolgenTrainer controller behavior', () => {
       },
     });
 
-    ({ createAkkordfolgenTrainer } = await import('../../js/games/akkordfolgenTrainer/akkordfolgenTrainer.js'));
+    ({ createAkkordfolgenTrainerFeature } = await import('../../js/games/akkordfolgenTrainer/akkordfolgenTrainer.js'));
   });
 
   afterEach(() => {
@@ -122,16 +122,16 @@ describe('AkkordfolgenTrainer controller behavior', () => {
   });
 
   it('mount populates setup UI and shows setup phase', () => {
-    const feature = createAkkordfolgenTrainer();
+    const feature = createAkkordfolgenTrainerFeature();
     feature.mount();
 
     expect(document.getElementById('aft-key-select').children.length).toBeGreaterThan(0);
     expect(document.getElementById('aft-progression-list').children.length).toBeGreaterThan(0);
-    expect(document.getElementById('aft-setup').style.display).toBe('flex');
+    expect(document.getElementById('aft-setup').classList.contains('u-hidden')).toBe(false);
   });
 
   it('start button enters active phase and starts audio + metronome', async () => {
-    const feature = createAkkordfolgenTrainer();
+    const feature = createAkkordfolgenTrainerFeature();
     feature.mount();
 
     document.getElementById('aft-start-btn').click();
@@ -143,12 +143,12 @@ describe('AkkordfolgenTrainer controller behavior', () => {
     expect(metronomeInit).toHaveBeenCalled();
     expect(metronomeSetBeatsPerMeasure).toHaveBeenCalledWith(4);
     expect(metronomeStart).toHaveBeenCalled();
-    expect(document.getElementById('aft-active').style.display).toBe('flex');
+    expect(document.getElementById('aft-active').classList.contains('u-hidden')).toBe(false);
     expect(document.getElementById('aft-current-chord-name').textContent.length).toBeGreaterThan(0);
   });
 
   it('unmount tears down metronome and media resources when running', async () => {
-    const feature = createAkkordfolgenTrainer();
+    const feature = createAkkordfolgenTrainerFeature();
     feature.mount();
     document.getElementById('aft-start-btn').click();
     await Promise.resolve();

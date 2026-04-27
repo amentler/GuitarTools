@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { createNotePlayingExercise } from '../../js/games/notePlayingExercise/notePlayingExercise.js';
+import { createNotePlayingExerciseFeature } from '../../js/games/notePlayingExercise/notePlayingExercise.js';
 
 // Mock dependencies that might fail in JSDOM/Node
 vi.mock('../../js/games/notePlayingExercise/notePlayingSVG.js', () => ({
@@ -58,7 +58,7 @@ describe('NotePlayingExercise Skip Button Integration', () => {
       }
     });
 
-    exercise = createNotePlayingExercise();
+    exercise = createNotePlayingExerciseFeature();
   });
 
   it('should change the target note when the skip button is clicked', async () => {

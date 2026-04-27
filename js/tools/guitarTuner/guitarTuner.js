@@ -43,7 +43,7 @@ import {
   stopGuidedModeState,
 } from './guitarTunerGuidedMode.js';
 
-export function createGuitarTunerTool() {
+export function createGuitarTunerFeature() {
   let intervalId = null;
   let modeWired = false;
   let guidedWired = false;
@@ -112,7 +112,7 @@ export function createGuitarTunerTool() {
     syncModeButtons(query, state.mode);
 
     // Request microphone
-    permission.style.display = 'block';
+    permission.classList.remove('u-hidden');
     permission.textContent = 'Mikrofon-Zugriff wird benötigt…';
 
     try {
@@ -122,7 +122,7 @@ export function createGuitarTunerTool() {
       return;
     }
 
-    permission.style.display = 'none';
+    permission.classList.add('u-hidden');
 
     // NOTE: The tuner creates its own AudioContext, AnalyserNode and audio
     // pipeline. This is intentional — the tuner prioritises pitch precision
@@ -308,5 +308,3 @@ export function createGuitarTunerTool() {
     stopExercise: unmount,
   };
 }
-
-export const createGuitarTunerExercise = createGuitarTunerTool;

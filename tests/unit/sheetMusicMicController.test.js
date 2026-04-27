@@ -39,9 +39,9 @@ function buildDom() {
       <div id="sheet-mic-current-note">–</div>
       <div id="sheet-mic-feedback" class="feedback-text"></div>
       <button id="sheet-mic-start-btn"></button>
-      <button id="sheet-mic-stop-btn" style="display:none"></button>
+      <button id="sheet-mic-stop-btn" class="u-hidden"></button>
       <button id="sheet-mic-new-bars"></button>
-      <p id="sheet-mic-permission" style="display:none"></p>
+      <p id="sheet-mic-permission" class="u-hidden"></p>
       <select id="sheet-mic-mode"><option value="easy">Einfach</option><option value="hard">Schwer</option></select>
       <input type="range" id="sheet-mic-fret-slider" min="0" max="3" value="3" />
       <span id="sheet-mic-fret-label">0 – 3</span>
@@ -69,7 +69,7 @@ function createMockAudioContext() {
 }
 
 describe('SheetMusicMic controller behavior', () => {
-  let createSheetMusicMicExercise;
+  let createSheetMusicMicFeature;
   let mockTrack;
   let mockAudio;
 
@@ -92,7 +92,7 @@ describe('SheetMusicMic controller behavior', () => {
       },
     });
 
-    ({ createSheetMusicMicExercise } = await import('../../js/games/sheetMusicMic/sheetMusicMicExercise.js'));
+    ({ createSheetMusicMicFeature } = await import('../../js/games/sheetMusicMic/sheetMusicMicExercise.js'));
   });
 
   afterEach(() => {
@@ -101,7 +101,7 @@ describe('SheetMusicMic controller behavior', () => {
   });
 
   it('mount initializes score and target note', () => {
-    const feature = createSheetMusicMicExercise();
+    const feature = createSheetMusicMicFeature();
     feature.mount();
 
     expect(renderScoreWithStatus).toHaveBeenCalled();
@@ -110,23 +110,23 @@ describe('SheetMusicMic controller behavior', () => {
   });
 
   it('start and stop buttons toggle listening UI', async () => {
-    const feature = createSheetMusicMicExercise();
+    const feature = createSheetMusicMicFeature();
     feature.mount();
 
     document.getElementById('sheet-mic-start-btn').click();
     await Promise.resolve();
 
     expect(navigator.mediaDevices.getUserMedia).toHaveBeenCalled();
-    expect(document.getElementById('sheet-mic-start-btn').style.display).toBe('none');
-    expect(document.getElementById('sheet-mic-stop-btn').style.display).toBe('inline-block');
+    expect(document.getElementById('sheet-mic-start-btn').classList.contains('u-hidden')).toBe(true);
+    expect(document.getElementById('sheet-mic-stop-btn').classList.contains('u-hidden')).toBe(false);
 
     document.getElementById('sheet-mic-stop-btn').click();
-    expect(document.getElementById('sheet-mic-start-btn').style.display).toBe('inline-block');
-    expect(document.getElementById('sheet-mic-stop-btn').style.display).toBe('none');
+    expect(document.getElementById('sheet-mic-start-btn').classList.contains('u-hidden')).toBe(false);
+    expect(document.getElementById('sheet-mic-stop-btn').classList.contains('u-hidden')).toBe(true);
   });
 
   it('unmount tears down media tracks and audio context', async () => {
-    const feature = createSheetMusicMicExercise();
+    const feature = createSheetMusicMicFeature();
     feature.mount();
     document.getElementById('sheet-mic-start-btn').click();
     await Promise.resolve();
