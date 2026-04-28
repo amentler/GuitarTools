@@ -1,1 +1,1 @@
-Version 2026-04-27 12:48 | architecture cleanup and naming conventions phase 5
+Version 1.0 | 2026-04-29 00:19 | 4fad8b8 | docs: clean up stale plans and project docs
