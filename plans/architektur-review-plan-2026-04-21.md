@@ -366,19 +366,7 @@ Abgeschlossene Phasen:
 - Phase 1 bis 4 sind umgesetzt und archiviert in [plans/old/architektur-review-plan-phasen-1-4-abgeschlossen-2026-04-24.md](/home/azureuserhauptmann/privat/GuitarTools/plans/old/architektur-review-plan-phasen-1-4-abgeschlossen-2026-04-24.md).
 - Phase 4 wurde am 2026-04-24 vervollständigt: Storage-, Mikrofon-/Audio-Session-, AudioContext- und Precache-Infrastruktur liegen jetzt zentral unter `js/shared/`.
 - Phase 5 ist ebenfalls abgeschlossen und archiviert in [plans/old/phase-5-conventions-plan-2026-04-26.md](/home/azureuserhauptmann/privat/GuitarTools/plans/old/phase-5-conventions-plan-2026-04-26.md).
-
-### Phase 6: Test- und CI-Qualität verbessern
-
-Priorität: P2
-
-1. Hängende oder sehr langsame Tests identifizieren und separieren.
-2. Test-Skripte nach Typ splitten.
-3. Smoke-Tests für Seiten-Bootstrapping und Lifecycle ergänzen.
-4. Architekturkritische Regeln per Lint und Tests absichern.
-
-## Empfohlene Reihenfolge der Restumsetzung
-
-1. Phase 6: Test- und CI-Qualität verbessern.
+- Phase 6 ist abgeschlossen; Ausfuehrungsstand und Commit-Historie liegen in [plans/old/phase-6-test-ci-qualitaet-2026-04-29.md](/home/azureuserhauptmann/privat/GuitarTools/plans/old/phase-6-test-ci-qualitaet-2026-04-29.md).
 
 ## Zielbild
 

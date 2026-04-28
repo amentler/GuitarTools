@@ -1,7 +1,7 @@
 # Plan: Phase 6 – Test- und CI-Qualitaet verbessern
 
 Stand: 2026-04-29
-Status: In Umsetzung
+Status: Abgeschlossen
 Quelle: [plans/architektur-review-plan-2026-04-21.md](/home/azureuserhauptmann/privat/GuitarTools/plans/architektur-review-plan-2026-04-21.md)
 
 ## Ziel
@@ -157,7 +157,18 @@ Validierung:
 Commit:
 - `test: add architecture boundary guards`
 
-Status: Offen
+Status: Abgeschlossen
+
+Umgesetzt:
+
+- `tests/unit/architectureBoundaryGuards.test.js` prueft jetzt:
+  - `js/components/**` importiert nicht aus `js/games/**` oder `js/tools/**`
+  - `js/tools/**` importiert nicht aus `js/games/**`
+
+Validiert:
+
+- `npx vitest run tests/unit/architectureBoundaryGuards.test.js` -> gruen
+- `npm run test:ci` -> gruen
 
 ### Schritt 5 – Abschluss und Restpunkte
 
@@ -171,7 +182,22 @@ Validierung:
 Commit:
 - `docs: update phase 6 progress`
 
-Status: Offen
+Status: Abgeschlossen
+
+Abschlussstand:
+
+- `npm test` -> gruen
+- Phase-6-Ziele aus dem Architekturreview sind fuer den aktuellen Scope umgesetzt.
+- E2E-Ausbau und weitergehende Import-/Architekturregeln bleiben moegliche Folgearbeiten, sind aber nicht mehr offener Kern dieser Phase.
+
+## Ergebnis
+
+Phase 6 ist fuer den aktuell geplanten Umfang abgeschlossen:
+
+- getrennte Testskripte existieren
+- CI ist sichtbar in lint/unit/audio geschnitten
+- schwere Audio-/Fixture-Suites sind isoliert und mit passenden Timeout-Budgets versehen
+- eine erste architekturkritische Grenze ist automatisiert abgesichert
 
 ## Testfaelle
 
