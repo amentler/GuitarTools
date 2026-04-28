@@ -8,6 +8,8 @@ aktive Arbeit und bereits erledigte Altstaende mischt.
 
 ## Aktiv
 
+- [plans/phase-6-test-ci-qualitaet-2026-04-29.md](/home/azureuserhauptmann/privat/GuitarTools/plans/phase-6-test-ci-qualitaet-2026-04-29.md)
+  Konkreter Umsetzungsplan fuer die verbleibende Phase 6 aus dem Architekturreview.
 - [plans/akkord-testabdeckung-vervollstaendigung-2026-04-23.md](/home/azureuserhauptmann/privat/GuitarTools/plans/akkord-testabdeckung-vervollstaendigung-2026-04-23.md)
   Offene Arbeit an fehlenden Akkorden, WAV-Fixtures und Filterstrategie fuer die Akkorduebersicht.
 - [plans/notenzeilen-akustische-pruefung.md](/home/azureuserhauptmann/privat/GuitarTools/plans/notenzeilen-akustische-pruefung.md)
