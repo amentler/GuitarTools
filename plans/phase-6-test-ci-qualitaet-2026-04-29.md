@@ -131,7 +131,19 @@ Validierung:
 Commit:
 - `ci: split lint unit and audio jobs`
 
-Status: Offen
+Status: Abgeschlossen
+
+Umgesetzt:
+
+- `.github/workflows/ci.yml` ist jetzt in getrennte Jobs `lint`, `unit` und `audio` geschnitten.
+- `unit` verwendet `npm run test:ci`.
+- `audio` verwendet `npm run test:audio`.
+- `docs/ci-quality-roadmap.md` beschreibt den neuen Pipeline-Zuschnitt.
+
+Validiert:
+
+- `npm run lint` -> gruen
+- `npm run test:ci` -> gruen
 
 ### Schritt 4 – Architektur-Guard automatisieren
 

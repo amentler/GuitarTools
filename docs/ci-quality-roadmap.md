@@ -9,14 +9,14 @@ GuitarTools ist eine statische Web-App ohne Build-Schritt. Die Qualitätssicheru
 CI-Workflow (`.github/workflows/ci.yml`):
 - Trigger: `push`, `pull_request`
 - Runtime: Node.js 22
-- Schritte:
-  - `npm ci`
-  - `npm run lint`
-  - `npm test`
+- Jobs:
+  - `lint` -> `npm run lint`
+  - `unit` -> `npm run test:ci`
+  - `audio` -> `npm run test:audio`
 
-Lokal verifiziert am 2026-04-21:
-- `npm run lint`: erfolgreich
-- `npm test`: erfolgreich (`31` Testdateien, `677` bestanden, `1` übersprungen)
+Lokal verifiziert am 2026-04-29:
+- `npm run test:unit`: erfolgreich
+- `npm run test:audio`: erfolgreich
 
 ## 2. Scope der Teststrategie
 
@@ -31,8 +31,8 @@ Bewusste Grenzen:
 
 ## 3. Nächste sinnvolle Schritte
 
-1. Branch Protection mit Pflichtstatus `CI` aktivieren, falls noch nicht gesetzt.
-2. Flaky-Test-Monitoring ergänzen (z. B. wiederholte Ausführung kritischer Audio-Tests im CI bei Bedarf).
+1. Branch Protection fuer die getrennten Pflichtstatus (`lint`, `unit`, `audio`) aktivieren, falls noch nicht gesetzt.
+2. Flaky-Test-Monitoring fuer die Audio-Suite ergänzen, falls wiederkehrende Timing-Probleme sichtbar werden.
 3. Optional: schlanke Smoke-E2E-Tests für Kernflows (Startseite, Navigation, Tuner-Start, eine Übung starten/beenden).
 4. Optional: Coverage-Reporting nur für Kernlogik einführen, nicht als hartes Merge-Kriterium.
 
