@@ -1,3 +1,3 @@
 # Intentionally left empty.
-# Version + service-worker sync runs in .husky/commit-msg so the generated
-# files are staged after pre-commit/lint-staged has finished.
+# Version + service-worker sync runs in .husky/pre-commit after lint-staged so
+# the generated files are part of the actual commit snapshot.
