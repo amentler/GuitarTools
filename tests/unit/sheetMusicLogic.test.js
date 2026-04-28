@@ -1,5 +1,56 @@
 import { describe, it, expect } from 'vitest';
-import { NOTES, generateBars, getFilteredNotes } from '../../js/games/sheetMusicReading/sheetMusicLogic.js';
+import { NOTES, generateBars, getFilteredNotes, getTimeSignatureConfig, EndlessBarGenerator } from '../../js/games/sheetMusicReading/sheetMusicLogic.js';
+
+describe('getTimeSignatureConfig', () => {
+  it('returns valid config for 4/4', () => {
+    const config = getTimeSignatureConfig('4/4');
+    expect(config).toEqual({ beatsPerBar: 4, noteDuration: 'q', vfTimeSig: '4/4' });
+  });
+
+  it('returns valid config for 3/4', () => {
+    const config = getTimeSignatureConfig('3/4');
+    expect(config).toEqual({ beatsPerBar: 3, noteDuration: 'q', vfTimeSig: '3/4' });
+  });
+
+  it('returns valid config for 6/8', () => {
+    const config = getTimeSignatureConfig('6/8');
+    expect(config).toEqual({ beatsPerBar: 6, noteDuration: 'e', vfTimeSig: '6/8' });
+  });
+
+  it('returns null for unknown signature', () => {
+    expect(getTimeSignatureConfig('5/4')).toBeNull();
+  });
+});
+
+describe('EndlessBarGenerator', () => {
+  it('initializes with correct beats per bar', () => {
+    const gen = new EndlessBarGenerator(4);
+    const batch = gen.nextBatch(2);
+    expect(batch).toHaveLength(2);
+    expect(batch[0]).toHaveLength(4);
+  });
+
+  it('maintains state across batches', () => {
+    const gen = new EndlessBarGenerator(4);
+    const batch1 = gen.nextBatch(1);
+    const batch2 = gen.nextBatch(1);
+    
+    const lastOf1 = batch1[0][3];
+    const firstOf2 = batch2[0][0];
+    
+    const idx1 = NOTES.indexOf(lastOf1);
+    const idx2 = NOTES.indexOf(firstOf2);
+    expect(Math.abs(idx1 - idx2)).toBeLessThanOrEqual(2);
+  });
+
+  it('can update notes pool', () => {
+    const pool = [NOTES[0], NOTES[1]];
+    const gen = new EndlessBarGenerator(4);
+    gen.setNotesPool(pool);
+    const batch = gen.nextBatch(1);
+    expect(batch[0].every(n => pool.includes(n))).toBe(true);
+  });
+});
 
 describe('generateBars', () => {
   it('creates 4 bars with 4 notes by default', () => {

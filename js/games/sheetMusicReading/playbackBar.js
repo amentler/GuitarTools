@@ -1,126 +1,101 @@
 /**
  * playbackBar.js
- * SVG overlay that shows a vertical playback bar (cursor) moving across the
- * sheet music in sync with the metronome.
- *
- * Coordinates are in VexFlow viewBox units (default: 640 × 240).
- * The overlay SVG is positioned absolutely over the notation wrapper div,
- * so the notation wrapper must have `position: relative`.
+ * 
+ * Manages the visual playhead (moving bar) for sheet music.
  */
 
-/**
- * Calculates the x-position of a beat in VexFlow viewBox coordinates.
- * Evenly distributes beat positions across the note area of the given bar.
- *
- * @param {Array<{ noteStartX: number, noteEndX: number }>} staveLayout
- *        One entry per bar; values are absolute x in viewBox units.
- * @param {number} barIndex   0-based bar index
- * @param {number} beatIndex  0-based beat index within the bar
- * @param {number} beatsPerBar
- * @returns {number|null}  x in viewBox units, or null if barIndex is out of range
- */
-export function calcBeatX(staveLayout, barIndex, beatIndex, beatsPerBar) {
-  if (!staveLayout || barIndex < 0 || barIndex >= staveLayout.length) return null;
-  const { noteStartX } = staveLayout[barIndex];
-  // Use the narrowest note area across all bars so every bar gets the same
-  // beat step width. Bar 0 has a wider area (clef + time signature take up
-  // space), which would otherwise make its notes appear more spread out.
-  const uniformNoteArea = Math.min(...staveLayout.map(b => b.noteEndX - b.noteStartX));
-  return noteStartX + (beatIndex / beatsPerBar) * uniformNoteArea;
-}
+import { calcBeatX as logicCalcBeatX } from './playbackLogic.js';
 
-/**
- * Manages the visual playback bar overlay.
- */
-export class PlaybackBar {
-  constructor() {
-    /** @type {SVGSVGElement|null} */
-    this._svg = null;
-    /** @type {SVGRectElement|null} */
-    this._rect = null;
-    /** @type {Array<{ noteStartX: number, noteEndX: number }>|null} */
-    this._staveLayout = null;
-    this._vw = 640;
-    this._vh = 240;
-  }
+export const calcBeatX = logicCalcBeatX;
 
-  /**
-   * Creates (or replaces) the SVG overlay inside the given container.
-   * The container must have `position: relative` for the overlay to work.
-   *
-   * @param {HTMLElement} container - The notation wrapper div
-   * @param {Array<{ noteStartX: number, noteEndX: number }>} staveLayout
-   * @param {number} [vw=640]  VexFlow viewBox width
-   * @param {number} [vh=240]  VexFlow viewBox height
-   */
-  render(container, staveLayout, vw = 640, vh = 240) {
-    // Remove any previous overlay
-    this._svg?.remove();
+export function createPlaybackBarFeature() {
+  let playheadEl = null;
+  let staveLayout = [];
 
-    this._staveLayout = staveLayout;
-    this._vw = vw;
-    this._vh = vh;
-
-    const ns = 'http://www.w3.org/2000/svg';
-    const svg = document.createElementNS(ns, 'svg');
-    svg.setAttribute('viewBox', `0 0 ${vw} ${vh}`);
+  function createPlayheadSVG(height) {
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('class', 'playback-bar-svg');
     svg.setAttribute('width', '100%');
-    svg.setAttribute('height', 'auto');
-    svg.setAttribute('aria-hidden', 'true');
-    svg.classList.add('playback-bar-svg');
+    svg.setAttribute('height', '100%');
+    svg.style.position = 'absolute';
+    svg.style.top = '0';
+    svg.style.left = '0';
+    svg.style.pointerEvents = 'none';
+    svg.style.zIndex = '10';
 
-    // Thin vertical rect (2 viewBox units wide) as the cursor
-    const rect = document.createElementNS(ns, 'rect');
-    rect.setAttribute('x', '0');
+    const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+    rect.setAttribute('class', 'playback-rect');
     rect.setAttribute('y', '0');
-    rect.setAttribute('width', '2');
-    rect.setAttribute('height', String(vh));
-    rect.setAttribute('fill', 'var(--color-accent, #e8334a)');
-    rect.setAttribute('opacity', '0.7');
-    rect.classList.add('playback-rect');
+    rect.setAttribute('width', '3');
+    rect.setAttribute('height', height);
+    rect.setAttribute('fill', 'var(--color-accent)');
+    rect.style.transition = 'none';
 
     svg.appendChild(rect);
-    container.appendChild(svg);
-
-    this._svg = svg;
-    this._rect = rect;
+    return { svg, rect };
   }
 
-  /**
-   * Moves the playback bar to the position of the given beat.
-   * Adjusts the CSS transition duration to match the current beat interval.
-   *
-   * @param {number} barIndex
-   * @param {number} beatIndex
-   * @param {number} beatsPerBar
-   */
-  moveToBeat(barIndex, beatIndex, beatsPerBar) {
-    if (!this._rect || !this._staveLayout) return;
-    const x = calcBeatX(this._staveLayout, barIndex, beatIndex, beatsPerBar);
-    if (x === null) return;
+  return {
+    render(container, layout, vw, height = 240) {
+      this.destroy();
+      staveLayout = layout;
+      const { svg, rect } = createPlayheadSVG(height);
+      playheadEl = rect;
+      container.appendChild(svg);
+    },
 
-    // Snap the cursor to the exact beat position the instant the beat fires.
-    // A CSS transition FROM the previous position would delay the visual by
-    // one full beat, making the accent appear on beat 4 instead of beat 1.
-    this._rect.style.transition = 'none';
-    this._rect.setAttribute('x', String(x));
-  }
+    destroy() {
+      if (playheadEl && playheadEl.parentNode) {
+        playheadEl.parentNode.parentNode.removeChild(playheadEl.parentNode);
+      }
+      playheadEl = null;
+    },
 
-  /** Shows the overlay (called when playback starts). */
-  show() {
-    if (this._svg) this._svg.classList.remove('playback-bar-hidden');
-  }
+    hide() {
+      if (playheadEl && playheadEl.parentNode) {
+        playheadEl.parentNode.classList.add('playback-bar-hidden');
+      }
+    },
 
-  /** Hides the overlay (called when playback stops). */
-  hide() {
-    if (this._svg) this._svg.classList.add('playback-bar-hidden');
-  }
+    show() {
+      if (playheadEl && playheadEl.parentNode) {
+        playheadEl.parentNode.classList.remove('playback-bar-hidden');
+      }
+    },
 
-  /** Removes the overlay SVG from the DOM entirely. */
-  destroy() {
-    this._svg?.remove();
-    this._svg  = null;
-    this._rect = null;
-    this._staveLayout = null;
+    moveToBeat(barIndex, beatIndex, beatsPerBar, bpm = 80) {
+      if (!playheadEl || !staveLayout[barIndex]) return;
+
+      const x = calcBeatX(staveLayout, barIndex, beatIndex, beatsPerBar);
+      if (x === null) return;
+      
+      // Snap to current position
+      playheadEl.style.transition = 'none';
+      playheadEl.setAttribute('x', String(x));
+
+      // Schedule animation for next beat
+      const beatDuration = 60 / bpm;
+      requestAnimationFrame(() => {
+        if (playheadEl) {
+          playheadEl.style.transition = `x ${beatDuration * 0.8}s linear`;
+        }
+      });
+    },
+
+    // For testing
+    get _rect() { return playheadEl; }
+  };
+}
+
+// Keep class for compatibility with existing code
+export class PlaybackBar {
+  constructor() {
+    this._feature = createPlaybackBarFeature();
   }
+  render(c, l, v) { this._feature.render(c, l, v); }
+  destroy() { this._feature.destroy(); }
+  hide() { this._feature.hide(); }
+  show() { this._feature.show(); }
+  moveToBeat(bar, beat, bpb) { this._feature.moveToBeat(bar, beat, bpb); }
+  get _rect() { return this._feature._rect; }
 }
