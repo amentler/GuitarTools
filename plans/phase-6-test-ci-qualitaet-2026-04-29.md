@@ -104,7 +104,19 @@ Validierung:
 Commit:
 - `test: split unit and audio test scripts`
 
-Status: Offen
+Status: Abgeschlossen
+
+Umgesetzt:
+
+- `package.json` enthaelt jetzt `test:unit`, `test:audio` und `test:ci`.
+- `test:unit` schliesst die klar schweren Signal-/Fixture-/Sequence-Suites explizit aus.
+- `test:audio` buendelt die schweren Suites inklusive `pitchLogic.test.js`.
+- `tests/unit/tunerAudio.test.js` erhielt eine groessere Timeout-Budgetierung fuer reale Low-String-Fixtures.
+
+Validiert:
+
+- `npm run test:unit` -> gruen
+- `npm run test:audio` -> gruen
 
 ### Schritt 3 – CI auf die neue Struktur umstellen
 

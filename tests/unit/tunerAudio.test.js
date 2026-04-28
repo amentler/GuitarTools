@@ -207,7 +207,7 @@ describe('Audio Fixture Integration Tests – Gitarren-Aufnahmen', () => {
         expect(result.octave).toBe(fixture.expectedOctave);
       // Real-guitar low-string fixtures get much slower when the overall test
       // suite runs with fewer parallel workers; keep a wider timeout budget.
-      }, 20_000);
+      }, 30_000);
     }
   }
 });
@@ -232,7 +232,7 @@ describe('Audio Fixture Integration Tests – Gitarren-Aufnahmen (unpräzise)', 
         expect(result).not.toBeNull();
         expect(result.note).toBe(fixture.expectedNote);
         expect(result.octave).toBe(fixture.expectedOctave);
-      }, 20_000);
+      }, 30_000);
     }
   }
 });

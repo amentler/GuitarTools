@@ -1,1 +1,1 @@
-Version 1.0 | 2026-04-29 00:19 | 4fad8b8 | docs: clean up stale plans and project docs
+Version 1.1 | 2026-04-29 00:30 | 8cdf816 | docs: add phase 6 execution plan
