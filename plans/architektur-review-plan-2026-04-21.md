@@ -4,6 +4,11 @@ Datum: 2026-04-21
 Projekt: `GuitarTools`
 Umfang: Review von Struktur, Modulgrenzen, SOLID, Wiederverwendung, Konventionen, Testbarkeit und Betriebsaspekten.
 
+Hinweis zum Dokumentstatus:
+Die Befunde in den Review-Abschnitten spiegeln den Stand vom 2026-04-21 wider.
+Mehrere damals kritische Punkte wurden seitdem in den archivierten Folgephasen behoben.
+Der aktuell relevante Reststand steht im Abschnitt `Priorisierter Optimierungsplan`.
+
 ## Bewertungsrahmen
 
 Die Review wurde entlang dieser Themen und Kriterien durchgeführt:
@@ -354,21 +359,13 @@ Optimierung:
 
 ## Priorisierter Optimierungsplan
 
-Statusstand: 2026-04-24
+Statusstand: 2026-04-29
 
 Abgeschlossene Phasen:
 
 - Phase 1 bis 4 sind umgesetzt und archiviert in [plans/old/architektur-review-plan-phasen-1-4-abgeschlossen-2026-04-24.md](/home/azureuserhauptmann/privat/GuitarTools/plans/old/architektur-review-plan-phasen-1-4-abgeschlossen-2026-04-24.md).
 - Phase 4 wurde am 2026-04-24 vervollständigt: Storage-, Mikrofon-/Audio-Session-, AudioContext- und Precache-Infrastruktur liegen jetzt zentral unter `js/shared/`.
-
-### Phase 5: Konventionen schärfen
-
-Priorität: P2
-
-1. Naming-Konvention für Module, IDs und Exporte festlegen.
-2. Standard für Dateigröße und Verantwortungsumfang dokumentieren.
-3. HTML ohne Inline-Bootstrap und ohne Inline-Styles.
-4. Architekturregeln in `docs/architecture.md` dokumentieren.
+- Phase 5 ist ebenfalls abgeschlossen und archiviert in [plans/old/phase-5-conventions-plan-2026-04-26.md](/home/azureuserhauptmann/privat/GuitarTools/plans/old/phase-5-conventions-plan-2026-04-26.md).
 
 ### Phase 6: Test- und CI-Qualität verbessern
 
@@ -381,8 +378,7 @@ Priorität: P2
 
 ## Empfohlene Reihenfolge der Restumsetzung
 
-1. Phase 5: Konventionen schärfen.
-2. Phase 6: Test- und CI-Qualität verbessern.
+1. Phase 6: Test- und CI-Qualität verbessern.
 
 ## Zielbild
 

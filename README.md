@@ -47,7 +47,7 @@ Die App läuft direkt im Browser (Desktop & Mobil) und kann dank Service Worker 
 
 ## Lokal starten
 
-Da es sich um eine statische App ohne Build-Schritt handelt, empfiehlt sich ein lokaler Webserver (damit ES-Module und der Service Worker korrekt funktionieren):
+Da es sich um eine statische App ohne Build-Schritt handelt, empfiehlt sich ein lokaler Webserver, damit ES-Module, page-lokale `bootstrap.js`-Dateien und der Service Worker korrekt funktionieren:
 
 **Option A – Python**
 ```bash
@@ -61,6 +61,13 @@ npx http-server -p 8000
 ```
 
 > **Hinweis:** Das direkte Öffnen von `index.html` per Doppelklick kann je nach Browser Probleme mit ES-Modulen und dem Service Worker verursachen und wird daher nicht empfohlen.
+
+### Checks
+
+```bash
+npm run lint
+npm test
+```
 
 ---
 
@@ -82,37 +89,35 @@ Dadurch werden Updates **sofort** sichtbar – auch auf Firefox für Android.
 
 ## Projektstruktur
 
-```
-index.html          – UI / alle Views (Menü, Übungen, Werkzeuge)
-style.css           – Globale Styles & CSS Custom Properties (Dark Theme)
-version.txt         – Versionsanzeige im Hauptmenü (Format: `Version YYYY-MM-DD HH:MM | label`, z. B. `Version 2026-04-21 20:40 | ton spielen layout update 3`)
+Die App ist heute eine Multi-Page Application. Jede Seite lebt unter `pages/<seite>/`
+mit eigenem `index.html` und `bootstrap.js`.
+
+```text
+index.html          – Startseite / Menü
+style.css           – Globale Styles
+version.txt         – Versionsanzeige
 manifest.json       – PWA-Manifest
-sw.js               – Service Worker (Network-First + Essentia Cache-First)
+sw.js               – Service Worker
+pages/
+├── <seite>/
+│   ├── index.html  – deklarative Seite
+│   └── bootstrap.js – seitenlokaler Composition Root
 js/
-├── app.js          – Navigation zwischen Views, Start/Stop der Module
-├── exerciseRegistry.js – Laufzeit-Registry für alle Übungen
-├── components/     – Wiederverwendbare Web Components (UI-Schicht)
-│   ├── index.js    – Registriert alle Custom Elements
-│   └── fretboard/
-│       ├── gt-fretboard.js         – <gt-fretboard> Web Component
-│       └── gt-fretboard-render.js  – Pure SVG-Renderfunktion
-├── games/          – Übungen (selbstständige Module)
-│   ├── fretboardToneRecognition/   – Griffbrett: Töne erkennen
-│   ├── sheetMusicReading/          – Noten lesen
-│   ├── akkordTrainer/              – Akkord-Trainer
-│   ├── tonFinder/                  – Ton-Finder (nutzt <gt-fretboard>)
-│   ├── notePlayingExercise/        – Ton spielen (Mikrofon)
-│   ├── sheetMusicMic/              – Noten spielen (Mikrofon + Notenbild)
-│   ├── chordExerciseEssentia/      – Akkord spielen (Essentia)
-│   └── akkordfolgenTrainer/        – Akkordfolgen-Training
-└── tools/          – Werkzeuge (ohne Score)
-    ├── guitarTuner/                – Gitarren-Stimmgerät
-    ├── metronome/                  – Metronom
-    └── akkordUebersicht/           – Akkord-Übersicht
-icons/              – App-Icons (SVG)
-docs/               – Dokumentation / Notizen
-plans/              – Planungsdokumente
+├── components/     – Wiederverwendbare Web Components
+├── games/          – Übungen / interaktive Features
+├── tools/          – Werkzeuge
+├── shared/         – Audio, Storage, PWA, Rendering, geteilte Infrastruktur
+├── domain/         – Fachlogik ohne DOM
+└── utils/          – Hilfsfunktionen
+tests/
+├── unit/           – Vitest Unit- und Smoke-Tests
+└── e2e/            – Playwright-End-to-End-Tests
+docs/               – Architektur- und Fachdokumentation
+plans/              – Aktive und archivierte Planungsdokumente
 ```
+
+Eine genauere Beschreibung der Schichten und Konventionen steht in
+[docs/architecture.md](docs/architecture.md).
 
 ---
 

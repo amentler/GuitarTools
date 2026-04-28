@@ -6,9 +6,11 @@ Fortlaufende Liste gefundener Probleme mit kurzer Einordnung und Beleg.
 
 ### 1. README beschreibt eine Repo-Struktur, die so nicht mehr existiert
 - Schwere: mittel
-- Beleg: `README.md:93` referenziert `js/exerciseRegistry.js`, diese Datei existiert im Repo nicht.
+- Status: ✅ Gelöst (2026-04-29)
+- Historischer Beleg: Die fruehere README referenzierte `js/exerciseRegistry.js`, obwohl diese Struktur nicht mehr dem aktuellen Repo entsprach.
 - Beleg: Die aktuelle Struktur liegt stattdessen unter `js/games/**`, `js/tools/**`, `js/shared/**`, `js/domain/**`.
 - Risiko: Neue Mitarbeitende oder spätere Refactorings arbeiten mit einer falschen mentalen Landkarte; dadurch werden Codepfade, Verantwortlichkeiten und Update-Stellen leicht falsch eingeschätzt.
+- Lösung: `README.md` auf die aktuelle MPA-Struktur mit `pages/<seite>/index.html` + `bootstrap.js`, `js/shared/**` und `docs/architecture.md` umgestellt.
 
 ### 2. Service-Worker-Cache-Version ist manuell entkoppelt von Releases
 - Schwere: hoch
