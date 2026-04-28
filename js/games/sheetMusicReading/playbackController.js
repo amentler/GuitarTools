@@ -1,87 +1,114 @@
 /**
  * playbackController.js
  * Bridges MetronomeLogic with sheet music playback.
- * 
- * Tracks global beat position so callers can determine which bar and beat
- * are currently playing.
+ *
+ * Tracks global beat position (not just beat within measure) so callers can
+ * determine which bar and which beat within that bar are currently playing.
+ *
+ * Usage:
+ *   const pc = new PlaybackController();
+ *   pc.onBeat(({ barIndex, beatIndex }) => highlightNote(barIndex, beatIndex));
+ *   pc.init();          // call after a user gesture (AudioContext requirement)
+ *   pc.start(80, 4, 16); // 80 BPM, 4 beats/bar, 16 total beats (4 bars)
+ *   pc.stop();
  */
 
 import { MetronomeLogic } from '../../shared/audio/metronomeLogic.js';
 
-export function createPlaybackController(dependencies = {}) {
-  const {
-    metronome = new MetronomeLogic(dependencies)
-  } = dependencies;
+export class PlaybackController {
+  constructor() {
+    this._metronome = new MetronomeLogic();
+    // Keep playback cursor visually a touch ahead of the click for easier reading.
+    this._metronome.setOnBeatAdvanceSeconds(0.1);
+    this._beatsPerBar = 4;
+    this._totalBeats = 0;
+    this._globalBeat = -1;
+    this._onBeatCallback = null;
 
-  // Keep playback cursor visually a touch ahead of the click for easier reading.
-  metronome.setOnBeatAdvanceSeconds(0.1);
+    // Wire the internal metronome callback once in the constructor.
+    // The external callback (_onBeatCallback) is set via onBeat().
+    this._metronome.onBeat = (_beatNumber) => {
+      this._globalBeat++;
+      if (this._onBeatCallback) {
+        const { barIndex, beatIndex } = this.getCurrentBeat();
+        this._onBeatCallback({ barIndex, beatIndex, globalBeat: this._globalBeat });
+      }
+    };
+  }
 
-  let beatsPerBar = 4;
-  let totalBeats = 0;
-  let globalBeat = -1;
-  let onBeatCallback = null;
+  /**
+   * Initializes the AudioContext. Must be called after a user gesture
+   * (browser autoplay policy).
+   */
+  init() {
+    this._metronome.init();
+  }
 
-  metronome.onBeat = (_beatNumber) => {
-    globalBeat++;
-    if (onBeatCallback) {
-      const position = getCurrentBeat();
-      onBeatCallback({ ...position, globalBeat });
-    }
-  };
+  /**
+   * Registers a callback that fires on every metronome beat.
+   * @param {function({ barIndex: number, beatIndex: number, globalBeat: number }): void} callback
+   */
+  onBeat(callback) {
+    this._onBeatCallback = callback;
+  }
 
-  function getCurrentBeat() {
-    const beat = Math.max(0, globalBeat);
-    const effectiveBeat = totalBeats > 0 ? beat % totalBeats : beat;
-    const barIndex = Math.floor(effectiveBeat / beatsPerBar);
-    const beatIndex = effectiveBeat % beatsPerBar;
+  /**
+   * Starts playback from the beginning.
+   * Lazily initialises the AudioContext on the first call (browser autoplay policy
+   * requires this to happen inside a user-gesture handler).
+   *
+   * @param {number} bpm           - Beats per minute (40–240)
+   * @param {number} beatsPerBar   - Beats per bar (time signature numerator)
+   * @param {number} [totalBeats]  - Total beats in piece (for wrap-around). 0 = no wrap.
+   */
+  start(bpm, beatsPerBar, totalBeats = 0) {
+    // Lazy AudioContext creation – safe to call multiple times (MetronomeLogic.init is idempotent).
+    this._metronome.init();
+    this._beatsPerBar = beatsPerBar || 4;
+    this._totalBeats = totalBeats;
+    this._globalBeat = -1;
+    this._metronome.setBpm(bpm);
+    this._metronome.setBeatsPerMeasure(beatsPerBar);
+    this._metronome.start();
+  }
+
+  /**
+   * Stops playback.
+   */
+  stop() {
+    this._metronome.stop();
+  }
+
+  /**
+   * Returns the current playback position as { barIndex, beatIndex }.
+   * Both indices are 0-based.
+   * If totalBeats is set, wraps around after the last beat.
+   *
+   * @returns {{ barIndex: number, beatIndex: number }}
+   */
+  getCurrentBeat() {
+    const beat = Math.max(0, this._globalBeat);
+    const effectiveBeat = this._totalBeats > 0
+      ? beat % this._totalBeats
+      : beat;
+    const barIndex = Math.floor(effectiveBeat / this._beatsPerBar);
+    const beatIndex = effectiveBeat % this._beatsPerBar;
     return { barIndex, beatIndex };
   }
 
-  return {
-    init() {
-      metronome.init();
-    },
-
-    onBeat(callback) {
-      onBeatCallback = callback;
-    },
-
-    start(bpm, bpb, total = 0) {
-      metronome.init();
-      beatsPerBar = bpb || 4;
-      totalBeats = total;
-      globalBeat = -1;
-      metronome.setBpm(bpm);
-      metronome.setBeatsPerMeasure(bpb);
-      metronome.start();
-    },
-
-    stop() {
-      metronome.stop();
-    },
-
-    setBpm(bpm) {
-      metronome.setBpm(bpm);
-    },
-
-    getCurrentBeat,
-
-    get isPlaying() {
-      return metronome.isPlaying;
-    }
-  };
-}
-
-// Keep class for compatibility with existing code during transition
-export class PlaybackController {
-  constructor() {
-    this._controller = createPlaybackController();
+  /**
+   * Updates the BPM while playing. Takes effect on the next beat.
+   * @param {number} bpm
+   */
+  setBpm(bpm) {
+    this._metronome.setBpm(bpm);
   }
-  init() { this._controller.init(); }
-  onBeat(cb) { this._controller.onBeat(cb); }
-  start(bpm, bpb, total) { this._controller.start(bpm, bpb, total); }
-  stop() { this._controller.stop(); }
-  setBpm(bpm) { this._controller.setBpm(bpm); }
-  getCurrentBeat() { return this._controller.getCurrentBeat(); }
-  get isPlaying() { return this._controller.isPlaying; }
+
+  /**
+   * Whether the metronome is currently running.
+   * @returns {boolean}
+   */
+  get isPlaying() {
+    return this._metronome.isPlaying;
+  }
 }

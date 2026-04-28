@@ -46,10 +46,6 @@ body {
   min-height: 100vh;
 }
 
-.playback-bar-hidden {
-  display: none !important;
-}
-
 .u-hidden {
   display: none !important;
 }
