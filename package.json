@@ -5,6 +5,7 @@
   "scripts": {
     "test": "npm run test:unit && npm run test:audio",
     "test:unit": "vitest run tests/unit --exclude 'tests/unit/pitchLogic.test.js' --exclude 'tests/unit/tunerAudio.test.js' --exclude 'tests/unit/fastNoteMatcherAudio.test.js' --exclude 'tests/unit/fastNoteMatcherSequence.fast.test.js' --exclude 'tests/unit/fastNoteMatcherSequence.medium.test.js' --exclude 'tests/unit/fastNoteMatcherSequence.slow.test.js' --exclude 'tests/unit/noteOnsetGateAudio.test.js' --exclude 'tests/unit/essentiaChordAudio.test.js' --exclude 'tests/unit/essentiaBassScore.test.js' --exclude 'tests/unit/essentiaChordConfusionMetrics.test.js' --exclude 'tests/unit/essentiaChordExtractionSnapshot.test.js'",
+    "test:staged": "vitest related --run --passWithNoTests --exclude 'tests/unit/pitchLogic.test.js' --exclude 'tests/unit/tunerAudio.test.js' --exclude 'tests/unit/fastNoteMatcherAudio.test.js' --exclude 'tests/unit/fastNoteMatcherSequence.fast.test.js' --exclude 'tests/unit/fastNoteMatcherSequence.medium.test.js' --exclude 'tests/unit/fastNoteMatcherSequence.slow.test.js' --exclude 'tests/unit/noteOnsetGateAudio.test.js' --exclude 'tests/unit/essentiaChordAudio.test.js' --exclude 'tests/unit/essentiaBassScore.test.js' --exclude 'tests/unit/essentiaChordConfusionMetrics.test.js' --exclude 'tests/unit/essentiaChordExtractionSnapshot.test.js'",
     "test:audio": "vitest run --testTimeout 60000 tests/unit/pitchLogic.test.js tests/unit/tunerAudio.test.js tests/unit/fastNoteMatcherAudio.test.js tests/unit/fastNoteMatcherSequence.fast.test.js tests/unit/fastNoteMatcherSequence.medium.test.js tests/unit/fastNoteMatcherSequence.slow.test.js tests/unit/noteOnsetGateAudio.test.js tests/unit/essentiaChordAudio.test.js tests/unit/essentiaBassScore.test.js tests/unit/essentiaChordConfusionMetrics.test.js tests/unit/essentiaChordExtractionSnapshot.test.js",
     "test:ci": "npm run test:unit",
     "test:e2e": "playwright test",
@@ -15,7 +16,7 @@
   "lint-staged": {
     "*.js": [
       "eslint --fix",
-      "vitest related --run --passWithNoTests --exclude 'tests/unit/tunerAudio.test.js' --exclude 'tests/unit/fastNoteMatcherAudio.test.js'"
+      "npm run test:staged --"
     ]
   },
   "devDependencies": {
