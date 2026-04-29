@@ -102,6 +102,7 @@ function _renderNotation(bars, timeSignature = '4/4') {
   const tsConfig = getTimeSignatureConfig(timeSignature) || getTimeSignatureConfig('4/4');
   const { vfTimeSig, noteDuration, beatsPerBar } = tsConfig;
   const beatValue = noteDuration === 'e' ? 8 : 4;
+  const vexflowDuration = noteDuration === 'e' ? '8' : noteDuration;
 
   // Probe VexFlow to get the actual clef+time-sig width (tsw) and the bare
   // leading margin (marginW) for the current time signature, without drawing.
@@ -169,7 +170,7 @@ function _renderNotation(bars, timeSignature = '4/4') {
   for (let bi = 0; bi < bars.length; bi++) {
     const stave = staves[bi];
     const notes = bars[bi].map(n =>
-      new StaveNote({ clef: 'treble', keys: [n.vfKey], duration: noteDuration })
+      new StaveNote({ clef: 'treble', keys: [n.vfKey], duration: vexflowDuration })
     );
 
     const voice = new Voice({ num_beats: beatsPerBar, beat_value: beatValue });

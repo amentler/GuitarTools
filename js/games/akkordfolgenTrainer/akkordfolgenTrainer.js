@@ -211,6 +211,7 @@ export function createAkkordfolgenTrainerFeature() {
       if (ui.permission) ui.permission.textContent = 'Mikrofon nicht verf\u00FCgbar. Bitte Zugriff erlauben.';
       state.isRunning = false;
       cleanup();
+      showSetup();
       return;
     }
 

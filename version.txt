@@ -1,1 +1,1 @@
-Version 1.7 | 2026-04-29 20:48 | 855ad04 | Update
+Version 1.8 | 2026-04-29 21:58 | d384d29 | Update
