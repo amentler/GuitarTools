@@ -54,4 +54,26 @@ test.describe('Fretboard Tone Recognition Exercise', () => {
     await expect(fretPlaceholder).toHaveAttribute('cx', markerCx);
     await expect(fretPlaceholder).toHaveAttribute('cy', markerCy);
   });
+
+  test('keeps the first fret visible in open-string-only mode without rendering fret markers on the board', async ({ page }) => {
+    await mockRandomSequence(page, [0.01, 0.01]);
+    await page.goto('/pages/fretboard-tone-recognition/index.html');
+
+    await page.locator('#fret-range-slider').fill('0');
+
+    const fretboard = page.locator('gt-fretboard');
+    await expect(fretboard).toHaveAttribute('frets', '0');
+
+    const fretNumber = page.locator('gt-fretboard text').filter({ hasText: '1' });
+    await expect(fretNumber).toHaveCount(1);
+
+    const openTarget = page.locator('gt-fretboard circle[fill="none"][stroke="#ff6b35"]');
+    await expect(openTarget).toHaveCount(1);
+
+    const filledTargets = page.locator('gt-fretboard circle[fill="#ff6b35"]');
+    await expect(filledTargets).toHaveCount(0);
+
+    const fret1Placeholder = page.locator('gt-fretboard circle[data-string="0"][data-fret="1"]');
+    await expect(fret1Placeholder).toHaveCount(0);
+  });
 });

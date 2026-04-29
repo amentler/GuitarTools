@@ -77,10 +77,11 @@ export function renderFretboard(container, options = {}) {
     showLabels = true,
     onSelect = null,
   } = options;
+  const displayedMaxFret = Math.max(1, maxFret);
 
   container.innerHTML = '';
-  const fretWireX = computeFretWireX(maxFret);
-  const fretCenterX = fretWireX.slice(0, -1).map((x, i) =>
+  const fretWireX = computeFretWireX(displayedMaxFret);
+  const fretCenters = fretWireX.slice(0, -1).map((x, i) =>
     Math.round((x + fretWireX[i + 1]) / 2)
   );
 
@@ -126,7 +127,7 @@ export function renderFretboard(container, options = {}) {
   }
 
   // Frets & Nut
-  for (let f = 0; f <= maxFret; f++) {
+  for (let f = 0; f <= displayedMaxFret; f++) {
     const x = fretWireX[f];
     const isNut = f === 0;
 
@@ -143,7 +144,7 @@ export function renderFretboard(container, options = {}) {
     // Fret Numbers
     if (f > 0) {
       svg.appendChild(txt(f.toString(), {
-        x: fretCenterX[f],
+        x: fretCenters[f - 1],
         y: MARGIN_TOP + DIAGRAM_H + 30,
         'text-anchor': 'middle',
         fill: COLOR_TEXT,
@@ -157,7 +158,7 @@ export function renderFretboard(container, options = {}) {
     const y = stringY(stringIndex);
 
     for (let f = 0; f <= maxFret; f++) {
-      const x = f === 0 ? MARGIN_LEFT - 20 : fretCenterX[f];
+      const x = f === 0 ? MARGIN_LEFT - 20 : fretCenters[f - 1];
       const zoneX = f === 0 ? MARGIN_LEFT - 55 : fretWireX[f - 1];
       const zoneWidth = f === 0 ? 55 : fretWireX[f] - fretWireX[f - 1];
 
@@ -224,7 +225,7 @@ export function renderFretboard(container, options = {}) {
         'pointer-events': 'none',
       }));
     } else {
-      const x = fretCenterX[pos.fret];
+      const x = fretCenters[pos.fret - 1];
       let fill = COLOR_MARKER_DEFAULT;
       if (pos.state === 'correct') fill = COLOR_CORRECT;
       if (pos.state === 'wrong') fill = COLOR_WRONG;

@@ -63,6 +63,29 @@ describe('GtFretboard', () => {
     expect(fret2 - fret1).toBeGreaterThan(fret5 - fret4);
   });
 
+  it('places the first fret marker between the nut and the first fret wire', () => {
+    document.body.innerHTML = '<gt-fretboard frets="3"></gt-fretboard>';
+    const element = document.querySelector('gt-fretboard');
+
+    const nutX = Number(element.querySelector('line[stroke="#f5e6c8"]').getAttribute('x1'));
+    const firstFretWireX = Number(element.querySelector('line[stroke="#d4a843"]').getAttribute('x1'));
+    const fret1MarkerX = Number(element.querySelector('circle[data-string="0"][data-fret="1"]').getAttribute('cx'));
+
+    expect(fret1MarkerX).toBeGreaterThan(nutX);
+    expect(fret1MarkerX).toBeLessThan(firstFretWireX);
+  });
+
+  it('keeps the first fret visible even when only open strings are allowed', () => {
+    document.body.innerHTML = '<gt-fretboard frets="0"></gt-fretboard>';
+    const element = document.querySelector('gt-fretboard');
+
+    const fretNumbers = Array.from(element.querySelectorAll('text')).map(node => node.textContent);
+    const fret1Marker = element.querySelector('circle[data-string="0"][data-fret="1"]');
+
+    expect(fretNumbers).toContain('1');
+    expect(fret1Marker).toBeNull();
+  });
+
   it('maps string index 0 to the bottom string and 5 to the top string', () => {
     document.body.innerHTML = '<gt-fretboard frets="3"></gt-fretboard>';
     const element = document.querySelector('gt-fretboard');
