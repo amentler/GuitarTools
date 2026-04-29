@@ -37,6 +37,12 @@ const SUCCESS_PAUSE_MS      = 600; // pause after correct note before advancing
 const WRONG_FEEDBACK_MS     = 900; // duration of wrong-note feedback in easy mode
 const ANALYZE_INTERVAL_MS   = 50;  // frame cadence for the matching loop
 
+function resolveInjectedBars() {
+  const injectedBars = globalThis.__GT_SHEET_MUSIC_MIC_BARS__;
+  if (typeof injectedBars === 'function') return injectedBars();
+  return injectedBars ?? null;
+}
+
 export function createSheetMusicMicFeature() {
   let intervalId = null;
   const audioSession = createSheetMusicMicAudioSession();
@@ -67,8 +73,11 @@ export function createSheetMusicMicFeature() {
 
   // ── Score generation ──────────────────────────────────────────────────────
   function generateNewBars() {
-    const pool    = getNotesPool();
-    const rawBars = generateBars(4, 4, pool);
+    const injectedBars = resolveInjectedBars();
+    const pool = getNotesPool();
+    const rawBars = Array.isArray(injectedBars)
+      ? injectedBars
+      : generateBars(4, 4, pool);
 
     // Attach a mutable `status` to each note object (shallow copy to avoid mutating the pool)
     state.bars = rawBars.map(bar =>
