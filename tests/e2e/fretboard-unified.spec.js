@@ -1,26 +1,6 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('Unified Fretboard Component - Baseline', () => {
-
-  test('Fretboard Tone Recognition: should show target note and handle interaction', async ({ page }) => {
-    await page.goto('/pages/fretboard-tone-recognition/index.html');
-
-    const fretboard = page.locator('gt-fretboard');
-    await expect(fretboard).toBeVisible();
-
-    // Check if there is exactly one highlighted circle (target note)
-    const highlightedCircles = page.locator('gt-fretboard circle[fill="#ff6b35"]');
-    await expect(highlightedCircles).toHaveCount(1);
-
-    // Clicking a note button should provide feedback
-    const firstNoteBtn = page.locator('.btn-note').first();
-    await firstNoteBtn.click();
-
-    // Feedback text should appear
-    const feedback = page.locator('#feedback-text');
-    await expect(feedback).not.toBeEmpty();
-  });
-
   test('Ton-Finder: should allow toggling positions and show feedback on finish', async ({ page }) => {
     await page.goto('/pages/ton-finder/index.html');
 

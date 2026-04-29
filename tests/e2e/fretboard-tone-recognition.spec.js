@@ -1,23 +1,57 @@
 import { test, expect } from '@playwright/test';
 
+function mockRandomSequence(page, values) {
+  return page.addInitScript(sequence => {
+    const queue = [...sequence];
+    window.__GT_RANDOM__ = () => {
+      if (queue.length === 0) {
+        throw new Error('Random mock exhausted.');
+      }
+      return queue.shift();
+    };
+  }, values);
+}
+
 test.describe('Fretboard Tone Recognition Exercise', () => {
-  test('should show a highlighted note on load', async ({ page }) => {
+  test('shows an open-string target marker left of the fretboard when the mocked draw picks fret 0', async ({ page }) => {
+    await mockRandomSequence(page, [0.01, 0.01]);
     await page.goto('/pages/fretboard-tone-recognition/index.html');
 
-    // Wait for the fretboard to be rendered
     const fretboard = page.locator('gt-fretboard');
     await expect(fretboard).toBeVisible();
 
-    // Check if there is exactly one highlighted circle
-    // Highlighting means fill is not transparent.
-    // In gt-fretboard-render.js:
-    // selected/missed: #ff6b35
-    // correct: #2ecc71
-    // wrong: #e74c3c
+    const openTarget = page.locator('gt-fretboard circle[fill="none"][stroke="#ff6b35"]');
+    await expect(openTarget).toHaveCount(1);
 
-    const highlightedCircles = page.locator('gt-fretboard circle[fill="#ff6b35"]');
+    const filledTargets = page.locator('gt-fretboard circle[fill="#ff6b35"]');
+    await expect(filledTargets).toHaveCount(0);
 
-    // Initially, one note should be "selected" (highlighted)
-    await expect(highlightedCircles).toHaveCount(1);
+    const openPlaceholder = page.locator('gt-fretboard circle[data-string="0"][data-fret="0"]');
+    const markerCx = await openTarget.getAttribute('cx');
+    const markerCy = await openTarget.getAttribute('cy');
+
+    await expect(openPlaceholder).toHaveAttribute('cx', markerCx);
+    await expect(openPlaceholder).toHaveAttribute('cy', markerCy);
+  });
+
+  test('shows a filled fret marker on the fretboard when the mocked draw picks a fretted note', async ({ page }) => {
+    await mockRandomSequence(page, [0.34, 0.65]);
+    await page.goto('/pages/fretboard-tone-recognition/index.html');
+
+    const fretboard = page.locator('gt-fretboard');
+    await expect(fretboard).toBeVisible();
+
+    const fretTarget = page.locator('gt-fretboard circle[fill="#ff6b35"]');
+    await expect(fretTarget).toHaveCount(1);
+
+    const openTargets = page.locator('gt-fretboard circle[fill="none"][stroke="#ff6b35"]');
+    await expect(openTargets).toHaveCount(0);
+
+    const fretPlaceholder = page.locator('gt-fretboard circle[data-string="2"][data-fret="3"]');
+    const markerCx = await fretTarget.getAttribute('cx');
+    const markerCy = await fretTarget.getAttribute('cy');
+
+    await expect(fretPlaceholder).toHaveAttribute('cx', markerCx);
+    await expect(fretPlaceholder).toHaveAttribute('cy', markerCy);
   });
 });

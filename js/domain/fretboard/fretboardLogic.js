@@ -8,6 +8,14 @@ export const OPEN_STRING_NOTES = ['E', 'A', 'D', 'G', 'B', 'E'];
 // Labels shown to the user (same order as OPEN_STRING_NOTES)
 export const STRING_LABELS = ['E2', 'A2', 'D3', 'G3', 'B3', 'E4'];
 
+function drawRandom() {
+  const mockedRandom = globalThis.__GT_RANDOM__;
+  if (typeof mockedRandom === 'function') {
+    return mockedRandom();
+  }
+  return Math.random();
+}
+
 /**
  * Returns the note name for a given string and fret.
  * @param {number} stringIndex - 0 (low E) to 5 (high E)
@@ -33,8 +41,8 @@ export function getRandomPosition(previous = null, config = {}) {
   let pos;
   do {
     pos = {
-      string: activeStrings[Math.floor(Math.random() * activeStrings.length)],
-      fret: Math.floor(Math.random() * (maxFret + 1)),
+      string: activeStrings[Math.floor(drawRandom() * activeStrings.length)],
+      fret: Math.floor(drawRandom() * (maxFret + 1)),
     };
   } while (
     previous !== null &&

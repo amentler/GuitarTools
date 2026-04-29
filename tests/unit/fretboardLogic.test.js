@@ -50,6 +50,20 @@ describe('getRandomPosition', () => {
       expect(sameAsPrevious).toBe(false);
     }
   });
+
+  it('uses the global random mock when present', () => {
+    const originalRandom = globalThis.__GT_RANDOM__;
+    const draws = [0.34, 0.65];
+    try {
+      globalThis.__GT_RANDOM__ = () => draws.shift();
+
+      const pos = getRandomPosition(null, { maxFret: 4, activeStrings: [0, 1, 2, 3, 4, 5] });
+
+      expect(pos).toEqual({ string: 2, fret: 3 });
+    } finally {
+      globalThis.__GT_RANDOM__ = originalRandom;
+    }
+  });
 });
 
 describe('CHROMATIC_NOTES and OPEN_STRING_NOTES constants', () => {
