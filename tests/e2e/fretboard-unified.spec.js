@@ -70,4 +70,49 @@ test.describe('Unified Fretboard Component - Baseline', () => {
     const fret3Circle = page.locator('gt-fretboard circle[data-fret="3"]');
     await expect(fret3Circle).not.toHaveCount(0);
   });
+
+  test('Fretboard: should keep string positions and interaction order unmirrored', async ({ page }) => {
+    await page.goto('/pages/ton-finder/index.html');
+
+    const fretboard = page.locator('#ton-finder-svg');
+    await expect(fretboard).toBeVisible();
+
+    await page.evaluate(() => {
+      const fretboardEl = document.querySelector('#ton-finder-svg');
+      fretboardEl.positions = [
+        { stringIndex: 0, fret: 1, state: 'selected' },
+        { stringIndex: 5, fret: 1, state: 'correct' },
+      ];
+    });
+
+    const lowE = page.locator('gt-fretboard circle[fill="#ff6b35"]').first();
+    const highE = page.locator('gt-fretboard circle[fill="#2ecc71"]').first();
+
+    const lowECy = Number(await lowE.getAttribute('cy'));
+    const highECy = Number(await highE.getAttribute('cy'));
+    expect(lowECy).toBeGreaterThan(highECy);
+
+    const topStringFret1 = page.locator('gt-fretboard circle[data-string="5"][data-fret="1"]');
+    const bottomStringFret1 = page.locator('gt-fretboard circle[data-string="0"][data-fret="1"]');
+
+    const topBox = await topStringFret1.boundingBox();
+    const bottomBox = await bottomStringFret1.boundingBox();
+    expect(topBox).not.toBeNull();
+    expect(bottomBox).not.toBeNull();
+    expect(topBox.y).toBeLessThan(bottomBox.y);
+
+    await page.evaluate(() => {
+      window.__lastFretSelect = null;
+      const fretboardEl = document.querySelector('#ton-finder-svg');
+      fretboardEl.addEventListener('fret-select', event => {
+        window.__lastFretSelect = event.detail;
+      }, { once: true });
+    });
+
+    await topStringFret1.click({ force: true });
+    await expect(page.locator('gt-fretboard circle[fill="#ff6b35"]')).toHaveCount(1);
+
+    const selectedString = await page.evaluate(() => window.__lastFretSelect?.stringIndex ?? null);
+    expect(selectedString).toBe(5);
+  });
 });

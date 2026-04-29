@@ -50,4 +50,30 @@ describe('GtFretboard', () => {
     // Active strings lines
     expect(element.querySelectorAll('line[opacity="1"]').length).toBe(2);
   });
+
+  it('uses non-linear fret spacing so markers stay centered between fret wires', () => {
+    document.body.innerHTML = '<gt-fretboard frets="5"></gt-fretboard>';
+    const element = document.querySelector('gt-fretboard');
+
+    const fret1 = Number(element.querySelector('circle[data-string="0"][data-fret="1"]').getAttribute('cx'));
+    const fret2 = Number(element.querySelector('circle[data-string="0"][data-fret="2"]').getAttribute('cx'));
+    const fret4 = Number(element.querySelector('circle[data-string="0"][data-fret="4"]').getAttribute('cx'));
+    const fret5 = Number(element.querySelector('circle[data-string="0"][data-fret="5"]').getAttribute('cx'));
+
+    expect(fret2 - fret1).toBeGreaterThan(fret5 - fret4);
+  });
+
+  it('maps string index 0 to the bottom string and 5 to the top string', () => {
+    document.body.innerHTML = '<gt-fretboard frets="3"></gt-fretboard>';
+    const element = document.querySelector('gt-fretboard');
+    element.positions = [
+      { stringIndex: 0, fret: 1, state: 'selected' },
+      { stringIndex: 5, fret: 1, state: 'correct' },
+    ];
+
+    const bottom = Number(element.querySelector('circle[fill="#ff6b35"]').getAttribute('cy'));
+    const top = Number(element.querySelector('circle[fill="#2ecc71"]').getAttribute('cy'));
+
+    expect(bottom).toBeGreaterThan(top);
+  });
 });

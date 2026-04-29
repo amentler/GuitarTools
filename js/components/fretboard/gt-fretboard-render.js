@@ -28,8 +28,18 @@ const COLOR_WRONG = '#e74c3c';
 
 const STRING_LABELS = ['e', 'B', 'G', 'D', 'A', 'E'];
 
-function stringY(sIdx) {
-  return MARGIN_TOP + sIdx * STRING_SPACING;
+function stringY(stringIndex) {
+  return MARGIN_TOP + (NUM_STRINGS - 1 - stringIndex) * STRING_SPACING;
+}
+
+function computeFretWireX(maxFret) {
+  const span = 1 - Math.pow(2, -(maxFret + 1) / 12);
+  const positions = [];
+  for (let n = 0; n <= maxFret + 1; n++) {
+    const ratio = (1 - Math.pow(2, -n / 12)) / span;
+    positions.push(Math.round(MARGIN_LEFT + ratio * DIAGRAM_W));
+  }
+  return positions;
 }
 
 function el(tag, attrs = {}) {
@@ -68,9 +78,11 @@ export function renderFretboard(container, options = {}) {
     onSelect = null,
   } = options;
 
-  const FRET_SPACING = DIAGRAM_W / maxFret;
-
   container.innerHTML = '';
+  const fretWireX = computeFretWireX(maxFret);
+  const fretCenterX = fretWireX.slice(0, -1).map((x, i) =>
+    Math.round((x + fretWireX[i + 1]) / 2)
+  );
 
   const svg = el('svg', {
     viewBox: `0 0 ${VB_W} ${VB_H}`,
@@ -83,8 +95,8 @@ export function renderFretboard(container, options = {}) {
 
   // Strings & Labels
   for (let s = 0; s < NUM_STRINGS; s++) {
-    const y = stringY(s);
     const stringIndex = 5 - s;
+    const y = stringY(stringIndex);
     const isActive = activeStrings.includes(stringIndex);
 
     // String Line
@@ -94,7 +106,7 @@ export function renderFretboard(container, options = {}) {
       x2: MARGIN_LEFT + DIAGRAM_W,
       y2: y,
       stroke: COLOR_STRING,
-      'stroke-width': 1 + ((NUM_STRINGS - 1 - s) * 0.5),
+      'stroke-width': 1 + ((NUM_STRINGS - 1 - stringIndex) * 0.5),
       opacity: isActive ? '1' : '0.2',
     }));
 
@@ -115,7 +127,7 @@ export function renderFretboard(container, options = {}) {
 
   // Frets & Nut
   for (let f = 0; f <= maxFret; f++) {
-    const x = MARGIN_LEFT + f * FRET_SPACING;
+    const x = fretWireX[f];
     const isNut = f === 0;
 
     svg.appendChild(el('line', {
@@ -131,7 +143,7 @@ export function renderFretboard(container, options = {}) {
     // Fret Numbers
     if (f > 0) {
       svg.appendChild(txt(f.toString(), {
-        x: x - FRET_SPACING / 2,
+        x: fretCenterX[f],
         y: MARGIN_TOP + DIAGRAM_H + 30,
         'text-anchor': 'middle',
         fill: COLOR_TEXT,
@@ -142,17 +154,18 @@ export function renderFretboard(container, options = {}) {
 
   // Interactive Zones & Position placeholders for Testing
   for (const stringIndex of activeStrings) {
-    const sIdx = 5 - stringIndex;
-    const y = stringY(sIdx);
+    const y = stringY(stringIndex);
 
     for (let f = 0; f <= maxFret; f++) {
-      const x = f === 0 ? MARGIN_LEFT - 20 : MARGIN_LEFT + (f - 0.5) * FRET_SPACING;
+      const x = f === 0 ? MARGIN_LEFT - 20 : fretCenterX[f];
+      const zoneX = f === 0 ? MARGIN_LEFT - 55 : fretWireX[f - 1];
+      const zoneWidth = f === 0 ? 55 : fretWireX[f] - fretWireX[f - 1];
 
       // Clickable area
       const zone = el('rect', {
-        x: f === 0 ? MARGIN_LEFT - 55 : MARGIN_LEFT + (f - 1) * FRET_SPACING,
+        x: zoneX,
         y: y - STRING_SPACING / 2,
-        width: f === 0 ? 55 : FRET_SPACING,
+        width: zoneWidth,
         height: STRING_SPACING,
         fill: 'transparent',
         style: interactive ? 'cursor:pointer;' : '',
@@ -180,8 +193,7 @@ export function renderFretboard(container, options = {}) {
 
   // Positions (Actual Markers)
   positions.forEach(pos => {
-    const sIdx = 5 - pos.stringIndex;
-    const y = stringY(sIdx);
+    const y = stringY(pos.stringIndex);
 
     if (pos.state === 'muted') {
       const size = 10;
@@ -212,7 +224,7 @@ export function renderFretboard(container, options = {}) {
         'pointer-events': 'none',
       }));
     } else {
-      const x = MARGIN_LEFT + (pos.fret - 0.5) * FRET_SPACING;
+      const x = fretCenterX[pos.fret];
       let fill = COLOR_MARKER_DEFAULT;
       if (pos.state === 'correct') fill = COLOR_CORRECT;
       if (pos.state === 'wrong') fill = COLOR_WRONG;
