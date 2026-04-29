@@ -14,6 +14,7 @@ import {
   MAJOR_KEYS,
 } from './akkordfolgenLogic.js';
 import { CHORDS } from '../../data/akkordData.js';
+import { chordStringToFretboardIndex } from '../../domain/chords/chordFretboardMapping.js';
 import { GUITAR_MIN_RMS, analyzeInputLevel } from '../../shared/audio/inputLevel.js';
 import { detectPeaksFromSpectrum, identifyNotesFromPeaks } from '../../domain/chords/chordDetectionLogic.js';
 import { getExpectedNoteClasses, matchDetectedNotes } from './akkordfolgenChordMatcher.js';
@@ -287,7 +288,7 @@ export function createAkkordfolgenTrainerFeature() {
     if (positions && ui.chordDiagram) {
       ui.chordDiagram.classList.remove('u-hidden');
       ui.chordDiagram.positions = positions.map(p => ({
-        stringIndex: p.string - 1,
+        stringIndex: chordStringToFretboardIndex(p.string),
         fret: p.muted ? 0 : p.fret,
         state: p.muted ? 'muted' : 'selected',
         label: p.finger ? String(p.finger) : null

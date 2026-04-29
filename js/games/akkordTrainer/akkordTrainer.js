@@ -5,6 +5,10 @@
  */
 
 import { getRandomChord, validateChord } from './akkordLogic.js';
+import {
+  chordStringToFretboardIndex,
+  fretboardIndexToChordString,
+} from '../../domain/chords/chordFretboardMapping.js';
 
 export function createAkkordTrainerFeature() {
   // State (per-instance)
@@ -69,7 +73,7 @@ export function createAkkordTrainerFeature() {
     userPositions.forEach(pos => {
       const state = feedback || 'selected';
       positions.push({
-        stringIndex: pos.string - 1,
+        stringIndex: chordStringToFretboardIndex(pos.string),
         fret: pos.muted ? 0 : pos.fret,
         state: pos.muted ? 'muted' : state
       });
@@ -85,7 +89,7 @@ export function createAkkordTrainerFeature() {
         );
         if (!alreadyShown) {
           positions.push({
-            stringIndex: ref.string - 1,
+            stringIndex: chordStringToFretboardIndex(ref.string),
             fret: ref.muted ? 0 : ref.fret,
             state: ref.muted ? 'muted' : 'missed'
           });
@@ -102,7 +106,7 @@ export function createAkkordTrainerFeature() {
   function handleTogglePosition(stringIndex, fret) {
     if (feedback) return; // Disable interaction during feedback phase
     
-    const string = stringIndex + 1;
+    const string = fretboardIndexToChordString(stringIndex);
     const existingIdx = userPositions.findIndex(p => p.string === string);
     if (existingIdx < 0) return;
 

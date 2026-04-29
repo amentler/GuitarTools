@@ -5,6 +5,7 @@
  */
 
 import { getRandomChord } from '../../domain/chords/chordCatalog.js';
+import { chordStringToFretboardIndex } from '../../domain/chords/chordFretboardMapping.js';
 import { detectChordEssentia, stopListeningEssentia } from './essentiaChordDetection.js';
 import { getEssentia } from './essentiaLoader.js';
 import { CHORDS, CHORD_CATEGORIES } from '../../data/akkordData.js';
@@ -81,7 +82,7 @@ export function createChordExerciseEssentiaFeature() {
   function drawChordDiagram() {
     if (!currentChord || !ui.diagramEl) return;
     ui.diagramEl.positions = currentChord.positions.map(p => ({
-      stringIndex: p.string - 1,
+      stringIndex: chordStringToFretboardIndex(p.string),
       fret: p.muted ? 0 : p.fret,
       state: p.muted ? 'muted' : 'selected',
       label: p.finger ? String(p.finger) : null
