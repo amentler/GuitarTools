@@ -1,1 +1,1 @@
-Version 0.24 | 2026-04-30 00:03 | 19c740e | Update
+Version 0.26 | 2026-04-30 19:54 | note-playing audio regression sequence test

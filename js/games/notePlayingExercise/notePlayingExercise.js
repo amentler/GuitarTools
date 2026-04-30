@@ -38,6 +38,7 @@ export function createNotePlayingExerciseFeature() {
     targetNote:   null,
     matchState:   createMatchState(),
     onsetGateState: createOnsetGateState(),
+    allowRetryWithoutOnset: false,
     isLocked:     false,
     hintLevel:    0,      // 0 = no hint, 1 = note name shown, 2 = tabs shown
     score:        { correct: 0 },
@@ -71,6 +72,7 @@ export function createNotePlayingExerciseFeature() {
       targetNote:     null,
       matchState:     createMatchState(),
       onsetGateState: createOnsetGateState(),
+      allowRetryWithoutOnset: false,
       isLocked:       false,
       hintLevel:      0,
       score:          { correct: 0 },
@@ -84,8 +86,9 @@ export function createNotePlayingExerciseFeature() {
     }
     syncSettingsUI();
 
-    // Pick initial target note
-    state.targetNote = getRandomPitch(null, state.settings.maxFret, state.settings.activeStrings);
+    // Pick initial target note (window.__GT_NOTE_PLAYING_FORCE_NOTE__ pins a specific note in tests)
+    state.targetNote = window.__GT_NOTE_PLAYING_FORCE_NOTE__
+      ?? getRandomPitch(null, state.settings.maxFret, state.settings.activeStrings);
     updateTargetDisplay();
     updateDetectedNote(null);
     updateFeedback(null);
@@ -192,6 +195,7 @@ export function createNotePlayingExerciseFeature() {
     state.isLocked = false;
     state.matchState = createMatchState();
     state.onsetGateState = consumeOnsetGate(state.onsetGateState);
+    state.allowRetryWithoutOnset = false;
     state.hintLevel = 0;
     state.targetNote = getRandomPitch(null, state.settings.maxFret, state.settings.activeStrings);
     applyTargetFftSize();
@@ -213,7 +217,8 @@ export function createNotePlayingExerciseFeature() {
     state.onsetGateState = gate.nextState;
 
     const frameResult = classifyFrame(buffer, audioSession.audioCtx.sampleRate, state.targetNote);
-    const effective = isOnsetGateOpen(state.onsetGateState)
+    const gateAllowsMatch = isOnsetGateOpen(state.onsetGateState) || state.allowRetryWithoutOnset;
+    const effective = gateAllowsMatch
       ? frameResult
       : { ...frameResult, status: 'unsure' };
 
@@ -224,6 +229,12 @@ export function createNotePlayingExerciseFeature() {
 
     if (event === 'accept') {
       handleSuccess();
+    } else if (event === 'reject') {
+      // Transient attack frames can trigger a rejection before the note stabilises.
+      // Resetting the state machine here lets the current target recover even if
+      // the signal never drops low enough to produce a second onset.
+      state.matchState = createMatchState();
+      state.allowRetryWithoutOnset = true;
     }
   }
 
@@ -231,6 +242,7 @@ export function createNotePlayingExerciseFeature() {
     state.isLocked   = true;
     state.matchState = createMatchState();
     state.onsetGateState = consumeOnsetGate(state.onsetGateState);
+    state.allowRetryWithoutOnset = false;
     state.score.correct++;
     updateScore();
     // Always reveal the note name on success
@@ -259,6 +271,7 @@ export function createNotePlayingExerciseFeature() {
     );
     state.matchState = createMatchState();
     state.onsetGateState = consumeOnsetGate(state.onsetGateState);
+    state.allowRetryWithoutOnset = false;
     state.isLocked = false;
     state.hintLevel = 0;
     applyTargetFftSize();
