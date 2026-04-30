@@ -8,6 +8,8 @@ export function resolveSheetMusicMicUI(root = document) {
     newBarsBtn: root.getElementById?.('sheet-mic-new-bars') ?? document.getElementById('sheet-mic-new-bars'),
     feedback: root.getElementById?.('sheet-mic-feedback') ?? document.getElementById('sheet-mic-feedback'),
     currentNote: root.getElementById?.('sheet-mic-current-note') ?? document.getElementById('sheet-mic-current-note'),
+    debugPanel: root.getElementById?.('sheet-mic-debug') ?? document.getElementById('sheet-mic-debug'),
+    debugOutput: root.getElementById?.('sheet-mic-debug-output') ?? document.getElementById('sheet-mic-debug-output'),
     modeSelect: root.getElementById?.('sheet-mic-mode') ?? document.getElementById('sheet-mic-mode'),
     slider: root.getElementById?.('sheet-mic-fret-slider') ?? document.getElementById('sheet-mic-fret-slider'),
     sliderLabel: root.getElementById?.('sheet-mic-fret-label') ?? document.getElementById('sheet-mic-fret-label'),

@@ -1,1 +1,1 @@
-Version 0.26 | 2026-04-30 19:54 | note-playing audio regression sequence test
+Version 2026-04-30 19:51 UTC | sheet-mic audio debug and microphone regression coverage

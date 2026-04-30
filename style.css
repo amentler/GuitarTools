@@ -1224,6 +1224,30 @@ input[type="range"] {
   text-align: center;
 }
 
+.sheet-mic-debug {
+  width: 100%;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 0.7rem 0.85rem;
+}
+
+.sheet-mic-debug summary {
+  cursor: pointer;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--color-text-muted);
+}
+
+.sheet-mic-debug-output {
+  margin: 0.65rem 0 0;
+  font-size: 0.75rem;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: var(--color-text);
+}
+
 .sheet-mic-controls {
   display: flex;
   gap: 0.75rem;

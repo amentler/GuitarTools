@@ -1,7 +1,14 @@
 import { test, expect } from '@playwright/test';
 
-async function installFixtureBackedMicrophone(page, fixtureUrl) {
-  await page.addInitScript(url => {
+const INJECTED_OPEN_STRING_BARS = [[
+  { name: 'E', octave: 2, vfKey: 'e/3', string: 6, fret: 0 },
+  { name: 'A', octave: 2, vfKey: 'a/3', string: 5, fret: 0 },
+  { name: 'D', octave: 3, vfKey: 'd/4', string: 4, fret: 0 },
+  { name: 'G', octave: 3, vfKey: 'g/4', string: 3, fret: 0 },
+]];
+
+async function installFixtureBackedMicrophone(page, fixtureUrls) {
+  await page.addInitScript(urls => {
     const fixtureState = {
       samples: null,
       sampleRate: 44100,
@@ -65,21 +72,47 @@ async function installFixtureBackedMicrophone(page, fixtureUrl) {
       return { samples, sampleRate };
     }
 
+    function concatSamples(segments, silenceSamples) {
+      const totalLength = segments.reduce((sum, samples, index) => {
+        const gap = index === segments.length - 1 ? 0 : silenceSamples;
+        return sum + samples.length + gap;
+      }, 0);
+
+      const combined = new Float32Array(totalLength);
+      let offset = 0;
+      segments.forEach((samples, index) => {
+        combined.set(samples, offset);
+        offset += samples.length;
+        if (index !== segments.length - 1) {
+          offset += silenceSamples;
+        }
+      });
+      return combined;
+    }
+
     async function ensureFixtureLoaded() {
       if (fixtureState.samples) return fixtureState;
       if (!fixtureState.loadPromise) {
-        fixtureState.loadPromise = fetch(url)
-          .then(response => {
+        fixtureState.loadPromise = Promise.all(
+          urls.map(async url => {
+            const response = await fetch(url);
             if (!response.ok) throw new Error(`Failed to load fixture: ${response.status}`);
-            return response.arrayBuffer();
-          })
-          .then(parsePcmWave)
-          .then(({ samples, sampleRate }) => {
-            fixtureState.samples = samples;
-            fixtureState.sampleRate = sampleRate;
-            fixtureState.cursor = 0;
-            return fixtureState;
-          });
+            return parsePcmWave(await response.arrayBuffer());
+          }),
+        ).then(fixtures => {
+          const sampleRate = fixtures[0]?.sampleRate ?? 44100;
+          if (fixtures.some(fixture => fixture.sampleRate !== sampleRate)) {
+            throw new Error('All WAV fixtures must use the same sample rate');
+          }
+
+          fixtureState.samples = concatSamples(
+            fixtures.map(fixture => fixture.samples),
+            Math.floor(sampleRate * 0.2),
+          );
+          fixtureState.sampleRate = sampleRate;
+          fixtureState.cursor = 0;
+          return fixtureState;
+        });
       }
       return fixtureState.loadPromise;
     }
@@ -156,17 +189,95 @@ async function installFixtureBackedMicrophone(page, fixtureUrl) {
 
     window.AudioContext = FakeAudioContext;
     window.webkitAudioContext = FakeAudioContext;
-  }, fixtureUrl);
+  }, fixtureUrls);
 }
 
-test('Noten spielen zeigt nach einem Treffer sichtbar gruen und wechselt zur naechsten Note', async ({ page }) => {
-  await installFixtureBackedMicrophone(page, '/tests/fixtures/sequences/open-strings/medium.wav');
-  await page.addInitScript(() => {
-    window.__GT_SHEET_MUSIC_MIC_BARS__ = [[
-      { name: 'E', octave: 2, vfKey: 'e/3', string: 6, fret: 0 },
-      { name: 'A', octave: 2, vfKey: 'a/3', string: 5, fret: 0 },
-    ]];
+async function countRenderedScoreState(page) {
+  return page.evaluate(() => {
+    const svg = document.querySelector('#sheet-mic-score-container svg');
+    if (!svg) return null;
+    return {
+      renderedNotes: svg.querySelectorAll('g.vf-stavenote').length,
+      orangeFill: svg.querySelectorAll('[fill="#ff6b35"]').length,
+      orangeStroke: svg.querySelectorAll('[stroke="#ff6b35"]').length,
+      greenFill: svg.querySelectorAll('[fill="#2ecc71"]').length,
+      greenStroke: svg.querySelectorAll('[stroke="#2ecc71"]').length,
+    };
   });
+}
+
+test('Noten spielen erzeugt ohne Test-Hook einen gueltigen Startzustand', async ({ page }) => {
+  await page.goto('/pages/sheet-music-mic/index.html');
+
+  await expect(page.locator('#sheet-mic-score-container svg')).toBeVisible();
+  await expect(page.locator('#score-value')).toHaveText('0 / 16');
+  await expect(page.locator('#sheet-mic-current-note')).not.toHaveText('–');
+
+  const scoreState = await countRenderedScoreState(page);
+  expect(scoreState).toEqual({
+    renderedNotes: 16,
+    orangeFill: 1,
+    orangeStroke: 1,
+    greenFill: 0,
+    greenStroke: 0,
+  });
+});
+
+test('Noten spielen rendert injizierte Zielnoten konsistent vor dem Start', async ({ page }) => {
+  await page.addInitScript(bars => {
+    window.__GT_SHEET_MUSIC_MIC_BARS__ = bars;
+  }, INJECTED_OPEN_STRING_BARS);
+
+  await page.goto('/pages/sheet-music-mic/index.html');
+
+  await expect(page.locator('#sheet-mic-score-container svg')).toBeVisible();
+  await expect(page.locator('#score-value')).toHaveText('0 / 4');
+  await expect(page.locator('#sheet-mic-current-note')).toHaveText('E2');
+
+  const scoreState = await countRenderedScoreState(page);
+  expect(scoreState).toEqual({
+    renderedNotes: 4,
+    orangeFill: 1,
+    orangeStroke: 1,
+    greenFill: 0,
+    greenStroke: 0,
+  });
+});
+
+test('Noten spielen exponiert Debug-Snapshot bei aktiviertem Audio-Debug', async ({ page }) => {
+  await page.addInitScript(bars => {
+    window.__GT_SHEET_MUSIC_MIC_BARS__ = bars;
+  }, INJECTED_OPEN_STRING_BARS);
+
+  await page.goto('/pages/sheet-music-mic/index.html?debug-audio=1');
+
+  await expect(page.locator('#sheet-mic-debug')).toBeVisible();
+  await expect(page.locator('#sheet-mic-debug-output')).toContainText('"currentTarget": "E2"');
+
+  const debugSnapshot = await page.evaluate(() => window.__GT_SHEET_MUSIC_MIC_DEBUG__);
+  expect(debugSnapshot).toMatchObject({
+    mode: 'easy',
+    isListening: false,
+    currentTarget: 'E2',
+    score: {
+      correct: 0,
+      total: 4,
+    },
+  });
+  expect(Array.isArray(debugSnapshot.events)).toBe(true);
+  expect(debugSnapshot.bars[0]).toHaveLength(4);
+});
+
+test('Noten spielen markiert vier nacheinander gespielte WAV-Noten jeweils gruen', async ({ page }) => {
+  await installFixtureBackedMicrophone(page, [
+    '/tests/fixtures/audio/E2/e2.wav',
+    '/tests/fixtures/audio/A2/a2k.wav',
+    '/tests/fixtures/audio/D3/d.wav',
+    '/tests/fixtures/audio/G3/g.wav',
+  ]);
+  await page.addInitScript(bars => {
+    window.__GT_SHEET_MUSIC_MIC_BARS__ = bars;
+  }, INJECTED_OPEN_STRING_BARS);
 
   await page.goto('/pages/sheet-music-mic/index.html');
 
@@ -174,9 +285,22 @@ test('Noten spielen zeigt nach einem Treffer sichtbar gruen und wechselt zur nae
 
   await page.click('#sheet-mic-start-btn');
 
-  await expect(page.locator('#score-value')).toHaveText('1 / 2', { timeout: 4_000 });
+  await expect(page.locator('#score-value')).toHaveText('1 / 4', { timeout: 4_000 });
   await expect(page.locator('#sheet-mic-current-note')).toHaveText('A2', { timeout: 4_000 });
 
   const greenNotes = page.locator('#sheet-mic-score-container svg [fill="#2ecc71"], #sheet-mic-score-container svg [stroke="#2ecc71"]');
   await expect(greenNotes).toHaveCount(1);
+
+  await expect(page.locator('#score-value')).toHaveText('2 / 4', { timeout: 4_000 });
+  await expect(page.locator('#sheet-mic-current-note')).toHaveText('D3', { timeout: 4_000 });
+  await expect(greenNotes).toHaveCount(2);
+
+  await expect(page.locator('#score-value')).toHaveText('3 / 4', { timeout: 4_000 });
+  await expect(page.locator('#sheet-mic-current-note')).toHaveText('G3', { timeout: 4_000 });
+  await expect(greenNotes).toHaveCount(3);
+
+  await expect(page.locator('#score-value')).toHaveText('4 / 4', { timeout: 4_000 });
+  await expect(page.locator('#sheet-mic-current-note')).toHaveText('✓', { timeout: 4_000 });
+  await expect(greenNotes).toHaveCount(4);
+  await expect(page.locator('#sheet-mic-feedback')).toContainText('Alle Noten gespielt!', { timeout: 4_000 });
 });

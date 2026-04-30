@@ -36,6 +36,7 @@ import { requestMicrophoneStream } from '../../shared/audio/microphoneService.js
 const SUCCESS_PAUSE_MS      = 600; // pause after correct note before advancing
 const WRONG_FEEDBACK_MS     = 900; // duration of wrong-note feedback in easy mode
 const ANALYZE_INTERVAL_MS   = 50;  // frame cadence for the matching loop
+const DEBUG_HISTORY_LIMIT   = 80;
 
 function resolveInjectedBars() {
   const injectedBars = globalThis.__GT_SHEET_MUSIC_MIC_BARS__;
@@ -43,9 +44,19 @@ function resolveInjectedBars() {
   return injectedBars ?? null;
 }
 
+function isDebugEnabled() {
+  if (globalThis.__GT_SHEET_MUSIC_MIC_DEBUG_ENABLED__ === true) return true;
+  try {
+    return new URLSearchParams(globalThis.location?.search ?? '').has('debug-audio');
+  } catch {
+    return false;
+  }
+}
+
 export function createSheetMusicMicFeature() {
   let intervalId = null;
   const audioSession = createSheetMusicMicAudioSession();
+  const debugEnabled = isDebugEnabled();
 
   // State (per-instance)
   let state = {
@@ -66,6 +77,66 @@ export function createSheetMusicMicFeature() {
 
   let settingsWired = false;
   let ui = null;
+  let debugState = {
+    enabled: debugEnabled,
+    events: [],
+    snapshot: null,
+  };
+
+  function pushDebugEvent(type, payload = {}) {
+    if (!debugEnabled) return;
+    const entry = {
+      type,
+      at: new Date().toISOString(),
+      ...payload,
+    };
+    debugState.events.push(entry);
+    if (debugState.events.length > DEBUG_HISTORY_LIMIT) {
+      debugState.events.splice(0, debugState.events.length - DEBUG_HISTORY_LIMIT);
+    }
+  }
+
+  function summarizeBars() {
+    return state.bars.map(bar => bar.map(note => ({
+      pitch: `${note.name}${note.octave}`,
+      string: note.string,
+      fret: note.fret,
+      status: note.status,
+    })));
+  }
+
+  function roundNumber(value) {
+    return Number.isFinite(value) ? Math.round(value * 1000) / 1000 : null;
+  }
+
+  function syncDebugView(extra = {}) {
+    if (!debugEnabled) return;
+
+    const note = getCurrentNote();
+    debugState.snapshot = {
+      mode: state.mode,
+      isListening: state.isListening,
+      isLocked: state.isLocked,
+      currentTarget: note ? `${note.name}${note.octave}` : null,
+      currentBarIndex: state.currentBarIndex,
+      currentBeatIndex: state.currentBeatIndex,
+      score: { ...state.score },
+      analyserFftSize: audioSession.analyser?.fftSize ?? null,
+      sampleRate: audioSession.audioCtx?.sampleRate ?? null,
+      matchState: { ...state.matchState },
+      onsetGateState: { ...state.onsetGateState },
+      bars: summarizeBars(),
+      latest: extra,
+      events: debugState.events.slice(-12),
+    };
+
+    globalThis.__GT_SHEET_MUSIC_MIC_DEBUG__ = debugState.snapshot;
+
+    if (ui?.debugPanel && ui?.debugOutput) {
+      ui.debugPanel.classList.remove('u-hidden');
+      ui.debugOutput.textContent = JSON.stringify(debugState.snapshot, null, 2);
+    }
+  }
 
   function getNotesPool() {
     return getFilteredNotes(state.settings.maxFret, state.settings.activeStrings);
@@ -95,6 +166,11 @@ export function createSheetMusicMicFeature() {
     renderCurrentState();
     updateScore();
     updateCurrentNoteDisplay();
+    pushDebugEvent('bars-generated', {
+      total: state.score.total,
+      injected: Array.isArray(injectedBars),
+    });
+    syncDebugView();
   }
 
   function markCurrentNote() {
@@ -137,6 +213,12 @@ export function createSheetMusicMicFeature() {
     ui.feedback.className    = 'feedback-text correct';
     ui.startBtn.classList.remove('u-hidden');
     ui.stopBtn.classList.add('u-hidden');
+    pushDebugEvent('sequence-complete', {
+      score: { ...state.score },
+    });
+    syncDebugView({
+      sequenceComplete: true,
+    });
   }
 
   function restartSequence() {
@@ -155,6 +237,8 @@ export function createSheetMusicMicFeature() {
     updateCurrentNoteDisplay();
     applyTargetFftSize();
     updateFeedback(null);
+    pushDebugEvent('sequence-restarted');
+    syncDebugView();
   }
 
   /**
@@ -170,6 +254,14 @@ export function createSheetMusicMicFeature() {
     if (recommended !== audioSession.currentFftSize) {
       audioSession.analyser.fftSize = recommended;
       audioSession.currentFftSize = recommended;
+      pushDebugEvent('fft-size-updated', {
+        targetPitch,
+        fftSize: recommended,
+      });
+      syncDebugView({
+        fftSize: recommended,
+        targetPitch,
+      });
     }
   }
 
@@ -208,6 +300,9 @@ export function createSheetMusicMicFeature() {
     } else {
       ui.feedback.textContent = '';
     }
+    syncDebugView({
+      feedback: ui.feedback.textContent,
+    });
   }
 
   // ── Audio pipeline ────────────────────────────────────────────────────────
@@ -226,6 +321,10 @@ export function createSheetMusicMicFeature() {
       audioSession.stream = await requestMicrophoneStream();
     } catch {
       ui.permission.textContent = 'Mikrofon nicht verfügbar. Bitte Zugriff erlauben.';
+      pushDebugEvent('microphone-error', { reason: 'getUserMedia failed' });
+      syncDebugView({
+        permission: ui.permission.textContent,
+      });
       return;
     }
 
@@ -255,6 +354,13 @@ export function createSheetMusicMicFeature() {
 
     setMicListeningUI(activeUi, true);
     activeUi.feedback.textContent = '';
+    pushDebugEvent('listening-started', {
+      sampleRate: audioSession.audioCtx?.sampleRate ?? null,
+      fftSize: audioSession.analyser?.fftSize ?? null,
+    });
+    syncDebugView({
+      permission: 'hidden',
+    });
   }
 
   function stopListening() {
@@ -262,6 +368,8 @@ export function createSheetMusicMicFeature() {
     intervalId = null;
     closeSheetMusicMicAudioSession(audioSession);
     state.isListening = false;
+    pushDebugEvent('listening-stopped');
+    syncDebugView();
   }
 
   // ── Pitch analysis ────────────────────────────────────────────────────────
@@ -291,6 +399,24 @@ export function createSheetMusicMicFeature() {
 
     const { nextState, event } = updateMatchState(state.matchState, effective);
     state.matchState = nextState;
+    const frameSnapshot = {
+      targetPitch,
+      rms: roundNumber(gate.rms),
+      armThreshold: roundNumber(gate.armThreshold),
+      onsetEvent: gate.event,
+      gateOpen: isOnsetGateOpen(state.onsetGateState),
+      rawStatus: frameResult.status,
+      effectiveStatus: effective.status,
+      detectedPitch: effective.detectedPitch,
+      hz: roundNumber(effective.hz),
+      cents: roundNumber(effective.cents),
+      event,
+      matchState: { ...state.matchState },
+    };
+    if (gate.event || frameResult.status !== 'unsure' || event) {
+      pushDebugEvent('analysis-frame', frameSnapshot);
+    }
+    syncDebugView(frameSnapshot);
 
     if (event === 'accept') {
       handleCorrectNote();
@@ -311,6 +437,13 @@ export function createSheetMusicMicFeature() {
     updateScore();
     renderCurrentState();
     updateFeedback('correct');
+    pushDebugEvent('note-accepted', {
+      pitch: note ? `${note.name}${note.octave}` : null,
+      score: { ...state.score },
+    });
+    syncDebugView({
+      acceptedPitch: note ? `${note.name}${note.octave}` : null,
+    });
 
     setTimeout(() => {
       state.isLocked = false;
@@ -320,6 +453,7 @@ export function createSheetMusicMicFeature() {
         renderCurrentState();
         updateCurrentNoteDisplay();
         updateFeedback(null);
+        syncDebugView();
       }
     }, SUCCESS_PAUSE_MS);
   }
@@ -330,6 +464,8 @@ export function createSheetMusicMicFeature() {
     state.matchState = createMatchState();
     state.onsetGateState = consumeOnsetGate(state.onsetGateState);
     updateFeedback('wrong');
+    pushDebugEvent('note-rejected');
+    syncDebugView();
     setTimeout(() => {
       state.isLocked = false;
       restartSequence();
@@ -413,10 +549,18 @@ export function createSheetMusicMicFeature() {
     setMicListeningUI(ui, false);
     ui.feedback.textContent     = '';
     ui.permission.classList.add('u-hidden');
+    if (debugEnabled && ui.debugPanel) {
+      ui.debugPanel.classList.remove('u-hidden');
+    }
+    pushDebugEvent('mounted');
+    syncDebugView();
   }
 
   function unmount() {
     stopListening();
+    if (debugEnabled) {
+      globalThis.__GT_SHEET_MUSIC_MIC_DEBUG__ = null;
+    }
     ui = null;
   }
 
