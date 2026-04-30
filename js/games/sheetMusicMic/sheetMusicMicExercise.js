@@ -23,7 +23,6 @@ import { wireStringToggles, syncStringToggles, wireFretSlider, syncFretSlider } 
 import {
   resolveSheetMusicMicUI,
   syncSheetMusicMicUI,
-  setMicListeningUI,
 } from './sheetMusicMicUI.js';
 import {
   createSheetMusicMicAudioSession,
@@ -31,6 +30,7 @@ import {
   closeSheetMusicMicAudioSession,
 } from './sheetMusicMicAudioSession.js';
 import { requestMicrophoneStream } from '../../shared/audio/microphoneService.js';
+import { loadSheetMusicMicPrefs, saveSheetMusicMicEndless } from './sheetMusicMicStorage.js';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 const SUCCESS_PAUSE_MS      = 600; // pause after correct note before advancing
@@ -57,6 +57,7 @@ export function createSheetMusicMicFeature() {
   let intervalId = null;
   const audioSession = createSheetMusicMicAudioSession();
   const debugEnabled = isDebugEnabled();
+  const prefs = loadSheetMusicMicPrefs();
 
   // State (per-instance)
   let state = {
@@ -64,6 +65,7 @@ export function createSheetMusicMicFeature() {
     currentBarIndex:  0,
     currentBeatIndex: 0,
     mode:             'easy',
+    endless:          prefs.endless,
     isListening:      false,
     matchState:       createMatchState(),
     onsetGateState:   createOnsetGateState(),
@@ -161,6 +163,7 @@ export function createSheetMusicMicFeature() {
     state.score.total      = state.bars.reduce((s, b) => s + b.length, 0);
     state.matchState       = createMatchState();
     state.onsetGateState   = createOnsetGateState();
+    state.isLocked         = false;
 
     markCurrentNote();
     renderCurrentState();
@@ -220,17 +223,33 @@ export function createSheetMusicMicFeature() {
   }
 
   function handleSequenceComplete() {
+    if (state.endless) {
+      pushDebugEvent('sequence-complete', {
+        score: { ...state.score },
+        endless: true,
+      });
+      generateNewBars();
+      applyTargetFftSize();
+      updateFeedback(null);
+      syncDebugView({
+        sequenceComplete: true,
+        endlessRollover: true,
+      });
+      return;
+    }
+
     state.currentBarIndex  = -1;
     state.currentBeatIndex = -1;
-    stopListening();
+    state.matchState = createMatchState();
+    state.onsetGateState = consumeOnsetGate(state.onsetGateState);
+    state.isLocked = false;
     renderCurrentState();
     updateCurrentNoteDisplay();
     ui.feedback.textContent  = `Alle Noten gespielt! ${state.score.correct}/${state.score.total} richtig. 🎉`;
     ui.feedback.className    = 'feedback-text correct';
-    ui.startBtn.classList.remove('u-hidden');
-    ui.stopBtn.classList.add('u-hidden');
     pushDebugEvent('sequence-complete', {
       score: { ...state.score },
+      endless: false,
     });
     syncDebugView({
       sequenceComplete: true,
@@ -378,7 +397,6 @@ export function createSheetMusicMicFeature() {
     state.isListening = true;
     intervalId = setInterval(analyzeFrame, ANALYZE_INTERVAL_MS);
 
-    setMicListeningUI(activeUi, true);
     activeUi.feedback.textContent = '';
     pushDebugEvent('listening-started', {
       sampleRate: audioSession.audioCtx?.sampleRate ?? null,
@@ -526,10 +544,12 @@ export function createSheetMusicMicFeature() {
 
   function wireSettings() {
     wireFretSlider(ui.slider, ui.sliderLabel, state.settings, () => {
-      stopListening();
       generateNewBars();
-      ui.startBtn.classList.remove('u-hidden');
-      ui.stopBtn.classList.add('u-hidden');
+      applyTargetFftSize();
+      updateFeedback(null);
+      syncDebugView({
+        source: 'fret-slider',
+      });
     });
 
     wireStringToggles(
@@ -537,46 +557,57 @@ export function createSheetMusicMicFeature() {
       state.settings.activeStrings,
       () => {
         syncSettingsUI();
-        stopListening();
         generateNewBars();
-        setMicListeningUI(ui, false);
+        applyTargetFftSize();
+        updateFeedback(null);
+        syncDebugView({
+          source: 'string-toggle',
+        });
       },
     );
 
     ui.modeSelect.addEventListener('change', () => {
       state.mode = ui.modeSelect.value;
+      syncDebugView({
+        source: 'mode-select',
+      });
+    });
+
+    ui.endlessBtn?.addEventListener('click', () => {
+      state.endless = !state.endless;
+      saveSheetMusicMicEndless(state.endless);
+      ui.endlessBtn.classList.toggle('active', state.endless);
+      generateNewBars();
+      applyTargetFftSize();
+      updateFeedback(null);
+      pushDebugEvent('endless-toggled', {
+        endless: state.endless,
+      });
+      syncDebugView({
+        source: 'endless-toggle',
+      });
     });
 
     ui.newBarsBtn.addEventListener('click', () => {
-      stopListening();
       generateNewBars();
-      setMicListeningUI(ui, false);
-      ui.feedback.textContent   = '';
-    });
-
-    ui.startBtn.addEventListener('click', () => {
-      // Reset sequence state before (re-)listening
-      if (!state.isListening) {
-        restartSequence();
-      }
-      startListening();
-    });
-
-    ui.stopBtn.addEventListener('click', () => {
-      stopListening();
-      setMicListeningUI(ui, false);
+      applyTargetFftSize();
+      updateFeedback(null);
+      syncDebugView({
+        source: 'new-bars',
+      });
     });
   }
 
   // ── Public API ────────────────────────────────────────────────────────────
-  function mount() {
-    ui = resolveSheetMusicMicUI(document);
+  function mount(root = document) {
+    ui = resolveSheetMusicMicUI(root);
 
     state = {
       bars:             [],
       currentBarIndex:  0,
       currentBeatIndex: 0,
       mode:             state.mode,
+      endless:          state.endless,
       isListening:      false,
       matchState:       createMatchState(),
       onsetGateState:   createOnsetGateState(),
@@ -592,8 +623,6 @@ export function createSheetMusicMicFeature() {
 
     syncSettingsUI();
     generateNewBars();
-
-    setMicListeningUI(ui, false);
     ui.feedback.textContent     = '';
     ui.permission.classList.add('u-hidden');
     if (debugEnabled && ui.debugPanel) {
@@ -601,6 +630,7 @@ export function createSheetMusicMicFeature() {
     }
     pushDebugEvent('mounted');
     syncDebugView();
+    startListening();
   }
 
   function unmount() {

@@ -31,8 +31,6 @@ test('Noten spielen akzeptiert vier Noten ueber das echte Chromium-Fake-Mikrofon
   await expect(page.locator('#score-value')).toHaveText('0 / 4');
   await expect(page.locator('#sheet-mic-current-note')).toHaveText('E2');
 
-  await page.click('#sheet-mic-start-btn');
-
   await expect(page.locator('#score-value')).toHaveText('1 / 4', { timeout: 6_000 });
   await expect(page.locator('#sheet-mic-current-note')).toHaveText('A2', { timeout: 6_000 });
 

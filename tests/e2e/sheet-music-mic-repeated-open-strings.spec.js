@@ -52,8 +52,6 @@ test('Noten spielen akzeptiert viermal E, A, D und G ueber das echte Chromium-Fa
   await expect(page.locator('#score-value')).toHaveText('0 / 16');
   await expect(page.locator('#sheet-mic-current-note')).toHaveText('E2');
 
-  await page.click('#sheet-mic-start-btn');
-
   await expect(page.locator('#score-value')).toHaveText('4 / 16', { timeout: 10_000 });
   await expect(page.locator('#sheet-mic-current-note')).toHaveText('A2', { timeout: 10_000 });
 

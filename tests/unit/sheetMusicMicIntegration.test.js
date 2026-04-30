@@ -49,8 +49,7 @@ describe('SheetMusicMic Exercise Basic Integration', () => {
         <div id="sheet-mic-score-container"></div>
         <div id="sheet-mic-current-note">–</div>
         <div id="sheet-mic-feedback" class="feedback-text"></div>
-        <button id="sheet-mic-start-btn"></button>
-        <button id="sheet-mic-stop-btn" style="display:none"></button>
+        <button id="sheet-mic-endless-mode"></button>
         <button id="sheet-mic-new-bars"></button>
         <p id="sheet-mic-permission" style="display:none"></p>
         <select id="sheet-mic-mode">
@@ -138,7 +137,6 @@ describe('SheetMusicMic Exercise Basic Integration', () => {
     sheetMusicLogic.generateBars.mockReturnValue(repeatedBars);
 
     exercise.startExercise();
-    document.getElementById('sheet-mic-start-btn').click();
     await Promise.resolve();
     await Promise.resolve();
 
@@ -197,7 +195,6 @@ describe('SheetMusicMic Exercise Basic Integration', () => {
     sheetMusicLogic.generateBars.mockReturnValue(repeatedBars);
 
     exercise.startExercise();
-    document.getElementById('sheet-mic-start-btn').click();
     await Promise.resolve();
     await Promise.resolve();
 
@@ -210,5 +207,58 @@ describe('SheetMusicMic Exercise Basic Integration', () => {
 
     vi.advanceTimersByTime(700);
     expect(document.getElementById('sheet-mic-current-note').textContent).toBe('✓');
+  });
+
+  it('rolls directly into a fresh sequence in endless mode', async () => {
+    vi.useFakeTimers();
+    localStorage.setItem('sheetMusicMic_endless', 'true');
+    exercise = createSheetMusicMicFeature();
+
+    class MockAudioContext {
+      constructor() {
+        this.state = 'running';
+        this.sampleRate = 44100;
+      }
+      createAnalyser() {
+        return {
+          fftSize: 4096,
+          connect: vi.fn(),
+          getFloatTimeDomainData: vi.fn(buffer => buffer.fill(0.08)),
+        };
+      }
+      createMediaStreamSource() { return { connect: vi.fn() }; }
+      resume() { return Promise.resolve(); }
+      close() { return Promise.resolve(); }
+    }
+
+    vi.stubGlobal('AudioContext', MockAudioContext);
+    vi.stubGlobal('navigator', {
+      mediaDevices: {
+        getUserMedia: vi.fn().mockResolvedValue({ getTracks: () => [{ stop: vi.fn() }] }),
+      },
+    });
+
+    const sheetMusicLogic = await import('../../js/shared/music/sheetMusicLogic.js');
+    const fastNoteMatcher = await import('../../js/shared/audio/fastNoteMatcher.js');
+    sheetMusicLogic.generateBars
+      .mockReturnValueOnce([[
+        { name: 'E', octave: 4, duration: 'q', string: 1, fret: 0 },
+      ]])
+      .mockReturnValueOnce([[
+        { name: 'A', octave: 2, duration: 'q', string: 5, fret: 0 },
+      ]]);
+    fastNoteMatcher.classifyFrame
+      .mockImplementationOnce(() => ({ status: 'correct', detectedPitch: 'E4', hz: 329.63, cents: 0 }))
+      .mockImplementationOnce(() => ({ status: 'correct', detectedPitch: 'E4', hz: 329.63, cents: 0 }))
+      .mockImplementation(() => ({ status: 'unsure' }));
+
+    exercise.startExercise();
+    await Promise.resolve();
+    await Promise.resolve();
+
+    vi.advanceTimersByTime(800);
+    expect(document.getElementById('score-value').textContent).toBe('0 / 1');
+    expect(document.getElementById('sheet-mic-current-note').textContent).toBe('A2');
+    expect(document.getElementById('sheet-mic-feedback').textContent).toBe('');
   });
 });

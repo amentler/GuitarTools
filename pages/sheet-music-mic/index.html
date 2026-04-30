@@ -10,6 +10,10 @@
   <section id="view-sheet-mic" class="view active">
     <gt-exercise-header title="Noten spielen" score-type="simple"></gt-exercise-header>
 
+    <div class="exercise-subheader">
+      <button id="sheet-mic-endless-mode" class="btn-mode">∞ Endlos</button>
+    </div>
+
     <p id="sheet-mic-permission" class="tuner-permission u-hidden"></p>
 
     <!-- Sheet-music score container -->
@@ -27,10 +31,7 @@
       <pre id="sheet-mic-debug-output" class="sheet-mic-debug-output"></pre>
     </details>
 
-    <!-- Start / Stop listening buttons -->
     <div class="sheet-mic-controls">
-      <button id="sheet-mic-start-btn" class="btn-start-toggle">🎙️ Hören starten</button>
-      <button id="sheet-mic-stop-btn"  class="btn-start-toggle btn-stop u-hidden">⏹ Stopp</button>
       <button id="sheet-mic-new-bars"  class="btn-new-bars">Neue Noten</button>
     </div>
 

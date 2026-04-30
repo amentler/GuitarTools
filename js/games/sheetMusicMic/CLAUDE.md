@@ -11,6 +11,10 @@ guitar. Correct notes turn green. Two difficulty modes:
 - **Schwer (hard)** — three consecutive wrong-note frames restart the whole
   sequence from the beginning
 
+The exercise starts microphone listening automatically on load. An optional
+`∞ Endlos` toggle regenerates a fresh sequence after the last note instead of
+ending the run.
+
 ## Files
 
 | File | Purpose |
@@ -74,6 +78,7 @@ state = {
   currentBarIndex:  0,
   currentBeatIndex: 0,
   mode:             'easy',    // 'easy' | 'hard'
+  endless:          false,
   isListening:      false,
   matchState:       createMatchState(),
   onsetGateState:   createOnsetGateState(),
@@ -136,5 +141,6 @@ In easy mode, `wrong` frames are mapped to `unsure` before being fed into
 | Strings | E2–E4 (toggle per string, min 1) | all 6 |
 | Mode    | Einfach / Schwer | Einfach |
 
-Changing frets or strings stops listening, regenerates bars, and shows the
-start button. Changing mode takes effect from the next note onward.
+Changing frets or strings regenerates bars and switches the current target
+immediately while listening continues. Changing mode takes effect from the next note onward.
+The endless toggle is persisted in `localStorage` as `sheetMusicMic_endless`.

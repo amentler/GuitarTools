@@ -410,7 +410,7 @@ test('Noten spielen erzeugt ohne Test-Hook einen gueltigen Startzustand', async 
   });
 });
 
-test('Noten spielen rendert injizierte Zielnoten konsistent vor dem Start', async ({ page }) => {
+test('Noten spielen rendert injizierte Zielnoten konsistent direkt nach dem Laden', async ({ page }) => {
   await page.addInitScript(bars => {
     window.__GT_SHEET_MUSIC_MIC_BARS__ = bars;
   }, INJECTED_OPEN_STRING_BARS);
@@ -444,7 +444,7 @@ test('Noten spielen exponiert Debug-Snapshot bei aktiviertem Audio-Debug', async
   const debugSnapshot = await page.evaluate(() => window.__GT_SHEET_MUSIC_MIC_DEBUG__);
   expect(debugSnapshot).toMatchObject({
     mode: 'easy',
-    isListening: false,
+    isListening: true,
     currentTarget: 'E2',
     score: {
       correct: 0,
@@ -467,7 +467,6 @@ test('Noten spielen setzt die FFT auch bei initial suspended AudioContext korrek
   }, INJECTED_OPEN_STRING_BARS);
 
   await page.goto('/pages/sheet-music-mic/index.html?debug-audio=1');
-  await page.click('#sheet-mic-start-btn');
 
   await page.waitForFunction(() => {
     const debugSnapshot = window.__GT_SHEET_MUSIC_MIC_DEBUG__;
@@ -493,8 +492,6 @@ test('Noten spielen markiert vier nacheinander gespielte WAV-Noten jeweils gruen
   await page.goto('/pages/sheet-music-mic/index.html');
 
   await expect(page.locator('#sheet-mic-current-note')).toHaveText('E2');
-
-  await page.click('#sheet-mic-start-btn');
 
   await expect(page.locator('#score-value')).toHaveText('1 / 4', { timeout: 4_000 });
   await expect(page.locator('#sheet-mic-current-note')).toHaveText('A2', { timeout: 4_000 });

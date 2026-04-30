@@ -38,8 +38,7 @@ function buildDom() {
       <div id="sheet-mic-score-container"></div>
       <div id="sheet-mic-current-note">–</div>
       <div id="sheet-mic-feedback" class="feedback-text"></div>
-      <button id="sheet-mic-start-btn"></button>
-      <button id="sheet-mic-stop-btn" class="u-hidden"></button>
+      <button id="sheet-mic-endless-mode"></button>
       <button id="sheet-mic-new-bars"></button>
       <p id="sheet-mic-permission" class="u-hidden"></p>
       <select id="sheet-mic-mode"><option value="easy">Einfach</option><option value="hard">Schwer</option></select>
@@ -109,27 +108,18 @@ describe('SheetMusicMic controller behavior', () => {
     expect(document.getElementById('sheet-mic-current-note').textContent).toBe('E4');
   });
 
-  it('start and stop buttons toggle listening UI', async () => {
+  it('mount starts listening automatically', async () => {
     const feature = createSheetMusicMicFeature();
     feature.mount();
-
-    document.getElementById('sheet-mic-start-btn').click();
     await Promise.resolve();
     await Promise.resolve();
 
     expect(navigator.mediaDevices.getUserMedia).toHaveBeenCalled();
-    expect(document.getElementById('sheet-mic-start-btn').classList.contains('u-hidden')).toBe(true);
-    expect(document.getElementById('sheet-mic-stop-btn').classList.contains('u-hidden')).toBe(false);
-
-    document.getElementById('sheet-mic-stop-btn').click();
-    expect(document.getElementById('sheet-mic-start-btn').classList.contains('u-hidden')).toBe(false);
-    expect(document.getElementById('sheet-mic-stop-btn').classList.contains('u-hidden')).toBe(true);
   });
 
   it('unmount tears down media tracks and audio context', async () => {
     const feature = createSheetMusicMicFeature();
     feature.mount();
-    document.getElementById('sheet-mic-start-btn').click();
     await Promise.resolve();
     await Promise.resolve();
 
@@ -137,5 +127,14 @@ describe('SheetMusicMic controller behavior', () => {
 
     expect(mockTrack.stop).toHaveBeenCalledTimes(1);
     expect(mockAudio.close).toHaveBeenCalledTimes(1);
+  });
+
+  it('restores endless mode from localStorage', () => {
+    localStorage.setItem('sheetMusicMic_endless', 'true');
+
+    const feature = createSheetMusicMicFeature();
+    feature.mount();
+
+    expect(document.getElementById('sheet-mic-endless-mode').classList.contains('active')).toBe(true);
   });
 });
