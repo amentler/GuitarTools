@@ -577,9 +577,6 @@ export function createSheetMusicMicFeature() {
       state.endless = !state.endless;
       saveSheetMusicMicEndless(state.endless);
       ui.endlessBtn.classList.toggle('active', state.endless);
-      generateNewBars();
-      applyTargetFftSize();
-      updateFeedback(null);
       pushDebugEvent('endless-toggled', {
         endless: state.endless,
       });

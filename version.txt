@@ -1,1 +1,1 @@
-Version 2026-04-30 23:30 | sheet music mic endless auto listen
+Version 2026-05-01 | fix endless button reset + e2e timeout

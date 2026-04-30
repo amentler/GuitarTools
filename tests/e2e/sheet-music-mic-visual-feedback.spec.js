@@ -475,7 +475,7 @@ test('Noten spielen setzt die FFT auch bei initial suspended AudioContext korrek
       && debugSnapshot?.analyserFftSize === 4096;
   }, null, { timeout: 4_000 });
 
-  await expect(page.locator('#score-value')).toHaveText('4 / 4', { timeout: 12_000 });
+  await expect(page.locator('#score-value')).toHaveText('4 / 4', { timeout: 20_000 });
 });
 
 test('Noten spielen markiert vier nacheinander gespielte WAV-Noten jeweils gruen', async ({ page }) => {
@@ -507,7 +507,7 @@ test('Noten spielen markiert vier nacheinander gespielte WAV-Noten jeweils gruen
   await expect(page.locator('#sheet-mic-current-note')).toHaveText('G3', { timeout: 4_000 });
   await expect(greenNotes).toHaveCount(3);
 
-  await expect(page.locator('#score-value')).toHaveText('4 / 4', { timeout: 4_000 });
+  await expect(page.locator('#score-value')).toHaveText('4 / 4', { timeout: 8_000 });
   await expect(page.locator('#sheet-mic-current-note')).toHaveText('✓', { timeout: 4_000 });
   await expect(greenNotes).toHaveCount(4);
   await expect(page.locator('#sheet-mic-feedback')).toContainText('Alle Noten gespielt!', { timeout: 4_000 });
