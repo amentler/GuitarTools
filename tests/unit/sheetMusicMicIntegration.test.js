@@ -140,6 +140,7 @@ describe('SheetMusicMic Exercise Basic Integration', () => {
     exercise.startExercise();
     document.getElementById('sheet-mic-start-btn').click();
     await Promise.resolve();
+    await Promise.resolve();
 
     vi.advanceTimersByTime(150);
 

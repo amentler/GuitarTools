@@ -342,7 +342,17 @@ export function createSheetMusicMicFeature() {
     // heuristics. Sharing a single AnalyserNode would force one fftSize on both,
     // causing audio glitches and wrong latency/precision trade-offs.
     // See improvement.md §1.4 for the design rationale.
-    openSheetMusicMicAudioSession(audioSession, audioSession.stream, AudioContext);
+    try {
+      await openSheetMusicMicAudioSession(audioSession, audioSession.stream, AudioContext);
+    } catch {
+      activeUi.permission.classList.remove('u-hidden');
+      activeUi.permission.textContent = 'Audio-Kontext konnte nicht gestartet werden.';
+      pushDebugEvent('audio-session-error', { reason: 'open audio session failed' });
+      syncDebugView({
+        permission: activeUi.permission.textContent,
+      });
+      return;
+    }
     if (ui !== activeUi || !ui) {
       closeSheetMusicMicAudioSession(audioSession);
       return;

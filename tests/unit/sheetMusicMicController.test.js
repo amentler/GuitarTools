@@ -115,6 +115,7 @@ describe('SheetMusicMic controller behavior', () => {
 
     document.getElementById('sheet-mic-start-btn').click();
     await Promise.resolve();
+    await Promise.resolve();
 
     expect(navigator.mediaDevices.getUserMedia).toHaveBeenCalled();
     expect(document.getElementById('sheet-mic-start-btn').classList.contains('u-hidden')).toBe(true);
@@ -129,6 +130,7 @@ describe('SheetMusicMic controller behavior', () => {
     const feature = createSheetMusicMicFeature();
     feature.mount();
     document.getElementById('sheet-mic-start-btn').click();
+    await Promise.resolve();
     await Promise.resolve();
 
     feature.unmount();
