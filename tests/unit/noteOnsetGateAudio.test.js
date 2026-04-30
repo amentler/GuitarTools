@@ -19,6 +19,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const FIXTURE_PATH = join(__dirname, '../fixtures/audio/A2/a2-2.wav');
 const FIXTURE_NOTE = 'A2';
+const REPEATED_OPEN_STRINGS_FIXTURE_PATH = join(__dirname, '../fixtures/sequences/open-strings/eeeeaaaaddddgggg.wav');
 
 function concatBuffers(buffers) {
   const totalLength = buffers.reduce((sum, buf) => sum + buf.length, 0);
@@ -129,5 +130,21 @@ describe('noteOnsetGate with real audio fixtures', () => {
 
     expect(fixture.filePath).toContain('a2-2.wav');
     expect(accepted).toEqual([targetPitch, targetPitch, targetPitch]);
+  }, 30_000);
+
+  it('tracks repeated open-string attacks in the eeeeaaaaddddgggg fixture', () => {
+    const fixture = readWavFile(REPEATED_OPEN_STRINGS_FIXTURE_PATH);
+    const accepted = runOnsetAwareSequenceSimulation(
+      fixture.samples,
+      fixture.sampleRate,
+      ['E2', 'E2', 'E2', 'E2', 'A2', 'A2', 'A2', 'A2', 'D3', 'D3', 'D3', 'D3', 'G3', 'G3', 'G3', 'G3'],
+    );
+
+    expect(accepted).toEqual([
+      'E2', 'E2', 'E2', 'E2',
+      'A2', 'A2', 'A2', 'A2',
+      'D3', 'D3', 'D3', 'D3',
+      'G3', 'G3', 'G3', 'G3',
+    ]);
   }, 30_000);
 });

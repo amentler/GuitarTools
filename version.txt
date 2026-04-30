@@ -1,1 +1,1 @@
-Version 0.29 | 2026-04-30 22:30 | 183dc76 | Update
+Version 0.30 | 2026-04-30 23:00 | 491e8dc | Update

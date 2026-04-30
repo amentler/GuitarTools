@@ -186,6 +186,22 @@ export function createSheetMusicMicFeature() {
     return state.bars[bi][ni] ?? null;
   }
 
+  function getNotePitch(note) {
+    return note ? `${note.name}${note.octave}` : null;
+  }
+
+  function getNextNote() {
+    let bi = state.currentBarIndex;
+    let ni = state.currentBeatIndex + 1;
+    if (bi < 0 || bi >= state.bars.length) return null;
+    if (ni >= state.bars[bi].length) {
+      bi++;
+      ni = 0;
+    }
+    if (bi >= state.bars.length) return null;
+    return state.bars[bi][ni] ?? null;
+  }
+
   // ── Sequence navigation ───────────────────────────────────────────────────
   function advanceToNextNote() {
     let bi = state.currentBarIndex;
@@ -436,11 +452,13 @@ export function createSheetMusicMicFeature() {
   }
 
   function handleCorrectNote() {
-    state.isLocked = true;
     state.matchState = createMatchState();
     state.onsetGateState = consumeOnsetGate(state.onsetGateState);
 
     const note = getCurrentNote();
+    const acceptedPitch = getNotePitch(note);
+    const nextNote = getNextNote();
+    const repeatsSamePitch = getNotePitch(nextNote) === acceptedPitch;
     if (note) note.status = 'correct';
 
     state.score.correct++;
@@ -453,18 +471,37 @@ export function createSheetMusicMicFeature() {
     });
     syncDebugView({
       acceptedPitch: note ? `${note.name}${note.octave}` : null,
+      repeatsSamePitch,
     });
 
-    setTimeout(() => {
-      state.isLocked = false;
+    if (repeatsSamePitch) {
       advanceToNextNote();
-      if (state.currentBarIndex !== -1) {
-        applyTargetFftSize();
-        renderCurrentState();
-        updateCurrentNoteDisplay();
+      applyTargetFftSize();
+      renderCurrentState();
+      updateCurrentNoteDisplay();
+      syncDebugView({
+        acceptedPitch,
+        repeatsSamePitch,
+        rearmedImmediately: true,
+      });
+    } else {
+      state.isLocked = true;
+    }
+
+    setTimeout(() => {
+      if (!repeatsSamePitch) {
+        state.isLocked = false;
+        advanceToNextNote();
+        if (state.currentBarIndex !== -1) {
+          applyTargetFftSize();
+          renderCurrentState();
+          updateCurrentNoteDisplay();
+          updateFeedback(null);
+        }
+      } else if (state.currentBarIndex !== -1) {
         updateFeedback(null);
-        syncDebugView();
       }
+      syncDebugView();
     }, SUCCESS_PAUSE_MS);
   }
 

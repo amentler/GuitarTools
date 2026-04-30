@@ -61,4 +61,20 @@ describe('noteOnsetGate', () => {
     expect(replay.event).toBe('onset');
     expect(isOnsetGateOpen(replay.nextState)).toBe(true);
   });
+
+  it('reopens on a strong re-attack without requiring near-silence first', () => {
+    let state = createOnsetGateState();
+    ({ nextState: state } = updateOnsetGate(state, 0.001));
+    ({ nextState: state } = updateOnsetGate(state, 0.08));
+    state = consumeOnsetGate(state);
+
+    for (const rms of [0.07, 0.05, 0.03, 0.02, 0.018]) {
+      ({ nextState: state } = updateOnsetGate(state, rms));
+    }
+
+    const replay = updateOnsetGate(state, 0.055);
+
+    expect(replay.event).toBe('onset');
+    expect(isOnsetGateOpen(replay.nextState)).toBe(true);
+  });
 });

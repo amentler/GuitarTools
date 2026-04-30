@@ -153,4 +153,62 @@ describe('SheetMusicMic Exercise Basic Integration', () => {
     expect(document.getElementById('sheet-mic-current-note').textContent).toBe('E4');
     expect(document.getElementById('sheet-mic-feedback').textContent).toBe('');
   });
+
+  it('accepts repeated identical notes after a fresh second attack', async () => {
+    vi.useFakeTimers();
+
+    const frameLevels = [
+      0.08, 0.08,
+      0.08, 0.08, 0.08,
+      0.001, 0.001,
+      0.08, 0.08,
+    ];
+    let frameIndex = 0;
+
+    class MockAudioContext {
+      constructor() {
+        this.state = 'running';
+        this.sampleRate = 44100;
+      }
+      createAnalyser() {
+        return {
+          fftSize: 4096,
+          connect: vi.fn(),
+          getFloatTimeDomainData: vi.fn(buffer => {
+            const level = frameLevels[Math.min(frameIndex, frameLevels.length - 1)];
+            frameIndex++;
+            buffer.fill(level);
+          }),
+        };
+      }
+      createMediaStreamSource() { return { connect: vi.fn() }; }
+      resume() { return Promise.resolve(); }
+      close() { return Promise.resolve(); }
+    }
+
+    vi.stubGlobal('AudioContext', MockAudioContext);
+    vi.stubGlobal('navigator', {
+      mediaDevices: {
+        getUserMedia: vi.fn().mockResolvedValue({ getTracks: () => [{ stop: vi.fn() }] }),
+      },
+    });
+
+    const sheetMusicLogic = await import('../../js/shared/music/sheetMusicLogic.js');
+    sheetMusicLogic.generateBars.mockReturnValue(repeatedBars);
+
+    exercise.startExercise();
+    document.getElementById('sheet-mic-start-btn').click();
+    await Promise.resolve();
+    await Promise.resolve();
+
+    vi.advanceTimersByTime(150);
+    expect(document.getElementById('score-value').textContent).toBe('1 / 2');
+    expect(document.getElementById('sheet-mic-current-note').textContent).toBe('E4');
+
+    vi.advanceTimersByTime(350);
+    expect(document.getElementById('score-value').textContent).toBe('2 / 2');
+
+    vi.advanceTimersByTime(700);
+    expect(document.getElementById('sheet-mic-current-note').textContent).toBe('✓');
+  });
 });
