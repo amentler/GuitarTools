@@ -159,11 +159,13 @@ function detectPitchYin(buffer, sampleRate, minFreq, maxFreq, minPeriods = 3) {
 
   const THRESHOLD = 0.15;
   let bestTau = -1;
+  let foundViaThreshold = false;
 
   for (let tau = minPeriod; tau <= maxPeriod - 1; tau++) {
     if (cmnd[tau] < THRESHOLD) {
       while (tau + 1 <= maxPeriod && cmnd[tau + 1] < cmnd[tau]) tau++;
       bestTau = tau;
+      foundViaThreshold = true;
       break;
     }
   }
@@ -176,15 +178,24 @@ function detectPitchYin(buffer, sampleRate, minFreq, maxFreq, minPeriods = 3) {
     if (minVal > 0.5) return null;
   }
 
-  // Subharmonic check: prefer lower fundamental if quality is very close.
-  // Threshold tightened from 1.08 → 1.02 to avoid demoting correctly-detected
-  // fundamentals (B3, E4) to their subharmonics on real guitar recordings.
-  for (const factor of [2, 3]) {
-    const candidateTau = bestTau * factor;
-    const candidateIdx = Math.round(candidateTau);
-    if (candidateIdx <= maxPeriod && cmnd[candidateIdx] <= cmnd[Math.round(bestTau)] * 1.02) {
-      bestTau = candidateTau;
-      break;
+  // Subharmonic check: if YIN found only an uncertain minimum (CMND ≥ threshold,
+  // fell through to global min), it may have locked onto a harmonic instead of
+  // the true fundamental. Checking double/triple the period corrects that.
+  //
+  // The check is intentionally skipped when YIN was already confident
+  // (CMND < threshold). For a periodic guitar signal, a signal with period T is
+  // also periodic at 2T, so cmnd[2T] ≈ cmnd[T] ≈ 0. Without the guard, the
+  // check fires on every confident detection and collapses D3 → D2, G3 → G2,
+  // etc. — confirmed for D3 (cmnd[D2]=0.01185 ≤ cmnd[D3]×1.02=0.01261 at t≈1.3s
+  // in d3k.wav, causing the display to jump to deep-bass notes).
+  if (!foundViaThreshold) {
+    for (const factor of [2, 3]) {
+      const candidateTau = bestTau * factor;
+      const candidateIdx = Math.round(candidateTau);
+      if (candidateIdx <= maxPeriod && cmnd[candidateIdx] <= cmnd[Math.round(bestTau)] * 1.02) {
+        bestTau = candidateTau;
+        break;
+      }
     }
   }
 
@@ -328,6 +339,19 @@ export function detectPitch(buffer, sampleRate, options = {}) {
   const minRms = options.minRms ?? GUITAR_MIN_RMS;
   const level = analyzeInputLevel(buffer, minRms);
   if (!level.isValid) return null;
+
+  // Reject onset-transient frames: when the second half of the window is much
+  // louder than the first half (silence→attack boundary inside the window),
+  // YIN's autocorrelation sees a non-periodic chimeric signal and produces
+  // random pitch results. Return null so the caller treats this as 'unsure'.
+  const half = buffer.length >> 1;
+  let sumFirst = 0;
+  let sumSecond = 0;
+  for (let i = 0; i < half; i++) sumFirst += buffer[i] * buffer[i];
+  for (let i = half; i < buffer.length; i++) sumSecond += buffer[i] * buffer[i];
+  const rmsFirst = Math.sqrt(sumFirst / half);
+  const rmsSecond = Math.sqrt(sumSecond / half);
+  if (rmsFirst < minRms && rmsSecond > rmsFirst * 10) return null;
 
   const referenceHz = options.referenceHz ?? null;
   const minFreq = referenceHz !== null ? Math.max(GUITAR_MIN_FREQUENCY, referenceHz * 0.55) : GUITAR_MIN_FREQUENCY;

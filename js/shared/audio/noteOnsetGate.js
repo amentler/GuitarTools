@@ -8,7 +8,7 @@ export const ONSET_SPIKE_FACTOR = 2.2;
 export const ONSET_RELEASE_FACTOR = 0.6;
 export const ONSET_BASELINE_ALPHA = 0.12;
 export const ONSET_COOLDOWN_FRAMES = 4;
-export const ONSET_WINDOW_FRAMES = 6;
+export const ONSET_WINDOW_FRAMES = 10;
 export const ONSET_REATTACK_MIN_DELTA = 0.015;
 
 export function computeFrameRms(samples) {

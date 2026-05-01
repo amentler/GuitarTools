@@ -213,8 +213,18 @@ export function createNotePlayingExerciseFeature() {
     const buffer = new Float32Array(audioSession.analyser.fftSize);
     audioSession.analyser.getFloatTimeDomainData(buffer);
 
+    const prevOnsetWindowRemaining = state.onsetGateState.onsetWindowRemaining;
     const gate = updateOnsetGate(state.onsetGateState, buffer);
     state.onsetGateState = gate.nextState;
+
+    // If the onset window just expired naturally (not via consumeOnsetGate)
+    // without producing an accept, unlock retry so the sustain phase can
+    // still be matched without requiring a new pluck. This prevents a
+    // deadlock for notes like open-D (D3) whose attack phase is long enough
+    // that YIN only stabilises after the gate has already closed.
+    if (prevOnsetWindowRemaining > 0 && gate.nextState.onsetWindowRemaining === 0 && !state.allowRetryWithoutOnset) {
+      state.allowRetryWithoutOnset = true;
+    }
 
     const frameResult = classifyFrame(buffer, audioSession.audioCtx.sampleRate, state.targetNote);
     const gateAllowsMatch = isOnsetGateOpen(state.onsetGateState) || state.allowRetryWithoutOnset;
