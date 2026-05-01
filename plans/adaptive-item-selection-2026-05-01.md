@@ -1,7 +1,7 @@
 # Plan: Adaptive Item-Selektion (Spaced Repetition)
 
 **Stand:** 2026-05-01  
-**Status:** Entwurf – noch nicht umgesetzt
+**Status:** ✅ Umgesetzt – tonFinder, fretboardToneRecognition, akkordTrainer. sheetMusicReading zurückgestellt (generateBars ±2-Fenster inkompatibel ohne Refactor).
 
 ---
 

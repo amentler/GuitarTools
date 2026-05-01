@@ -3,6 +3,8 @@
 
 import { CHROMATIC_NOTES, getNoteAtPosition, getRandomPosition, initGameState, evaluateAnswer } from './fretboardLogic.js';
 import { wireStringToggles, syncStringToggles, wireFretSlider, syncFretSlider } from '../../utils/settings.js';
+import { getSetting, SETTING_KEYS } from '../../shared/globalSettings.js';
+import { createSrsStore, pickNextItem, recordResult } from '../../shared/learning/srsLogic.js';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 const RESHUFFLE_INTERVAL = 5;
@@ -13,6 +15,8 @@ export function createFretboardToneRecognitionFeature() {
   // Module-level flags (per-instance)
   let settingsWired = false;
   let rootElement = null;
+  let srsStore = null;
+  let roundStartTime = 0;
 
   // State (per-instance)
   let state = {
@@ -40,6 +44,23 @@ export function createFretboardToneRecognitionFeature() {
 
   function query(selector) {
     return rootElement?.querySelector(selector) ?? null;
+  }
+
+  // ── SRS helpers ───────────────────────────────────────────────────────────
+
+  function buildPositionPool(settings) {
+    const keys = [];
+    for (const s of settings.activeStrings) {
+      for (let f = 0; f <= settings.maxFret; f++) {
+        keys.push(`${s}:${f}`);
+      }
+    }
+    return keys;
+  }
+
+  function positionFromKey(key) {
+    const [string, fret] = key.split(':').map(Number);
+    return { string, fret };
   }
 
   // ── Utilities ─────────────────────────────────────────────────────────────
@@ -81,7 +102,12 @@ export function createFretboardToneRecognitionFeature() {
     // Preserve settings across restarts, reset everything else
     const oldSettings = state.settings;
     state = initGameState(oldSettings);
-    state.targetPosition = getRandomPosition(null, state.settings);
+    srsStore = getSetting(SETTING_KEYS.SRS_ENABLED) ? createSrsStore('fretboard') : null;
+    const pool = buildPositionPool(state.settings);
+    state.targetPosition = srsStore
+      ? positionFromKey(pickNextItem(srsStore, pool))
+      : getRandomPosition(null, state.settings);
+    roundStartTime = Date.now();
     state.noteOrder = makeNoteOrder(state.settings.shuffleNotes);
     state.exercisesAnswered = 0;
     state.noteOrderDirty = false;
@@ -185,6 +211,13 @@ export function createFretboardToneRecognitionFeature() {
     state.correctNote  = correctNote;
 
     if (isCorrect || state.chancesLeft === 0) {
+      if (srsStore) {
+        const posKey = `${state.targetPosition.string}:${state.targetPosition.fret}`;
+        recordResult(srsStore, posKey, {
+          correct: isCorrect,
+          responseTimeMs: Date.now() - roundStartTime,
+        });
+      }
       updateScore();
       render();
       updateChancesDisplay();
@@ -198,7 +231,13 @@ export function createFretboardToneRecognitionFeature() {
   }
 
   function advanceToNextPosition() {
-    state.targetPosition = getRandomPosition(state.targetPosition, state.settings);
+    if (srsStore) {
+      const pool = buildPositionPool(state.settings);
+      state.targetPosition = positionFromKey(pickNextItem(srsStore, pool));
+    } else {
+      state.targetPosition = getRandomPosition(state.targetPosition, state.settings);
+    }
+    roundStartTime = Date.now();
     state.feedbackState  = null;
     state.selectedNote   = null;
     state.correctNote    = null;

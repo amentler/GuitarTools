@@ -1,9 +1,13 @@
 import { getAllPositions, getNotePool, evaluateRound, positionKey } from './tonFinderLogic.js';
 import { wireStringToggles, syncStringToggles, wireFretSlider, syncFretSlider } from '../../utils/settings.js';
+import { getSetting, SETTING_KEYS } from '../../shared/globalSettings.js';
+import { createSrsStore, pickNextItem, recordResult } from '../../shared/learning/srsLogic.js';
 
 export function createTonFinderFeature() {
   let settingsWired = false;
   let rootElement = null;
+  let srsStore = null;
+  let roundStartTime = 0;
   let state = {
     settings: {
       maxFret: 5,
@@ -38,6 +42,7 @@ export function createTonFinderFeature() {
   function mount(root = document) {
     rootElement = root;
     resolveUI();
+    srsStore = getSetting(SETTING_KEYS.SRS_ENABLED) ? createSrsStore('tonFinder') : null;
     state = {
       settings: state.settings,
       notePool: getNotePool(state.settings.difficulty),
@@ -96,8 +101,10 @@ export function createTonFinderFeature() {
 
   function startNextRound() {
     state.notePool = getNotePool(state.settings.difficulty);
-    const idx = Math.floor(Math.random() * state.notePool.length);
-    state.targetNote = state.notePool[idx];
+    state.targetNote = srsStore
+      ? pickNextItem(srsStore, state.notePool)
+      : state.notePool[Math.floor(Math.random() * state.notePool.length)];
+    roundStartTime = Date.now();
     state.selected = new Set();
     state.resultMap = new Map();
     state.locked = false;
@@ -155,6 +162,13 @@ export function createTonFinderFeature() {
     state.score.points += roundPoints;
     state.score.rounds += 1;
     updateScore();
+
+    if (srsStore) {
+      recordResult(srsStore, state.targetNote, {
+        correct: evaluation.wrong === 0 && evaluation.missed === 0,
+        responseTimeMs: Date.now() - roundStartTime,
+      });
+    }
 
     const correctKeys = new Set(correctPositions.map(pos => positionKey(pos.string, pos.fret)));
     state.resultMap = new Map();

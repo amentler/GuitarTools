@@ -5,7 +5,7 @@ export const SETTING_KEYS = {
 };
 
 const DEFAULTS = {
-  [SETTING_KEYS.SRS_ENABLED]: false,
+  [SETTING_KEYS.SRS_ENABLED]: true,
 };
 
 const storageService = createStorageService({ storage: globalThis.localStorage });

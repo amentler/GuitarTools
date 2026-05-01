@@ -4,11 +4,13 @@
  * Uses <gt-fretboard> component.
  */
 
-import { getRandomChord, validateChord } from './akkordLogic.js';
+import { getRandomChord, validateChord, CHORDS, CHORD_CATEGORIES } from './akkordLogic.js';
 import {
   chordStringToFretboardIndex,
   fretboardIndexToChordString,
 } from '../../domain/chords/chordFretboardMapping.js';
+import { getSetting, SETTING_KEYS } from '../../shared/globalSettings.js';
+import { createSrsStore, pickNextItem, recordResult } from '../../shared/learning/srsLogic.js';
 
 export function createAkkordTrainerFeature() {
   // State (per-instance)
@@ -17,6 +19,8 @@ export function createAkkordTrainerFeature() {
   let feedback = null;
   let score = { correct: 0, total: 0 };
   let rootElement = null;
+  let srsStore = null;
+  let roundStartTime = 0;
   
   // Category mapping
   const CATEGORIES = {
@@ -25,6 +29,16 @@ export function createAkkordTrainerFeature() {
     'check-cat-extended': 'extended',
     'check-cat-sus-add': 'sus_add'
   };
+
+  function getActiveCategoryChordNames() {
+    const active = getActiveCategories();
+    const names = [];
+    for (const cat of active) {
+      if (CHORD_CATEGORIES[cat]) names.push(...CHORD_CATEGORIES[cat]);
+    }
+    const pool = names.length > 0 ? names : [...(CHORD_CATEGORIES.simplified ?? [])];
+    return [...new Set(pool)];
+  }
 
   function getActiveCategories() {
     const active = [];
@@ -50,7 +64,13 @@ export function createAkkordTrainerFeature() {
   }
 
   function nextRound() {
-    currentChord = getRandomChord(getActiveCategories());
+    if (srsStore) {
+      const chordName = pickNextItem(srsStore, getActiveCategoryChordNames());
+      currentChord = { name: chordName, positions: CHORDS[chordName] };
+    } else {
+      currentChord = getRandomChord(getActiveCategories());
+    }
+    roundStartTime = Date.now();
     userPositions = getDefaultStringPositions();
     feedback = null;
 
@@ -141,6 +161,13 @@ export function createAkkordTrainerFeature() {
     feedback = isCorrect ? 'correct' : 'wrong';
     query('#btn-chord-check').disabled = true;
 
+    if (srsStore) {
+      recordResult(srsStore, currentChord.name, {
+        correct: isCorrect,
+        responseTimeMs: Date.now() - roundStartTime,
+      });
+    }
+
     score.total++;
     if (isCorrect) {
       score.correct++;
@@ -172,6 +199,7 @@ export function createAkkordTrainerFeature() {
   function mount(root = document) {
     rootElement = root;
     score = { correct: 0, total: 0 };
+    srsStore = getSetting(SETTING_KEYS.SRS_ENABLED) ? createSrsStore('akkordTrainer') : null;
     updateScoreUI();
     
     const fretboard = query('#chord-fretboard');

@@ -1,1 +1,1 @@
-Version 0.34 | 2026-05-01 22:15 | cf30333 | Globale Einstellungen mit Debug-Modus und Adaptivem Lernen
+Version 0.35 | 2026-05-01 22:30 | f00683c | Spaced Repetition für tonFinder, Griffbrett und Akkord-Trainer
