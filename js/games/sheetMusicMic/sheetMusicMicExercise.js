@@ -70,6 +70,8 @@ export function createSheetMusicMicFeature() {
     matchState:       createMatchState(),
     onsetGateState:   createOnsetGateState(),
     isLocked:         false,
+    successTimeout:   null,
+    wrongTimeout:     null,
     score:            { correct: 0, total: 0 },
     settings: {
       maxFret:       3,
@@ -148,6 +150,15 @@ export function createSheetMusicMicFeature() {
   function generateNewBars() {
     const injectedBars = resolveInjectedBars();
     const pool = getNotesPool();
+
+    if (!Array.isArray(injectedBars) && pool.length === 0) {
+      if (ui) {
+        ui.feedback.textContent = 'Keine Noten im gewählten Bereich. Bitte Saiten oder Bünde anpassen.';
+        ui.feedback.className = 'feedback-text wrong';
+      }
+      return;
+    }
+
     const rawBars = Array.isArray(injectedBars)
       ? injectedBars
       : generateBars(4, 4, pool);
@@ -410,6 +421,14 @@ export function createSheetMusicMicFeature() {
   function stopListening() {
     clearInterval(intervalId);
     intervalId = null;
+    if (state.successTimeout) {
+      clearTimeout(state.successTimeout);
+      state.successTimeout = null;
+    }
+    if (state.wrongTimeout) {
+      clearTimeout(state.wrongTimeout);
+      state.wrongTimeout = null;
+    }
     closeSheetMusicMicAudioSession(audioSession);
     state.isListening = false;
     pushDebugEvent('listening-stopped');
@@ -506,7 +525,8 @@ export function createSheetMusicMicFeature() {
       state.isLocked = true;
     }
 
-    setTimeout(() => {
+    state.successTimeout = setTimeout(() => {
+      state.successTimeout = null;
       if (!repeatsSamePitch) {
         state.isLocked = false;
         advanceToNextNote();
@@ -531,7 +551,8 @@ export function createSheetMusicMicFeature() {
     updateFeedback('wrong');
     pushDebugEvent('note-rejected');
     syncDebugView();
-    setTimeout(() => {
+    state.wrongTimeout = setTimeout(() => {
+      state.wrongTimeout = null;
       state.isLocked = false;
       restartSequence();
     }, WRONG_FEEDBACK_MS);
