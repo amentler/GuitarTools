@@ -25,8 +25,8 @@ Nach Abschluss der Umsetzung soll folgendes gelten:
 
 ### Muss-Anforderungen
 
-- Die Startseite bietet am unteren Seitenende einen Debug-Schalter oder
-  Debug-Knopf zum Einschalten des globalen Debug-Modus.
+- Die Startseite bietet im zugeklappten Einstellungen-Abschnitt einen Debug-Schalter
+  zum Einschalten des globalen Debug-Modus (umgesetzt in globalSettings-Plan).
 - Der Aktivzustand des Debug-Modus ist seitenuebergreifend verfuegbar.
 - Auf jeder Unterseite ist ein Debug-Einstieg vorhanden, sobald der
   Debug-Modus aktiv ist.

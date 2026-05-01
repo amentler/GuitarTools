@@ -1,1 +1,1 @@
-Version 0.33 | 2026-05-01 21:38 | cf30333 | Update
+Version 0.34 | 2026-05-01 22:15 | cf30333 | Globale Einstellungen mit Debug-Modus und Adaptivem Lernen

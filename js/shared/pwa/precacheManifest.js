@@ -4,6 +4,7 @@ const CORE_PRECACHED_URLS = [
   'js/lib/essentia/essentia-wasm.web.js',
   'js/lib/essentia/essentia-wasm.web.wasm',
   'js/lib/essentia/essentia.js-core.umd.js',
+  'js/shared/globalSettings.js',
   'manifest.json',
   'style.css',
   'version.txt',

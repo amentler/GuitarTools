@@ -62,19 +62,28 @@
       </div>
     </div>
 
-    <footer class="impressum">
-      <div class="menu-footer-meta">
-        <button id="btn-update" class="btn-update">⟳ Neu laden</button>
-        <p id="app-version" class="app-version"></p>
+    <details class="global-settings" id="global-settings">
+      <summary class="global-settings__summary">⚙ Einstellungen</summary>
+      <div class="global-settings__body">
+        <label class="settings-item">
+          <span class="settings-item__label">
+            <input type="checkbox" id="setting-debug-mode" class="settings-item__checkbox">
+            Debug-Modus
+          </span>
+        </label>
+        <label class="settings-item">
+          <span class="settings-item__label">
+            <input type="checkbox" id="setting-srs-enabled" class="settings-item__checkbox">
+            Adaptives Lernen
+          </span>
+          <span class="settings-item__desc">Schwierige Aufgaben werden häufiger abgefragt</span>
+        </label>
       </div>
-      <h3 class="impressum-title">Impressum</h3>
-      <p class="impressum-text">
-        Angaben gemäß § 5 TMG:<br>
-        André Mentler<br>
-        Emil Figge Straße 85, Gebäudeteil H<br>
-        44227 Dortmund<br>
-        <a href="mailto:guitartools.rocking928((at) - bitte ersetzen)slmails.com" class="impressum-link">guitartools.rocking928((at) - bitte ersetzen)slmails.com</a>
-      </p>
+    </details>
+
+    <footer class="menu-footer">
+      <button id="btn-update" class="btn-update">⟳ Neu laden</button>
+      <p id="app-version" class="app-version"></p>
     </footer>
   </section>
 

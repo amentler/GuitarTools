@@ -1,40 +1,85 @@
 # GuitarTools – Backlog Index
 
-Stand: 2026-04-29
+Stand: 2026-05-01
 
 Dieses Dokument ist der aktuelle Einstieg in offene und archivierte Planungsdokumente.
-Historisch gewachsene Detailplaene wurden bereinigt, damit `plans/` nicht gleichzeitig
-aktive Arbeit und bereits erledigte Altstaende mischt.
 
-## Aktiv
+## Aktuell in Arbeit
 
-- [plans/akkord-testabdeckung-vervollstaendigung-2026-04-23.md](/home/azureuserhauptmann/privat/GuitarTools/plans/akkord-testabdeckung-vervollstaendigung-2026-04-23.md)
-  Offene Arbeit an fehlenden Akkorden, WAV-Fixtures und Filterstrategie fuer die Akkorduebersicht.
-- [plans/notenzeilen-akustische-pruefung.md](/home/azureuserhauptmann/privat/GuitarTools/plans/notenzeilen-akustische-pruefung.md)
-  Audio-/Matcher-Plan fuer `Noten spielen` und den geteilten Mikrofonpfad.
-- [plans/backlog/sheet-music-reading-playback-plan-2026-04-12.md](/home/azureuserhauptmann/privat/GuitarTools/plans/backlog/sheet-music-reading-playback-plan-2026-04-12.md)
-  Verbleibende Restpunkte fuer den Ausbau von `Noten lesen`.
+- [plans/global-debug-mode-plan-2026-04-30.md](global-debug-mode-plan-2026-04-30.md)
+  Globaler Debug-Modus mit In-App-Fenster, strukturiertem Log und „Alles kopieren". Wird gerade umgesetzt.
+
+## Nächste Schritte (priorisiert)
+
+### P0 – Stabilität / reale Browser-Bugs
+
+- [plans/audiocontext-resume-ohne-button-2026-05-01.md](audiocontext-resume-ohne-button-2026-05-01.md)
+  AudioContext bleibt `suspended` wenn Mic-Permission bereits gespeichert ist → Töne werden nicht erkannt.
+  Lösung: nach `resume()` prüfen, bei `suspended` Fehlermeldung + Reload-Aufforderung anzeigen. (~5 Zeilen)
+
+- **sheetMusicMic Timeout-Handles** (kein eigener Plan, Quelle: architektur-review-2026-05-01.md P0-1)
+  Nach `unmount()` laufende `setTimeout`-Callbacks können noch `ui`-DOM-Zugriffe machen.
+  Fix: alle Handles in `state` halten und in `unmount()` gezielt clearen.
+
+- **Leerer Note-Pool** (kein eigener Plan, Quelle: architektur-review-2026-05-01.md P0-2)
+  `getFilteredNotes()` kann leer sein; `generateBars()` fällt still auf Default-Pool zurück.
+  Fix: leeren Pool explizit erkennen und Nutzer darüber informieren.
+
+### P1 – Testabdeckung
+
+- [plans/playwright-testplan-2026-04-29.md](playwright-testplan-2026-04-29.md)
+  Fehlende UI-Specs (Phase 2, Prio B): `guitar-tuner-ui`, `note-playing-ui`,
+  `akkordfolgen-trainer-ui`, `sheet-music-mic-ui`. Keine Audio-Abhängigkeit, CI-stabil.
+
+- [plans/notenzeilen-akustische-pruefung.md](notenzeilen-akustische-pruefung.md)
+  Stufe 2 noch offen: `fastNoteMatcherLatency.test.js` (B1–B6) und Sequenz-Aufnahmen
+  C5.2–C5.6 (ascending, descending, repeat, chromatic, cmajor, leaps). Braucht Gitarre + Mikrofon.
+
+### P2 – Analyse / Beobachtung
+
+- [plans/sheet-music-mic-auto-listen-analyse-2026-04-30.md](sheet-music-mic-auto-listen-analyse-2026-04-30.md)
+  Analyse der nicht abgesicherten Browserpfade (Settings-Wechsel bei aktivem Listening,
+  Endlosmodus, echter Permission-Pfad). Kein sofortiger Handlungsbedarf, aber Referenz für
+  zukünftige E2E-Erweiterungen.
+
+- [plans/architektur-review-2026-05-01.md](architektur-review-2026-05-01.md)
+  Aktuelles Architektur-Review. P1-Maßnahmen (sheetMusicMic Sequenzlogik extrahieren,
+  generische FFT-Session-Factory, akkordTrainer Runden-/Input-Logik) können nach P0 angegangen
+  werden.
+
+### P2 – Lernqualität
+
+- [plans/global-settings-2026-05-01.md](global-settings-2026-05-01.md)
+  Globale Einstellungen auf der Startseite. Zugeklappter Abschnitt in `index.html`,
+  getragen von `js/shared/globalSettings.js`. Erstes Setting: Adaptives Lernen an/aus.
+
+- [plans/adaptive-item-selection-2026-05-01.md](adaptive-item-selection-2026-05-01.md)
+  Adaptive Item-Selektion (Spaced Repetition / gewichtetes Zufallsziehen). Schwierige Items
+  werden häufiger abgefragt, sichere seltener. Betrifft tonFinder, fretboardToneRecognition,
+  akkordTrainer, sheetMusicReading. Kern ist ein reines Logik-Modul `srsLogic.js`.
+  Setzt globale Einstellungen voraus.
 
 ## Backlog / Ideen
 
-- [plans/backlog/improvement.md](/home/azureuserhauptmann/privat/GuitarTools/plans/backlog/improvement.md)
-  Allgemeine Verbesserungswunschliste. Teilweise umgesetzt, aber weiterhin bewusst als Sammelbacklog aktiv.
-- [plans/backlog/intervall-gehoertraining.md](/home/azureuserhauptmann/privat/GuitarTools/plans/backlog/intervall-gehoertraining.md)
+- [plans/backlog/improvement.md](backlog/improvement.md)
+  Allgemeine Verbesserungswunschliste. Teilweise umgesetzt (factory pattern, settings, pre-commit).
+  Noch offen: Service Worker Caching (P0), Shared AudioContext Manager (P1), Split large files (P2).
+- [plans/backlog/intervall-gehoertraining.md](backlog/intervall-gehoertraining.md)
   Geplanter neuer Trainer.
-- [plans/backlog/skalenvisualisierer.md](/home/azureuserhauptmann/privat/GuitarTools/plans/backlog/skalenvisualisierer.md)
+- [plans/backlog/skalenvisualisierer.md](backlog/skalenvisualisierer.md)
   Geplantes neues Tool.
-- [plans/backlog/ideen.md](/home/azureuserhauptmann/privat/GuitarTools/plans/backlog/ideen.md)
+- [plans/backlog/ideen.md](backlog/ideen.md)
   Ideensammlung ohne Umsetzungsstatus.
-- [plans/backlog/codexanalyse.md](/home/azureuserhauptmann/privat/GuitarTools/plans/backlog/codexanalyse.md)
-  Aeltere Meta-Analyse; weiterhin nur als Referenz und Ideensammlung.
+- [plans/backlog/codexanalyse.md](backlog/codexanalyse.md)
+  Ältere Meta-Analyse; weiterhin nur als Referenz und Ideensammlung.
 
 ## Archiviert
 
-- [plans/old/phase-6-test-ci-qualitaet-2026-04-29.md](/home/azureuserhauptmann/privat/GuitarTools/plans/old/phase-6-test-ci-qualitaet-2026-04-29.md)
-  Abgeschlossener Umsetzungsplan fuer die Test-/CI-Verbesserungen aus Phase 6.
-- [plans/architektur-review-plan-2026-04-21.md](/home/azureuserhauptmann/privat/GuitarTools/plans/architektur-review-plan-2026-04-21.md)
+- [plans/old/phase-6-test-ci-qualitaet-2026-04-29.md](old/phase-6-test-ci-qualitaet-2026-04-29.md)
+  Abgeschlossener Umsetzungsplan für die Test-/CI-Verbesserungen aus Phase 6.
+- [plans/architektur-review-plan-2026-04-21.md](architektur-review-plan-2026-04-21.md)
   Architekturreview als Referenzdokument; die darin beschriebenen Phasen 1 bis 6 sind abgeschlossen.
-- [plans/old/chord-exercise-essentia-plan-2026-04-12.md](/home/azureuserhauptmann/privat/GuitarTools/plans/old/chord-exercise-essentia-plan-2026-04-12.md)
-  Der fruehere Chord-Exercise-Plan aus diesem Dokument ist umgesetzt und wurde ausgelagert.
-- [plans/old/review-2026-04-20.md](/home/azureuserhauptmann/privat/GuitarTools/plans/old/review-2026-04-20.md)
+- [plans/old/chord-exercise-essentia-plan-2026-04-12.md](old/chord-exercise-essentia-plan-2026-04-12.md)
+  Der frühere Chord-Exercise-Plan aus diesem Dokument ist umgesetzt und wurde ausgelagert.
+- [plans/old/review-2026-04-20.md](old/review-2026-04-20.md)
   Historische technische Review; die Nachfolgearbeit liegt im Architekturreview-Plan.
