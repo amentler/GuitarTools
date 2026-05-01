@@ -22,12 +22,44 @@ const debugStore = createGlobalDebugStore();
 
 function initSettings() {
   const debugCheckbox = document.getElementById('setting-debug-mode');
+  const debugCopyButton = document.getElementById('setting-debug-copy');
+  const debugCopyStatus = document.getElementById('setting-debug-copy-status');
+
+  function updateDebugCopyUi() {
+    if (!debugCopyButton) return;
+    debugCopyButton.disabled = !debugStore.isEnabled() || debugStore.getEntries().length === 0;
+  }
+
+  async function copyDebugData() {
+    if (!debugCopyStatus) return;
+
+    try {
+      await navigator.clipboard.writeText(debugStore.serializeForClipboard());
+      debugCopyStatus.textContent = 'Debug-Daten kopiert.';
+    } catch {
+      debugCopyStatus.textContent = 'Kopieren fehlgeschlagen.';
+    }
+  }
+
   if (debugCheckbox) {
     debugCheckbox.checked = debugStore.isEnabled();
     debugCheckbox.addEventListener('change', () => {
       debugStore.setEnabled(debugCheckbox.checked);
+      if (debugCopyStatus) {
+        debugCopyStatus.textContent = '';
+      }
+      updateDebugCopyUi();
     });
   }
+
+  if (debugCopyButton) {
+    debugCopyButton.addEventListener('click', copyDebugData);
+  }
+
+  updateDebugCopyUi();
+  debugStore.subscribe(() => {
+    updateDebugCopyUi();
+  });
 
   const srsCheckbox = document.getElementById('setting-srs-enabled');
   if (srsCheckbox) {

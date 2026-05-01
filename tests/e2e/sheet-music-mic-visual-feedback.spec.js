@@ -435,8 +435,11 @@ test('Noten spielen exponiert Debug-Snapshot bei aktiviertem Audio-Debug', async
   await page.addInitScript(bars => {
     window.__GT_SHEET_MUSIC_MIC_BARS__ = bars;
   }, INJECTED_OPEN_STRING_BARS);
+  await page.addInitScript(() => {
+    window.localStorage.setItem('global_debug_enabled', 'true');
+  });
 
-  await page.goto('/pages/sheet-music-mic/index.html?debug-audio=1');
+  await page.goto('/pages/sheet-music-mic/index.html');
 
   await expect(page.locator('#sheet-mic-debug')).toBeVisible();
   await expect(page.locator('#sheet-mic-debug-output')).toContainText('"currentTarget": "E2"');
@@ -465,8 +468,11 @@ test('Noten spielen setzt die FFT auch bei initial suspended AudioContext korrek
   await page.addInitScript(bars => {
     window.__GT_SHEET_MUSIC_MIC_BARS__ = bars;
   }, INJECTED_OPEN_STRING_BARS);
+  await page.addInitScript(() => {
+    window.localStorage.setItem('global_debug_enabled', 'true');
+  });
 
-  await page.goto('/pages/sheet-music-mic/index.html?debug-audio=1');
+  await page.goto('/pages/sheet-music-mic/index.html');
 
   await page.waitForFunction(() => {
     const debugSnapshot = window.__GT_SHEET_MUSIC_MIC_DEBUG__;

@@ -2,6 +2,7 @@ import { createStorageService } from '../storage/storageService.js';
 import {
   DEBUG_COPY_FORMAT_VERSION,
   DEBUG_ENTRY_LIMIT,
+  DEBUG_ENTRIES_SESSION_KEY,
   DEBUG_LOG_SCOPE,
   DEBUG_MODE_STORAGE_KEY,
   GLOBAL_DEBUG_DEFAULTS,
@@ -44,23 +45,57 @@ function createBasePageContext({ pageId = '', pageTitle = '', url = '' } = {}) {
   };
 }
 
+function loadPersistedState(storageService) {
+  const persisted = storageService.getJson(DEBUG_ENTRIES_SESSION_KEY, { defaultValue: null });
+  if (!persisted || typeof persisted !== 'object') {
+    return null;
+  }
+
+  const entries = Array.isArray(persisted.entries)
+    ? persisted.entries.map(entry => ({
+      ...entry,
+      payload: clonePayload(entry?.payload),
+    }))
+    : [];
+
+  return {
+    page: createBasePageContext(persisted.page),
+    entries,
+  };
+}
+
 export function createGlobalDebugStore({
   storage = globalThis.localStorage,
+  sessionStorage = globalThis.sessionStorage,
   location = globalThis.location,
   navigator = globalThis.navigator,
   now = () => new Date(),
   entryLimit = DEBUG_ENTRY_LIMIT,
 } = {}) {
   const storageService = createStorageService({ storage });
+  const sessionStorageService = createStorageService({ storage: sessionStorage });
+  const persistedState = loadPersistedState(sessionStorageService);
   const subscribers = new Set();
   const state = {
     enabled: storageService.getBoolean(DEBUG_MODE_STORAGE_KEY, { defaultValue: false }),
-    entries: [],
-    page: createBasePageContext({
+    entries: persistedState?.entries ?? [],
+    page: persistedState?.page ?? createBasePageContext({
       pageTitle: globalThis.document?.title ?? '',
       url: resolvePageUrl(location),
     }),
   };
+
+  function persistState() {
+    if (state.entries.length === 0) {
+      sessionStorageService.remove(DEBUG_ENTRIES_SESSION_KEY);
+      return;
+    }
+
+    sessionStorageService.set(DEBUG_ENTRIES_SESSION_KEY, JSON.stringify({
+      page: state.page,
+      entries: state.entries,
+    }));
+  }
 
   function notify() {
     const snapshot = getSnapshot();
@@ -82,6 +117,11 @@ export function createGlobalDebugStore({
     } else {
       storageService.remove(DEBUG_MODE_STORAGE_KEY);
       state.entries = [];
+      state.page = createBasePageContext({
+        pageTitle: globalThis.document?.title ?? '',
+        url: resolvePageUrl(location),
+      });
+      sessionStorageService.remove(DEBUG_ENTRIES_SESSION_KEY);
     }
 
     notify();
@@ -94,6 +134,7 @@ export function createGlobalDebugStore({
       pageTitle: pageContext.pageTitle ?? state.page.pageTitle,
       url: pageContext.url ?? state.page.url,
     });
+    persistState();
     notify();
     return getPageContext();
   }
@@ -115,6 +156,7 @@ export function createGlobalDebugStore({
 
     state.entries.push(entry);
     trimEntries();
+    persistState();
     notify();
     return { ...entry, payload: clonePayload(entry.payload) };
   }
@@ -122,6 +164,7 @@ export function createGlobalDebugStore({
   function clearEntries() {
     if (state.entries.length === 0) return;
     state.entries = [];
+    persistState();
     notify();
   }
 

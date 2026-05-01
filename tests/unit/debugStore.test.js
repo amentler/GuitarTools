@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import {
   DEBUG_COPY_FORMAT_VERSION,
   DEBUG_ENTRY_LIMIT,
+  DEBUG_ENTRIES_SESSION_KEY,
   DEBUG_LOG_SCOPE,
   DEBUG_MODE_STORAGE_KEY,
   createGlobalDebugStore,
@@ -40,6 +41,7 @@ describe('global debug store', () => {
   it('captures page-scoped entries only while debug mode is enabled', () => {
     const store = createGlobalDebugStore({
       storage: createMockStorage(),
+      sessionStorage: createMockStorage(),
       now: () => new Date('2026-05-01T10:15:30.000Z'),
     });
 
@@ -77,6 +79,7 @@ describe('global debug store', () => {
   it('trims the oldest entries when the configured limit is exceeded', () => {
     const store = createGlobalDebugStore({
       storage: createMockStorage({ [DEBUG_MODE_STORAGE_KEY]: 'true' }),
+      sessionStorage: createMockStorage(),
       entryLimit: 2,
       now: () => new Date('2026-05-01T10:15:30.000Z'),
     });
@@ -90,8 +93,10 @@ describe('global debug store', () => {
   });
 
   it('serializes metadata and entries for clipboard export', () => {
+    const sessionStorage = createMockStorage();
     const store = createGlobalDebugStore({
       storage: createMockStorage({ [DEBUG_MODE_STORAGE_KEY]: 'true' }),
+      sessionStorage,
       navigator: { userAgent: 'UnitTest/1.0' },
       location: { href: 'https://example.test/pages/note-playing/index.html?debug=1' },
       now: () => new Date('2026-05-01T12:00:00.000Z'),
@@ -128,11 +133,24 @@ describe('global debug store', () => {
       }],
     });
     expect(serialized).toEqual(payload);
+    expect(sessionStorage.setItem).toHaveBeenCalledWith(
+      DEBUG_ENTRIES_SESSION_KEY,
+      JSON.stringify({
+        page: {
+          pageId: 'note-playing',
+          pageTitle: 'Ton spielen',
+          url: 'https://example.test/pages/note-playing/index.html?debug=1',
+        },
+        entries: payload.entries,
+      }),
+    );
   });
 
   it('clears in-memory entries when debug mode is disabled', () => {
+    const sessionStorage = createMockStorage();
     const store = createGlobalDebugStore({
       storage: createMockStorage({ [DEBUG_MODE_STORAGE_KEY]: 'true' }),
+      sessionStorage,
       now: () => new Date('2026-05-01T10:15:30.000Z'),
     });
 
@@ -143,6 +161,7 @@ describe('global debug store', () => {
     store.disable();
 
     expect(store.getEntries()).toEqual([]);
+    expect(sessionStorage.removeItem).toHaveBeenCalledWith(DEBUG_ENTRIES_SESSION_KEY);
   });
 
   it('exposes the agreed shared defaults for later UI integration', () => {
@@ -158,5 +177,42 @@ describe('global debug store', () => {
       includeMetadata: true,
       includeUserAgent: true,
     });
+  });
+
+  it('restores the last persisted page context and entries from session storage', () => {
+    const sessionStorage = createMockStorage({
+      [DEBUG_ENTRIES_SESSION_KEY]: JSON.stringify({
+        page: {
+          pageId: 'sheet-music-mic',
+          pageTitle: 'Noten spielen',
+          url: 'https://example.test/pages/sheet-music-mic/index.html',
+        },
+        entries: [{
+          at: '2026-05-01T12:00:00.000Z',
+          type: 'mounted',
+          source: 'sheet-music-mic',
+          level: 'info',
+          payload: { mode: 'easy' },
+        }],
+      }),
+    });
+
+    const store = createGlobalDebugStore({
+      storage: createMockStorage({ [DEBUG_MODE_STORAGE_KEY]: 'true' }),
+      sessionStorage,
+    });
+
+    expect(store.getPageContext()).toEqual({
+      pageId: 'sheet-music-mic',
+      pageTitle: 'Noten spielen',
+      url: 'https://example.test/pages/sheet-music-mic/index.html',
+    });
+    expect(store.getEntries()).toEqual([{
+      at: '2026-05-01T12:00:00.000Z',
+      type: 'mounted',
+      source: 'sheet-music-mic',
+      level: 'info',
+      payload: { mode: 'easy' },
+    }]);
   });
 });

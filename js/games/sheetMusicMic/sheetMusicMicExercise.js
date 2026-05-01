@@ -31,6 +31,7 @@ import {
 } from './sheetMusicMicAudioSession.js';
 import { requestMicrophoneStream } from '../../shared/audio/microphoneService.js';
 import { loadSheetMusicMicPrefs, saveSheetMusicMicEndless } from './sheetMusicMicStorage.js';
+import { createGlobalDebugStore } from '../../shared/debug/index.js';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 const SUCCESS_PAUSE_MS      = 600; // pause after correct note before advancing
@@ -44,19 +45,11 @@ function resolveInjectedBars() {
   return injectedBars ?? null;
 }
 
-function isDebugEnabled() {
-  if (globalThis.__GT_SHEET_MUSIC_MIC_DEBUG_ENABLED__ === true) return true;
-  try {
-    return new URLSearchParams(globalThis.location?.search ?? '').has('debug-audio');
-  } catch {
-    return false;
-  }
-}
-
 export function createSheetMusicMicFeature() {
   let intervalId = null;
   const audioSession = createSheetMusicMicAudioSession();
-  const debugEnabled = isDebugEnabled();
+  const debugStore = createGlobalDebugStore();
+  const debugEnabled = debugStore.isEnabled();
   const prefs = loadSheetMusicMicPrefs();
 
   // State (per-instance)
@@ -98,6 +91,9 @@ export function createSheetMusicMicFeature() {
     if (debugState.events.length > DEBUG_HISTORY_LIMIT) {
       debugState.events.splice(0, debugState.events.length - DEBUG_HISTORY_LIMIT);
     }
+    debugStore.addEntry(type, payload, {
+      source: 'sheet-music-mic',
+    });
   }
 
   function summarizeBars() {
@@ -637,6 +633,14 @@ export function createSheetMusicMicFeature() {
     if (!settingsWired) {
       wireSettings();
       settingsWired = true;
+    }
+
+    if (debugEnabled) {
+      debugStore.setPageContext({
+        pageId: 'sheet-music-mic',
+        pageTitle: 'Noten spielen',
+        url: globalThis.location?.href ?? '',
+      });
     }
 
     syncSettingsUI();

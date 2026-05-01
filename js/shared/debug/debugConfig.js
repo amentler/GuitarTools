@@ -1,4 +1,5 @@
 export const DEBUG_MODE_STORAGE_KEY = 'global_debug_enabled';
+export const DEBUG_ENTRIES_SESSION_KEY = 'global_debug_entries';
 export const DEBUG_LOG_SCOPE = 'page';
 export const DEBUG_COPY_FORMAT_VERSION = 1;
 export const DEBUG_ENTRY_LIMIT = 200;
