@@ -2,36 +2,39 @@
 
 ## Ziel und Ergebnis
 
-Die Anwendung soll einen globalen Debug-Modus erhalten, der von der Startseite
-aus aktiviert werden kann und danach auf allen Unterseiten konsistent zur
-Verfuegung steht.
+Die Anwendung soll einen global aktivierbaren Debug-Modus erhalten, der von
+der Startseite aus eingeschaltet werden kann und danach auf allen Unterseiten
+konsistent verfuegbar ist.
 
 Nach Abschluss der Umsetzung soll folgendes gelten:
 
-- Auf der Startseite gibt es ganz unten einen klaren Einstieg `Debug-Modus AN`.
-- Der Debug-Modus bleibt nach Navigation auf weitere Seiten aktiv.
-- Auf jeder Unterseite ist unten ein Debug-Zugang verfuegbar.
-- Dieser Zugang oeffnet ein eigenes Debug-Fenster innerhalb der Seite.
-- Das Debug-Fenster zeigt ein laufendes Log der Aktionen auf der aktuellen
+- Auf der Startseite gibt es am unteren Seitenende einen klaren Einstieg
+  `Debug-Modus AN`.
+- Der Aktivzustand des Debug-Modus bleibt nach Navigation und Reload erhalten.
+- Auf Unterseiten ist ein einheitlicher Debug-Zugang verfuegbar, solange der
+  Debug-Modus aktiv ist.
+- Der Debug-Zugang oeffnet ein In-App-Debug-Fenster innerhalb der aktuellen
   Seite.
-- Das Debug-Fenster besitzt einen Knopf `Alles kopieren`, der den kompletten
-  Debug-Inhalt in die Zwischenablage legt.
+- Das Debug-Fenster zeigt strukturierte Ereignisse in zeitlicher Reihenfolge.
+- Das Debug-Fenster besitzt einen Knopf `Alles kopieren`, der den aktuellen
+  Debug-Inhalt inklusive Kontextmetadaten in die Zwischenablage legt.
 - Fachspezifische Debug-Daten, wie aktuell bereits bei `Noten spielen`,
-  sollen an die neue gemeinsame Infrastruktur anschliessbar sein.
+  koennen in die gemeinsame Infrastruktur eingespeist werden.
 
 ## Fachliche Anforderungen
 
 ### Muss-Anforderungen
 
-- Die Startseite bietet ganz unten einen Debug-Schalter oder Debug-Knopf zum
-  Einschalten des globalen Debug-Modus.
+- Die Startseite bietet am unteren Seitenende einen Debug-Schalter oder
+  Debug-Knopf zum Einschalten des globalen Debug-Modus.
 - Der Aktivzustand des Debug-Modus ist seitenuebergreifend verfuegbar.
-- Jede Unterseite bietet einen Debug-Einstieg am unteren Rand der Seite.
+- Auf jeder Unterseite ist ein Debug-Einstieg vorhanden, sobald der
+  Debug-Modus aktiv ist.
 - Das Debug-Fenster ist auf Mobil und Desktop bedienbar.
 - Das Debug-Fenster zeigt strukturierte Eintraege statt unlesbarer Rohlogs.
-- Eintraege enthalten mindestens:
+- Jeder Eintrag enthaelt mindestens:
   - Zeitpunkt
-  - Seitennamen oder Seitenkontext
+  - Quelle oder Seitenkontext
   - Ereignistyp
   - relevante Nutzdaten oder Statuswerte
 - Es gibt einen Knopf `Alles kopieren`.
@@ -42,18 +45,18 @@ Nach Abschluss der Umsetzung soll folgendes gelten:
 
 ### Soll-Anforderungen
 
-- Das Debug-Fenster zeigt allgemeine Basisereignisse auf allen Seiten:
-  - Seitenstart
-  - Navigation
-  - zentrale Button-Aktionen
-  - Start/Stopp-Flows
-  - Berechtigungsfehler
-  - ungefangene Fehler
+- Das Debug-Fenster zeigt garantierte Basisereignisse auf allen Seiten:
+  - `page-loaded`
+  - `navigation`
+  - `ui-action`
+  - `flow-start`
+  - `flow-stop`
+  - `permission-error`
+  - `unhandled-error`
 - Vorhandene Spezialdiagnostik von `sheet-music-mic` wird nicht parallel
-  isoliert weitergefuehrt, sondern in den globalen Debug-Pfad integrierbar
-  gemacht.
-- Das Debug-Fenster soll nicht nur technisch, sondern auch fuer Fehlermeldungen
-  an Dritte nutzbar sein.
+  isoliert weitergefuehrt, sondern an den globalen Debug-Pfad angeschlossen.
+- Das Debug-Fenster soll nicht nur fuer Entwickler, sondern auch fuer
+  Fehlermeldungen an Dritte nutzbar sein.
 
 ### Kann-Anforderungen
 
@@ -70,14 +73,15 @@ werden. Bis zur Rueckmeldung gelten folgende Defaults:
 - Der Debug-Modus wird in `localStorage` gespeichert.
 - Das Debug-Fenster ist kein echtes Browser-Popup, sondern ein In-App-Fenster
   als Bottom-Sheet oder Drawer.
-- Der Debug-Zugang auf Unterseiten ist sichtbar, wenn der Debug-Modus aktiv
-  ist.
-- Das Log ist primaer seitenbezogen, darf aber Metadaten ueber Navigation
-  enthalten.
+- Der Debug-Zugang auf Unterseiten ist nur sichtbar, wenn der Debug-Modus
+  aktiv ist.
+- Das Log ist primaer seitenbezogen und lebt pro Browsertab im Speicher.
+- Beim Seitenwechsel startet das Seitenlog neu, darf aber einen
+  Navigationseintrag als Kontext enthalten.
 - `Alles kopieren` kopiert:
   - URL
   - Zeitstempel
-  - Seitenname
+  - Seitenname oder Seitenschluessel
   - User-Agent
   - Debug-Modus-Status
   - sichtbare Log-Eintraege
@@ -100,135 +104,135 @@ werden. Bis zur Rueckmeldung gelten folgende Defaults:
     bleibt bedienbar.
 - Ein Nutzer schliesst das Debug-Fenster.
   - Erwartung: Die normale Seite bleibt unveraendert nutzbar.
+- Ein Nutzer verwendet das Debug-Fenster auf kleinem mobilen Viewport.
+  - Erwartung: Inhalt bleibt scrollbar und Aktionen bleiben erreichbar.
 
 ### Logging
 
-- Ein Nutzer klickt zentrale Bedienknoepfe auf einer Seite.
-  - Erwartung: Die Aktionen erscheinen als neue Debug-Eintraege.
+- Ein Nutzer startet eine Kernaktion auf einer Seite.
+  - Erwartung: Die Aktion erscheint als strukturierter Eintrag im Debug-Log.
 - Ein Fehlerfall tritt auf, z. B. ein Berechtigungsfehler.
   - Erwartung: Der Fehler erscheint strukturiert im Debug-Log.
 - Auf `Noten spielen` werden Audio- oder Matcher-Daten erzeugt.
   - Erwartung: Diese koennen im gemeinsamen Debug-Fenster angezeigt werden.
+- Eine Seite ohne Spezialdiagnostik wird geoeffnet und benutzt.
+  - Erwartung: Mindestens Basisereignisse erscheinen im Log.
 
 ### Kopieren
 
 - Ein Nutzer klickt `Alles kopieren`.
-  - Erwartung: Der gesamte Debug-Inhalt wird in die Zwischenablage kopiert.
+  - Erwartung: Der gesamte Debug-Inhalt wird mit Metadaten in die
+    Zwischenablage kopiert.
 - Der Clipboard-Zugriff scheitert.
   - Erwartung: Es gibt eine sichtbare Fehlerrueckmeldung.
-
-### Responsive Verhalten
-
-- Das Debug-Fenster wird auf kleinem mobilen Viewport geoeffnet.
-  - Erwartung: Inhalt bleibt scrollbar und Aktionen bleiben erreichbar.
 
 ## Technisches Vorgehen
 
 ### Zielarchitektur
 
-Es sollte eine gemeinsame Debug-Infrastruktur eingefuehrt werden, statt jede
+Es soll eine gemeinsame Debug-Infrastruktur eingefuehrt werden, statt jede
 Seite separat mit Einzellogik auszustatten.
 
 Vorgeschlagene Bausteine:
 
 - `js/shared/debug/`
-  - Debug-Store fuer Aktivzustand und Log-Puffer
+  - Aktivzustand des Debug-Modus
+  - In-Memory-Log-Puffer
   - API zum Schreiben strukturierter Events
-  - Clipboard-Export
-  - optionale Serialisierung fuer Copy/Download
-- neue UI-Komponente oder globaler Debug-Host
+  - Clipboard-Export und Serialisierung
+- neuer globaler Debug-Host oder neue UI-Komponente
   - rendert den Debug-Zugang unten auf der Seite
-  - oeffnet/schliesst das Debug-Fenster
+  - oeffnet und schliesst das Debug-Fenster
   - zeigt den Log an
 - Startseitenintegration
   - globaler Einstieg `Debug-Modus AN`
-- Seitenintegration
-  - gemeinsamer Bootstrap-Hook oder Seiten-Host fuer Debug-UI
+- Unterseitenintegration
+  - gemeinsamer Bootstrap-Hook fuer `pages/*/bootstrap.js`
 - fachspezifische Adapter
-  - z. B. `sheetMusicMic` publiziert Events in den gemeinsamen Debug-Store
+  - z. B. `sheetMusicMic` publiziert Ereignisse in den gemeinsamen Debug-Store
 
 ### Wahrscheinlich betroffene Dateien
 
 - `index.html`
+- `js/app.js`
 - `style.css`
 - `js/components/index.js`
 - `js/components/gt-exercise-header.js`
 - neue Dateien unter `js/shared/debug/`
 - ggf. neue UI-Komponente unter `js/components/`
 - `pages/*/bootstrap.js`
-- `pages/*/index.html`, falls der Debug-Host nicht rein zentral einhaengbar ist
 - bestehende Spezialinstrumentierung in:
   - `js/games/sheetMusicMic/sheetMusicMicExercise.js`
 
 ### Integrationsstrategie
 
 - Nicht jede Seite einzeln per Copy-Paste anpassen.
-- Stattdessen einen gemeinsamen Debug-Host etablieren, der im Bootstrap oder
-  ueber eine gemeinsame Komponente eingebunden wird.
+- Stattdessen einen gemeinsamen Debug-Host etablieren, der ueber einen
+  gemeinsamen Bootstrap-Pfad oder eine gemeinsame Komponente eingebunden wird.
 - Bestehende Spezial-Debug-Daten in das neue gemeinsame Logging einspeisen.
-- Erst generische Events auf allen Seiten, danach gezielte fachliche
-  Instrumentierung.
+- Erst garantierte generische Events auf allen Seiten, danach gezielte
+  fachliche Instrumentierung.
 
 ## Phasen
 
-### Phase 1: Produktentscheidungen und UX-Rahmen
+### Phase 1: Debug-Lebenszyklus festlegen
 
 Ziel:
 
-- Debug-Modus-Verhalten, Sichtbarkeit und Fensterart final festlegen.
+- Aktivzustand, Logskope, Sichtbarkeit und Exportumfang final festlegen.
 
 Validierung:
 
-- Antworten auf die blockierenden Fragen liegen vor oder Defaults werden
-  freigegeben.
+- Offene Produktentscheidungen sind beantwortet oder Defaults sind freigegeben.
 
-### Phase 2: Gemeinsame Debug-Infrastruktur
+### Phase 2: Gemeinsamen Debug-Kern bereitstellen
 
 Ziel:
 
-- Shared Debug-Store, Event-API und Copy-Export bereitstellen.
+- Shared Debug-State, Event-API, In-Memory-Log und Serialisierung
+  bereitstellen.
 
 Validierung:
 
-- Unit-Tests fuer Aktivzustand, Log-Puffer und Copy-Serialisierung.
+- Unit-Tests fuer Aktivzustand, Log-Puffer und Exportserialisierung.
 
-### Phase 3: Startseite
+### Phase 3: Startseite integrieren
 
 Ziel:
 
-- Startseiten-Knopf `Debug-Modus AN` ganz unten einfuehren.
+- Startseiten-Einstieg `Debug-Modus AN` am unteren Seitenende einfuehren.
 
 Validierung:
 
 - Aktivierung wird gespeichert und ist nach Navigation verfuegbar.
 
-### Phase 4: Globaler Debug-Zugang auf Unterseiten
+### Phase 4: Globalen Unterseiten-Host anschliessen
 
 Ziel:
 
-- Unten auf jeder Unterseite einen einheitlichen Debug-Einstieg verfuegbar
-  machen.
+- Einheitlichen Debug-Zugang auf Unterseiten ueber den Bootstrap-Pfad
+  verfuegbar machen.
 
 Validierung:
 
-- Smoke- und Playwright-Checks fuer mehrere Seiten.
+- Mehrere Unterseiten zeigen denselben Debug-Zugang ohne HTML-Copy-Paste.
 
-### Phase 5: Debug-Fenster und Copy-Funktion
+### Phase 5: Debug-Fenster und Copy-Flow
 
 Ziel:
 
-- In-App-Debug-Fenster mit laufendem Log und `Alles kopieren`.
+- In-App-Debug-Fenster mit strukturiertem Log und `Alles kopieren`.
 
 Validierung:
 
-- Copy-Flow laeuft, Fallback bei Fehlern ist sichtbar.
+- Copy-Flow funktioniert und Fehlerfaelle sind sichtbar.
 
-### Phase 6: Basisinstrumentierung aller Seiten
+### Phase 6: Garantierte Basisinstrumentierung
 
 Ziel:
 
-- Generische Eintraege fuer Seitenstart, Navigation, zentrale Aktionen und
-  Fehler.
+- Generische Eintraege fuer Seitenstart, Navigation, zentrale Aktionen,
+  Start-Stopp-Flows und Fehler.
 
 Validierung:
 
@@ -243,14 +247,14 @@ Ziel:
 
 Validierung:
 
-- Das Debug-Fenster zeigt Audio-/Matcher-Kontext innerhalb des gemeinsamen
-  Logs.
+- Das Debug-Fenster zeigt Audio-, Matcher- oder Ablaufkontext innerhalb des
+  gemeinsamen Logs.
 
-### Phase 8: Tests und Politur
+### Phase 8: Regression und Politur
 
 Ziel:
 
-- Regressionssichere Tests und brauchbare UX auf Mobil/Desktop.
+- Regressionssichere Tests und brauchbare UX auf Mobil und Desktop.
 
 Validierung:
 
@@ -261,35 +265,39 @@ Validierung:
 - Ein echter Browser-Popup-Ansatz waere unzuverlaessiger und mobilkritischer.
 - Zu viele rohe Events machen das Debug-Log unbrauchbar.
 - Zu wenig strukturierte Ereignisse machen das Debug-Log wertlos.
-- Wenn der Debug-Zugang immer sichtbar ist, braucht die UI eine sehr
-  zurueckhaltende Gestaltung.
-- Wenn nur die aktuelle Seite protokolliert wird, kann Navigation als
-  Fehlerkontext verloren gehen.
+- Ein dauerhaft gespeichertes Log wuerde Datenschutz- und Speicherfragen
+  vergroessern, ohne fuer V1 noetig zu sein.
+- Wenn der Debug-Zugang im aktiven Modus zu dominant ist, stoert er die
+  regulaere Nutzung.
 - Wenn zu viele Seiten individuell angepasst werden muessen, steigt das
   Wartungsrisiko.
+- Die aktuelle `sheet-music-mic`-Diagnostik nutzt direkte Globals; diese
+  sollten mittelfristig durch eine offizielle Producer-Schnittstelle ersetzt
+  werden.
 
 ## Rueckfragen zur Implementierung
 
 ### Blockierend
 
-1. Soll der Debug-Zugang auf Unterseiten immer sichtbar sein oder nur, wenn der
-   Debug-Modus zuvor aktiviert wurde?
-   - Default: nur sichtbar bei aktivem Debug-Modus.
+1. Soll das Log nur den aktuellen Seitenkontext zeigen oder einen
+   seitenuebergreifenden Sitzungsverlauf enthalten?
+   - Default: aktueller Seitenkontext plus Navigationseintrag.
 
 2. Bedeutet `extra Fenster` ein echtes Browserfenster oder ein In-App-Fenster?
    - Default: In-App-Fenster.
 
-3. Soll das Log nur die aktuelle Seite oder einen seitenuebergreifenden Verlauf
-   enthalten?
-   - Default: aktueller Seitenkontext plus relevante Navigationsmetadaten.
+3. Soll der Debug-Zugang auf Unterseiten immer sichtbar sein, sobald Debug
+   aktiv ist, oder nur ueber ein dezentes Trigger-Element?
+   - Default: sichtbar bei aktivem Debug-Modus, aber visuell zurueckhaltend.
 
 ### Wichtig
 
-4. Welche Aktionen muessen sicher in jedem Fall geloggt werden?
+4. Welche Aktionen muessen seitenuebergreifend garantiert geloggt werden?
    - Vorschlag:
      - Seitenstart
-     - zentrale Klicks
-     - Start/Stopp
+     - Navigation
+     - primäre CTA-Klicks
+     - Start-Stopp
      - Fehler
      - Permission-Events
      - fachliche Kernereignisse je Tool
@@ -299,7 +307,7 @@ Validierung:
    - Default: inklusive Metadaten.
 
 6. Soll es im Debug-Fenster direkt auch `Debug AUS` und `Log leeren` geben?
-   - Default: ja fuer `Debug AUS`, optional fuer `Log leeren`.
+   - Default: ja fuer `Debug AUS` und ja fuer `Log leeren`.
 
 ### Optional
 
@@ -309,8 +317,8 @@ Validierung:
 
 ## Umsetzungsreihenfolge
 
-1. Produktentscheidungen bestaetigen
-2. Shared Debug-Store und Event-API
+1. Debug-Lebenszyklus bestaetigen
+2. Shared Debug-Kern und Event-API
 3. Startseiten-Schalter
 4. Globaler Debug-Host fuer Unterseiten
 5. Debug-Fenster und Copy-Funktion
@@ -322,9 +330,10 @@ Validierung:
 
 - Der Debug-Modus ist auf der Startseite aktivierbar.
 - Der Aktivzustand ist seitenuebergreifend stabil.
-- Auf allen Unterseiten ist der Debug-Zugang unten verfuegbar.
-- Das Debug-Fenster zeigt ein nutzbares Log.
-- `Alles kopieren` funktioniert.
+- Auf allen Unterseiten ist der Debug-Zugang bei aktivem Debug-Modus
+  verfuegbar.
+- Das Debug-Fenster zeigt ein nutzbares strukturiertes Log.
+- `Alles kopieren` funktioniert inklusive Metadaten.
 - `Noten spielen` kann seine Spezialdiagnostik in den globalen Debug-Modus
   einbringen.
 - Die bestehende Fachfunktionalitaet wird nicht regressiv beeinflusst.
