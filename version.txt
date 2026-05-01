@@ -1,1 +1,1 @@
-Version 2026-05-01 | fix endless button reset + e2e timeout
+Version 0.31 | 2026-05-01 16:03 | 7f6c735 | Update
