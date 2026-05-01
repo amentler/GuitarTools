@@ -49,15 +49,12 @@ Dieses Dokument ist der aktuelle Einstieg in offene und archivierte Planungsdoku
 
 ### P2 – Lernqualität
 
-- [plans/global-settings-2026-05-01.md](global-settings-2026-05-01.md)
-  Globale Einstellungen auf der Startseite. Zugeklappter Abschnitt in `index.html`,
-  getragen von `js/shared/globalSettings.js`. Erstes Setting: Adaptives Lernen an/aus.
+- ✅ [plans/global-settings-2026-05-01.md](global-settings-2026-05-01.md)
+  Globale Einstellungen umgesetzt. `globalSettings.js` + Einstellungen-Abschnitt in `index.html`.
 
-- [plans/adaptive-item-selection-2026-05-01.md](adaptive-item-selection-2026-05-01.md)
-  Adaptive Item-Selektion (Spaced Repetition / gewichtetes Zufallsziehen). Schwierige Items
-  werden häufiger abgefragt, sichere seltener. Betrifft tonFinder, fretboardToneRecognition,
-  akkordTrainer, sheetMusicReading. Kern ist ein reines Logik-Modul `srsLogic.js`.
-  Setzt globale Einstellungen voraus.
+- ✅ [plans/adaptive-item-selection-2026-05-01.md](adaptive-item-selection-2026-05-01.md)
+  Spaced Repetition umgesetzt für tonFinder, fretboardToneRecognition, akkordTrainer.
+  `srsLogic.js` mit 19 Unit-Tests. Standard: an. sheetMusicReading zurückgestellt.
 
 ## Backlog / Ideen
 

@@ -1,1 +1,1 @@
-Version 0.35 | 2026-05-01 22:30 | f00683c | Spaced Repetition für tonFinder, Griffbrett und Akkord-Trainer
+Version 0.36 | 2026-05-01 22:29 | 2945286 | Update
