@@ -114,7 +114,13 @@ export function createNotePlayingExerciseFeature() {
     // heuristics. Sharing a single AnalyserNode would force one fftSize on both,
     // causing audio glitches and wrong latency/precision trade-offs.
     // See improvement.md §1.4 for the design rationale.
-    await openNotePlayingAudioSession(audioSession, audioSession.stream, AudioContext);
+    try {
+      await openNotePlayingAudioSession(audioSession, audioSession.stream, AudioContext);
+    } catch {
+      ui.permission.classList.remove('u-hidden');
+      ui.permission.textContent = 'Audio-Kontext konnte nicht gestartet werden. Bitte Seite neu laden.';
+      return;
+    }
     applyTargetFftSize();
 
     intervalId = setInterval(analyzeFrame, ANALYZE_INTERVAL_MS);

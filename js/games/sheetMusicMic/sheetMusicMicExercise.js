@@ -381,7 +381,7 @@ export function createSheetMusicMicFeature() {
       await openSheetMusicMicAudioSession(audioSession, audioSession.stream, AudioContext);
     } catch {
       activeUi.permission.classList.remove('u-hidden');
-      activeUi.permission.textContent = 'Audio-Kontext konnte nicht gestartet werden.';
+      activeUi.permission.textContent = 'Audio-Kontext konnte nicht gestartet werden. Bitte Seite neu laden.';
       pushDebugEvent('audio-session-error', { reason: 'open audio session failed' });
       syncDebugView({
         permission: activeUi.permission.textContent,

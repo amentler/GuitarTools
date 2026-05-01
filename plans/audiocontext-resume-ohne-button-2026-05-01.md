@@ -1,5 +1,7 @@
 # Plan: AudioContext-Resume ohne User-Gesture-Button
 
+**Status:** ✅ Umgesetzt – `audioSessionService.js` wirft nach `resume()`, beide Controller zeigen Reload-Meldung.
+
 ## Problem
 
 `AudioContext` startet in Chrome im Zustand `suspended`, wenn kein expliziter

@@ -13,9 +13,8 @@ Dieses Dokument ist der aktuelle Einstieg in offene und archivierte Planungsdoku
 
 ### P0 – Stabilität / reale Browser-Bugs
 
-- [plans/audiocontext-resume-ohne-button-2026-05-01.md](audiocontext-resume-ohne-button-2026-05-01.md)
-  AudioContext bleibt `suspended` wenn Mic-Permission bereits gespeichert ist → Töne werden nicht erkannt.
-  Lösung: nach `resume()` prüfen, bei `suspended` Fehlermeldung + Reload-Aufforderung anzeigen. (~5 Zeilen)
+- ✅ [plans/audiocontext-resume-ohne-button-2026-05-01.md](audiocontext-resume-ohne-button-2026-05-01.md)
+  AudioContext-Suspend-Fix umgesetzt: nach `resume()` wird bei `suspended` geworfen; beide Mic-Controller zeigen Reload-Meldung.
 
 - **sheetMusicMic Timeout-Handles** (kein eigener Plan, Quelle: architektur-review-2026-05-01.md P0-1)
   Nach `unmount()` laufende `setTimeout`-Callbacks können noch `ui`-DOM-Zugriffe machen.

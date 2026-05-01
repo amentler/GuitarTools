@@ -13,15 +13,19 @@ function createMockAudioContext({ suspended = false } = {}) {
     }),
   };
 
-  return {
+  const ctx = {
     state: suspended ? 'suspended' : 'running',
-    resume: vi.fn().mockResolvedValue(undefined),
     close: vi.fn().mockResolvedValue(undefined),
     createAnalyser: vi.fn(() => analyser),
     createMediaStreamSource: vi.fn(() => source),
     analyser,
     source,
   };
+  ctx.resume = vi.fn(() => {
+    ctx.state = 'running';
+    return Promise.resolve();
+  });
+  return ctx;
 }
 
 describe('audioSessionService', () => {

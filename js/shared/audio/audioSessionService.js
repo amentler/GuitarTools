@@ -31,6 +31,9 @@ export async function openAudioSession(
     if (audioCtx.state === 'suspended' && typeof audioCtx.resume === 'function') {
       await audioCtx.resume();
     }
+    if (audioCtx.state === 'suspended') {
+      throw new Error('AudioContext bleibt suspended – bitte Seite neu laden');
+    }
 
     const analyser = audioCtx.createAnalyser();
     if (typeof configureAnalyser === 'function') {
