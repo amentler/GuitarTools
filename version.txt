@@ -1,1 +1,1 @@
-Version 0.38 | 2026-05-01 23:30 | 979ec14 | Update
+Version 0.39 | 2026-05-02 00:08 | fae81d1 | fix: Griffbrett zeigt nur Sattel bei Bünde=0

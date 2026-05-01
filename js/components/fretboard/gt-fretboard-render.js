@@ -77,7 +77,7 @@ export function renderFretboard(container, options = {}) {
     showLabels = true,
     onSelect = null,
   } = options;
-  const displayedMaxFret = Math.max(1, maxFret);
+  const displayedMaxFret = maxFret;
 
   container.innerHTML = '';
   const fretWireX = computeFretWireX(displayedMaxFret);

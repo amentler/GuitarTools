@@ -75,15 +75,17 @@ describe('GtFretboard', () => {
     expect(fret1MarkerX).toBeLessThan(firstFretWireX);
   });
 
-  it('keeps the first fret visible even when only open strings are allowed', () => {
+  it('zeigt nur den Sattel wenn frets="0" (nur leere Saiten)', () => {
     document.body.innerHTML = '<gt-fretboard frets="0"></gt-fretboard>';
     const element = document.querySelector('gt-fretboard');
 
-    const fretNumbers = Array.from(element.querySelectorAll('text')).map(node => node.textContent);
-    const fret1Marker = element.querySelector('circle[data-string="0"][data-fret="1"]');
+    const fretNumbers = Array.from(element.querySelectorAll('text'))
+      .map(node => node.textContent.trim())
+      .filter(t => /^\d+$/.test(t));
+    const fret1Zone = element.querySelector('[data-fret="1"]');
 
-    expect(fretNumbers).toContain('1');
-    expect(fret1Marker).toBeNull();
+    expect(fretNumbers).toHaveLength(0);
+    expect(fret1Zone).toBeNull();
   });
 
   it('maps string index 0 to the bottom string and 5 to the top string', () => {
