@@ -1,7 +1,7 @@
 # Plan: Gemeinsamer Precision-Plan
 
 **Stand:** 2026-05-02  
-**Status:** aktiv — Phase 1 + 2 abgeschlossen, Phase 3 nächster Schritt
+**Status:** aktiv — Phase 1 + 2 + 3 abgeschlossen, Phase 4 nächster Schritt
 
 ---
 
@@ -46,25 +46,32 @@ Gleiches gilt für `G-Dur` / `G-Dur (1-Finger)`.
 
 ---
 
-## Aktueller Fingerprint-Stand (Baseline nach Phase 2)
+## Fingerprint-Verlauf
 
+### Baseline nach Phase 2
 ```
 TP=57, FP=28, FN=0, TN=3708
 Precision=67.1%, Recall=100%, F1=80.3%
 chords=66, samples=3793
 ```
 
-**Verbleibende FP-Cluster (28 gesamt):**
+### Stand nach Phase 3
+```
+TP=57, FP=18, FN=0, TN=3718
+Precision=76.0%, Recall=100%, F1=86.4%
+chords=66, samples=3793
+```
+
+**Verbleibende FP-Cluster (18 gesamt):**
 
 | Cluster | FPs | Ursache |
 |---|---|---|
-| C-Dur ↔ C-Dur(1-Finger) | 4 | identische Pitch Classes, kein Bass-Gate |
-| G-Dur ↔ G-Dur(1-Finger) | 2 | identische Pitch Classes, kein Bass-Gate |
 | Sus-Identitäten: Xsus4 ↔ Ysus2 | 4 | Csus4/Fsus2, Csus2/Gsus4, Asus2/Esus4, Asus4/Dsus2 teilen exakt gleiche Pitch Classes |
-| Subset-Konfusionen | 4 | Cadd9→Gsus4, Cmaj7→C-Dur, Csus2→C-Dur (Superset triggert) |
+| Subset-Konfusionen | 2 | Cadd9→Gsus4, Csus2→Gsus4 |
 | Dim-adjacent | 3 | D-Moll→Ddim, E-Moll→Edim (×2) |
 | 7th-Subset | 3 | Em7→E-Moll, E-Moll→Em7, F7→F-Dur |
-| Sonstige | 8 | G-Moll→G7, weitere |
+| Moll-Konfusion | 3 | G-Moll→G7, G-Moll→Dsus4, G-Moll→Gsus2 |
+| Sonstige | 3 | G7→G-Dur(1-Finger), G7→G7sus4, H-Moll→Hdim, H7→Hmaj7 |
 
 ---
 
@@ -90,27 +97,23 @@ Umgesetzt in Commit `c99eb01`:
 
 ---
 
-## Offene Phasen
+## Abgeschlossene Phasen (Fortsetzung)
 
-### Phase 3: Bass-gestützte Variantentrennung
+### ✅ Phase 3: Bass-gestützte Variantentrennung
 
-**Ziel:** C-Dur vs. C-Dur(1-Finger) und G-Dur vs. G-Dur(1-Finger) via Bass-Oktave unterscheiden.
+Umgesetzt in Commit (Version 0.44):
 
-**Erster Schritt (Analyse, keine Implementierung):**
+- `BASS_VARIANT_COUNTERPART`-Map in `essentiaChordLogic.js` (C-Dur ↔ C-Dur(1-Finger), G-Dur ↔ G-Dur(1-Finger))
+- `BASS_VARIANT_FUND_FACTOR = 1.1` als Toleranzschwelle (verhindert false blocks bei Synth-Fixtures)
+- `fundamentalScore` (H1-only) in `buildBassNeighborScores` (`essentiaBassScore.js`) ergänzt
+- `hasBassVariantPriority`-Gate in `evaluateRootAndBassEvidence`: blockiert wenn `target_fund * 1.1 < counterpart_fund`
+- Gate greift in `passesCoreEvidence` und `passesSpecialCaseAcceptance`
 
-Bass-Support-Werte für die problematischen Fixture-Paare ausgeben:
-```bash
-# C3 (C-Dur) vs C4 (C-Dur 1-Finger) in Bass-Evidenz vergleichen
-# extractBassSupportMapFromWav ist in essentiaChordTargetedRegression.test.js bereits verfügbar
-```
-
-Frage: Ist `isLocallyDominant` für C3-Erwartung bei C-Dur-Audio stabil anders als bei C-Dur-1-Finger-Audio?
-
-**Implementierung nur wenn:** Bass-Evidenz zuverlässig zwischen C3 und C4 trennt UND keine neuen FNs entstehen.
-
-**Validierung:** Gezielte Fixture-Tests + Fingerprint. FN=0 bleibt Abbruchkriterium.
+**Ergebnis:** 10 FPs eliminiert, FN=0 gehalten. Precision 67.1% → 76.0%, F1 80.3% → 86.4%.
 
 ---
+
+## Offene Phasen
 
 ### Phase 4: Sus-Identitäts-Paare adressieren
 
@@ -145,6 +148,6 @@ Höchstes FN-Risiko — Fingerprint-Vergleich ist Pflicht.
 
 ## Nächste Aktion
 
-**Phase 3, Analyseschritt:**  
-Bass-Support-Ausgabe für `C-Dur/c_chord.wav` vs. `C-Dur (1-Finger)/csimp.wav` —  
-prüfen ob `isLocallyDominant` für den C3-Bass zuverlässig unterscheidet.
+**Phase 4, Analyseschritt:**  
+Prüfen ob Bass-Root-Disambiguierung Sus-Paare trennt (z. B. Csus4 Bass=C3 vs. Fsus2 Bass=F2).  
+Gleiche Methode wie Phase 3: `fundamentalScore`-Vergleich via `extractBassSupportMapFromWav`.

@@ -126,6 +126,14 @@ const CHORD_TYPE_PROFILES = {
     minSeventhEnergy: 0.08,
   },
 };
+const BASS_VARIANT_COUNTERPART = {
+  'C-Dur': 'C-Dur (1-Finger)',
+  'C-Dur (1-Finger)': 'C-Dur',
+  'G-Dur': 'G-Dur (1-Finger)',
+  'G-Dur (1-Finger)': 'G-Dur',
+};
+const BASS_VARIANT_FUND_FACTOR = 1.1;
+
 const MIN_TRIAD_THIRD_SEPARATION = 0.05;
 const MIN_SUSPENSION_ENERGY = 0.18;
 const MAX_SUSPENSION_COMPETING_THIRD_ENERGY = 0.3;
@@ -381,15 +389,23 @@ function scoreChordCandidates(hpcp, templates) {
   };
 }
 
-function evaluateRootAndBassEvidence(targetDescriptor, targetEvidence, profile, targetBassSupport) {
+function evaluateRootAndBassEvidence(targetDescriptor, targetEvidence, profile, targetBassSupport, bassSupportByChord, targetChordName) {
   const hasStrongRoot = !targetDescriptor || targetEvidence.rootEnergy >= profile.minRootEnergy;
   const hasStrongFifth = !targetDescriptor || targetEvidence.fifthEnergy >= profile.minFifthEnergy;
   const hasExpectedBass = !targetBassSupport || targetBassSupport.isLocallyDominant;
+
+  const counterpartName = BASS_VARIANT_COUNTERPART[targetChordName];
+  const counterpartBassSupport = counterpartName && bassSupportByChord ? bassSupportByChord[counterpartName] : null;
+  const targetFund = targetBassSupport?.expected.fundamentalScore ?? targetBassSupport?.expected.score ?? 0;
+  const counterpartFund = counterpartBassSupport?.expected.fundamentalScore ?? counterpartBassSupport?.expected.score ?? 0;
+  const hasBassVariantPriority = !counterpartBassSupport || !targetBassSupport ||
+    targetFund * BASS_VARIANT_FUND_FACTOR >= counterpartFund;
 
   return {
     hasStrongRoot,
     hasStrongFifth,
     hasExpectedBass,
+    hasBassVariantPriority,
   };
 }
 
@@ -570,6 +586,7 @@ function passesSpecialCaseAcceptance({
     rootAndBassEvidence.hasStrongFifth &&
     chordExtensionEvidence.hasExpectedSeventh &&
     rootAndBassEvidence.hasExpectedBass &&
+    rootAndBassEvidence.hasBassVariantPriority &&
     annotatedTargetAcceptance.hasExactAnnotatedMatch &&
     chordExtensionEvidence.hasSuspensionEvidence &&
     chordExtensionEvidence.hasAdd9Evidence &&
@@ -594,6 +611,7 @@ function passesCoreEvidence({
   return confidence >= threshold &&
     rootAndBassEvidence.hasStrongRoot &&
     rootAndBassEvidence.hasStrongFifth &&
+    rootAndBassEvidence.hasBassVariantPriority &&
     triadQualityEvidence.hasExpectedThird &&
     triadQualityEvidence.hasSeparatedTriadThird &&
     chordExtensionEvidence.hasExpectedSeventh &&
@@ -763,7 +781,7 @@ export function matchHpcpToChord(hpcp, targetChordName, templates, thresholdOver
   const threshold = thresholdOverride ?? profile.threshold;
   const hasEnoughChordSupport = targetEvidence.supportMean >= profile.minSupportMean;
   const specialCase = CHORD_MATCH_SPECIAL_CASES[effectiveTargetChordName] ?? CHORD_MATCH_SPECIAL_CASES[targetChordName];
-  const rootAndBassEvidence = evaluateRootAndBassEvidence(targetDescriptor, targetEvidence, profile, targetBassSupport);
+  const rootAndBassEvidence = evaluateRootAndBassEvidence(targetDescriptor, targetEvidence, profile, targetBassSupport, bassSupportByChord, targetChordName);
   const triadQualityEvidence = evaluateTriadQualityEvidence(targetDescriptor, targetEvidence, profile);
   const chordExtensionEvidence = evaluateChordExtensionEvidence(targetDescriptor, targetEvidence, profile, hpcp);
   const annotatedTargetAcceptance = evaluateAnnotatedTargetAcceptance(

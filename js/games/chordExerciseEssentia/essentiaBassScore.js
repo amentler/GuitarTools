@@ -51,11 +51,15 @@ export function scoreBassCandidateFromSpectrum(freqData, sampleRate, candidateFr
   return score;
 }
 
+const FUNDAMENTAL_HARMONICS = [1];
+const FUNDAMENTAL_WEIGHTS = [1.0];
+
 export function buildBassNeighborScores(freqData, sampleRate, bassNote, options = {}) {
   const bassMidi = (bassNote.octave + 1) * 12 + NOTE_NAMES.indexOf(bassNote.note);
   const lowerNeighbor = midiToCandidate(bassMidi - 1);
   const expected = midiToCandidate(bassMidi);
   const upperNeighbor = midiToCandidate(bassMidi + 1);
+  const fundamentalOptions = { ...options, harmonics: FUNDAMENTAL_HARMONICS, harmonicWeights: FUNDAMENTAL_WEIGHTS };
 
   return {
     lowerNeighbor: {
@@ -65,6 +69,7 @@ export function buildBassNeighborScores(freqData, sampleRate, bassNote, options 
     expected: {
       ...expected,
       score: scoreBassCandidateFromSpectrum(freqData, sampleRate, expected.frequency, options),
+      fundamentalScore: scoreBassCandidateFromSpectrum(freqData, sampleRate, expected.frequency, fundamentalOptions),
     },
     upperNeighbor: {
       ...upperNeighbor,

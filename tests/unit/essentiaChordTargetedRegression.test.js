@@ -221,6 +221,28 @@ describe('Targeted chord regressions', () => {
     expect(gAdd9Result.isCorrect).toBe(false);
   });
 
+  it('akzeptiert C-Dur-Fixtures nicht als C-Dur (1-Finger) (Bass-Varianten-Gate)', () => {
+    for (const wavFile of ['C-Dur/c_chord.wav', 'C-Dur/cdur_steel.wav', 'C-Dur/cdur_steel2.wav']) {
+      const result = getMatchResult('C-Dur', wavFile, 'C-Dur (1-Finger)');
+      expect(result.isCorrect, `${wavFile} darf nicht als C-Dur (1-Finger) akzeptiert werden`).toBe(false);
+    }
+  });
+
+  it('akzeptiert C-Dur (1-Finger)-Fixture nicht als C-Dur (Bass-Varianten-Gate)', () => {
+    const result = getMatchResult('C-Dur (1-Finger)', 'C-Dur (1-Finger)/csimp.wav', 'C-Dur');
+    expect(result.isCorrect, 'csimp.wav darf nicht als C-Dur akzeptiert werden').toBe(false);
+  });
+
+  it('akzeptiert G-Dur-Fixture nicht als G-Dur (1-Finger) (Bass-Varianten-Gate)', () => {
+    const result = getMatchResult('G-Dur', 'G-Dur/g_chord.wav', 'G-Dur (1-Finger)');
+    expect(result.isCorrect, 'g_chord.wav darf nicht als G-Dur (1-Finger) akzeptiert werden').toBe(false);
+  });
+
+  it('akzeptiert G-Dur (1-Finger)-Fixture nicht als G-Dur (Bass-Varianten-Gate)', () => {
+    const result = getMatchResult('G-Dur (1-Finger)', 'G-Dur (1-Finger)/gsimp.wav', 'G-Dur');
+    expect(result.isCorrect, 'gsimp.wav darf nicht als G-Dur akzeptiert werden').toBe(false);
+  });
+
   it('zeigt reproduzierbar unterschiedliche Bass-Evidenz für C-Dur und C-Dur (1-Finger)', () => {
     const chordNames = ['C-Dur', 'C-Dur (1-Finger)'];
     const cMajorBassSupport = extractBassSupportMapFromWav('C-Dur/c_chord.wav', chordNames);
