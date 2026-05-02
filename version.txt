@@ -1,1 +1,1 @@
-Version 0.50 | 2026-05-02 23:20 | c1125a8 | chore: Backlog aufgeräumt, erledigte Pläne nach old/ verschoben
+Version 0.51 | 2026-05-03 00:01 | cf444d0 | Update
