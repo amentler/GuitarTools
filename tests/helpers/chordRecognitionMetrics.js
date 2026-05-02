@@ -21,6 +21,7 @@ export function evaluateChordRecognitionConfusion(frozenFixtures) {
     !fixture.wavFile.includes('synth'),
   );
   const explicitNegativeFixtures = frozenFixtures.filter(fixture => !fixture.expected.isCorrect);
+  const exhaustiveNegativeFixturePattern = /^open-strums\/\d_strum(?:_alt\d*)?\.wav$/;
 
   const rows = [];
 
@@ -49,17 +50,23 @@ export function evaluateChordRecognitionConfusion(frozenFixtures) {
     const bassSupportByChord = fixture.wavFile.includes('/')
       ? extractBassSupportMapFromWav(fixture.wavFile, chordNames)
       : null;
-    const result = matchHpcpToChord(avgHpcp, fixture.chordName, templates, undefined, { bassSupportByChord });
+    const probeChordNames = exhaustiveNegativeFixturePattern.test(fixture.wavFile)
+      ? chordNames
+      : [fixture.chordName];
 
-    rows.push({
-      kind: 'explicit-negative',
-      fixture,
-      probeChordName: fixture.chordName,
-      expectedPositive: false,
-      actualPositive: result.isCorrect,
-      bestMatch: result.bestMatch,
-      confidence: result.confidence,
-    });
+    for (const probeChordName of probeChordNames) {
+      const result = matchHpcpToChord(avgHpcp, probeChordName, templates, undefined, { bassSupportByChord });
+
+      rows.push({
+        kind: probeChordNames.length === 1 ? 'explicit-negative' : 'explicit-negative-matrix',
+        fixture,
+        probeChordName,
+        expectedPositive: false,
+        actualPositive: result.isCorrect,
+        bestMatch: result.bestMatch,
+        confidence: result.confidence,
+      });
+    }
   }
 
   const truePositives = rows.filter(row => row.expectedPositive && row.actualPositive);
