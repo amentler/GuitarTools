@@ -148,6 +148,11 @@ const MIN_DOMINANT_VARIANT_SEVENTH_ENERGY = 0.09;
 const MAX_SPARSE_DOMINANT_THIRD_ENERGY = 0.3;
 const MIN_SPARSE_DOMINANT_FIFTH_ENERGY = 0.8;
 const MIN_SUSPENSION_TO_THIRD_RATIO = 1.2;
+const OPEN_STRUM_CANDIDATE_NAME = 'open-strum';
+const OPEN_STRUM_BASE_BINS = [4, 9, 2, 7, 11];
+const OPEN_STRUM_TEMPLATE_OFFSETS = [0, 1, 2, 3, 4, 5];
+const OPEN_STRUM_THRESHOLD = 0.45;
+const OPEN_STRUM_BEST_CHORD_MARGIN = 0.22;
 
 function stripChordAnnotation(chordName) {
   return chordName.replace(/\s*\([^)]*\)\s*$/, '').trim();
@@ -366,27 +371,99 @@ function scoreHpcpAgainstChord(hpcp, template, descriptor) {
 }
 
 function scoreChordCandidates(hpcp, templates) {
-  let bestMatch = null;
-  let bestScore = -1;
-  let bestDescriptor = null;
+  let bestChordMatch = null;
+  let bestChordScore = -1;
+  let bestChordDescriptor = null;
   const scoreByChordName = new Map();
 
   for (const [name, template] of Object.entries(templates)) {
     const descriptor = getChordDescriptor(name);
     const score = scoreHpcpAgainstChord(hpcp, template, descriptor).score;
     scoreByChordName.set(name, score);
-    if (score > bestScore) {
-      bestScore = score;
-      bestMatch = name;
-      bestDescriptor = descriptor;
+    if (score > bestChordScore) {
+      bestChordScore = score;
+      bestChordMatch = name;
+      bestChordDescriptor = descriptor;
     }
   }
+
+  const openStrumCandidate = scoreOpenStrumCandidate(hpcp);
+  const bestMatch = openStrumCandidate.score > bestChordScore
+    ? OPEN_STRUM_CANDIDATE_NAME
+    : bestChordMatch;
+  const bestScore = openStrumCandidate.score > bestChordScore
+    ? openStrumCandidate.score
+    : bestChordScore;
 
   return {
     bestMatch,
     bestScore,
-    bestDescriptor,
+    bestDescriptor: bestChordDescriptor,
+    bestChordMatch,
+    bestChordScore,
+    bestChordDescriptor,
+    openStrumCandidate,
     scoreByChordName,
+  };
+}
+
+function buildOpenStrumTemplate(offset) {
+  const template = new Float32Array(12);
+  for (const bin of OPEN_STRUM_BASE_BINS) {
+    template[(bin + offset) % 12] = 1;
+  }
+  return template;
+}
+
+function scoreOpenStrumCandidate(hpcp) {
+  let bestOffset = null;
+  let bestEvidence = null;
+  let bestScore = -1;
+
+  for (const offset of OPEN_STRUM_TEMPLATE_OFFSETS) {
+    const template = buildOpenStrumTemplate(offset);
+    const supportMean = getMeanEnergy(hpcp, template, true);
+    const leakageMean = getMeanEnergy(hpcp, template, false);
+    const rawScore =
+      DEFAULT_PROFILE.weights.supportMean * supportMean -
+      DEFAULT_PROFILE.weights.leakageMean * leakageMean;
+    const normalizedScore = rawScore / DEFAULT_PROFILE.weights.supportMean;
+    const score = clampConfidence(normalizedScore);
+
+    if (score > bestScore) {
+      bestScore = score;
+      bestOffset = offset;
+      bestEvidence = {
+        supportMean,
+        leakageMean,
+      };
+    }
+  }
+
+  return {
+    name: OPEN_STRUM_CANDIDATE_NAME,
+    offset: bestOffset,
+    score: bestScore,
+    supportMean: bestEvidence?.supportMean ?? 0,
+    leakageMean: bestEvidence?.leakageMean ?? 0,
+  };
+}
+
+function evaluateOpenStrumRejectCandidate(openStrumCandidate, bestChordScore, targetDescriptor, confidence, chordExtensionEvidence) {
+  const hasOpenStrumEvidence = openStrumCandidate.score >= OPEN_STRUM_THRESHOLD;
+  const isNearBestChord = bestChordScore >= 0 &&
+    openStrumCandidate.score >= bestChordScore - OPEN_STRUM_BEST_CHORD_MARGIN;
+  const hasStrongSeventhOverride = Boolean(
+    targetDescriptor?.expectedSeventhBin !== null &&
+    chordExtensionEvidence.hasExpectedSeventh &&
+    confidence >= openStrumCandidate.score + 0.12
+  );
+
+  return {
+    hasOpenStrumEvidence,
+    isNearBestChord,
+    hasStrongSeventhOverride,
+    rejectsChordClaim: hasOpenStrumEvidence && isNearBestChord && !hasStrongSeventhOverride,
   };
 }
 
@@ -787,7 +864,15 @@ export function matchHpcpToChord(hpcp, targetChordName, templates, thresholdOver
   const targetBassSupport = bassSupportByChord?.[effectiveTargetChordName] ?? bassSupportByChord?.[targetChordName] ?? null;
   const confidence = targetEvidence.score;
   const candidateScores = scoreChordCandidates(hpcp, templates);
-  const { bestMatch, bestScore, bestDescriptor, scoreByChordName } = candidateScores;
+  const {
+    bestMatch,
+    bestScore,
+    bestChordMatch,
+    bestChordScore,
+    bestChordDescriptor,
+    openStrumCandidate,
+    scoreByChordName,
+  } = candidateScores;
 
   const threshold = thresholdOverride ?? profile.threshold;
   const hasEnoughChordSupport = targetEvidence.supportMean >= profile.minSupportMean;
@@ -803,12 +888,12 @@ export function matchHpcpToChord(hpcp, targetChordName, templates, thresholdOver
   );
   const bestMatchCompatibility = evaluateBestMatchCompatibility({
     targetDescriptor,
-    bestDescriptor,
+    bestDescriptor: bestChordDescriptor,
     targetEvidence,
     profile,
-    bestScore,
+    bestScore: bestChordScore,
     confidence,
-    bestMatch,
+    bestMatch: bestChordMatch,
     targetTemplate,
     templates,
   });
@@ -822,6 +907,13 @@ export function matchHpcpToChord(hpcp, targetChordName, templates, thresholdOver
     annotatedTargetAcceptance,
     hasEnoughChordSupport,
   });
+  const openStrumRejectCandidate = evaluateOpenStrumRejectCandidate(
+    openStrumCandidate,
+    bestChordScore,
+    targetDescriptor,
+    confidence,
+    chordExtensionEvidence,
+  );
   const acceptsCoreEvidence = passesCoreEvidence({
     confidence,
     threshold,
@@ -832,9 +924,10 @@ export function matchHpcpToChord(hpcp, targetChordName, templates, thresholdOver
     hasEnoughChordSupport,
   });
   const isCorrect = acceptsSpecialCase || (
+    !openStrumRejectCandidate.rejectsChordClaim &&
     acceptsCoreEvidence && (
-      bestMatch === targetChordName ||
-      bestMatch === effectiveTargetChordName ||
+      bestChordMatch === targetChordName ||
+      bestChordMatch === effectiveTargetChordName ||
       bestMatchCompatibility.passesBestMatchTolerance ||
       bestMatchCompatibility.passesSubsetAcceptance ||
       bestMatchCompatibility.passesDominantSeventhVariantAcceptance
@@ -843,12 +936,20 @@ export function matchHpcpToChord(hpcp, targetChordName, templates, thresholdOver
   const reportedSpecialCaseBestMatch = specialCase?.reportAsTarget
     ? effectiveTargetChordName
     : bestAcceptedAliasName;
+  const reportedBestMatch = acceptsSpecialCase
+    ? reportedSpecialCaseBestMatch
+    : (openStrumRejectCandidate.rejectsChordClaim ? OPEN_STRUM_CANDIDATE_NAME : bestMatch);
+  const reportedBestScore = acceptsSpecialCase && specialCase?.reportAsTarget
+    ? confidence
+    : (acceptsSpecialCase
+      ? bestAcceptedAliasScore
+      : (reportedBestMatch === OPEN_STRUM_CANDIDATE_NAME ? openStrumCandidate.score : bestScore));
 
   return {
     isCorrect,
     confidence,
-    bestMatch: acceptsSpecialCase ? reportedSpecialCaseBestMatch : bestMatch,
-    bestScore: acceptsSpecialCase && specialCase?.reportAsTarget ? confidence : (acceptsSpecialCase ? bestAcceptedAliasScore : bestScore),
+    bestMatch: reportedBestMatch,
+    bestScore: reportedBestScore,
     bassSupport: targetBassSupport,
   };
 }

@@ -155,6 +155,14 @@ describe('matchHpcpToChord', () => {
     expect(result.confidence).toBeLessThan(1);
   });
 
+  it('reports a transposed open-strum pattern as open-strum instead of a concrete chord claim', () => {
+    const hpcp = new Float32Array([0, 0, 0.95, 0, 0.31, 0, 0, 0.69, 0, 0.25, 0, 1]);
+    const result = matchHpcpToChord(hpcp, 'E-Moll', templates);
+
+    expect(result.isCorrect).toBe(false);
+    expect(result.bestMatch).toBe('open-strum');
+  });
+
   it('returns false for unknown chord name', () => {
     const hpcp = new Float32Array([1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0]);
     const result = matchHpcpToChord(hpcp, 'Xyz-Nonexistent', templates);

@@ -1,7 +1,25 @@
 # Plan: Open-Strum-Reject im Chord-Matcher
 
 **Stand:** 2026-05-02  
-**Status:** geplant
+**Status:** teilweise umgesetzt
+
+**Umgesetzt am 2026-05-02**
+
+- Generischer Matcher-Kandidat `open-strum` in `essentiaChordLogic.js` ergänzt.
+- Reject-Gate über Nähe zum besten echten Akkordkandidaten ergänzt.
+- Schutzregel gegen False Negatives bei echten Septakkorden ergänzt.
+- Relevante Unit-/Audio-Regressionen ergänzt und ausgeführt.
+- Fingerprint ausgeführt; `open-strums/*` werden aktuell nicht mehr als Akkorde akzeptiert.
+
+**Archivierte erledigte Phasen**
+
+- Siehe [open-strum-reject-plan-phasen-1-4-abgeschlossen-2026-05-02.md](old/open-strum-reject-plan-phasen-1-4-abgeschlossen-2026-05-02.md)
+
+**Offen bleibt**
+
+- Nachschärfung der verbleibenden False-Positive-Cluster außerhalb der Open-Strums.
+- Entscheidung, ob `0-open` bis `5-open` später eigene Matcher-Kandidaten werden.
+- Eventuelle weitere Diffusitäts-/Bass-Gates nur bei Bedarf nach neuer Messung.
 
 ---
 
@@ -160,56 +178,11 @@ Diese Ideen sind bewusst im Plan gesammelt, auch wenn sie nicht alle in Phase 1 
 
 ## Phasen
 
-### Phase 1: Analyse- und Modellierungsphase
+Die erledigten Phasen 1 bis 4 sind archiviert unter:
 
-Ziel:
-- Festlegen, wie `open-strum` fachlich in den Matcher integriert wird.
+- [open-strum-reject-plan-phasen-1-4-abgeschlossen-2026-05-02.md](old/open-strum-reject-plan-phasen-1-4-abgeschlossen-2026-05-02.md)
 
-Arbeit:
-- Vergleich der bestehenden Open-Strum-FPs nach Score-Mustern.
-- Prüfen, ob ein generischer `open-strum`-Kandidat ausreicht oder ob mehrere Untertypen sofort nötig wären.
-- Entscheidung, welche Signale die Reject-Entscheidung tragen sollen.
-
-Validierung:
-- Klare Definition, wann `open-strum` als dominanter Kandidat gilt.
-
-### Phase 2: Matcher-Kandidat `open-strum`
-
-Ziel:
-- `open-strum` als expliziten Sonderkandidaten im Candidate-Scoring ergänzen.
-
-Arbeit:
-- Sonderkandidat in der Match-Logik aufnehmen.
-- Score-Regel und Vergleich mit normalen Akkordkandidaten implementierbar vorbereiten.
-
-Validierung:
-- Unit-Tests zeigen, dass `bestMatch` in Open-Strum-Fällen auch `open-strum` werden kann.
-
-### Phase 3: Reject-Gate integrieren
-
-Ziel:
-- Akkord-Claims blockieren, wenn `open-strum` dominant oder zu nah am besten Akkordkandidaten ist.
-
-Arbeit:
-- Reject-Regel in den Acceptance-Pfad einbauen.
-- Sicherheitsmarge gegen False Negatives auf echten Akkorden definieren.
-
-Validierung:
-- Gezielte Regressionen auf heutige Open-Strum-FPs.
-
-### Phase 4: Fingerprint-Messung und Nachschärfung
-
-Ziel:
-- Wirkung auf Precision und Recall reproduzierbar messen.
-
-Arbeit:
-- Fingerprint ausführen.
-- FP-Rückgang bei Open-Strums gegen mögliche neue FNs abwägen.
-- Falls nötig Schwellenwerte feinjustieren.
-
-Validierung:
-- Fingerprint-Vergleich vor/nachher.
-- Relevante Fixture-Tests grün.
+Aktiv bleiben in diesem Plan nur noch Risiken, Varianten und mögliche Folgearbeit.
 
 ---
 

@@ -244,6 +244,23 @@ describe('Targeted chord regressions', () => {
     expect(result.isCorrect, `${wavFile} darf nicht als ${probeChordName} akzeptiert werden`).toBe(false);
   });
 
+  it.each([
+    ['2-open', 'open-strums/2_strum_alt2.wav', 'Esus2'],
+    ['5-open', 'open-strums/5_strum_alt.wav', 'C-Dur (1-Finger)'],
+  ])('meldet %s/%s als open-strum statt als %s', (chordName, wavFile, probeChordName) => {
+    const result = getMatchResult(chordName, wavFile, probeChordName);
+
+    expect(result.isCorrect, `${wavFile} darf nicht als ${probeChordName} akzeptiert werden`).toBe(false);
+    expect(result.bestMatch).toBe('open-strum');
+  });
+
+  it('laesst E-Moll trotz Open-Strum-Reject weiterhin als echten Akkord zu', () => {
+    const result = getMatchResult('E-Moll', 'E-Moll/emin.wav', 'E-Moll');
+
+    expect(result.isCorrect).toBe(true);
+    expect(result.bestMatch).not.toBe('open-strum');
+  });
+
   it('akzeptiert G-Dur-Fixture nicht als G-Dur (1-Finger) (Bass-Varianten-Gate)', () => {
     const result = getMatchResult('G-Dur', 'G-Dur/g_chord.wav', 'G-Dur (1-Finger)');
     expect(result.isCorrect, 'g_chord.wav darf nicht als G-Dur (1-Finger) akzeptiert werden').toBe(false);
