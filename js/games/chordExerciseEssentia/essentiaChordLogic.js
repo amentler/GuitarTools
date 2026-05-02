@@ -57,6 +57,7 @@ const DEFAULT_PROFILE = {
   minExpectedThirdEnergy: 0.05,
   minSupportMean: 0.32,
   minSeventhEnergy: 0,
+  minBassFundamentalToNeighborRatio: 0.05,
 };
 
 const CHORD_TYPE_PROFILES = {
@@ -393,6 +394,13 @@ function evaluateRootAndBassEvidence(targetDescriptor, targetEvidence, profile, 
   const hasStrongRoot = !targetDescriptor || targetEvidence.rootEnergy >= profile.minRootEnergy;
   const hasStrongFifth = !targetDescriptor || targetEvidence.fifthEnergy >= profile.minFifthEnergy;
   const hasExpectedBass = !targetBassSupport || targetBassSupport.isLocallyDominant;
+  const fundamentalScore = targetBassSupport?.expected?.fundamentalScore ?? 0;
+  const strongestNeighborScore = targetBassSupport?.strongestNeighbor ?? 0;
+  const fundamentalToNeighborRatio = strongestNeighborScore > 0
+    ? fundamentalScore / strongestNeighborScore
+    : (fundamentalScore > 0 ? Number.POSITIVE_INFINITY : 0);
+  const hasStrongBassFundamental = !targetBassSupport ||
+    fundamentalToNeighborRatio >= (profile.minBassFundamentalToNeighborRatio ?? 0);
 
   const counterpartName = BASS_VARIANT_COUNTERPART[targetChordName];
   const counterpartBassSupport = counterpartName && bassSupportByChord ? bassSupportByChord[counterpartName] : null;
@@ -405,6 +413,7 @@ function evaluateRootAndBassEvidence(targetDescriptor, targetEvidence, profile, 
     hasStrongRoot,
     hasStrongFifth,
     hasExpectedBass,
+    hasStrongBassFundamental,
     hasBassVariantPriority,
   };
 }
@@ -586,6 +595,7 @@ function passesSpecialCaseAcceptance({
     rootAndBassEvidence.hasStrongFifth &&
     chordExtensionEvidence.hasExpectedSeventh &&
     rootAndBassEvidence.hasExpectedBass &&
+    rootAndBassEvidence.hasStrongBassFundamental &&
     rootAndBassEvidence.hasBassVariantPriority &&
     annotatedTargetAcceptance.hasExactAnnotatedMatch &&
     chordExtensionEvidence.hasSuspensionEvidence &&
@@ -616,6 +626,7 @@ function passesCoreEvidence({
     triadQualityEvidence.hasSeparatedTriadThird &&
     chordExtensionEvidence.hasExpectedSeventh &&
     rootAndBassEvidence.hasExpectedBass &&
+    rootAndBassEvidence.hasStrongBassFundamental &&
     annotatedTargetAcceptance.hasExactAnnotatedMatch &&
     chordExtensionEvidence.hasSuspensionEvidence &&
     chordExtensionEvidence.hasAdd9Evidence &&

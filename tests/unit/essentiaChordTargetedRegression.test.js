@@ -233,6 +233,17 @@ describe('Targeted chord regressions', () => {
     expect(result.isCorrect, 'csimp.wav darf nicht als C-Dur akzeptiert werden').toBe(false);
   });
 
+  it.each([
+    ['C-Dur', 'open-strums/3_strum.wav', 'Fsus2'],
+    ['C-Dur', 'open-strums/3_strum.wav', 'Fsus4'],
+    ['C-Dur', 'open-strums/3_strum_alt.wav', 'Fsus4'],
+    ['C-Dur', 'open-strums/5_strum.wav', 'Gsus2'],
+    ['C-Dur', 'open-strums/5_strum.wav', 'Gsus4'],
+  ])('verwirft %s/%s weiterhin als negatives Open-Strum fuer %s', (chordName, wavFile, probeChordName) => {
+    const result = getMatchResult(chordName, wavFile, probeChordName);
+    expect(result.isCorrect, `${wavFile} darf nicht als ${probeChordName} akzeptiert werden`).toBe(false);
+  });
+
   it('akzeptiert G-Dur-Fixture nicht als G-Dur (1-Finger) (Bass-Varianten-Gate)', () => {
     const result = getMatchResult('G-Dur', 'G-Dur/g_chord.wav', 'G-Dur (1-Finger)');
     expect(result.isCorrect, 'g_chord.wav darf nicht als G-Dur (1-Finger) akzeptiert werden').toBe(false);
