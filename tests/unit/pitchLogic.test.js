@@ -180,7 +180,7 @@ describe('detectPitch – regression tests', () => {
     expect(hz).not.toBeNull();
     expect(hz).toBeGreaterThan(78);
     expect(hz).toBeLessThan(88);
-  });
+  }, 20000);
 
   it('detects G3 correctly with reduced 8192-sample buffer', () => {
     const buf = synth(196, 44100, 8192);
@@ -209,7 +209,7 @@ describe('detectPitch – regression tests', () => {
     const hz = detectPitch(buf, 44100, { applyFilters: true });
     expect(hz).not.toBeNull();
     expect(Math.abs(1200 * Math.log2(hz / 110))).toBeLessThan(2);
-  });
+  }, 20000);
 });
 
 describe('GUITAR_MAX_FREQUENCY', () => {

@@ -285,4 +285,34 @@ describe('Targeted chord regressions', () => {
     expect(cMajorBassSupport['C-Dur'].isLocallyDominant).toBe(true);
     expect(simplifiedCMajorBassSupport['C-Dur (1-Finger)'].isLocallyDominant).toBe(true);
   });
+
+  // Phase 4: Sus-Identity-Gate — Xsus4↔Ysus2-Verwechslungen via Bass-Root blockiert
+  it('akzeptiert Asus2-Fixtures nicht als Esus4 (Sus-Identity-Gate)', () => {
+    for (const wavFile of ['Asus2/asus2.wav', 'Asus2/01.wav']) {
+      const result = getMatchResult('Asus2', wavFile, 'Esus4');
+      expect(result.isCorrect, `${wavFile} darf nicht als Esus4 akzeptiert werden`).toBe(false);
+    }
+  });
+
+  it('akzeptiert Esus4-Fixture als Esus4 (Sus-Identity-Gate blockiert keine TPs)', () => {
+    const result = getMatchResult('Esus4', 'Esus4/esus4.wav', 'Esus4');
+    expect(result.isCorrect, 'esus4.wav muss als Esus4 akzeptiert werden').toBe(true);
+  });
+
+  it('akzeptiert Asus4-Fixture nicht als Dsus2 (Sus-Identity-Gate)', () => {
+    const result = getMatchResult('Asus4', 'Asus4/asus4.wav', 'Dsus2');
+    expect(result.isCorrect, 'asus4.wav darf nicht als Dsus2 akzeptiert werden').toBe(false);
+  });
+
+  it('akzeptiert Csus4-Fixture nicht als Fsus2 (Sus-Identity-Gate)', () => {
+    const result = getMatchResult('Csus4', 'Csus4/csus4.wav', 'Fsus2');
+    expect(result.isCorrect, 'csus4.wav darf nicht als Fsus2 akzeptiert werden').toBe(false);
+  });
+
+  it('akzeptiert Csus2-Fixtures nicht als Gsus4 (Sus-Identity-Gate)', () => {
+    for (const wavFile of ['Csus2/csus2.wav', 'Csus2/csus2_alt.wav']) {
+      const result = getMatchResult('Csus2', wavFile, 'Gsus4');
+      expect(result.isCorrect, `${wavFile} darf nicht als Gsus4 akzeptiert werden`).toBe(false);
+    }
+  });
 });

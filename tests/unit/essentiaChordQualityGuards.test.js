@@ -34,8 +34,8 @@ describe('Chord recognition quality guards', () => {
       `Precision=${(metrics.precision * 100).toFixed(1)}% Recall=${(metrics.sensitivity * 100).toFixed(1)}% F1=${(metrics.f1 * 100).toFixed(1)}%`,
     );
     expect(counts.fn, 'Recall=100% ist Pflicht (FN=0)').toBe(0);
-    expect(counts.fp, 'FP-Regression: mehr als 38 FPs').toBeLessThanOrEqual(38);
-    expect(metrics.precision, 'Precision unter 60% — starke Regression').toBeGreaterThanOrEqual(0.60);
+    expect(counts.fp, 'FP-Regression: mehr als 33 FPs').toBeLessThanOrEqual(33);
+    expect(metrics.precision, 'Precision unter 63% — starke Regression').toBeGreaterThanOrEqual(0.63);
   });
 
   it('Guard 2 – Bass-Contribution: Bass blockiert ≥ 5 FPs ohne TPs zu blockieren', () => {
@@ -107,10 +107,10 @@ describe('Chord recognition quality guards', () => {
       fpsBySource[src] = (fpsBySource[src] ?? 0) + 1;
     }
 
-    // C-Dur's 19 FPs come from open-strum negative fixtures probed exhaustively
+    // C-Dur's 18 FPs come from open-strum negative fixtures probed exhaustively
     // against all 66 chords — not from actual C-Dur recordings being confused.
     const BUDGETS = {
-      'C-Dur': 19,
+      'C-Dur': 18,
       'E-Moll': 3,
       'G-Moll': 3,
       'G7': 2,

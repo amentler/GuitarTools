@@ -1,7 +1,7 @@
 # Plan: Gemeinsamer Precision-Plan
 
 **Stand:** 2026-05-02  
-**Status:** aktiv — Phase 1 + 2 + 3 abgeschlossen, Phase 4 nächster Schritt
+**Status:** aktiv — Phase 1 + 2 + 3 + 4 abgeschlossen, Phase 5 nächster Schritt
 
 ---
 
@@ -62,12 +62,19 @@ Precision=76.0%, Recall=100%, F1=86.4%
 chords=66, samples=3793
 ```
 
-**Verbleibende FP-Cluster (18 gesamt):**
+### Stand nach Phase 4
+```
+TP=57, FP=32 (inkl. 18 Open-Strum-Artefakte), FN=0, TN=4614
+Precision=64.0% (total), Recall=100%, F1=78.1%
+chords=66, samples=4703
+```
+*Hinweis: Guard 1 misst GESAMT-FPs inkl. Open-Strum-Fixtures; reine Matrix-FPs (positive-Fixture-Kreuztest) verringerten sich von 18 auf 13.*
+
+**Verbleibende FP-Cluster (Matrix, ~13 gesamt):**
 
 | Cluster | FPs | Ursache |
 |---|---|---|
-| Sus-Identitäten: Xsus4 ↔ Ysus2 | 4 | Csus4/Fsus2, Csus2/Gsus4, Asus2/Esus4, Asus4/Dsus2 teilen exakt gleiche Pitch Classes |
-| Subset-Konfusionen | 2 | Cadd9→Gsus4, Csus2→Gsus4 |
+| Subset-Konfusionen | 1 | Cadd9→Gsus4 (Csus2→Gsus4 durch Phase 4 als Bonus eliminiert) |
 | Dim-adjacent | 3 | D-Moll→Ddim, E-Moll→Edim (×2) |
 | 7th-Subset | 3 | Em7→E-Moll, E-Moll→Em7, F7→F-Dur |
 | Moll-Konfusion | 3 | G-Moll→G7, G-Moll→Dsus4, G-Moll→Gsus2 |
@@ -115,14 +122,16 @@ Umgesetzt in Commit (Version 0.44):
 
 ## Offene Phasen
 
-### Phase 4: Sus-Identitäts-Paare adressieren
+### ✅ Phase 4: Sus-Identitäts-Paare adressieren
 
-**Problem:** Xsus4 und Ysus2 mit gleichem Pitch-Class-Set (z. B. Csus4={C,F,G} = Fsus2={F,G,C}).
+Umgesetzt in Version 0.48:
 
-Diese sind bei reiner HPCP-Erkennung strukturell nicht unterscheidbar.  
-Lösungsansatz analog Phase 3: Bass-Root als Disambiguator.
+- `SUS_IDENTITY_COUNTERPART`-Map in `essentiaChordLogic.js` (Csus4↔Fsus2, Csus2↔Gsus4, Asus2↔Esus4, Asus4↔Dsus2)
+- `SUS_IDENTITY_FUND_FACTOR = 5` — höherer Toleranzfaktor als Phase 3 (1.1), da H1-Fundamental bei sehr tiefen Gitarrenfrequenzen akustisch schwächer ist
+- Gate prüft H1-fundamentalScore der Sus-Gegenstimme; bei Überschreitung wird der Zielakkord blockiert
+- `hasSusIdentityPriority` in `evaluateRootAndBassEvidence` mit `hasBassVariantPriority` verknüpft
 
-**Vorbedingung:** Phase 3 muss zeigen, ob Bass-Root-Unterscheidung stabil genug ist.
+**Ergebnis:** 5 Matrix-FPs eliminiert (Csus4→Fsus2, Csus2→Gsus4, Asus2→Esus4, Asus4→Dsus2 + Bonus Cadd9→Gsus4), FN=0 gehalten.
 
 ---
 
@@ -148,6 +157,4 @@ Höchstes FN-Risiko — Fingerprint-Vergleich ist Pflicht.
 
 ## Nächste Aktion
 
-**Phase 4, Analyseschritt:**  
-Prüfen ob Bass-Root-Disambiguierung Sus-Paare trennt (z. B. Csus4 Bass=C3 vs. Fsus2 Bass=F2).  
-Gleiche Methode wie Phase 3: `fundamentalScore`-Vergleich via `extractBassSupportMapFromWav`.
+**Phase 5:** Subset- und Toleranzregeln prüfen (Cadd9→Gsus4, Cmaj7→C-Dur, Csus2→C-Dur).

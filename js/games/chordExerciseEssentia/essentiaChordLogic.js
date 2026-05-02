@@ -135,6 +135,21 @@ const BASS_VARIANT_COUNTERPART = {
 };
 const BASS_VARIANT_FUND_FACTOR = 1.1;
 
+// Sus-identity pairs share the same pitch classes but have different bass roots.
+// H1-fundamentals at low guitar frequencies are unreliable (body resonance distorts
+// the spectrum), so a higher tolerance factor is required vs Phase-3 octave pairs.
+const SUS_IDENTITY_COUNTERPART = {
+  'Csus4': 'Fsus2',
+  'Fsus2': 'Csus4',
+  'Csus2': 'Gsus4',
+  'Gsus4': 'Csus2',
+  'Asus2': 'Esus4',
+  'Esus4': 'Asus2',
+  'Asus4': 'Dsus2',
+  'Dsus2': 'Asus4',
+};
+const SUS_IDENTITY_FUND_FACTOR = 5;
+
 const MIN_TRIAD_THIRD_SEPARATION = 0.05;
 const MIN_SUSPENSION_ENERGY = 0.18;
 const MAX_SUSPENSION_COMPETING_THIRD_ENERGY = 0.3;
@@ -486,12 +501,18 @@ function evaluateRootAndBassEvidence(targetDescriptor, targetEvidence, profile, 
   const hasBassVariantPriority = !counterpartBassSupport || !targetBassSupport ||
     targetFund * BASS_VARIANT_FUND_FACTOR >= counterpartFund;
 
+  const susCounterpartName = SUS_IDENTITY_COUNTERPART[targetChordName];
+  const susCounterpartBassSupport = susCounterpartName && bassSupportByChord ? bassSupportByChord[susCounterpartName] : null;
+  const susCounterpartFund = susCounterpartBassSupport?.expected.fundamentalScore ?? susCounterpartBassSupport?.expected.score ?? 0;
+  const hasSusIdentityPriority = !susCounterpartBassSupport || !targetBassSupport ||
+    targetFund * SUS_IDENTITY_FUND_FACTOR >= susCounterpartFund;
+
   return {
     hasStrongRoot,
     hasStrongFifth,
     hasExpectedBass,
     hasStrongBassFundamental,
-    hasBassVariantPriority,
+    hasBassVariantPriority: hasBassVariantPriority && hasSusIdentityPriority,
   };
 }
 

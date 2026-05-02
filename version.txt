@@ -1,1 +1,1 @@
-Version 0.47 | 2026-05-02 22:35 | 969a56a | test: 5 Chord-Quality-Guards (Precision-Lock, Bass-Contribution, Fragile-TPs, Asymmetrie, FP-Budget)
+Version 0.48 | 2026-05-02 23:07 | 88e734f | feat: Phase 4 — Sus-Identity-Gate via Bass-Root (Precision 64%), fix pitchLogic test timeouts
