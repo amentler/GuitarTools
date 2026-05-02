@@ -15,7 +15,7 @@ test.use({
   },
 });
 
-test('akzeptiert identisches E-Moll-Voicing auch im simplified-Pfad', async ({ page }) => {
+test('akzeptiert E-Moll auch im simplified-Pfad', async ({ page }) => {
   await page.addInitScript(() => {
     window.__eceFeedbackHistory = [];
 
@@ -34,9 +34,9 @@ test('akzeptiert identisches E-Moll-Voicing auch im simplified-Pfad', async ({ p
     });
   });
 
-  await page.goto('/pages/chord-playing-essentia/index.html?chord=E-Moll%20(2-Finger)&categories=simplified');
+  await page.goto('/pages/chord-playing-essentia/index.html?chord=E-Moll&categories=simplified');
 
-  await expect(page.locator('#ece-chord-name')).toHaveText('E-Moll (2-Finger)');
+  await expect(page.locator('#ece-chord-name')).toHaveText('E-Moll');
   await expect(page.locator('#btn-ece-listen')).toBeEnabled({ timeout: 15_000 });
 
   await page.waitForFunction(() => {

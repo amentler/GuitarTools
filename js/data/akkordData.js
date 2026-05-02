@@ -27,14 +27,6 @@ export const CHORDS = {
     { string: 2, fret: 1, finger: 1 },
     { string: 1, fret: 0 }
   ],
-  "E-Moll (2-Finger)": [
-    { string: 6, fret: 0 },
-    { string: 5, fret: 2, finger: 2 },
-    { string: 4, fret: 2, finger: 3 },
-    { string: 3, fret: 0 },
-    { string: 2, fret: 0 },
-    { string: 1, fret: 0 }
-  ],
   // --- 2. Einsteiger-Akkorde (Standard CAGED) ---
   "C-Dur": [
     { string: 6, muted: true },
@@ -555,7 +547,7 @@ export const CHORDS = {
 };
 
 export const CHORD_CATEGORIES = {
-  "simplified": ["G-Dur (1-Finger)", "C-Dur (1-Finger)", "E-Moll (2-Finger)", "Asus2"],
+  "simplified": ["G-Dur (1-Finger)", "C-Dur (1-Finger)", "E-Moll", "Asus2"],
   "standard": ["C-Dur", "G-Dur", "D-Dur", "E-Moll", "A-Moll", "E-Dur", "A-Dur", "D-Moll"],
   "extended": [
     "F-Dur", "H-Dur", "H-Moll", "C-Moll", "F-Moll", "G-Moll",
@@ -577,7 +569,6 @@ export const CHORD_CATEGORIES = {
 export const CHORD_META = {
   "G-Dur (1-Finger)": { rootNote: "G", chordType: "Dur"  },
   "C-Dur (1-Finger)": { rootNote: "C", chordType: "Dur"  },
-  "E-Moll (2-Finger)":{ rootNote: "E", chordType: "Moll" },
   "C-Dur":    { rootNote: "C", chordType: "Dur"  },
   "G-Dur":    { rootNote: "G", chordType: "Dur"  },
   "D-Dur":    { rootNote: "D", chordType: "Dur"  },
