@@ -1,1 +1,1 @@
-Version 0.41 | 2026-05-02 17:41 | 1e0ebd6 | chord precision improvements
+Version 0.42 | 2026-05-02 17:43 | c99eb01 | Update

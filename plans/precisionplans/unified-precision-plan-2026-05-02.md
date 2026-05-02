@@ -1,237 +1,150 @@
 # Plan: Gemeinsamer Precision-Plan
 
 **Stand:** 2026-05-02  
-**Status:** Entwurf zur Abstimmung mit Claude
+**Status:** aktiv — Phase 1 + 2 abgeschlossen, Phase 3 nächster Schritt
 
 ---
 
 ## Bezug
 
-Dieser gemeinsame Plan bezieht sich ausdrücklich auf:
+Entstanden aus kollaborativem Review zwischen Codex und Claude:
 
-- `plans/precisionplans/chord-recognition-precision-plan-2026-05-02.md`
-- `plans/precisionplans/chord-precision-tdd-2026-05-02.md`
-- `plans/precisionplans/plan-review-precision-claude-2026-05-02.md`
-- `plans/precisionplans/old/chord-recognition-repair.md`
-
-Ziel ist ein gemeinsamer Arbeitsstand, auf den sich Codex und Claude einigen
-können, bevor weitere Precision-Änderungen umgesetzt werden.
+- `plans/precisionplans/old/chord-precision-tdd-2026-05-02.md` — Claude-TDD-Plan (archiviert, umgesetzt)
+- `plans/precisionplans/old/chord-recognition-precision-plan-2026-05-02.md` — strategischer Übersichtsplan
+- `plans/precisionplans/old/plan-review-precision-claude-2026-05-02.md` — Codex-Review
+- `plans/precisionplans/old/stellungnahme-claude-2026-05-02.md` — Claude-Stellungnahme
+- `plans/precisionplans/old/chord-recognition-repair.md` — historischer Reparaturplan
 
 ---
 
 ## Ziel
 
-Die Präzision der Chord-Erkennung soll weiter steigen, ohne die aktuelle
-`FN=0`-Lage zu verschlechtern.
-
-Der Plan kombiniert:
-
-- die vorsichtige, phasenweise Strategie aus dem strategischen Precision-Plan
-- die konkreten technischen Hypothesen aus dem Claude-TDD-Plan
-- die kritischen Einwände aus der Plan-Review
+Precision weiter steigern ohne `FN=0` zu verlieren.  
+Ziel: Precision ≥ 75 %, FN = 0.
 
 ---
 
 ## Fachliche Leitlinien
 
 - `FN=0` bleibt harte Leitplanke.
-- Änderungen werden immer gegen den aktuellen Fingerprint bewertet, nicht
-  gegen veraltete Zwischenstände.
-- Echte Fixture-basierte Regressionen sind wichtiger als stark kalibrierte
-  synthetische HPCP-Tests.
-- Varianten- und Äquivalenzfragen bleiben im Scope und werden nicht pauschal
-  als „nicht fixierbar“ ausgeschlossen.
-- Jede kleine Regeländerung wird einzeln messbar gemacht.
+- Änderungen immer gegen aktuellen Fingerprint messen.
+- Fixture-basierte Regressionen sind wichtiger als synthetische HPCP-Tests.
+- Varianten- und Äquivalenzfragen bleiben im Scope.
+- Jede Regeländerung einzeln einführen und messen.
 
 ---
 
-## Wichtige fachliche Annahme
+## Fachliche Annahme: C-Dur vs. C-Dur (1-Finger)
 
-`C-Dur` und `C-Dur (1-Finger)` sind nicht vollständig identisch.
+Beide Akkorde teilen dieselben Pitch Classes, unterscheiden sich aber im Bass:
+- `C-Dur` → tiefster Ton C3
+- `C-Dur (1-Finger)` → tiefster Ton C4
 
-Sie teilen zwar dieselben Pitch Classes, unterscheiden sich aber im Bass:
-
-- `C-Dur` hat als tiefsten Ton `C3`
-- `C-Dur (1-Finger)` hat als tiefsten Ton `C4`
-
-Daraus folgt:
-
-- Mit reiner HPCP-Logik sind sie nicht unterscheidbar, da HPCP
-  oktavinvariant arbeitet.
-- Mit zusätzlicher oktavbewusster Bass-Evidenz können sie prinzipiell
-  unterscheidbar sein.
-- Die bestehende Bass-Logik im Repo ist deshalb ein relevanter Ansatzpunkt
-  für diese Variantentrennung.
+HPCP ist oktavinvariant → nicht unterscheidbar via HPCP.  
+Bass-Support-Logik (`essentiaBassScore.js`) arbeitet frequenzbasiert → prinzipiell unterscheidbar.  
+Gleiches gilt für `G-Dur` / `G-Dur (1-Finger)`.
 
 ---
 
-## Fachliche Anforderungen
+## Aktueller Fingerprint-Stand (Baseline nach Phase 2)
 
-- Akkorde, die heute korrekt erkannt werden, sollen korrekt bleiben.
-- `A-Moll` darf nicht zusätzlich als `A7` akzeptiert werden.
-- `D-Moll` darf nicht zusätzlich als `Dm7` akzeptiert werden.
-- Varianten mit gleicher Pitch-Class-Struktur, aber unterschiedlichem Bass,
-  sollen gezielt überprüft werden statt pauschal zusammenzufallen.
-- `C-Dur` und `C-Dur (1-Finger)` sollen als Bass-/Voicing-Fall gesondert
-  betrachtet werden.
-- Maßnahmen sollen die verbleibenden False Positives schrittweise reduzieren,
-  ohne neue False Negatives zu erzeugen.
+```
+TP=57, FP=28, FN=0, TN=3708
+Precision=67.1%, Recall=100%, F1=80.3%
+chords=66, samples=3793
+```
 
----
+**Verbleibende FP-Cluster (28 gesamt):**
 
-## Fachliche Testfälle
-
-- `A-Moll` bleibt korrekt erkannt und wird nicht zusätzlich als `A7`
-  akzeptiert.
-- `D-Moll` bleibt korrekt erkannt und wird nicht zusätzlich als `Dm7`
-  akzeptiert.
-- Echte `A7`- und `Dm7`-Fixtures bleiben korrekt erkannt.
-- `C-Dur` und `C-Dur (1-Finger)` werden gezielt gegen ihre Basslage geprüft:
-  - wenn die Bass-Evidenz stabil genug ist, sollen sie unterscheidbar werden
-  - wenn die Bass-Evidenz nicht stabil genug ist, darf kein neuer FN entstehen
-- Nach jeder Umsetzungsphase bleibt `FN=0`.
+| Cluster | FPs | Ursache |
+|---|---|---|
+| C-Dur ↔ C-Dur(1-Finger) | 4 | identische Pitch Classes, kein Bass-Gate |
+| G-Dur ↔ G-Dur(1-Finger) | 2 | identische Pitch Classes, kein Bass-Gate |
+| Sus-Identitäten: Xsus4 ↔ Ysus2 | 4 | Csus4/Fsus2, Csus2/Gsus4, Asus2/Esus4, Asus4/Dsus2 teilen exakt gleiche Pitch Classes |
+| Subset-Konfusionen | 4 | Cadd9→Gsus4, Cmaj7→C-Dur, Csus2→C-Dur (Superset triggert) |
+| Dim-adjacent | 3 | D-Moll→Ddim, E-Moll→Edim (×2) |
+| 7th-Subset | 3 | Em7→E-Moll, E-Moll→Em7, F7→F-Dur |
+| Sonstige | 8 | G-Moll→G7, weitere |
 
 ---
 
-## Vorgehen
+## Abgeschlossene Phasen
 
-### Phase 1: Gemeinsame Baseline festschreiben
+### ✅ Phase 1: Variantenbereinigung
 
-Ziel:
-Ein gemeinsamer, aktueller Ausgangspunkt für alle weiteren Diskussionen und
-Änderungen.
+- `E-Moll (2-Finger)` aus akkordData.js entfernt (kein eigenständiges Pitch-Class-Profil)
+- Simplified-Set auf `E-Moll` aktualisiert
 
-Maßnahmen:
+### ✅ Phase 2: Same-root-Fixes + Sus/Add9-Verschärfung
 
-- Aktuellen Fingerprint als Referenzstand dokumentieren
-- Veraltete Zwischenstände nicht mehr als Planbasis verwenden
+Umgesetzt in Commit `c99eb01`:
 
-Validierung:
+- `sameRootTolerance: 0.06` für m7 → D-Moll→Dm7 FP eliminiert
+- `minDominantVariantConfidence: 0.45` für dom7 → A-Moll→A7 FP eliminiert
+- `MIN_SUSPENSION_TO_THIRD_RATIO`: 0.6 → 1.2 (strengere Sus-Schwelle)
+- `MAX_SUSPENSION_COMPETING_THIRD_ENERGY: 0.3` (neues Kriterium)
+- `MIN_ADD9_THIRD_ENERGY: 0.3`, `MIN_ADD9_TO_SECOND_RATIO: 0.5` (Add9 präziser)
+- `strongestThirdEnergy` = max(minorThird, majorThird) für Sus/Add9-Gates
+- `7sus4`-Typ mit eigenem Profil hinzugefügt
+- `evaluateBestMatchCompatibility`: activeTolerance nutzt sameRootTolerance bei gleicher Root
 
-- `fingerprint` auf aktuellem Repo-Stand
-- Kennzahlen als Baseline für alle Folgephasen festhalten
+---
 
-### Phase 2: Kleine Same-root-Fixes aus dem Claude-Plan prüfen
+## Offene Phasen
 
-Ziel:
-Die zwei konkreten technischen Hypothesen aus dem Claude-TDD-Plan isoliert und
-messbar bewerten.
+### Phase 3: Bass-gestützte Variantentrennung
 
-Maßnahmen:
+**Ziel:** C-Dur vs. C-Dur(1-Finger) und G-Dur vs. G-Dur(1-Finger) via Bass-Oktave unterscheiden.
 
-- strengere Same-root-Toleranz prüfen
-- strengere Akzeptanz für Dominant-7-Varianten prüfen
+**Erster Schritt (Analyse, keine Implementierung):**
 
-Validierung:
+Bass-Support-Werte für die problematischen Fixture-Paare ausgeben:
+```bash
+# C3 (C-Dur) vs C4 (C-Dur 1-Finger) in Bass-Evidenz vergleichen
+# extractBassSupportMapFromWav ist in essentiaChordTargetedRegression.test.js bereits verfügbar
+```
 
-- gezielte Fixture-Regressionen für `A-Moll -> A7`
-- gezielte Fixture-Regressionen für `D-Moll -> Dm7`
-- Fingerprint nach jeder einzelnen kleinen Regeländerung
+Frage: Ist `isLocallyDominant` für C3-Erwartung bei C-Dur-Audio stabil anders als bei C-Dur-1-Finger-Audio?
 
-### Phase 3: Bass-gestützte Variantentrennung prüfen
+**Implementierung nur wenn:** Bass-Evidenz zuverlässig zwischen C3 und C4 trennt UND keine neuen FNs entstehen.
 
-Ziel:
-Ermitteln, ob Varianten mit gleichen Pitch Classes, aber anderer Basslage
-gezielt unterschieden werden können.
+**Validierung:** Gezielte Fixture-Tests + Fingerprint. FN=0 bleibt Abbruchkriterium.
 
-Maßnahmen:
+---
 
-- bestehende Bass-Support-Logik für Variantengruppen auswerten
-- `C-Dur` vs. `C-Dur (1-Finger)` gezielt als Pilotfall prüfen
-- Bass-Evidenz zunächst nur als Disambiguator verwenden, nicht als globales
-  hartes Gate
-- erster Schritt ohne Implementierung:
-  - die vorhandenen Bass-Support-Werte für
-    `C-Dur/c_chord.wav` und `C-Dur (1-Finger)/csimp.wav`
-    direkt aus den frozen Fixtures bzw. den darauf laufenden
-    Test-Helfern ausgeben und vergleichen
-  - Hintergrund: die Fixture-Tests in
-    `tests/unit/essentiaChordTargetedRegression.test.js`
-    rufen bereits `extractBassSupportMapFromWav(...)` auf, sodass die
-    notwendige Bass-Evidenz im Testpfad schon verfügbar ist
+### Phase 4: Sus-Identitäts-Paare adressieren
 
-Validierung:
+**Problem:** Xsus4 und Ysus2 mit gleichem Pitch-Class-Set (z. B. Csus4={C,F,G} = Fsus2={F,G,C}).
 
-- gezielte Tests für `C-Dur` und `C-Dur (1-Finger)`
-- Prüfung, ob `C3` gegenüber `C4` in den Fixtures reproduzierbar genug
-  erkennbar ist
-- Übernahme nur, wenn `FN=0` erhalten bleibt
+Diese sind bei reiner HPCP-Erkennung strukturell nicht unterscheidbar.  
+Lösungsansatz analog Phase 3: Bass-Root als Disambiguator.
 
-### Phase 4: Erweiterungsakkorde innerhalb derselben Root schärfen
+**Vorbedingung:** Phase 3 muss zeigen, ob Bass-Root-Unterscheidung stabil genug ist.
 
-Ziel:
-`sus2`, `sus4`, `add9`, `maj7`, `7` innerhalb derselben Tonika robuster
-trennen.
-
-Maßnahmen:
-
-- charakteristische Zusatznoten stärker relativ zur Konkurrenz bewerten
-- Best-Match-Toleranz chord-typ-spezifisch enger setzen, falls Phase 2
-  nicht ausreicht
-
-Validierung:
-
-- Regressionen pro Akkordfamilie
-- Fingerprint-Differenz gegen die Baseline
+---
 
 ### Phase 5: Subset- und Toleranzregeln prüfen
 
-Ziel:
-Mitakzeptanz aus großzügigen Kompatibilitätsregeln reduzieren.
+Cadd9→Gsus4, Cmaj7→C-Dur, Csus2→C-Dur entstehen durch Subset-Acceptance  
+(Gsus4-Template ⊂ Cadd9, C-Dur-Template ⊂ Cmaj7).
 
-Maßnahmen:
+Mögliche Maßnahmen:
+- Subset-Acceptance auf klar erlaubte Fälle begrenzen
+- Toleranzpfade einschränken wo sie systematisch Mitakzeptanz erzeugen
 
-- Subset-Acceptance auf klar definierte Fälle begrenzen
-- Toleranzpfade nur dort erhalten, wo sie echte Varianten oder robuste Treffer
-  absichern
-
-Validierung:
-
-- bekannte Sonderfälle müssen grün bleiben
-- Fingerprint darf keine neuen FNs zeigen
-
-### Phase 6: Globale Thresholds nur als letzter Schritt
-
-Ziel:
-Restliche False Positives nur dann über globale Verschärfung reduzieren, wenn
-gezielte Maßnahmen nicht ausreichen.
-
-Validierung:
-
-- nur übernehmen, wenn Precision steigt und `FN=0` bleibt
+**Risiko:** Diese Regeln sichern auch echte Treffer ab → sorgfältige Messung nötig.
 
 ---
 
-## Risiken und offene Fragen
+### Phase 6: Globale Thresholds (letzter Schritt)
 
-- Die Unterscheidung `C3` vs. `C4` ist fachlich plausibel, aber nur technisch
-  nutzbar, wenn die Bass-Evidenz in echten Gitarrenaufnahmen stabil genug ist.
-- Wenn die Bass-Evidenz zu volatil ist, darf sie nicht als hartes globales
-  Kriterium eingebaut werden.
-- Synthetische HPCP-Tests können ergänzend nützlich sein, dürfen aber nicht die
-  Hauptabsicherung ersetzen.
-- Variantenbereinigung in der Metrik und echte Erkennungsverbesserung müssen
-  sauber auseinandergehalten werden.
+Nur wenn Phases 3–5 nicht ausreichen.  
+Höchstes FN-Risiko — Fingerprint-Vergleich ist Pflicht.
 
 ---
 
-## Gemeinsame Einigungslinie
+## Nächste Aktion
 
-- Der strategische Precision-Plan bleibt die Hauptleitlinie.
-- Der Claude-TDD-Plan wird als Quelle für konkrete kleine Technikschritte
-  verwendet, nicht als alleiniger Hauptplan.
-- Die Plan-Review ist verbindlich für die Einordnung von Risiken und Grenzen.
-- Das Variantenproblem bleibt ausdrücklich Teil der Precision-Strategie.
-- `C-Dur` vs. `C-Dur (1-Finger)` wird nicht pauschal als „nicht fixierbar“
-  behandelt, sondern gezielt als Bass-/Voicing-Frage geprüft.
-
----
-
-## Nächster Schritt
-
-Claude soll zu diesem gemeinsamen Plan Stellung nehmen.
-
-Danach wird entschieden:
-
-- ob der Plan in dieser Form freigegeben wird
-- oder ob einzelne Phasen vor der Umsetzung noch angepasst werden
+**Phase 3, Analyseschritt:**  
+Bass-Support-Ausgabe für `C-Dur/c_chord.wav` vs. `C-Dur (1-Finger)/csimp.wav` —  
+prüfen ob `isLocallyDominant` für den C3-Bass zuverlässig unterscheidet.
