@@ -234,11 +234,11 @@ describe('Targeted chord regressions', () => {
   });
 
   it.each([
-    ['C-Dur', 'open-strums/3_strum.wav', 'Fsus2'],
-    ['C-Dur', 'open-strums/3_strum.wav', 'Fsus4'],
-    ['C-Dur', 'open-strums/3_strum_alt.wav', 'Fsus4'],
-    ['C-Dur', 'open-strums/5_strum.wav', 'Gsus2'],
-    ['C-Dur', 'open-strums/5_strum.wav', 'Gsus4'],
+    ['3-open', 'open-strums/3_strum.wav', 'Fsus2'],
+    ['3-open', 'open-strums/3_strum.wav', 'Fsus4'],
+    ['3-open', 'open-strums/3_strum_alt.wav', 'Fsus4'],
+    ['5-open', 'open-strums/5_strum.wav', 'Gsus2'],
+    ['5-open', 'open-strums/5_strum.wav', 'Gsus4'],
   ])('verwirft %s/%s weiterhin als negatives Open-Strum fuer %s', (chordName, wavFile, probeChordName) => {
     const result = getMatchResult(chordName, wavFile, probeChordName);
     expect(result.isCorrect, `${wavFile} darf nicht als ${probeChordName} akzeptiert werden`).toBe(false);

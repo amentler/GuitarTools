@@ -48,6 +48,13 @@ function getOpenStrumFixtures() {
     .sort((a, b) => a.localeCompare(b, 'de'));
 }
 
+function expectedOpenStrumChordName(wavFile) {
+  const fileName = path.basename(wavFile);
+  const match = fileName.match(/^(\d)_strum(?:_alt\d*)?\.wav$/i);
+  expect(match, `${wavFile} passt nicht zum erwarteten Open-Strum-Namensschema`).toBeTruthy();
+  return `${match[1]}-open`;
+}
+
 function allProgressionChordNames() {
   const chordNames = new Set();
   for (const key of MAJOR_KEYS) {
@@ -86,6 +93,9 @@ describe('Priorität 0 Akkord-Fixture-Abdeckung', () => {
     for (const wavFile of getOpenStrumFixtures()) {
       const catalogEntry = catalogEntryFor(wavFile);
       expect(catalogEntry, `${wavFile} fehlt in CHORD_HPCP_FIXTURE_CASES`).toBeDefined();
+      expect(catalogEntry.chordName, `${wavFile} muss der passenden Open-Klasse zugeordnet sein`).toBe(
+        expectedOpenStrumChordName(wavFile),
+      );
       expect(catalogEntry.expected.isCorrect, `${wavFile} muss als Negativfixture katalogisiert sein`).toBe(false);
     }
   });

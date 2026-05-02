@@ -19,30 +19,9 @@ const ROOT_NEGATIVE_CASES = [
   { chordName: 'C-Dur', wavFile: 'd_chord_wrong.wav', expected: { isCorrect: false } },
 ];
 const ROOT_NEGATIVE_FIXTURES = new Set(ROOT_NEGATIVE_CASES.map(fixture => fixture.wavFile));
-const OPEN_STRUM_NEGATIVE_CASES = [
-  '0_strum.wav',
-  '0_strum_alt.wav',
-  '1_strum.wav',
-  '1_strum_alt.wav',
-  '1_strum_alt1.wav',
-  '1_strum_alt3.wav',
-  '2_strum.wav',
-  '2_strum_alt.wav',
-  '3_strum.wav',
-  '3_strum_alt.wav',
-  '4_strum.wav',
-  '4_strum_alt.wav',
-  '5_strum.wav',
-  '5_strum_alt.wav',
-].map(fileName => ({
-  chordName: 'C-Dur',
-  wavFile: `${OPEN_STRUMS_FOLDER}/${fileName}`,
-  expected: { isCorrect: false },
-}));
 const CHORD_TEMPLATES = buildChordTemplates();
-const EXTRA_NEGATIVE_CASES = [
+const STATIC_EXTRA_NEGATIVE_CASES = [
   { chordName: 'G-Dur', wavFile: 'D-Dur/d_chord.wav', expected: { isCorrect: false, bestMatchContains: 'D-Dur' } },
-  ...OPEN_STRUM_NEGATIVE_CASES,
   ...ROOT_NEGATIVE_CASES,
 ];
 
@@ -107,6 +86,15 @@ function normalizeVector(vector) {
 
 function isOpenStrumFixture(fileName) {
   return /^\d_strum(?:_alt\d*)?\.wav$/i.test(fileName);
+}
+
+function inferOpenStrumChordName(fileName) {
+  const match = fileName.match(/^(\d)_strum(?:_alt\d*)?\.wav$/i);
+  if (!match) {
+    throw new Error(`Ungültiger Open-Strum-Dateiname: ${fileName}`);
+  }
+
+  return `${match[1]}-open`;
 }
 
 function inferChordFolder(fileName) {
@@ -194,6 +182,21 @@ async function collectPositiveFolderFixtures() {
   return fixtures;
 }
 
+async function collectOpenStrumNegativeFixtures() {
+  const openStrumsDir = path.join(CHORD_FIXTURES_DIR, OPEN_STRUMS_FOLDER);
+  const entries = await fs.readdir(openStrumsDir, { withFileTypes: true });
+
+  return entries
+    .filter(entry => entry.isFile() && isWavFile(entry.name))
+    .map(entry => entry.name)
+    .sort(compareStrings)
+    .map(fileName => ({
+      chordName: inferOpenStrumChordName(fileName),
+      wavFile: `${OPEN_STRUMS_FOLDER}/${fileName}`,
+      expected: { isCorrect: false },
+    }));
+}
+
 function formatExpected(expected) {
   if (expected.bestMatchContains) {
     return `{ isCorrect: ${expected.isCorrect}, bestMatchContains: '${expected.bestMatchContains}' }`;
@@ -236,12 +239,13 @@ async function main() {
   await moveLooseRootFixtures();
 
   const positiveFixtures = await collectPositiveFolderFixtures();
-  const allFixtures = [...positiveFixtures, ...EXTRA_NEGATIVE_CASES];
+  const openStrumNegativeFixtures = await collectOpenStrumNegativeFixtures();
+  const allFixtures = [...positiveFixtures, ...STATIC_EXTRA_NEGATIVE_CASES, ...openStrumNegativeFixtures];
 
   await writeCatalogFile(allFixtures);
   await writeGoldenFile(allFixtures);
 
-  console.log(`Chord fixtures eingeführt: ${positiveFixtures.length} positive Fixtures, ${EXTRA_NEGATIVE_CASES.length} Negativfälle.`);
+  console.log(`Chord fixtures eingeführt: ${positiveFixtures.length} positive Fixtures, ${STATIC_EXTRA_NEGATIVE_CASES.length + openStrumNegativeFixtures.length} Negativfälle.`);
 }
 
 await main();
