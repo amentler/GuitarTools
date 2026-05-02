@@ -2,6 +2,7 @@ import { test, expect } from '@playwright/test';
 
 function mockRandomSequence(page, values) {
   return page.addInitScript(sequence => {
+    window.localStorage.setItem('gt_srs_enabled', 'false');
     const queue = [...sequence];
     window.__GT_RANDOM__ = () => {
       if (queue.length === 0) {
@@ -55,7 +56,7 @@ test.describe('Fretboard Tone Recognition Exercise', () => {
     await expect(fretPlaceholder).toHaveAttribute('cy', markerCy);
   });
 
-  test('keeps the first fret visible in open-string-only mode without rendering fret markers on the board', async ({ page }) => {
+  test('keeps only open-string targets visible in open-string-only mode', async ({ page }) => {
     await mockRandomSequence(page, [0.01, 0.01]);
     await page.goto('/pages/fretboard-tone-recognition/index.html');
 
@@ -65,7 +66,7 @@ test.describe('Fretboard Tone Recognition Exercise', () => {
     await expect(fretboard).toHaveAttribute('frets', '0');
 
     const fretNumber = page.locator('gt-fretboard text').filter({ hasText: '1' });
-    await expect(fretNumber).toHaveCount(1);
+    await expect(fretNumber).toHaveCount(0);
 
     const openTarget = page.locator('gt-fretboard circle[fill="none"][stroke="#ff6b35"]');
     await expect(openTarget).toHaveCount(1);

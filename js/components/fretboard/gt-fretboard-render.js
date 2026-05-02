@@ -33,9 +33,11 @@ function stringY(stringIndex) {
 }
 
 function computeFretWireX(maxFret) {
-  const span = 1 - Math.pow(2, -(maxFret + 1) / 12);
+  if (maxFret <= 0) return [MARGIN_LEFT];
+
+  const span = 1 - Math.pow(2, -maxFret / 12);
   const positions = [];
-  for (let n = 0; n <= maxFret + 1; n++) {
+  for (let n = 0; n <= maxFret; n++) {
     const ratio = (1 - Math.pow(2, -n / 12)) / span;
     positions.push(Math.round(MARGIN_LEFT + ratio * DIAGRAM_W));
   }

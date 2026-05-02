@@ -1,1 +1,1 @@
-Version 0.43 | 2026-05-02 18:16 | 1825df6 | Update
+Version 0.44 | 2026-05-02 19:02 | 1d71f82 | Update
