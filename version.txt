@@ -1,1 +1,1 @@
-Version 0.48 | 2026-05-02 23:07 | 88e734f | feat: Phase 4 — Sus-Identity-Gate via Bass-Root (Precision 64%), fix pitchLogic test timeouts
+Version 0.50 | 2026-05-02 23:20 | c1125a8 | chore: Backlog aufgeräumt, erledigte Pläne nach old/ verschoben
