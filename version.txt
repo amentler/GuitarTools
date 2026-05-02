@@ -1,1 +1,1 @@
-Version 0.49 | 2026-05-02 23:05 | 6cb2df9 | feat: add open-strum reject matcher
+Version 0.47 | 2026-05-02 22:35 | 969a56a | test: 5 Chord-Quality-Guards (Precision-Lock, Bass-Contribution, Fragile-TPs, Asymmetrie, FP-Budget)
