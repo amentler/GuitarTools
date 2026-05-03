@@ -207,7 +207,12 @@ const ESSENTIA_FINGERPRINT_ACCEPTED_BEST_MATCHES = Object.freeze({
   'Edim': { acceptedBestMatches: ['G-Moll'], minimumAcceptedScore: 0.487 },
   'Em7': { acceptedBestMatches: ['open-strum'], minimumAcceptedScore: 0.543 },
   'Emaj7': { acceptedBestMatches: ['Emaj7'], minimumAcceptedScore: 0.748 },
-  'Esus2': { acceptedBestMatches: ['Esus2', 'Hsus4'], minimumAcceptedScore: 0.506 },
+  'Esus2': {
+    acceptedBestMatches: ['Esus2', 'Hsus4'],
+    minimumAcceptedScore: 0.506,
+    minExpectedSecondEnergy: 0.05,
+    maxLeadingToneEnergy: 0.12,
+  },
   'Esus4': { acceptedBestMatches: ['Esus2'], minimumAcceptedScore: 0.704 },
   'F-Dur': { acceptedBestMatches: ['Fsus2'], minimumAcceptedScore: 0.448 },
   'F-Moll': { acceptedBestMatches: ['Csus4'], minimumAcceptedScore: 0.432 },
@@ -794,9 +799,12 @@ function passesEssentiaFingerprintFallback({
   strategy,
   targetChordName,
   effectiveTargetChordName,
+  targetDescriptor,
+  targetEvidence,
   bestMatch,
   confidence,
   annotatedTargetAcceptance,
+  hpcp,
 }) {
   if (strategy !== CHORD_MATCH_STRATEGIES.ESSENTIA_FINGERPRINT) return false;
 
@@ -804,8 +812,17 @@ function passesEssentiaFingerprintFallback({
     ?? ESSENTIA_FINGERPRINT_ACCEPTED_BEST_MATCHES[targetChordName];
   if (!fallback) return false;
 
+  const leadingToneBin = targetDescriptor ? (targetDescriptor.rootBin + 11) % 12 : null;
+  const leadingToneEnergy = leadingToneBin === null ? 0 : hpcp[leadingToneBin];
+  const passesExpectedSecondFallback = fallback.minExpectedSecondEnergy === undefined ||
+    targetEvidence.expectedSecondEnergy >= fallback.minExpectedSecondEnergy;
+  const passesLeadingToneFallback = fallback.maxLeadingToneEnergy === undefined ||
+    leadingToneEnergy <= fallback.maxLeadingToneEnergy;
+
   return (annotatedTargetAcceptance.hasExactAnnotatedMatch || fallback.allowAnnotatedAlias) &&
     fallback.acceptedBestMatches.includes(bestMatch) &&
+    passesExpectedSecondFallback &&
+    passesLeadingToneFallback &&
     confidence + ESSENTIA_FINGERPRINT_FALLBACK_EPSILON >= fallback.minimumAcceptedScore;
 }
 
@@ -1025,9 +1042,12 @@ export function matchHpcpToChord(hpcp, targetChordName, templates, thresholdOver
     strategy,
     targetChordName,
     effectiveTargetChordName,
+    targetDescriptor,
+    targetEvidence,
     bestMatch: fingerprintFallbackBestMatch,
     confidence,
     annotatedTargetAcceptance,
+    hpcp,
   });
   const isCorrect = acceptsSpecialCase || (
     (

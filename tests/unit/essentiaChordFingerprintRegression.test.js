@@ -2,7 +2,11 @@ import { describe, expect, it } from 'vitest';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { readFileSync } from 'fs';
-import { buildChordTemplates, matchHpcpToChord } from '../../js/games/chordExerciseEssentia/essentiaChordLogic.js';
+import {
+  buildChordTemplates,
+  CHORD_MATCH_STRATEGIES,
+  matchHpcpToChord,
+} from '../../js/games/chordExerciseEssentia/essentiaChordLogic.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PREPARED_FIXTURES = JSON.parse(
@@ -27,6 +31,15 @@ function getDetectionResult(wavFile) {
   };
 }
 
+function getProbeResult(wavFile, probeChordName) {
+  const fixture = getFixture(wavFile);
+  const avgHpcp = Float32Array.from(fixture.wasmAverageHpcp);
+  return matchHpcpToChord(avgHpcp, probeChordName, TEMPLATES, undefined, {
+    bassSupportByChord: fixture.bassSupportByChord,
+    strategy: CHORD_MATCH_STRATEGIES.ESSENTIA_FINGERPRINT,
+  });
+}
+
 describe('Essentia fingerprint regression fixtures', () => {
   it.each([
     'Dmaj7/dmaj7.wav',
@@ -42,5 +55,23 @@ describe('Essentia fingerprint regression fixtures', () => {
   ])('behält stabile Referenzfälle wie %s als erkannt', (wavFile) => {
     const { result } = getDetectionResult(wavFile);
     expect(result.isCorrect, `${wavFile}: bestMatch=${result.bestMatch}, confidence=${result.confidence.toFixed(3)}`).toBe(true);
+  });
+
+  it.each([
+    'Esus2/esus2.wav',
+    'Esus2/esus2_alt.wav',
+    'Esus2/esus2_alt2.wav',
+  ])('behält %s als Esus2-Treffer trotz engerem Fingerprint-Fallback', (wavFile) => {
+    const result = getProbeResult(wavFile, 'Esus2');
+    expect(result.isCorrect, `${wavFile}: bestMatch=${result.bestMatch}, confidence=${result.confidence.toFixed(3)}`).toBe(true);
+  });
+
+  it.each([
+    'E-Dur/emaj.wav',
+    'E-Moll/emin.wav',
+    'Asus2/asus2.wav',
+  ])('akzeptiert %s im Fingerprint nicht mehr als Esus2', (wavFile) => {
+    const result = getProbeResult(wavFile, 'Esus2');
+    expect(result.isCorrect, `${wavFile}: bestMatch=${result.bestMatch}, confidence=${result.confidence.toFixed(3)}`).toBe(false);
   });
 });
