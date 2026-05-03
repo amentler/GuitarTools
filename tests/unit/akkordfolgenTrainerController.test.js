@@ -7,6 +7,9 @@ const metronomeStart = vi.fn();
 const metronomeStop = vi.fn();
 const metronomeSetBpm = vi.fn();
 const metronomeSetBeatsPerMeasure = vi.fn();
+const getEssentia = vi.fn();
+const runChordDetectionSession = vi.fn();
+const getSetting = vi.fn();
 
 vi.mock('../../js/shared/rendering/chords/chordDiagramRenderer.js', () => ({
   renderChordDiagram,
@@ -23,6 +26,21 @@ vi.mock('../../js/shared/audio/metronomeLogic.js', () => ({
     setBpm(value) { metronomeSetBpm(value); }
     setBeatsPerMeasure(value) { metronomeSetBeatsPerMeasure(value); }
   },
+}));
+
+vi.mock('../../js/games/chordExerciseEssentia/essentiaLoader.js', () => ({
+  getEssentia,
+}));
+
+vi.mock('../../js/games/chordExerciseEssentia/essentiaChordDetection.js', () => ({
+  runChordDetectionSession,
+}));
+
+vi.mock('../../js/shared/globalSettings.js', () => ({
+  SETTING_KEYS: {
+    CHORD_DETECTION_USE_ESSENTIA: 'gt_chord_detection_use_essentia',
+  },
+  getSetting,
 }));
 
 function buildDom() {
@@ -98,6 +116,9 @@ describe('AkkordfolgenTrainer controller behavior', () => {
     metronomeStop.mockClear();
     metronomeSetBpm.mockClear();
     metronomeSetBeatsPerMeasure.mockClear();
+    getEssentia.mockResolvedValue({ arrayToVector: vi.fn() });
+    runChordDetectionSession.mockResolvedValue({ isCorrect: false, confidence: 0 });
+    getSetting.mockReturnValue(true);
 
     mockTrack = { stop: vi.fn() };
     mockAudio = createMockAudioContext();
@@ -147,6 +168,16 @@ describe('AkkordfolgenTrainer controller behavior', () => {
     expect(document.getElementById('aft-current-chord-name').textContent.length).toBeGreaterThan(0);
   });
 
+  it('laedt bei aktivem Global-Setting Essentia fuer die Akkorderkennung vor', async () => {
+    const feature = createAkkordfolgenTrainerFeature();
+    feature.mount();
+
+    document.getElementById('aft-start-btn').click();
+    await vi.waitFor(() => {
+      expect(getEssentia).toHaveBeenCalled();
+    });
+  });
+
   it('unmount tears down metronome and media resources when running', async () => {
     const feature = createAkkordfolgenTrainerFeature();
     feature.mount();
@@ -160,5 +191,31 @@ describe('AkkordfolgenTrainer controller behavior', () => {
     expect(metronomeStop).toHaveBeenCalled();
     expect(mockTrack.stop).toHaveBeenCalledTimes(1);
     expect(mockAudio.close).toHaveBeenCalledTimes(1);
+  });
+
+  it('verwendet den gemeinsamen chord detector mit globaler Pure-JS-Einstellung', async () => {
+    mockAudio.analyser.getFloatTimeDomainData = vi.fn(buffer => buffer.fill(0.05));
+
+    const feature = createAkkordfolgenTrainerFeature();
+    feature.mount();
+
+    getSetting.mockReturnValue(false);
+    document.getElementById('aft-start-btn').click();
+    await vi.waitFor(() => {
+      expect(metronomeStart).toHaveBeenCalled();
+    });
+
+    await vi.advanceTimersByTimeAsync(60);
+
+    await vi.waitFor(() => {
+      expect(runChordDetectionSession).toHaveBeenCalled();
+    });
+
+    const call = runChordDetectionSession.mock.calls.at(-1)?.[0];
+    expect(call).toMatchObject({
+      preferEssentia: false,
+      analyserNode: mockAudio.analyser,
+      sampleRate: 44100,
+    });
   });
 });

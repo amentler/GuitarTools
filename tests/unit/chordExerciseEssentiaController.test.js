@@ -6,7 +6,6 @@ const stopListeningEssentia = vi.fn();
 const getEssentia = vi.fn();
 const getRandomChord = vi.fn();
 const getSetting = vi.fn();
-const setSetting = vi.fn();
 
 vi.mock('../../js/games/chordExerciseEssentia/essentiaChordDetection.js', () => ({
   detectChordEssentia,
@@ -30,7 +29,6 @@ vi.mock('../../js/shared/globalSettings.js', () => ({
     CHORD_DETECTION_USE_ESSENTIA: 'gt_chord_detection_use_essentia',
   },
   getSetting,
-  setSetting,
 }));
 
 const chordA = { name: 'C-Dur', positions: [null, 3, 2, 0, 1, 0] };
@@ -52,7 +50,6 @@ function setupDom() {
       <button id="btn-ece-listen">Weiter</button>
       <span id="score-correct"></span>
       <span id="score-total"></span>
-      <input type="checkbox" id="ece-setting-use-essentia" checked>
       <input type="checkbox" id="ece-cat-simplified" checked>
       <input type="checkbox" id="ece-cat-standard">
       <input type="checkbox" id="ece-cat-extended">
@@ -177,34 +174,17 @@ describe('chordExerciseEssentia controller', () => {
     expect(detectChordEssentia).toHaveBeenLastCalledWith('G-Dur', { preferEssentia: true });
   });
 
-  it('uebergibt die Pure-JS-Einstellung an die Erkennung und persistiert den Umschalter', async () => {
+  it('uebergibt die globale Pure-JS-Einstellung an die Erkennung', async () => {
     const firstDetection = deferred();
-    const secondDetection = deferred();
-    detectChordEssentia
-      .mockReturnValueOnce(firstDetection.promise)
-      .mockReturnValueOnce(secondDetection.promise);
-    getRandomChord
-      .mockReturnValueOnce(chordA)
-      .mockReturnValueOnce(chordB);
+    detectChordEssentia.mockReturnValueOnce(firstDetection.promise);
+    getRandomChord.mockReturnValueOnce(chordA);
+    getSetting.mockReturnValue(false);
 
     const feature = createChordExerciseEssentiaFeature();
     feature.mount();
 
     await letPromisesSettle();
     await advance();
-
-    const modeCheckbox = document.getElementById('ece-setting-use-essentia');
-    modeCheckbox.checked = false;
-    getSetting.mockReturnValue(false);
-    modeCheckbox.dispatchEvent(new Event('change'));
-
-    expect(setSetting).toHaveBeenCalledWith('gt_chord_detection_use_essentia', false);
-    expect(stopListeningEssentia).toHaveBeenCalledTimes(1);
-    expect(document.getElementById('ece-chord-name').textContent).toBe('G-Dur');
-    expect(document.getElementById('ece-essentia-status').textContent).toContain('Pure JS');
-
-    await advance();
-
-    expect(detectChordEssentia).toHaveBeenLastCalledWith('G-Dur', { preferEssentia: false });
+    expect(detectChordEssentia).toHaveBeenLastCalledWith('C-Dur', { preferEssentia: false });
   });
 });

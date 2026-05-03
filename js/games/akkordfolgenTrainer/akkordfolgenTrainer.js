@@ -16,8 +16,6 @@ import {
 import { CHORDS } from '../../data/akkordData.js';
 import { chordStringToFretboardIndex } from '../../domain/chords/chordFretboardMapping.js';
 import { GUITAR_MIN_RMS, analyzeInputLevel } from '../../shared/audio/inputLevel.js';
-import { detectPeaksFromSpectrum, identifyNotesFromPeaks } from '../../domain/chords/chordDetectionLogic.js';
-import { getExpectedNoteClasses, matchDetectedNotes } from './akkordfolgenChordMatcher.js';
 import {
   resolveAkkordfolgenUI,
   showAkkordfolgenSetup,
@@ -31,6 +29,9 @@ import {
   closeAkkordfolgenAudioSession,
 } from './akkordfolgenAudioSession.js';
 import { requestMicrophoneStream } from '../../shared/audio/microphoneService.js';
+import { getEssentia } from '../chordExerciseEssentia/essentiaLoader.js';
+import { runChordDetectionSession } from '../chordExerciseEssentia/essentiaChordDetection.js';
+import { getSetting, SETTING_KEYS } from '../../shared/globalSettings.js';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -39,13 +40,6 @@ const LISTEN_INTERVAL_MS   = 50;
 const RMS_SPIKE_MULTIPLIER = 2.5;
 const STRUM_COOLDOWN_MS    = 1500;  // cooldown after a correct strum
 const WRONG_COOLDOWN_MS    = 700;   // shorter cooldown to allow quick retry
-const ATTACK_SETTLE_MS     = 150;   // wait after strum onset for transient to decay
-const ANALYSIS_FRAMES      = 5;     // FFT frames to collect after strum
-const FRAME_INTERVAL_MS    = 50;    // ms between analysis frames
-const GUITAR_MIN_FREQUENCY = 70;    // Hz
-const GUITAR_MAX_FREQUENCY = 1200;  // Hz
-const MIN_DB_THRESHOLD     = -55;   // dB floor for peak detection
-const MIN_CONFIDENCE       = 0.6;   // fraction of expected notes that must be detected
 
 const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -79,11 +73,16 @@ export function createAkkordfolgenTrainerFeature() {
 
   let settingsWired = false;
   let ui = null;
+  let essentiaRuntime = null;
 
   // ── UI resolution ─────────────────────────────────────────────────────────
 
   function resolveUI() {
     ui = resolveAkkordfolgenUI(document);
+  }
+
+  function prefersEssentia() {
+    return getSetting(SETTING_KEYS.CHORD_DETECTION_USE_ESSENTIA);
   }
 
   // ── Phase management ──────────────────────────────────────────────────────
@@ -180,6 +179,10 @@ export function createAkkordfolgenTrainerFeature() {
 
   async function beginExercise() {
     const activeUi = ui;
+    const preferEssentia = prefersEssentia();
+    const essentiaPromise = preferEssentia
+      ? getEssentia().catch(() => null)
+      : Promise.resolve(null);
     state.progression = state.isRandom
       ? generateRandomProgression(state.key)
       : buildProgression(state.key, state.progressionIndex);
@@ -230,6 +233,8 @@ export function createAkkordfolgenTrainerFeature() {
       return;
     }
 
+    essentiaRuntime = await essentiaPromise;
+
     activeMetronome.setBpm(state.bpm);
     activeMetronome.setBeatsPerMeasure(state.beatsPerChord);
 
@@ -260,6 +265,7 @@ export function createAkkordfolgenTrainerFeature() {
     if (listenIntervalId) { clearInterval(listenIntervalId); listenIntervalId = null; }
     if (strumCooldownId)  { clearTimeout(strumCooldownId);  strumCooldownId = null; }
     strumCooldown = false;
+    essentiaRuntime = null;
     analysisToken++;   // cancel any in-flight analysis
 
     if (metronome) { metronome.stop(); metronome = null; }
@@ -335,41 +341,23 @@ export function createAkkordfolgenTrainerFeature() {
   }
 
   async function analyzeChordAfterStrum(token) {
-    await delay(ATTACK_SETTLE_MS);
     if (token !== analysisToken || !state.isRunning || !audioSession.analyser || !audioSession.audioCtx) return;
 
     const targetChord = state.progression[state.currentIndex];
     const sampleRate  = audioSession.audioCtx.sampleRate;
-    const freqBuffer  = new Float32Array(audioSession.analyser.frequencyBinCount);
-    const detected    = new Set();
+    const result = await runChordDetectionSession({
+      chordName: targetChord.name,
+      analyserNode: audioSession.analyser,
+      sampleRate,
+      essentia: essentiaRuntime,
+      preferEssentia: prefersEssentia(),
+      wait: delay,
+    });
 
-    for (let frame = 0; frame < ANALYSIS_FRAMES; frame++) {
-      if (token !== analysisToken || !state.isRunning || !audioSession.analyser) break;
-      audioSession.analyser.getFloatFrequencyData(freqBuffer);
-      const peaks = detectPeaksFromSpectrum(
-        freqBuffer, sampleRate,
-        GUITAR_MIN_FREQUENCY, GUITAR_MAX_FREQUENCY, MIN_DB_THRESHOLD,
-      );
-      identifyNotesFromPeaks(peaks).forEach(n => detected.add(n.note));
-      if (frame < ANALYSIS_FRAMES - 1) await delay(FRAME_INTERVAL_MS);
-    }
-
-    // Analysis cancelled or exercise stopped while collecting frames
     if (token !== analysisToken || !state.isRunning) return;
-    // Chord advanced by metronome while we were analysing
     if (state.progression[state.currentIndex] !== targetChord) return;
 
-    const expectedNotes = getExpectedNoteClasses(targetChord.name);
-    if (expectedNotes.length === 0) {
-      // Chord not in theory database (should not happen) – accept any strum as fallback
-      strumCooldownId = setTimeout(() => { strumCooldown = false; }, STRUM_COOLDOWN_MS);
-      handleCorrectStrum();
-      return;
-    }
-
-    const { confidence } = matchDetectedNotes([...detected], targetChord.name);
-
-    if (confidence >= MIN_CONFIDENCE) {
+    if (result.isCorrect) {
       strumCooldownId = setTimeout(() => { strumCooldown = false; }, STRUM_COOLDOWN_MS);
       handleCorrectStrum();
     } else {

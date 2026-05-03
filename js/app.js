@@ -68,6 +68,14 @@ function initSettings() {
       setSetting(SETTING_KEYS.SRS_ENABLED, srsCheckbox.checked);
     });
   }
+
+  const chordDetectionCheckbox = document.getElementById('setting-chord-detection-use-essentia');
+  if (chordDetectionCheckbox) {
+    chordDetectionCheckbox.checked = getSetting(SETTING_KEYS.CHORD_DETECTION_USE_ESSENTIA);
+    chordDetectionCheckbox.addEventListener('change', () => {
+      setSetting(SETTING_KEYS.CHORD_DETECTION_USE_ESSENTIA, chordDetectionCheckbox.checked);
+    });
+  }
 }
 
 // ── Initialization ───────────────────────────────────────────────────────────

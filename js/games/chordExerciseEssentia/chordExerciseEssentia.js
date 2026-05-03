@@ -9,7 +9,7 @@ import { chordStringToFretboardIndex } from '../../domain/chords/chordFretboardM
 import { detectChordEssentia, stopListeningEssentia } from './essentiaChordDetection.js';
 import { getEssentia } from './essentiaLoader.js';
 import { CHORDS, CHORD_CATEGORIES } from '../../data/akkordData.js';
-import { getSetting, setSetting, SETTING_KEYS } from '../../shared/globalSettings.js';
+import { getSetting, SETTING_KEYS } from '../../shared/globalSettings.js';
 
 // ── Factory ───────────────────────────────────────────────────────────────────
 
@@ -22,7 +22,6 @@ export function createChordExerciseEssentiaFeature() {
   let isListening    = false;
   let essentiaReady  = false;
   let flowToken      = 0;
-  let settingsWired  = false;
 
   const SUCCESS_ADVANCE_DELAY_MS = 500;
   const RETRY_DELAY_MS = 250;
@@ -76,30 +75,11 @@ export function createChordExerciseEssentiaFeature() {
       scoreCorrect: document.getElementById('score-correct'),
       scoreTotal:   document.getElementById('score-total'),
       view:         document.getElementById('view-chord-exercise-essentia'),
-      useEssentiaCheckbox: document.getElementById('ece-setting-use-essentia'),
     };
   }
 
   function prefersEssentia() {
     return getSetting(SETTING_KEYS.CHORD_DETECTION_USE_ESSENTIA);
-  }
-
-  function syncDetectionModeUi() {
-    if (ui.useEssentiaCheckbox) {
-      ui.useEssentiaCheckbox.checked = prefersEssentia();
-    }
-  }
-
-  function wireSettings() {
-    if (settingsWired || !ui.useEssentiaCheckbox) return;
-
-    ui.useEssentiaCheckbox.addEventListener('change', () => {
-      setSetting(SETTING_KEYS.CHORD_DETECTION_USE_ESSENTIA, ui.useEssentiaCheckbox.checked);
-      nextRound({ cancelActive: true });
-      void prepareDetection(flowToken);
-    });
-
-    settingsWired = true;
   }
 
   // ── Rendering ──────────────────────────────────────────────────────────────
@@ -308,8 +288,6 @@ export function createChordExerciseEssentiaFeature() {
     score         = { correct: 0, total: 0 };
     essentiaReady = false;
     updateScoreUI();
-    syncDetectionModeUi();
-    wireSettings();
 
     if (ui.listenBtn) {
       const fresh = ui.listenBtn.cloneNode(true);
