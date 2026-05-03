@@ -1,8 +1,16 @@
-import { averageHpcps, buildChordTemplates, matchHpcpToChord } from '../../js/games/chordExerciseEssentia/essentiaChordLogic.js';
-import { extractBassSupportMapFromWav } from './chordBassExtraction.js';
+import {
+  CHORD_MATCH_STRATEGIES,
+  averageHpcps,
+  buildChordTemplates,
+  matchHpcpToChord,
+} from '../../js/games/chordExerciseEssentia/essentiaChordLogic.js';
 
 function toAverageHpcp(fixture) {
-  return averageHpcps(fixture.hpcpFrames.map(frame => Float32Array.from(frame)));
+  if (fixture.wasmAverageHpcp) {
+    return Float32Array.from(fixture.wasmAverageHpcp);
+  }
+
+  return averageHpcps(fixture.wasmHpcpFrames.map(frame => Float32Array.from(frame)));
 }
 
 function safeDivide(numerator, denominator) {
@@ -13,24 +21,31 @@ function formatPercent(value) {
   return `${(value * 100).toFixed(1)}%`;
 }
 
-export function evaluateChordRecognitionConfusion(frozenFixtures) {
+function summarizeRow(row) {
+  return `${row.fixture.wavFile}: target=${row.fixture.chordName}, probe=${row.probeChordName}, actual=${row.actualPositive}, bestMatch=${row.bestMatch}, confidence=${row.confidence.toFixed(3)}`;
+}
+
+export function evaluateEssentiaFingerprintConfusion(preparedFixtures) {
   const templates = buildChordTemplates();
   const chordNames = Object.keys(templates);
-  const positiveFixtures = frozenFixtures.filter(fixture =>
+  const positiveFixtures = preparedFixtures.filter(fixture =>
     fixture.expected.isCorrect &&
     !fixture.wavFile.includes('synth'),
   );
-  const explicitNegativeFixtures = frozenFixtures.filter(fixture => !fixture.expected.isCorrect);
+  const explicitNegativeFixtures = preparedFixtures.filter(fixture => !fixture.expected.isCorrect);
   const exhaustiveNegativeFixturePattern = /^open-strums\/\d_strum(?:_alt\d*)?\.wav$/;
 
   const rows = [];
 
   for (const fixture of positiveFixtures) {
     const avgHpcp = toAverageHpcp(fixture);
-    const bassSupportByChord = extractBassSupportMapFromWav(fixture.wavFile, chordNames);
+    const bassSupportByChord = fixture.bassSupportByChord ?? null;
 
     for (const probeChordName of chordNames) {
-      const result = matchHpcpToChord(avgHpcp, probeChordName, templates, undefined, { bassSupportByChord });
+      const result = matchHpcpToChord(avgHpcp, probeChordName, templates, undefined, {
+        bassSupportByChord,
+        strategy: CHORD_MATCH_STRATEGIES.ESSENTIA_FINGERPRINT,
+      });
       const expectedPositive = probeChordName === fixture.chordName;
 
       rows.push({
@@ -47,15 +62,16 @@ export function evaluateChordRecognitionConfusion(frozenFixtures) {
 
   for (const fixture of explicitNegativeFixtures) {
     const avgHpcp = toAverageHpcp(fixture);
-    const bassSupportByChord = fixture.wavFile.includes('/')
-      ? extractBassSupportMapFromWav(fixture.wavFile, chordNames)
-      : null;
+    const bassSupportByChord = fixture.bassSupportByChord ?? null;
     const probeChordNames = exhaustiveNegativeFixturePattern.test(fixture.wavFile)
       ? chordNames
       : [fixture.chordName];
 
     for (const probeChordName of probeChordNames) {
-      const result = matchHpcpToChord(avgHpcp, probeChordName, templates, undefined, { bassSupportByChord });
+      const result = matchHpcpToChord(avgHpcp, probeChordName, templates, undefined, {
+        bassSupportByChord,
+        strategy: CHORD_MATCH_STRATEGIES.ESSENTIA_FINGERPRINT,
+      });
 
       rows.push({
         kind: probeChordNames.length === 1 ? 'explicit-negative' : 'explicit-negative-matrix',
@@ -114,15 +130,11 @@ export function evaluateChordRecognitionConfusion(frozenFixtures) {
   };
 }
 
-function summarizeRow(row) {
-  return `${row.fixture.wavFile}: target=${row.fixture.chordName}, probe=${row.probeChordName}, actual=${row.actualPositive}, bestMatch=${row.bestMatch}, confidence=${row.confidence.toFixed(3)}`;
-}
-
-export function formatChordRecognitionMetricsReport(report, maxExamples = 20) {
+export function formatEssentiaFingerprintReport(report, maxExamples = 20) {
   const { counts, metrics, cases } = report;
 
   const lines = [
-    'Chord recognition confusion matrix',
+    'Essentia chord recognition confusion matrix',
     `- samples: total=${counts.total}, chords=${counts.chordCount}, positiveFixtures=${counts.positiveFixtures}, explicitNegativeFixtures=${counts.explicitNegativeFixtures}`,
     `- confusion: TP=${counts.tp}, FP=${counts.fp}, FN=${counts.fn}, TN=${counts.tn}`,
     `- sensitivity: ${formatPercent(metrics.sensitivity)}`,
@@ -151,11 +163,4 @@ export function formatChordRecognitionMetricsReport(report, maxExamples = 20) {
   }
 
   return lines.join('\n');
-}
-
-export function formatChordRecognitionJsfingerprintReport(report, maxExamples = 20) {
-  return formatChordRecognitionMetricsReport(report, maxExamples).replace(
-    'Chord recognition confusion matrix',
-    'JS chord recognition confusion matrix',
-  );
 }

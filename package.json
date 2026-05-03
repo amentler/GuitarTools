@@ -10,6 +10,9 @@
     "test:ci": "npm run test:unit",
     "test:e2e": "playwright test",
     "fixtures:chords:introduce": "node scripts/introduce-chord-fixture.mjs",
+    "fingerprint": "node scripts/chord-recognition-fingerprint.mjs",
+    "fingerprint:fixtures": "node scripts/generate-essentia-fingerprint-fixtures.mjs",
+    "jsfingerprint": "node scripts/chord-recognition-jsfingerprint.mjs",
     "lint": "eslint .",
     "prepare": "husky"
   },

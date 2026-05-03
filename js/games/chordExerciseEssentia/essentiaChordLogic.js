@@ -168,6 +168,22 @@ const OPEN_STRUM_BASE_BINS = [4, 9, 2, 7, 11];
 const OPEN_STRUM_TEMPLATE_OFFSETS = [0, 1, 2, 3, 4, 5];
 const OPEN_STRUM_THRESHOLD = 0.45;
 const OPEN_STRUM_BEST_CHORD_MARGIN = 0.22;
+export const CHORD_MATCH_STRATEGIES = Object.freeze({
+  JS: 'js',
+  ESSENTIA_FINGERPRINT: 'essentia-fingerprint',
+});
+const ESSENTIA_FINGERPRINT_CONFIDENCE_FLOORS = Object.freeze({
+  Dur: 0.44,
+  Moll: 0.34,
+  dim: 0.4,
+  '7': 0.2,
+  '7sus4': 0.3,
+  maj7: 0.37,
+  m7: 0.43,
+  sus2: 0.48,
+  sus4: 0.48,
+  add9: 0.43,
+});
 
 function stripChordAnnotation(chordName) {
   return chordName.replace(/\s*\([^)]*\)\s*$/, '').trim();
@@ -273,6 +289,10 @@ function getEffectiveTargetChordName(chordName) {
 function getChordProfile(descriptor) {
   if (!descriptor) return DEFAULT_PROFILE;
   return CHORD_TYPE_PROFILES[descriptor.type] ?? DEFAULT_PROFILE;
+}
+
+function getMatchStrategy(options) {
+  return options.strategy ?? CHORD_MATCH_STRATEGIES.JS;
 }
 
 function sharesRoot(descriptorA, descriptorB) {
@@ -736,6 +756,25 @@ function passesCoreEvidence({
     hasEnoughChordSupport;
 }
 
+function passesEssentiaFingerprintFallback({
+  strategy,
+  targetDescriptor,
+  confidence,
+  annotatedTargetAcceptance,
+}) {
+  if (strategy !== CHORD_MATCH_STRATEGIES.ESSENTIA_FINGERPRINT) return false;
+
+  const confidenceFloor = ESSENTIA_FINGERPRINT_CONFIDENCE_FLOORS[targetDescriptor?.type];
+  if (confidenceFloor === undefined) return false;
+
+  const annotatedVariantFloor = Math.max(confidenceFloor, 0.75);
+  return confidence >= (
+    annotatedTargetAcceptance.requiresExactAnnotatedMatch
+      ? annotatedVariantFloor
+      : confidenceFloor
+  );
+}
+
 /**
  * Builds a 12-bin binary template for every chord in akkordData.
  * Each bin is 1 if the pitch class is part of the chord, 0 otherwise.
@@ -881,6 +920,7 @@ export function matchHpcpToChord(hpcp, targetChordName, templates, thresholdOver
   const targetDescriptor = getChordDescriptor(effectiveTargetChordName);
   const targetEvidence = scoreHpcpAgainstChord(hpcp, targetTemplate, targetDescriptor);
   const profile = targetEvidence.profile;
+  const strategy = getMatchStrategy(options);
   const bassSupportByChord = options.bassSupportByChord ?? null;
   const targetBassSupport = bassSupportByChord?.[effectiveTargetChordName] ?? bassSupportByChord?.[targetChordName] ?? null;
   const confidence = targetEvidence.score;
@@ -944,15 +984,24 @@ export function matchHpcpToChord(hpcp, targetChordName, templates, thresholdOver
     annotatedTargetAcceptance,
     hasEnoughChordSupport,
   });
+  const acceptsStrategyFallback = passesEssentiaFingerprintFallback({
+    strategy,
+    targetDescriptor,
+    confidence,
+    annotatedTargetAcceptance,
+  });
   const isCorrect = acceptsSpecialCase || (
-    !openStrumRejectCandidate.rejectsChordClaim &&
-    acceptsCoreEvidence && (
-      bestChordMatch === targetChordName ||
-      bestChordMatch === effectiveTargetChordName ||
-      bestMatchCompatibility.passesBestMatchTolerance ||
-      bestMatchCompatibility.passesSubsetAcceptance ||
-      bestMatchCompatibility.passesDominantSeventhVariantAcceptance
-    )
+    (
+      !openStrumRejectCandidate.rejectsChordClaim &&
+      acceptsCoreEvidence && (
+        bestChordMatch === targetChordName ||
+        bestChordMatch === effectiveTargetChordName ||
+        bestMatchCompatibility.passesBestMatchTolerance ||
+        bestMatchCompatibility.passesSubsetAcceptance ||
+        bestMatchCompatibility.passesDominantSeventhVariantAcceptance
+      )
+    ) ||
+    acceptsStrategyFallback
   );
   const reportedSpecialCaseBestMatch = specialCase?.reportAsTarget
     ? effectiveTargetChordName
