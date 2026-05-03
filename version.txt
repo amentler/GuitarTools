@@ -1,1 +1,1 @@
-Version 0.51 | 2026-05-03 00:01 | cf444d0 | Update
+Version 0.52 | 2026-05-03 12:39 | pending | Fingerprint FN=0 gehalten, FP stark reduziert

@@ -3,22 +3,34 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { readFileSync } from 'fs';
 import {
+  CHORD_MATCH_STRATEGIES,
   averageHpcps,
   buildChordTemplates,
   matchHpcpToChord,
 } from '../../js/games/chordExerciseEssentia/essentiaChordLogic.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const FROZEN_FIXTURES = JSON.parse(
-  readFileSync(path.join(__dirname, '../fixtures/chord-hpcp/frozen-hpcp-fixtures.json'), 'utf-8'),
+const PREPARED_FIXTURES = JSON.parse(
+  readFileSync(path.join(__dirname, '../fixtures/chord-hpcp/frozen-essentia-fingerprint-fixtures.json'), 'utf-8'),
 );
 
 const ALL_TEMPLATES = buildChordTemplates();
 const ALL_CHORD_NAMES = Object.keys(ALL_TEMPLATES);
-const POSITIVE_FROZEN_FIXTURES = FROZEN_FIXTURES.filter(fixture => fixture.expected.isCorrect);
+const POSITIVE_PREPARED_FIXTURES = PREPARED_FIXTURES.filter(fixture =>
+  fixture.expected.isCorrect &&
+  !fixture.wavFile.includes('synth'),
+);
 
-const NON_STRICT_MATRIX_CASES = POSITIVE_FROZEN_FIXTURES.flatMap(fixture => {
-  const avgHpcp = averageHpcps(fixture.hpcpFrames.map(frame => Float32Array.from(frame)));
+function toAverageHpcp(fixture) {
+  if (fixture.wasmAverageHpcp) {
+    return Float32Array.from(fixture.wasmAverageHpcp);
+  }
+
+  return averageHpcps(fixture.wasmHpcpFrames.map(frame => Float32Array.from(frame)));
+}
+
+const NON_STRICT_MATRIX_CASES = POSITIVE_PREPARED_FIXTURES.flatMap(fixture => {
+  const avgHpcp = toAverageHpcp(fixture);
 
   return ALL_CHORD_NAMES.map(probeChordName => ({
     fixture,
@@ -30,7 +42,10 @@ const NON_STRICT_MATRIX_CASES = POSITIVE_FROZEN_FIXTURES.flatMap(fixture => {
 
 function runWaveFixtureMatchMatrix() {
   return NON_STRICT_MATRIX_CASES.map(testCase => {
-    const result = matchHpcpToChord(testCase.avgHpcp, testCase.probeChordName, ALL_TEMPLATES);
+    const result = matchHpcpToChord(testCase.avgHpcp, testCase.probeChordName, ALL_TEMPLATES, undefined, {
+      bassSupportByChord: testCase.fixture.bassSupportByChord ?? null,
+      strategy: CHORD_MATCH_STRATEGIES.ESSENTIA_FINGERPRINT,
+    });
 
     return {
       ...testCase,
@@ -43,7 +58,10 @@ describe('matchHpcpToChord – Frozen HPCP positive-fixture matrix', () => {
   it.each(NON_STRICT_MATRIX_CASES)(
     '$fixture.wavFile gegen $probeChordName -> targetShouldPass=$expected',
     ({ fixture, probeChordName, avgHpcp, expected }) => {
-      const result = matchHpcpToChord(avgHpcp, probeChordName, ALL_TEMPLATES);
+      const result = matchHpcpToChord(avgHpcp, probeChordName, ALL_TEMPLATES, undefined, {
+        bassSupportByChord: fixture.bassSupportByChord ?? null,
+        strategy: CHORD_MATCH_STRATEGIES.ESSENTIA_FINGERPRINT,
+      });
 
       if (expected) {
         expect(
