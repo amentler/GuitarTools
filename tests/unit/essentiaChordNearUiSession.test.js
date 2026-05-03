@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { runChordDetectionSession } from '../../js/games/chordExerciseEssentia/essentiaChordDetection.js';
+import { CHORD_DETECTION_PATHS } from '../../js/games/chordExerciseEssentia/chordDetectionPaths.js';
 import {
   createAdvancingWait,
   createFakeChordDetectionAnalyserFromWav,
@@ -28,20 +29,33 @@ describe('runChordDetectionSession – near-UI WAV regression', () => {
       result.isCorrect,
       `${wavFile}: near-UI bestMatch=${result.bestMatch}, confidence=${result.confidence.toFixed(3)}`,
     ).toBe(true);
+    expect(result.detectionPath).toBe(CHORD_DETECTION_PATHS.ESSENTIA);
   });
 
   it.each([
     ['Dmaj7', 'Dmaj7/dmaj7.wav'],
-    ['Gdim', 'Gdim/gdim.wav'],
-    ['Gdim', 'Gdim/gdim_2.wav'],
     ['Hdim', 'Hdim/hdim.wav'],
-  ])('markiert den zuletzt hochgeladenen Problemfall %s aus %s als nicht erkannt', async (chordName, wavFile) => {
+  ])('bleibt für %s aus %s im Essentia-Routing ohne WASM weiterhin negativ', async (chordName, wavFile) => {
     const result = await detectFromWav(chordName, wavFile);
 
     expect(
       result.isCorrect,
       `${wavFile}: near-UI bestMatch=${result.bestMatch}, confidence=${result.confidence.toFixed(3)}`,
     ).toBe(false);
+    expect(result.detectionPath).toBe(CHORD_DETECTION_PATHS.ESSENTIA);
+  });
+
+  it.each([
+    ['Gdim', 'Gdim/gdim.wav'],
+    ['Gdim', 'Gdim/gdim_2.wav'],
+  ])('nutzt für %s aus %s den getrennten Essentia-Produktivpfad', async (chordName, wavFile) => {
+    const result = await detectFromWav(chordName, wavFile);
+
+    expect(
+      result.isCorrect,
+      `${wavFile}: near-UI bestMatch=${result.bestMatch}, confidence=${result.confidence.toFixed(3)}`,
+    ).toBe(true);
+    expect(result.detectionPath).toBe(CHORD_DETECTION_PATHS.ESSENTIA);
   });
 
   it('erzwingt Pure JS auch dann, wenn ein Essentia-Objekt übergeben wurde', async () => {
@@ -62,6 +76,7 @@ describe('runChordDetectionSession – near-UI WAV regression', () => {
     });
 
     expect(result.isCorrect, `Pure JS bestMatch=${result.bestMatch}, confidence=${result.confidence.toFixed(3)}`).toBe(true);
+    expect(result.detectionPath).toBe(CHORD_DETECTION_PATHS.PURE_JS);
     expect(result.wasm).toBe(false);
     expect(essentia.arrayToVector).not.toHaveBeenCalled();
   });

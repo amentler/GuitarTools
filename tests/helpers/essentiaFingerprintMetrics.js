@@ -1,9 +1,8 @@
 import {
-  CHORD_MATCH_STRATEGIES,
   averageHpcps,
   buildChordTemplates,
-  matchHpcpToChord,
 } from '../../js/games/chordExerciseEssentia/essentiaChordLogic.js';
+import { matchEssentiaFingerprintHpcpToChord } from '../../js/games/chordExerciseEssentia/essentiaFingerprintChordMatcher.js';
 
 function toAverageHpcp(fixture) {
   if (fixture.wasmAverageHpcp) {
@@ -42,9 +41,8 @@ export function evaluateEssentiaFingerprintConfusion(preparedFixtures) {
     const bassSupportByChord = fixture.bassSupportByChord ?? null;
 
     for (const probeChordName of chordNames) {
-      const result = matchHpcpToChord(avgHpcp, probeChordName, templates, undefined, {
+      const result = matchEssentiaFingerprintHpcpToChord(avgHpcp, probeChordName, templates, undefined, {
         bassSupportByChord,
-        strategy: CHORD_MATCH_STRATEGIES.ESSENTIA_FINGERPRINT,
       });
       const expectedPositive = probeChordName === fixture.chordName;
 
@@ -68,9 +66,8 @@ export function evaluateEssentiaFingerprintConfusion(preparedFixtures) {
       : [fixture.chordName];
 
     for (const probeChordName of probeChordNames) {
-      const result = matchHpcpToChord(avgHpcp, probeChordName, templates, undefined, {
+      const result = matchEssentiaFingerprintHpcpToChord(avgHpcp, probeChordName, templates, undefined, {
         bassSupportByChord,
-        strategy: CHORD_MATCH_STRATEGIES.ESSENTIA_FINGERPRINT,
       });
 
       rows.push({

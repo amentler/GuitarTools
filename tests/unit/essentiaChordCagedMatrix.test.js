@@ -3,11 +3,10 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { readFileSync } from 'fs';
 import {
-  CHORD_MATCH_STRATEGIES,
   averageHpcps,
   buildChordTemplates,
-  matchHpcpToChord,
 } from '../../js/games/chordExerciseEssentia/essentiaChordLogic.js';
+import { matchEssentiaFingerprintHpcpToChord } from '../../js/games/chordExerciseEssentia/essentiaFingerprintChordMatcher.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PREPARED_FIXTURES = JSON.parse(
@@ -42,9 +41,8 @@ const NON_STRICT_MATRIX_CASES = POSITIVE_PREPARED_FIXTURES.flatMap(fixture => {
 
 function runWaveFixtureMatchMatrix() {
   return NON_STRICT_MATRIX_CASES.map(testCase => {
-    const result = matchHpcpToChord(testCase.avgHpcp, testCase.probeChordName, ALL_TEMPLATES, undefined, {
+    const result = matchEssentiaFingerprintHpcpToChord(testCase.avgHpcp, testCase.probeChordName, ALL_TEMPLATES, undefined, {
       bassSupportByChord: testCase.fixture.bassSupportByChord ?? null,
-      strategy: CHORD_MATCH_STRATEGIES.ESSENTIA_FINGERPRINT,
     });
 
     return {
@@ -58,9 +56,8 @@ describe('matchHpcpToChord – Frozen HPCP positive-fixture matrix', () => {
   it.each(NON_STRICT_MATRIX_CASES)(
     '$fixture.wavFile gegen $probeChordName -> targetShouldPass=$expected',
     ({ fixture, probeChordName, avgHpcp, expected }) => {
-      const result = matchHpcpToChord(avgHpcp, probeChordName, ALL_TEMPLATES, undefined, {
+      const result = matchEssentiaFingerprintHpcpToChord(avgHpcp, probeChordName, ALL_TEMPLATES, undefined, {
         bassSupportByChord: fixture.bassSupportByChord ?? null,
-        strategy: CHORD_MATCH_STRATEGIES.ESSENTIA_FINGERPRINT,
       });
 
       if (expected) {

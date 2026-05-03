@@ -20,6 +20,12 @@ import {
   averageHpcps,
   computeHpcpPureJS,
 } from './essentiaChordLogic.js';
+import { matchEssentiaFingerprintHpcpToChord } from './essentiaFingerprintChordMatcher.js';
+import {
+  CHORD_DETECTION_PATHS,
+  isEssentiaDetectionPath,
+  resolveChordDetectionPath,
+} from './chordDetectionPaths.js';
 import { buildBassSupportByChord } from './essentiaBassScore.js';
 import {
   closeAudioSession,
@@ -242,14 +248,16 @@ export async function runChordDetectionSession({
   sampleRate = 44100,
   essentia = null,
   preferEssentia = true,
+  path,
   wait = waitMs,
 }) {
   if (!analyserNode) {
     return { isCorrect: false, confidence: 0, bestMatch: null, essentiaError: true };
   }
 
+  const detectionPath = resolveChordDetectionPath({ path, preferEssentia });
   const rmsThreshold = RMS_SPIKE_FACTOR * GUITAR_MIN_RMS;
-  const runtimeState = { essentiaHpcpAvailable: preferEssentia && essentia !== null };
+  const runtimeState = { essentiaHpcpAvailable: isEssentiaDetectionPath(detectionPath) && essentia !== null };
   const timeDomainBuffer = new Float32Array(analyserNode.fftSize);
 
   let strumDetected = false;
@@ -304,19 +312,24 @@ export async function runChordDetectionSession({
 
   const avgHpcp = averageHpcps(hpcps);
   const avgPureJsHpcp = averageHpcps(pureJsHpcps);
-  const result = matchHpcpToChord(avgHpcp, chordName, CHORD_TEMPLATES, undefined, { bassSupportByChord });
+  const matchChord = detectionPath === CHORD_DETECTION_PATHS.ESSENTIA
+    ? matchEssentiaFingerprintHpcpToChord
+    : matchHpcpToChord;
+  const result = matchChord(avgHpcp, chordName, CHORD_TEMPLATES, undefined, { bassSupportByChord });
   const pureJsResult = matchHpcpToChord(avgPureJsHpcp, chordName, CHORD_TEMPLATES, undefined, { bassSupportByChord });
-  const usingWasmNow = preferEssentia && essentia !== null && runtimeState.essentiaHpcpAvailable;
+  const usingWasmNow = isEssentiaDetectionPath(detectionPath) && essentia !== null && runtimeState.essentiaHpcpAvailable;
 
   if (usingWasmNow && result.isCorrect && !pureJsResult.isCorrect) {
     return {
       ...pureJsResult,
+      detectionPath,
       wasm: true,
     };
   }
 
   return {
     ...result,
+    detectionPath,
     wasm: usingWasmNow,
   };
 }
@@ -335,7 +348,8 @@ export async function runChordDetectionSession({
  * @returns {Promise<{ isCorrect, confidence, bestMatch, timedOut?, essentiaError?, wasm? }>}
  */
 export async function detectChordEssentia(chordName, options = {}) {
-  const preferEssentia = options.preferEssentia ?? true;
+  const detectionPath = resolveChordDetectionPath(options);
+  const preferEssentia = isEssentiaDetectionPath(detectionPath);
   let essentia = null;
 
   try {
@@ -366,7 +380,7 @@ export async function detectChordEssentia(chordName, options = {}) {
     analyserNode: audioSession.analyser,
     sampleRate,
     essentia,
-    preferEssentia,
+    path: detectionPath,
   });
 
   return result;

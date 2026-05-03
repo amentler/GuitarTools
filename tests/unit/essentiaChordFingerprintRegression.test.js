@@ -4,9 +4,8 @@ import { fileURLToPath } from 'url';
 import { readFileSync } from 'fs';
 import {
   buildChordTemplates,
-  CHORD_MATCH_STRATEGIES,
-  matchHpcpToChord,
 } from '../../js/games/chordExerciseEssentia/essentiaChordLogic.js';
+import { matchEssentiaFingerprintHpcpToChord } from '../../js/games/chordExerciseEssentia/essentiaFingerprintChordMatcher.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PREPARED_FIXTURES = JSON.parse(
@@ -25,7 +24,7 @@ function getDetectionResult(wavFile) {
   const avgHpcp = Float32Array.from(fixture.wasmAverageHpcp);
   return {
     fixture,
-    result: matchHpcpToChord(avgHpcp, fixture.chordName, TEMPLATES, undefined, {
+    result: matchEssentiaFingerprintHpcpToChord(avgHpcp, fixture.chordName, TEMPLATES, undefined, {
       bassSupportByChord: fixture.bassSupportByChord,
     }),
   };
@@ -34,9 +33,8 @@ function getDetectionResult(wavFile) {
 function getProbeResult(wavFile, probeChordName) {
   const fixture = getFixture(wavFile);
   const avgHpcp = Float32Array.from(fixture.wasmAverageHpcp);
-  return matchHpcpToChord(avgHpcp, probeChordName, TEMPLATES, undefined, {
+  return matchEssentiaFingerprintHpcpToChord(avgHpcp, probeChordName, TEMPLATES, undefined, {
     bassSupportByChord: fixture.bassSupportByChord,
-    strategy: CHORD_MATCH_STRATEGIES.ESSENTIA_FINGERPRINT,
   });
 }
 
@@ -44,9 +42,9 @@ describe('Essentia fingerprint regression fixtures', () => {
   it.each([
     'Dmaj7/dmaj7.wav',
     'Gdim/gdim.wav',
-  ])('zeigt den zuletzt hochgeladenen Problemfall %s als nicht erkannt', (wavFile) => {
+  ])('akzeptiert %s im getrennten Essentia-Pfad', (wavFile) => {
     const { result } = getDetectionResult(wavFile);
-    expect(result.isCorrect, `${wavFile}: bestMatch=${result.bestMatch}, confidence=${result.confidence.toFixed(3)}`).toBe(false);
+    expect(result.isCorrect, `${wavFile}: bestMatch=${result.bestMatch}, confidence=${result.confidence.toFixed(3)}`).toBe(true);
   });
 
   it.each([

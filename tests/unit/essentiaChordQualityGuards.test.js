@@ -3,11 +3,10 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { readFileSync } from 'fs';
 import {
-  CHORD_MATCH_STRATEGIES,
   averageHpcps,
   buildChordTemplates,
-  matchHpcpToChord,
 } from '../../js/games/chordExerciseEssentia/essentiaChordLogic.js';
+import { matchEssentiaFingerprintHpcpToChord } from '../../js/games/chordExerciseEssentia/essentiaFingerprintChordMatcher.js';
 import {
   evaluateEssentiaFingerprintConfusion,
 } from '../helpers/essentiaFingerprintMetrics.js';
@@ -52,9 +51,7 @@ describe('Chord recognition quality guards', () => {
 
     for (const row of MATRIX_ROWS) {
       const avgHpcp = toAverageHpcp(row.fixture);
-      const noBass = matchHpcpToChord(avgHpcp, row.probeChordName, TEMPLATES, undefined, {
-        strategy: CHORD_MATCH_STRATEGIES.ESSENTIA_FINGERPRINT,
-      });
+      const noBass = matchEssentiaFingerprintHpcpToChord(avgHpcp, row.probeChordName, TEMPLATES, undefined);
 
       if (!row.expectedPositive && !row.actualPositive && noBass.isCorrect) {
         bassBlockedFPs.push(`${row.fixture.wavFile} → ${row.probeChordName}`);

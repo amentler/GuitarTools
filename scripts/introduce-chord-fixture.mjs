@@ -31,12 +31,15 @@ const ROOT_FILE_ALIASES = new Map([
   ['adur', 'A-Dur'],
   ['adim', 'Adim'],
   ['am7', 'Am7'],
+  ['amin7', 'Am7'],
+  ['amaj', 'A-Dur'],
   ['amaj7', 'Amaj7'],
   ['amoll', 'A-Moll'],
   ['asus2', 'Asus2'],
   ['asus4', 'Asus4'],
   ['c7', 'C7'],
   ['cadd9', 'Cadd9'],
+  ['cmaj', 'C-Dur'],
   ['cdur', 'C-Dur'],
   ['cdim', 'Cdim'],
   ['cmaj7', 'Cmaj7'],
@@ -53,6 +56,7 @@ const ROOT_FILE_ALIASES = new Map([
   ['edur', 'E-Dur'],
   ['edim', 'Edim'],
   ['em7', 'Em7'],
+  ['emin', 'E-Moll'],
   ['emaj7', 'Emaj7'],
   ['emoll', 'E-Moll'],
   ['esus2', 'Esus2'],
@@ -62,10 +66,13 @@ const ROOT_FILE_ALIASES = new Map([
   ['fm7', 'Fm7'],
   ['fmoll', 'F-Moll'],
   ['g7', 'G7'],
+  ['g7sus4', 'G7sus4'],
   ['gdim', 'Gdim'],
   ['gdur', 'G-Dur'],
   ['gm7', 'Gm7'],
   ['gmoll', 'G-Moll'],
+  ['gsus2', 'Gsus2'],
+  ['gsus4', 'Gsus4'],
   ['h7', 'H7 (B7)'],
   ['hdim', 'Hdim'],
   ['hdur', 'H-Dur'],
@@ -119,18 +126,23 @@ async function ensureDirectory(dirPath) {
   await fs.mkdir(dirPath, { recursive: true });
 }
 
-async function moveLooseRootFixtures() {
-  const entries = await fs.readdir(CHORD_FIXTURES_DIR, { withFileTypes: true });
+async function moveLooseFixturesFrom(sourceDir) {
+  const entries = await fs.readdir(sourceDir, { withFileTypes: true });
   const looseWavs = entries
-    .filter(entry => entry.isFile() && isWavFile(entry.name) && !ROOT_NEGATIVE_FIXTURES.has(entry.name))
+    .filter(entry => entry.isFile() && isWavFile(entry.name))
+    .filter(entry => sourceDir !== CHORD_FIXTURES_DIR || !ROOT_NEGATIVE_FIXTURES.has(entry.name))
     .map(entry => entry.name)
     .sort(compareStrings);
 
   for (const fileName of looseWavs) {
     if (isOpenStrumFixture(fileName)) {
       const targetDir = path.join(CHORD_FIXTURES_DIR, OPEN_STRUMS_FOLDER);
-      const sourcePath = path.join(CHORD_FIXTURES_DIR, fileName);
+      const sourcePath = path.join(sourceDir, fileName);
       const targetPath = path.join(targetDir, fileName);
+
+      if (sourcePath === targetPath) {
+        continue;
+      }
 
       await ensureDirectory(targetDir);
       await fs.rename(sourcePath, targetPath);
@@ -143,12 +155,21 @@ async function moveLooseRootFixtures() {
     }
 
     const targetDir = path.join(CHORD_FIXTURES_DIR, targetFolder);
-    const sourcePath = path.join(CHORD_FIXTURES_DIR, fileName);
+    const sourcePath = path.join(sourceDir, fileName);
     const targetPath = path.join(targetDir, fileName);
+
+    if (sourcePath === targetPath) {
+      continue;
+    }
 
     await ensureDirectory(targetDir);
     await fs.rename(sourcePath, targetPath);
   }
+}
+
+async function moveLooseRootFixtures() {
+  await moveLooseFixturesFrom(REPO_ROOT);
+  await moveLooseFixturesFrom(CHORD_FIXTURES_DIR);
 }
 
 async function collectPositiveFolderFixtures() {
