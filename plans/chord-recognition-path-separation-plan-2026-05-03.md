@@ -10,9 +10,9 @@ Der Essentia-Pfad bleibt der Entwicklungs-Default und wird anschliessend matcher
 
 - Erledigt: strukturelle Pfadtrennung fuer Matcher und Laufzeit-Routing.
 - Erledigt: eigener Essentia-Matcher mit eigenem Fingerprint-Fallback in separatem Modul.
+- Erledigt: historischer Pure-JS-Matcher als eigenes Modul mit Referenz auf `c1125a8` verdrahtet.
 - Erledigt: zentraler Pfad-Resolver mit Essentia als Entwicklungsdefault.
 - Erledigt: Fingerprint-, Session- und Guard-Tests auf getrennte Matcher-Einstiege umgestellt.
-- Offen: historisches Pure-JS-Referenzverhalten aus der Git-Historie dokumentiert wiederherstellen.
 - Offen: Pure-JS-Fingerprint-/Direkt-WAV-Qualitaet wieder auf den gewuenschten Referenzstand anheben.
 
 ## Anforderungen
@@ -75,6 +75,11 @@ Der Essentia-Pfad bleibt der Entwicklungs-Default und wird anschliessend matcher
 - Commit-Spanne identifizieren, in der der Pure-JS-Pfad fachlich noch stabil war.
 - Commit oder Commit-Spanne als Referenz fuer die Wiederherstellung dokumentieren.
 - Fingerprint- und Direkt-WAV-Verhalten dieses Referenzstands festhalten.
+
+Referenzstand:
+- Referenz-Commit fuer den Pure-JS-Matcher: `c1125a8`
+- Commit-Titel: `feat: Phase 4 — Sus-Identity-Gate via Bass-Root (Precision 80.3%)`
+- Die heutige Fixture-Menge ist groesser; eine niedrigere aktuelle Precision auf neuen Fixtures ist akzeptabel, solange exakt diese historische Matcher-Logik im `pure-js`-Pfad lebt.
 
 ### Phase 2: Matcher-Pfade strukturell trennen
 

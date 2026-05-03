@@ -16,11 +16,11 @@
 import { getEssentia } from './essentiaLoader.js';
 import {
   buildChordTemplates,
-  matchHpcpToChord,
   averageHpcps,
   computeHpcpPureJS,
 } from './essentiaChordLogic.js';
 import { matchEssentiaFingerprintHpcpToChord } from './essentiaFingerprintChordMatcher.js';
+import { matchPureJsHpcpToChord } from './pureJsChordMatcher.js';
 import {
   CHORD_DETECTION_PATHS,
   isEssentiaDetectionPath,
@@ -314,9 +314,9 @@ export async function runChordDetectionSession({
   const avgPureJsHpcp = averageHpcps(pureJsHpcps);
   const matchChord = detectionPath === CHORD_DETECTION_PATHS.ESSENTIA
     ? matchEssentiaFingerprintHpcpToChord
-    : matchHpcpToChord;
+    : matchPureJsHpcpToChord;
   const result = matchChord(avgHpcp, chordName, CHORD_TEMPLATES, undefined, { bassSupportByChord });
-  const pureJsResult = matchHpcpToChord(avgPureJsHpcp, chordName, CHORD_TEMPLATES, undefined, { bassSupportByChord });
+  const pureJsResult = matchPureJsHpcpToChord(avgPureJsHpcp, chordName, CHORD_TEMPLATES, undefined, { bassSupportByChord });
   const usingWasmNow = isEssentiaDetectionPath(detectionPath) && essentia !== null && runtimeState.essentiaHpcpAvailable;
 
   if (usingWasmNow && result.isCorrect && !pureJsResult.isCorrect) {

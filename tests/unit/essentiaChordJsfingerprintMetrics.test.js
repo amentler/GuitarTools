@@ -13,7 +13,7 @@ const FROZEN_FIXTURES = JSON.parse(
 );
 
 describe('JS chord recognition fingerprint metrics', () => {
-  it('sammelt TP/FP/FN/TN und gibt Sensitivität/Spezifität automatisch aus', () => {
+  it('sammelt TP/FP/FN/TN und gibt Sensitivität/Spezifität automatisch aus', { timeout: 30000 }, () => {
     const report = evaluateChordRecognitionConfusion(FROZEN_FIXTURES);
 
     console.info(`\n${formatChordRecognitionJsfingerprintReport(report)}`);

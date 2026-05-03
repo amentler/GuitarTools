@@ -1,4 +1,5 @@
-import { averageHpcps, buildChordTemplates, matchHpcpToChord } from '../../js/games/chordExerciseEssentia/essentiaChordLogic.js';
+import { averageHpcps, buildChordTemplates } from '../../js/games/chordExerciseEssentia/essentiaChordLogic.js';
+import { matchPureJsHpcpToChord } from '../../js/games/chordExerciseEssentia/pureJsChordMatcher.js';
 import { extractBassSupportMapFromWav } from './chordBassExtraction.js';
 
 function toAverageHpcp(fixture) {
@@ -30,7 +31,7 @@ export function evaluateChordRecognitionConfusion(frozenFixtures) {
     const bassSupportByChord = extractBassSupportMapFromWav(fixture.wavFile, chordNames);
 
     for (const probeChordName of chordNames) {
-      const result = matchHpcpToChord(avgHpcp, probeChordName, templates, undefined, { bassSupportByChord });
+      const result = matchPureJsHpcpToChord(avgHpcp, probeChordName, templates, undefined, { bassSupportByChord });
       const expectedPositive = probeChordName === fixture.chordName;
 
       rows.push({
@@ -55,7 +56,7 @@ export function evaluateChordRecognitionConfusion(frozenFixtures) {
       : [fixture.chordName];
 
     for (const probeChordName of probeChordNames) {
-      const result = matchHpcpToChord(avgHpcp, probeChordName, templates, undefined, { bassSupportByChord });
+      const result = matchPureJsHpcpToChord(avgHpcp, probeChordName, templates, undefined, { bassSupportByChord });
 
       rows.push({
         kind: probeChordNames.length === 1 ? 'explicit-negative' : 'explicit-negative-matrix',
