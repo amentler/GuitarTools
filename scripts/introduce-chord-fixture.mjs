@@ -59,6 +59,7 @@ const ROOT_FILE_ALIASES = new Map([
   ['esus4', 'Esus4'],
   ['f7', 'F7'],
   ['fdur', 'F-Dur'],
+  ['fm7', 'Fm7'],
   ['fmoll', 'F-Moll'],
   ['g7', 'G7'],
   ['gdim', 'Gdim'],
@@ -169,15 +170,12 @@ async function collectPositiveFolderFixtures() {
     for (const fileName of files) {
       const wavFile = `${chordName}/${fileName}`;
       const analysis = extractHpcpAnalysisFromWav(path.join(CHORD_FIXTURES_DIR, wavFile));
-      const bassSupportByChord = extractBassSupportMapFromWav(wavFile, Object.keys(CHORD_TEMPLATES));
-      const match = matchHpcpToChord(analysis.averageHpcp, chordName, CHORD_TEMPLATES, undefined, {
-        bassSupportByChord,
-      });
 
       fixtures.push({
         chordName,
         wavFile,
-        expected: { isCorrect: match.isCorrect },
+        // Folder fixtures are positive ground truth and must not be relabeled by the current matcher.
+        expected: { isCorrect: true },
         analysis,
       });
     }

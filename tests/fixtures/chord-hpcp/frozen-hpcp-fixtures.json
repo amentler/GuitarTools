@@ -651,7 +651,7 @@
     "chordName": "Aadd9",
     "wavFile": "Aadd9/aadd9.wav",
     "expected": {
-      "isCorrect": false
+      "isCorrect": true
     },
     "sampleRate": 44100,
     "hpcpFrames": [
@@ -867,7 +867,7 @@
     "chordName": "Adim",
     "wavFile": "Adim/adim.wav",
     "expected": {
-      "isCorrect": false
+      "isCorrect": true
     },
     "sampleRate": 44100,
     "hpcpFrames": [
@@ -975,7 +975,7 @@
     "chordName": "Am7",
     "wavFile": "Am7/am7.wav",
     "expected": {
-      "isCorrect": false
+      "isCorrect": true
     },
     "sampleRate": 44100,
     "hpcpFrames": [
@@ -1083,7 +1083,7 @@
     "chordName": "Amaj7",
     "wavFile": "Amaj7/amaj7.wav",
     "expected": {
-      "isCorrect": false
+      "isCorrect": true
     },
     "sampleRate": 44100,
     "hpcpFrames": [
@@ -2487,7 +2487,7 @@
     "chordName": "Cdim",
     "wavFile": "Cdim/cdim.wav",
     "expected": {
-      "isCorrect": false
+      "isCorrect": true
     },
     "sampleRate": 44100,
     "hpcpFrames": [
@@ -2595,7 +2595,7 @@
     "chordName": "Cm7",
     "wavFile": "Cm7/cm7.wav",
     "expected": {
-      "isCorrect": false
+      "isCorrect": true
     },
     "sampleRate": 44100,
     "hpcpFrames": [
@@ -3027,7 +3027,7 @@
     "chordName": "Csus4",
     "wavFile": "Csus4/csus4_alt.wav",
     "expected": {
-      "isCorrect": false
+      "isCorrect": true
     },
     "sampleRate": 44100,
     "hpcpFrames": [
@@ -3891,7 +3891,7 @@
     "chordName": "Dmaj7",
     "wavFile": "Dmaj7/dmaj7.wav",
     "expected": {
-      "isCorrect": false
+      "isCorrect": true
     },
     "sampleRate": 44100,
     "hpcpFrames": [
@@ -4215,7 +4215,7 @@
     "chordName": "E-Dur",
     "wavFile": "E-Dur/edur_steel2.wav",
     "expected": {
-      "isCorrect": false
+      "isCorrect": true
     },
     "sampleRate": 44100,
     "hpcpFrames": [
@@ -4863,7 +4863,7 @@
     "chordName": "E-Moll",
     "wavFile": "E-Moll/emoll_steel1.wav",
     "expected": {
-      "isCorrect": false
+      "isCorrect": true
     },
     "sampleRate": 44100,
     "hpcpFrames": [
@@ -5403,7 +5403,7 @@
     "chordName": "Eadd9",
     "wavFile": "Eadd9/eadd9.wav",
     "expected": {
-      "isCorrect": false
+      "isCorrect": true
     },
     "sampleRate": 44100,
     "hpcpFrames": [
@@ -5511,7 +5511,7 @@
     "chordName": "Edim",
     "wavFile": "Edim/edim.wav",
     "expected": {
-      "isCorrect": false
+      "isCorrect": true
     },
     "sampleRate": 44100,
     "hpcpFrames": [
@@ -5727,7 +5727,7 @@
     "chordName": "Emaj7",
     "wavFile": "Emaj7/emaj7.wav",
     "expected": {
-      "isCorrect": false
+      "isCorrect": true
     },
     "sampleRate": 44100,
     "hpcpFrames": [
@@ -5835,7 +5835,7 @@
     "chordName": "Esus2",
     "wavFile": "Esus2/esus2_alt.wav",
     "expected": {
-      "isCorrect": false
+      "isCorrect": true
     },
     "sampleRate": 44100,
     "hpcpFrames": [
@@ -5943,7 +5943,7 @@
     "chordName": "Esus2",
     "wavFile": "Esus2/esus2_alt2.wav",
     "expected": {
-      "isCorrect": false
+      "isCorrect": true
     },
     "sampleRate": 44100,
     "hpcpFrames": [
@@ -6051,7 +6051,7 @@
     "chordName": "Esus2",
     "wavFile": "Esus2/esus2.wav",
     "expected": {
-      "isCorrect": false
+      "isCorrect": true
     },
     "sampleRate": 44100,
     "hpcpFrames": [
@@ -6909,6 +6909,114 @@
       0.282017,
       0.01655,
       0.010303
+    ]
+  },
+  {
+    "chordName": "Fm7",
+    "wavFile": "Fm7/fm7.wav",
+    "expected": {
+      "isCorrect": true
+    },
+    "sampleRate": 44100,
+    "hpcpFrames": [
+      [
+        1,
+        0.020105,
+        0.021865,
+        0.453314,
+        0.048513,
+        0.131354,
+        0.279634,
+        0.121237,
+        0.005806,
+        0.050581,
+        0.030534,
+        0.015255
+      ],
+      [
+        0.708002,
+        0.0072,
+        0.008312,
+        0.335238,
+        0.01351,
+        0.003114,
+        0.028142,
+        0.16813,
+        1,
+        0.00225,
+        0.029665,
+        0.005001
+      ],
+      [
+        1,
+        0.003313,
+        0.022654,
+        0.367316,
+        0.029687,
+        0.423078,
+        0.014308,
+        0.130091,
+        0.631398,
+        0.060976,
+        0.030851,
+        0.007545
+      ],
+      [
+        1,
+        0.003726,
+        0.006904,
+        0.431856,
+        0.166374,
+        0.397176,
+        0.011644,
+        0.070544,
+        0.559766,
+        0.009733,
+        0.03898,
+        0.001643
+      ],
+      [
+        1,
+        0.004968,
+        0.031208,
+        0.58523,
+        0.02154,
+        0.623543,
+        0.00985,
+        0.084866,
+        0.556433,
+        0.013159,
+        0.052916,
+        0.001296
+      ],
+      [
+        1,
+        0.003612,
+        0.009759,
+        0.529151,
+        0.224611,
+        0.53289,
+        0.006068,
+        0.055466,
+        0.400595,
+        0.008352,
+        0.048698,
+        0.000471
+      ]
+    ],
+    "averageHpcp": [
+      0.951334,
+      0.007154,
+      0.016784,
+      0.450351,
+      0.084039,
+      0.351859,
+      0.058274,
+      0.105056,
+      0.525666,
+      0.024175,
+      0.038607,
+      0.005202
     ]
   },
   {
@@ -7779,7 +7887,7 @@
     "chordName": "Gdim",
     "wavFile": "Gdim/gdim_2.wav",
     "expected": {
-      "isCorrect": false
+      "isCorrect": true
     },
     "sampleRate": 44100,
     "hpcpFrames": [
@@ -7887,7 +7995,7 @@
     "chordName": "Gdim",
     "wavFile": "Gdim/gdim.wav",
     "expected": {
-      "isCorrect": false
+      "isCorrect": true
     },
     "sampleRate": 44100,
     "hpcpFrames": [
@@ -8535,7 +8643,7 @@
     "chordName": "Hdim",
     "wavFile": "Hdim/hdim.wav",
     "expected": {
-      "isCorrect": false
+      "isCorrect": true
     },
     "sampleRate": 44100,
     "hpcpFrames": [

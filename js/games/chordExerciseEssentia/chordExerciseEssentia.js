@@ -9,6 +9,7 @@ import { chordStringToFretboardIndex } from '../../domain/chords/chordFretboardM
 import { detectChordEssentia, stopListeningEssentia } from './essentiaChordDetection.js';
 import { getEssentia } from './essentiaLoader.js';
 import { CHORDS, CHORD_CATEGORIES } from '../../data/akkordData.js';
+import { getSetting, setSetting, SETTING_KEYS } from '../../shared/globalSettings.js';
 
 // ── Factory ───────────────────────────────────────────────────────────────────
 
@@ -21,6 +22,7 @@ export function createChordExerciseEssentiaFeature() {
   let isListening    = false;
   let essentiaReady  = false;
   let flowToken      = 0;
+  let settingsWired  = false;
 
   const SUCCESS_ADVANCE_DELAY_MS = 500;
   const RETRY_DELAY_MS = 250;
@@ -74,7 +76,30 @@ export function createChordExerciseEssentiaFeature() {
       scoreCorrect: document.getElementById('score-correct'),
       scoreTotal:   document.getElementById('score-total'),
       view:         document.getElementById('view-chord-exercise-essentia'),
+      useEssentiaCheckbox: document.getElementById('ece-setting-use-essentia'),
     };
+  }
+
+  function prefersEssentia() {
+    return getSetting(SETTING_KEYS.CHORD_DETECTION_USE_ESSENTIA);
+  }
+
+  function syncDetectionModeUi() {
+    if (ui.useEssentiaCheckbox) {
+      ui.useEssentiaCheckbox.checked = prefersEssentia();
+    }
+  }
+
+  function wireSettings() {
+    if (settingsWired || !ui.useEssentiaCheckbox) return;
+
+    ui.useEssentiaCheckbox.addEventListener('change', () => {
+      setSetting(SETTING_KEYS.CHORD_DETECTION_USE_ESSENTIA, ui.useEssentiaCheckbox.checked);
+      nextRound({ cancelActive: true });
+      void prepareDetection(flowToken);
+    });
+
+    settingsWired = true;
   }
 
   // ── Rendering ──────────────────────────────────────────────────────────────
@@ -170,7 +195,9 @@ export function createChordExerciseEssentiaFeature() {
 
     let result;
     try {
-      result = await detectChordEssentia(currentChord.name);
+      result = await detectChordEssentia(currentChord.name, {
+        preferEssentia: prefersEssentia(),
+      });
     } catch {
       result = { isCorrect: false, confidence: 0, bestMatch: null, essentiaError: true };
     }
@@ -180,6 +207,35 @@ export function createChordExerciseEssentiaFeature() {
     if (!ui.view?.classList.contains('active')) return;
 
     showFeedback(result, token);
+  }
+
+  async function prepareDetection(token = flowToken) {
+    const preferEssentia = prefersEssentia();
+
+    if (!preferEssentia) {
+      essentiaReady = true;
+      if (!ui.view?.classList.contains('active') || token !== flowToken) return;
+      setStatus('Basis-Modus (Pure JS ausgewählt).');
+      scheduleAutoListen(token);
+      return;
+    }
+
+    essentiaReady = false;
+    setStatus('Lade Essentia\u2026');
+
+    try {
+      await getEssentia();
+      if (!ui.view?.classList.contains('active') || token !== flowToken) return;
+      essentiaReady = true;
+      setStatus('');
+      scheduleAutoListen(token);
+    } catch (err) {
+      if (!ui.view?.classList.contains('active') || token !== flowToken) return;
+      essentiaReady = true; // pure-JS fallback is active
+      const reason = err?.message ? `: ${err.message}` : '';
+      setStatus(`Basis-Modus (WASM nicht verf\u00FCgbar${reason}).`);
+      scheduleAutoListen(token);
+    }
   }
 
   function showFeedback(result, token = flowToken) {
@@ -252,6 +308,8 @@ export function createChordExerciseEssentiaFeature() {
     score         = { correct: 0, total: 0 };
     essentiaReady = false;
     updateScoreUI();
+    syncDetectionModeUi();
+    wireSettings();
 
     if (ui.listenBtn) {
       const fresh = ui.listenBtn.cloneNode(true);
@@ -262,25 +320,8 @@ export function createChordExerciseEssentiaFeature() {
       ui.listenBtn.disabled = false;
     }
 
-    // Pre-warm essentia WASM. Enable "Hören" regardless of outcome:
-    // on WASM failure the detection falls back to pure-JS HPCP automatically.
-    setStatus('Lade Essentia\u2026');
-    getEssentia()
-      .then(() => {
-        if (!ui.view?.classList.contains('active')) return;
-        essentiaReady = true;
-        setStatus('');
-        scheduleAutoListen(flowToken);
-      })
-      .catch(err => {
-        if (!ui.view?.classList.contains('active')) return;
-        essentiaReady = true; // pure-JS fallback is active
-        const reason = err?.message ? `: ${err.message}` : '';
-        setStatus(`Basis-Modus (WASM nicht verf\u00FCgbar${reason}).`);
-        scheduleAutoListen(flowToken);
-      });
-
     nextRound();
+    void prepareDetection(flowToken);
   }
 
   function unmount() {

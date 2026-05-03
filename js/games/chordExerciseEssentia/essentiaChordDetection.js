@@ -57,7 +57,6 @@ const audioSession = createAudioSessionState({
   sourceNode: null,
   channelSplitter: null,
 });
-let essentiaHpcpAvailable = true;
 
 // ── Internal helpers ──────────────────────────────────────────────────────────
 
@@ -208,28 +207,117 @@ function computePureJsHpcp(peakFreqs, peakMags) {
   return computeHpcpPureJS(peakFreqs, peakMags, HPCP_REFERENCE_HZ);
 }
 
+function waitMs(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 /**
  * Computes a 12-bin HPCP vector from the current AnalyserNode state.
  * Uses essentia WASM when available, otherwise falls back to pure-JS.
  */
-function computeHpcp(essentia, analyserNode, sampleRate) {
+function computeHpcp(essentia, analyserNode, sampleRate, runtimeState) {
   const { peakFreqs, peakMags } = detectPeaks(analyserNode, sampleRate);
   const normalizedPeakMags = normalizePeakMagnitudes(peakMags);
   const pureJsHpcp = computePureJsHpcp(peakFreqs, normalizedPeakMags);
 
-  if (essentia && essentiaHpcpAvailable) {
+  if (essentia && runtimeState.essentiaHpcpAvailable) {
     try {
       return {
         hpcp: computeHpcpEssentia(essentia, peakFreqs, normalizedPeakMags, sampleRate),
         pureJsHpcp,
       };
     } catch {
-      essentiaHpcpAvailable = false;
+      runtimeState.essentiaHpcpAvailable = false;
     }
   }
   return {
     hpcp: pureJsHpcp,
     pureJsHpcp,
+  };
+}
+
+export async function runChordDetectionSession({
+  chordName,
+  analyserNode,
+  sampleRate = 44100,
+  essentia = null,
+  preferEssentia = true,
+  wait = waitMs,
+}) {
+  if (!analyserNode) {
+    return { isCorrect: false, confidence: 0, bestMatch: null, essentiaError: true };
+  }
+
+  const rmsThreshold = RMS_SPIKE_FACTOR * GUITAR_MIN_RMS;
+  const runtimeState = { essentiaHpcpAvailable: preferEssentia && essentia !== null };
+  const timeDomainBuffer = new Float32Array(analyserNode.fftSize);
+
+  let strumDetected = false;
+  let waitedMs = 0;
+
+  while (waitedMs < LISTEN_TIMEOUT_MS) {
+    analyserNode.getFloatTimeDomainData(timeDomainBuffer);
+    if (computeRms(timeDomainBuffer) > rmsThreshold) {
+      strumDetected = true;
+      break;
+    }
+
+    await wait(50);
+    waitedMs += 50;
+  }
+
+  if (!strumDetected) {
+    return { isCorrect: false, confidence: 0, bestMatch: null, timedOut: true };
+  }
+
+  await wait(ATTACK_SETTLE_MS);
+
+  let bassSupportByChord;
+  try {
+    const previousFftSize = analyserNode.fftSize;
+    analyserNode.fftSize = BASS_SCORE_FFT_SIZE;
+    const bassSpectrum = new Float32Array(analyserNode.frequencyBinCount);
+    analyserNode.getFloatFrequencyData(bassSpectrum);
+    bassSupportByChord = buildBassSupportByChord(bassSpectrum, sampleRate, Object.keys(CHORD_TEMPLATES));
+    analyserNode.fftSize = previousFftSize;
+  } catch {
+    bassSupportByChord = null;
+  }
+
+  const hpcps = [];
+  const pureJsHpcps = [];
+
+  for (let i = 0; i < ANALYSIS_FRAMES; i++) {
+    if (i > 0) await wait(FRAME_INTERVAL_MS);
+    try {
+      const frameResult = computeHpcp(essentia, analyserNode, sampleRate, runtimeState);
+      hpcps.push(frameResult.hpcp);
+      pureJsHpcps.push(frameResult.pureJsHpcp);
+    } catch {
+      // single frame failure is non-fatal
+    }
+  }
+
+  if (!hpcps.length) {
+    return { isCorrect: false, confidence: 0, bestMatch: null };
+  }
+
+  const avgHpcp = averageHpcps(hpcps);
+  const avgPureJsHpcp = averageHpcps(pureJsHpcps);
+  const result = matchHpcpToChord(avgHpcp, chordName, CHORD_TEMPLATES, undefined, { bassSupportByChord });
+  const pureJsResult = matchHpcpToChord(avgPureJsHpcp, chordName, CHORD_TEMPLATES, undefined, { bassSupportByChord });
+  const usingWasmNow = preferEssentia && essentia !== null && runtimeState.essentiaHpcpAvailable;
+
+  if (usingWasmNow && result.isCorrect && !pureJsResult.isCorrect) {
+    return {
+      ...pureJsResult,
+      wasm: true,
+    };
+  }
+
+  return {
+    ...result,
+    wasm: usingWasmNow,
   };
 }
 
@@ -246,13 +334,21 @@ function computeHpcp(essentia, analyserNode, sampleRate) {
  * @param {string} chordName - e.g. 'C-Dur'
  * @returns {Promise<{ isCorrect, confidence, bestMatch, timedOut?, essentiaError?, wasm? }>}
  */
-export async function detectChordEssentia(chordName) {
+export async function detectChordEssentia(chordName, options = {}) {
+  const preferEssentia = options.preferEssentia ?? true;
   let essentia = null;
-  essentiaHpcpAvailable = true;
 
   try {
-    [essentia] = await Promise.all([getEssentia(), ensureMic()]);
+    if (preferEssentia) {
+      [essentia] = await Promise.all([getEssentia(), ensureMic()]);
+    } else {
+      await ensureMic();
+    }
   } catch {
+    if (!preferEssentia) {
+      return { isCorrect: false, confidence: 0, bestMatch: null, essentiaError: true };
+    }
+
     // Essentia WASM unavailable (SIMD / memory / network failure).
     // Attempt mic-only with pure-JS HPCP as fallback.
     try {
@@ -263,94 +359,17 @@ export async function detectChordEssentia(chordName) {
     // essentia stays null → computeHpcp uses pure-JS path
   }
 
-  const rmsThreshold = RMS_SPIKE_FACTOR * GUITAR_MIN_RMS;
   const sampleRate   = audioSession.audioCtx?.sampleRate ?? 44100;
 
-  return new Promise(resolve => {
-    let strumDetected = false;
-    let pollId = null;
-    let timeoutId = null;
-
-    function cleanup() {
-      clearInterval(pollId);
-      clearTimeout(timeoutId);
-    }
-    function resolveWith(r) {
-      cleanup();
-      resolve(r);
-    }
-
-    timeoutId = setTimeout(() => {
-      if (!strumDetected)
-        resolveWith({ isCorrect: false, confidence: 0, bestMatch: null, timedOut: true });
-    }, LISTEN_TIMEOUT_MS);
-
-    pollId = setInterval(() => {
-      if (!audioSession.analyser || strumDetected) return;
-      const buf = new Float32Array(FFT_SIZE);
-      audioSession.analyser.getFloatTimeDomainData(buf);
-      if (computeRms(buf) > rmsThreshold) {
-        strumDetected = true;
-        clearInterval(pollId);
-        setTimeout(() => collectAndResolve(), ATTACK_SETTLE_MS);
-      }
-    }, 50);
-
-    async function collectAndResolve() {
-      if (!audioSession.analyser) { resolveWith({ isCorrect: false, confidence: 0, bestMatch: null }); return; }
-
-      let bassSupportByChord;
-      try {
-        const previousFftSize = audioSession.analyser.fftSize;
-        audioSession.analyser.fftSize = BASS_SCORE_FFT_SIZE;
-        const bassSpectrum = new Float32Array(audioSession.analyser.frequencyBinCount);
-        audioSession.analyser.getFloatFrequencyData(bassSpectrum);
-        bassSupportByChord = buildBassSupportByChord(bassSpectrum, sampleRate, Object.keys(CHORD_TEMPLATES));
-        audioSession.analyser.fftSize = previousFftSize;
-      } catch {
-        bassSupportByChord = null;
-      }
-
-      const hpcps = [];
-      const pureJsHpcps = [];
-      for (let i = 0; i < ANALYSIS_FRAMES; i++) {
-        if (i > 0) await new Promise(r => setTimeout(r, FRAME_INTERVAL_MS));
-        if (!audioSession.analyser) break;
-        try {
-          const frameResult = computeHpcp(essentia, audioSession.analyser, sampleRate);
-          hpcps.push(frameResult.hpcp);
-          pureJsHpcps.push(frameResult.pureJsHpcp);
-        } catch {
-          // single frame failure is non-fatal
-        }
-      }
-
-      clearTimeout(timeoutId);
-      if (!hpcps.length) { resolve({ isCorrect: false, confidence: 0, bestMatch: null }); return; }
-
-      const avgHpcp = averageHpcps(hpcps);
-      const avgPureJsHpcp = averageHpcps(pureJsHpcps);
-      const result = matchHpcpToChord(avgHpcp, chordName, CHORD_TEMPLATES, undefined, { bassSupportByChord });
-      const pureJsResult = matchHpcpToChord(avgPureJsHpcp, chordName, CHORD_TEMPLATES, undefined, { bassSupportByChord });
-      const usingWasmNow = essentia !== null && essentiaHpcpAvailable;
-
-      // The Pure-JS HPCP path is covered by frozen regression fixtures.
-      // When WASM disagrees with that baseline, prefer the stricter outcome
-      // to avoid silence/noise false positives in the live browser path.
-      if (usingWasmNow && result.isCorrect && !pureJsResult.isCorrect) {
-        resolve({
-          ...pureJsResult,
-          wasm: true,
-        });
-        return;
-      }
-
-      resolve({
-        ...result,
-        wasm: usingWasmNow,
-      });
-    }
+  const result = await runChordDetectionSession({
+    chordName,
+    analyserNode: audioSession.analyser,
+    sampleRate,
+    essentia,
+    preferEssentia,
   });
+
+  return result;
 }
 
 /** Tears down microphone and AudioContext. Safe to call multiple times. */

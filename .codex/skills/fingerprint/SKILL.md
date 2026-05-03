@@ -24,16 +24,34 @@ Der Fingerprint basiert auf den Frozen-HPCP-Fixtures und liefert:
 
 ## Workflow
 
-1. Fingerprint-Skript ausführen:
+1. Neuer Essentia-Fingerprint:
 
 ```bash
 node scripts/chord-recognition-fingerprint.mjs
 ```
 
-2. Optional zusätzlich den zugehörigen Test laufen lassen:
+2. Optional zusätzlich den zugehörigen Essentia-Fingerprint-Test laufen lassen:
 
 ```bash
-npx vitest run tests/unit/essentiaChordConfusionMetrics.test.js
+npx vitest run tests/unit/essentiaChordFingerprintMetrics.test.js tests/unit/essentiaChordFingerprintRegression.test.js
+```
+
+3. Vorbereitete Essentia-Fixtures bei Bedarf neu erzeugen:
+
+```bash
+node scripts/generate-essentia-fingerprint-fixtures.mjs
+```
+
+4. Bestehender JS-Fingerprint bleibt separat verfügbar:
+
+```bash
+node scripts/chord-recognition-jsfingerprint.mjs
+```
+
+5. Optional zusätzlich den zugehörigen JS-Fingerprint-Test laufen lassen:
+
+```bash
+npx vitest run tests/unit/essentiaChordJsfingerprintMetrics.test.js
 ```
 
 ## Regeln
