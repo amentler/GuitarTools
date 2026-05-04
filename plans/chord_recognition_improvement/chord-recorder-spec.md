@@ -19,6 +19,12 @@ Sobald ein Akkord ausgewählt ist, erscheint ein **„Aufnahme starten"**-Button
 
 ```
 ┌─────────────────────────────────────────────────┐
+│  TOOL-MENÜ (immer sichtbar, oben)               │
+│  [⬇ Alles herunterladen (ZIP)]                  │
+│  [🗑 Aufnahmen löschen]                          │
+└─────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────┐
 │  ① INSTRUMENT                                   │
 │  Größe:   [Vollgröße  ▾]   Saiten: [Steel ▾]   │
 └─────────────────────────────────────────────────┘
@@ -41,7 +47,11 @@ Sobald ein Akkord ausgewählt ist, erscheint ein **„Aufnahme starten"**-Button
         (erscheint sobald Akkord gewählt)
 ```
 
-Einstellungen unter ① und ② bleiben über Sessions hinweg erhalten (localStorage).
+**Tool-Menü:**
+- **Alles herunterladen** — ZIP aller bisher in dieser Browser-Session aufgenommenen WAV + JSON Paare
+- **Aufnahmen löschen** — löscht alle Aufnahmen aus dem Speicher (In-Memory, kein localStorage); mit Bestätigungsdialog
+
+Einstellungen unter ① und ② (Gitarrentyp, Techniken, Modi) bleiben über Sessions hinweg erhalten (localStorage).
 
 ### Gitarren-Konfiguration (zwei unabhängige Felder)
 
@@ -182,11 +192,14 @@ WARN-Flags werden in der Sidecar-JSON eingetragen, blockieren aber nicht.
 ## Dateiausgabe
 
 ### WAV-Datei
-Schema: `{chordkey}_{technik}_{lautstaerke}_{strumModus}_{random4}.wav`
+Schema: `{chordkey}_{technik}_{lautstaerke}_{strumModus}_{random5}.wav`
+
+Random-Suffix: 5 Zeichen aus `0-9a-z` (reines ASCII, keine Umlaute).  
+Kollisionswahrscheinlichkeit bei 36⁵ = ~60 Mio. Kombinationen praktisch null.
 
 ```
-gdur_fingernagel_laut_single_a3f2.wav
-emoll_plektrum_leise_multi1_7c9b.wav
+gdur_fingernagel_laut_single_a3f2x.wav
+emoll_plektrum_leise_multi1_7c9bk.wav
 ```
 
 ### Sidecar-JSON (gleicher Name, `.json`)
