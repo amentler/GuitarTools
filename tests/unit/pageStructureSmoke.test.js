@@ -18,6 +18,7 @@ describe('Page structure smoke', () => {
       'akkord-uebersicht',
       'akkordfolgen-trainer',
       'chord-playing-essentia',
+      'chord-recorder',
       'fretboard-tone-recognition',
       'guitar-tuner',
       'metronome',

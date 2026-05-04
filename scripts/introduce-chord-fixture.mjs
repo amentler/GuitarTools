@@ -192,6 +192,10 @@ async function collectPositiveFolderFixtures() {
       const wavFile = `${chordName}/${fileName}`;
       const analysis = extractHpcpAnalysisFromWav(path.join(CHORD_FIXTURES_DIR, wavFile));
 
+      if (!match.isCorrect) {
+        console.warn(`NICHT ERKANNT: ${wavFile} (bestMatch=${match.bestMatch}, confidence=${match.confidence.toFixed(3)})`);
+      }
+
       fixtures.push({
         chordName,
         wavFile,
