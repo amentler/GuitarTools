@@ -5,7 +5,7 @@ Architektur folgt dem bestehenden Muster: `pages/{name}/index.html` + `js/tools/
 
 ---
 
-## Phase 1 — Grundgerüst
+## Phase 1 — Grundgerüst ✅ (v0.61)
 
 **Ziel:** Seite existiert, ist navigierbar, zeigt Platzhalter.
 
@@ -24,7 +24,7 @@ Architektur folgt dem bestehenden Muster: `pages/{name}/index.html` + `js/tools/
 
 ---
 
-## Phase 2 — Setup-Screen
+## Phase 2 — Setup-Screen ✅ (v0.62)
 
 **Ziel:** Instrument-Konfiguration, Varianten-Auswahl, Akkord-Auswahl — alles funktional. Noch keine Aufnahme.
 
@@ -44,7 +44,7 @@ Architektur folgt dem bestehenden Muster: `pages/{name}/index.html` + `js/tools/
 
 ---
 
-## Phase 3 — Quality Gates (Pure Logic)
+## Phase 3 — Quality Gates (Pure Logic) ✅ (v0.63)
 
 **Ziel:** Alle Quality-Gate-Funktionen fertig und vollständig unit-getestet — unabhängig von DOM und Mikrofon.
 
