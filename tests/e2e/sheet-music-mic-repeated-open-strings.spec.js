@@ -19,7 +19,7 @@ test.use({
   },
 });
 
-test('Noten spielen akzeptiert viermal E, A, D und G ueber das echte Chromium-Fake-Mikrofon', async ({ page }) => {
+test('Noten lesen im Aktivmodus akzeptiert wiederholte offene Saiten ueber das echte Chromium-Fake-Mikrofon', async ({ page }) => {
   const bars = [[
     note('E', 2, 'e/3', 6),
     note('E', 2, 'e/3', 6),
@@ -43,28 +43,24 @@ test('Noten spielen akzeptiert viermal E, A, D und G ueber das echte Chromium-Fa
   ]];
 
   await page.addInitScript(injectedBars => {
-    window.__GT_SHEET_MUSIC_MIC_BARS__ = injectedBars;
+    localStorage.setItem('sheetMusic_active', 'true');
+    window.__GT_SHEET_MUSIC_READING_BARS__ = injectedBars;
   }, bars);
 
-  await page.goto('/pages/sheet-music-mic/index.html');
+  await page.goto('/pages/sheet-music-reading/index.html');
 
-  await expect(page.locator('#sheet-mic-score-container svg')).toBeVisible();
-  await expect(page.locator('#score-value')).toHaveText('0 / 16');
-  await expect(page.locator('#sheet-mic-current-note')).toHaveText('E2');
+  await expect(page.locator('#score-container svg').first()).toBeVisible();
+  await expect(page.locator('#sheet-music-current-note')).toHaveText('E2');
 
-  await expect(page.locator('#score-value')).toHaveText('4 / 16', { timeout: 10_000 });
-  await expect(page.locator('#sheet-mic-current-note')).toHaveText('A2', { timeout: 10_000 });
+  await expect(page.locator('#sheet-music-current-note')).toHaveText('A2', { timeout: 10_000 });
 
-  await expect(page.locator('#score-value')).toHaveText('8 / 16', { timeout: 10_000 });
-  await expect(page.locator('#sheet-mic-current-note')).toHaveText('D3', { timeout: 10_000 });
+  await expect(page.locator('#sheet-music-current-note')).toHaveText('D3', { timeout: 10_000 });
 
-  await expect(page.locator('#score-value')).toHaveText('12 / 16', { timeout: 10_000 });
-  await expect(page.locator('#sheet-mic-current-note')).toHaveText('G3', { timeout: 10_000 });
+  await expect(page.locator('#sheet-music-current-note')).toHaveText('G3', { timeout: 10_000 });
 
-  await expect(page.locator('#score-value')).toHaveText('16 / 16', { timeout: 10_000 });
-  await expect(page.locator('#sheet-mic-current-note')).toHaveText('✓', { timeout: 10_000 });
-  await expect(page.locator('#sheet-mic-feedback')).toContainText('Alle Noten gespielt!', { timeout: 10_000 });
+  await expect(page.locator('#sheet-music-current-note')).toHaveText('✓', { timeout: 10_000 });
+  await expect(page.locator('#sheet-music-feedback')).toContainText('Alle Noten gespielt!', { timeout: 10_000 });
 
-  const greenNotes = page.locator('#sheet-mic-score-container svg [fill="#2ecc71"], #sheet-mic-score-container svg [stroke="#2ecc71"]');
+  const greenNotes = page.locator('#score-container svg [fill="#2ecc71"], #score-container svg [stroke="#2ecc71"]');
   await expect(greenNotes).toHaveCount(16);
 });

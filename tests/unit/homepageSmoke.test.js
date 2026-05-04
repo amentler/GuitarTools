@@ -43,7 +43,6 @@ describe('Homepage smoke', () => {
       'Akkord-Trainer': 'pages/akkord-trainer/index.html',
       'Ton-Finder': 'pages/ton-finder/index.html',
       'Ton spielen': 'pages/note-playing/index.html',
-      'Noten spielen': 'pages/sheet-music-mic/index.html',
       'Akkord spielen': 'pages/chord-playing-essentia/index.html',
       'Akkorde spielen': 'pages/akkordfolgen-trainer/index.html',
       'Tuner': 'pages/guitar-tuner/index.html',

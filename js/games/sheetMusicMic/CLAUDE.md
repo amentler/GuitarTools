@@ -1,6 +1,16 @@
-# sheetMusicMic – Noten spielen
+# sheetMusicMic – Noten spielen (Legacy)
 
-## Purpose
+## Status
+
+Diese Übung ist fachlich nach `sheetMusicReading` migriert.
+Die produktive Navigation zeigt sie nicht mehr an; `pages/sheet-music-mic/*`
+ist nur noch ein Legacy-Redirect auf
+`pages/sheet-music-reading/index.html?active=1`.
+
+Die Dateien in diesem Ordner bleiben vorerst als technische Referenz und für
+historische Tests bestehen, sind aber nicht mehr der führende Produktpfad.
+
+## Ehemaliger Zweck
 
 Combines "Noten lesen" (sheet music display) with microphone-based note
 recognition. A 4-bar score is generated; the user plays each note on the
@@ -11,9 +21,8 @@ guitar. Correct notes turn green. Two difficulty modes:
 - **Schwer (hard)** — three consecutive wrong-note frames restart the whole
   sequence from the beginning
 
-The exercise starts microphone listening automatically on load. An optional
-`∞ Endlos` toggle regenerates a fresh sequence after the last note instead of
-ending the run.
+Der frühere Funktionsumfang ist inzwischen in `sheetMusicReading`
+aufgegangen.
 
 ## Files
 

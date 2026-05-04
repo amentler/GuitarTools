@@ -47,6 +47,12 @@ const MIN_POOL_SIZE = 3;
 const SUCCESS_PAUSE_MS = 600;
 const ANALYZE_INTERVAL_MS = 50;
 
+function resolveInjectedBars() {
+  const injectedBars = globalThis.__GT_SHEET_MUSIC_READING_BARS__;
+  if (typeof injectedBars === 'function') return injectedBars();
+  return injectedBars ?? null;
+}
+
 export function createSheetMusicReadingFeature() {
   let wired = false;
   let ui = null;
@@ -91,6 +97,10 @@ export function createSheetMusicReadingFeature() {
 
   function getTimeSigConfig() {
     return getTimeSignatureConfig(state.timeSig) || getTimeSignatureConfig('4/4');
+  }
+
+  function isTimedRecognitionMode() {
+    return state.active && isPlaying;
   }
 
   function getCurrentNote() {
@@ -288,7 +298,7 @@ export function createSheetMusicReadingFeature() {
   }
 
   function handleSequenceComplete() {
-    if (state.endless) {
+    if (state.endless && !isTimedRecognitionMode()) {
       regenerate();
       applyTargetFftSize();
       updateFeedback();
@@ -310,13 +320,22 @@ export function createSheetMusicReadingFeature() {
     state.onsetGateState = consumeOnsetGate(state.onsetGateState);
 
     const note = getCurrentNote();
+    if (!note) return;
+    if (note.status === 'correct' && isTimedRecognitionMode()) {
+      return;
+    }
     const acceptedPitch = getNotePitch(note);
     const nextNote = getNextNote();
     const repeatsSamePitch = getNotePitch(nextNote) === acceptedPitch;
-    if (note) note.status = 'correct';
+    note.status = 'correct';
 
     renderCurrentScore();
     updateFeedback('correct');
+
+    if (isTimedRecognitionMode()) {
+      updateCurrentNoteDisplay();
+      return;
+    }
 
     if (repeatsSamePitch) {
       advanceToNextNote();
@@ -372,6 +391,75 @@ export function createSheetMusicReadingFeature() {
     }
   }
 
+  function setTimedCurrentNote(barIndex, beatIndex) {
+    const previous = getCurrentNote();
+    if (previous?.status === 'current') {
+      previous.status = 'pending';
+    }
+
+    state.currentBarIndex = barIndex;
+    state.currentBeatIndex = beatIndex;
+
+    const note = getCurrentNote();
+    if (!note) return;
+    if (note.status !== 'correct') {
+      note.status = 'current';
+    }
+  }
+
+  function finishTimedPass() {
+    state.currentBarIndex = -1;
+    state.currentBeatIndex = -1;
+    state.matchState = createMatchState();
+    state.onsetGateState = consumeOnsetGate(state.onsetGateState);
+    state.isLocked = false;
+    renderCurrentScore();
+    updateCurrentNoteDisplay();
+    updateFeedback('correct', 'Durchlauf beendet.');
+  }
+
+  function restartTimedEndlessPass() {
+    stopPlayback();
+    regenerate();
+    updateFeedback();
+    startPlayback();
+  }
+
+  function handleTimedBeat({ barIndex, beatIndex, globalBeat, totalBeats }) {
+    if (!state.active) return;
+
+    if (globalBeat >= totalBeats) {
+      const previous = getCurrentNote();
+      if (previous?.status === 'current') {
+        previous.status = 'wrong';
+      }
+
+      if (state.endless) {
+        restartTimedEndlessPass();
+      } else {
+        stopPlayback();
+        finishTimedPass();
+      }
+      return;
+    }
+
+    const previous = getCurrentNote();
+    const sameSlot = state.currentBarIndex === barIndex && state.currentBeatIndex === beatIndex;
+
+    if (!sameSlot && previous?.status === 'current') {
+      previous.status = 'wrong';
+    }
+
+    setTimedCurrentNote(barIndex, beatIndex);
+    state.matchState = createMatchState();
+    state.onsetGateState = createOnsetGateState();
+    state.isLocked = false;
+    renderCurrentScore();
+    updateCurrentNoteDisplay();
+    updateFeedback();
+    applyTargetFftSize();
+  }
+
   async function setActiveMode(nextActive) {
     if (state.active === nextActive) return;
     state.active = nextActive;
@@ -405,7 +493,10 @@ export function createSheetMusicReadingFeature() {
   function regenerate() {
     updatePoolWarning();
     const config = getTimeSigConfig();
-    state.bars = generateBars(BARS_PER_ROW, config.beatsPerBar, getNotesPool());
+    const injectedBars = resolveInjectedBars();
+    state.bars = Array.isArray(injectedBars)
+      ? injectedBars.map(bar => bar.map(note => ({ ...note })))
+      : generateBars(BARS_PER_ROW, config.beatsPerBar, getNotesPool());
     resetActiveSequenceState();
     renderCurrentScore();
     updateCurrentNoteDisplay();
@@ -461,9 +552,12 @@ export function createSheetMusicReadingFeature() {
     setPlaybackButtonState(ui.playBtn, true);
 
     const config     = getTimeSigConfig();
-    const totalBeats = BARS_PER_ROW * config.beatsPerBar;
+    const totalBeats = state.bars.length * config.beatsPerBar;
 
-    playback.onBeat(({ barIndex, beatIndex }) => {
+    playback.onBeat(({ barIndex, beatIndex, globalBeat }) => {
+      if (state.active) {
+        handleTimedBeat({ barIndex, beatIndex, globalBeat, totalBeats });
+      }
       playbackBar.moveToBeat(barIndex, beatIndex, config.beatsPerBar);
     });
 
@@ -554,7 +648,7 @@ export function createSheetMusicReadingFeature() {
       // After stopping endless mode, restore the normal 4-bar view
       if (state.endless) regenerate();
     } else {
-      if (state.endless) startEndlessPlayback(); else startPlayback();
+      if (state.endless && !state.active) startEndlessPlayback(); else startPlayback();
     }
   }
 
@@ -568,6 +662,10 @@ export function createSheetMusicReadingFeature() {
   // ── Exercise lifecycle ──────────────────────────────────────────────────
   function mount() {
     ui = resolveSheetMusicUI(document);
+    const searchParams = new URLSearchParams(globalThis.location?.search ?? '');
+    if (searchParams.get('active') === '1') {
+      state.active = true;
+    }
     regenerate();
 
     if (!wired) {

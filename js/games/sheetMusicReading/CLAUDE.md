@@ -4,8 +4,10 @@ Zeigt 4 zufällige Takte in C-Dur auf einer Notenzeile an.
 Metronom (BPM-Slider), wählbare Taktart (2/4–6/8), bewegender Playback-Cursor.
 Endlos-Modus: unbegrenzt neue Takte, auto-scrollend.
 Optional: Tabs unterhalb der Notenzeile.
-Optionaler Aktiv-Modus: Mikrofon-basierte, sequentielle Tonprüfung ohne
-Metronom-Zwang. `Aktiv` und `Metronom` sind getrennte Modi.
+Optionaler Aktiv-Modus: Mikrofon-basierte Tonprüfung.
+`Aktiv` und `Metronom` sind getrennte Modi:
+- `Aktiv` ohne Metronom: sequentielle Tonprüfung
+- `Aktiv` mit Metronom: zeitgebundene Tonprüfung, nur die aktuelle Note zählt
 
 ## Dateien
 
@@ -55,6 +57,9 @@ Metronom-Zwang. `Aktiv` und `Metronom` sind getrennte Modi.
   - `openAudioSession` / `closeAudioSession`
   - `classifyFrame` + `updateMatchState`
   - `getRecommendedFftSize` pro Zielnote
+- Test-/Legacy-Hooks:
+  - `?active=1` aktiviert den Aktivmodus direkt beim Laden
+  - `window.__GT_SHEET_MUSIC_READING_BARS__` injiziert deterministische Notenfolgen
 - localStorage-Persistenz: `sheetMusic_active`, `sheetMusic_bpm`, `sheetMusic_timeSig`, `sheetMusic_showTab`, `sheetMusic_endless`
 - Buttons: `#btn-sheet-active-mode`, `#btn-sheet-play` (Play/Stop), `#btn-new-bars`, `#btn-show-tab`, `#btn-endless-mode`
 - Slider: `#sheet-music-bpm-slider` (40–240), `#sheet-music-fret-range-slider`
@@ -73,13 +78,17 @@ Metronom-Zwang. `Aktiv` und `Metronom` sind getrennte Modi.
 | Phase 2 | Playback bar mit Exercise verdrahtet | ✅ |
 | Phase 2 | Aktiver Modus ohne Metronom (sequentielle Tonprüfung) | ✅ |
 | Phase 2 | Note-Highlighting (aktuell gespielte Note) | ✅ |
-| Phase 3 | Aktiver Modus mit Metronom (zeitgebunden) | ⬜ |
+| Phase 3 | Aktiver Modus mit Metronom (zeitgebunden) | ✅ |
 | Phase 3 | Multiple Time Signatures in VexFlow-Rendering | ✅ |
 | Phase 4 | Endless Mode + Auto-Scrolling | ✅ |
 | Phase 5 | Polish (Keyboard-Shortcuts, Fehlerbehandlung) | ✅ |
 
 Aktueller Detailplan:
 `plans/sheet-music-reading-active-mode-plan-2026-05-05.md`
+
+Legacy-Migration:
+- `pages/sheet-music-mic/*` leitet auf `sheet-music-reading?active=1` weiter
+- die Menükarte „Noten spielen“ ist entfernt
 
 ## AI Collaboration & Documentation
 

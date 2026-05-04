@@ -8,7 +8,6 @@ test.describe('Page Smoke Tests', () => {
     { name: 'Akkord-Trainer', path: '/pages/akkord-trainer/index.html', anchor: 'gt-fretboard' },
     { name: 'Ton-Finder', path: '/pages/ton-finder/index.html', anchor: '#ton-finder-svg' },
     { name: 'Ton spielen', path: '/pages/note-playing/index.html', anchor: '#note-play-notation' },
-    { name: 'Noten spielen', path: '/pages/sheet-music-mic/index.html', anchor: '#sheet-mic-score-container' },
     { name: 'Akkord spielen', path: '/pages/chord-playing-essentia/index.html', anchor: 'gt-fretboard' },
     { name: 'Akkordfolgen-Trainer', path: '/pages/akkordfolgen-trainer/index.html', anchor: '#aft-setup' },
     { name: 'Gitarren-Tuner', path: '/pages/guitar-tuner/index.html', anchor: '.tuner-mode-toggle' },

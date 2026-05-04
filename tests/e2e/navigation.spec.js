@@ -8,7 +8,6 @@ test.describe('Navigation Baseline', () => {
     { title: 'Akkord-Trainer', path: '/pages/akkord-trainer/index.html' },
     { title: 'Ton-Finder', path: '/pages/ton-finder/index.html' },
     { title: 'Ton spielen', path: '/pages/note-playing/index.html' },
-    { title: 'Noten spielen', path: '/pages/sheet-music-mic/index.html' },
     { title: 'Akkord spielen', path: '/pages/chord-playing-essentia/index.html' },
     { title: 'Akkorde spielen', path: '/pages/akkordfolgen-trainer/index.html' },
     { title: 'Tuner', path: '/pages/guitar-tuner/index.html' },

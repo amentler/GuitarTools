@@ -30,8 +30,6 @@ const PAGE_PRECACHED_URLS = [
   'pages/metronome/bootstrap.js',
   'pages/note-playing/index.html',
   'pages/note-playing/bootstrap.js',
-  'pages/sheet-music-mic/index.html',
-  'pages/sheet-music-mic/bootstrap.js',
   'pages/sheet-music-reading/index.html',
   'pages/sheet-music-reading/bootstrap.js',
   'pages/ton-finder/index.html',

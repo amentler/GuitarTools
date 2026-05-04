@@ -18,6 +18,7 @@ const playbackStop = vi.fn();
 const playbackSetBpm = vi.fn();
 const playbackOnBeat = vi.fn();
 const playbackInit = vi.fn();
+let playbackBeatCallback = null;
 
 const playbackBarRender = vi.fn();
 const playbackBarHide = vi.fn();
@@ -36,7 +37,7 @@ vi.mock('../../js/games/sheetMusicReading/sheetMusicSVG.js', () => ({
 vi.mock('../../js/games/sheetMusicReading/playbackController.js', () => ({
   PlaybackController: class PlaybackController {
     init() { playbackInit(); }
-    onBeat(cb) { playbackOnBeat(cb); }
+    onBeat(cb) { playbackBeatCallback = cb; playbackOnBeat(cb); }
     start(...args) { playbackStart(...args); }
     stop() { playbackStop(); }
     setBpm(...args) { playbackSetBpm(...args); }
@@ -133,6 +134,7 @@ describe('SheetMusicReading controller behavior', () => {
     playbackBarShow.mockClear();
     playbackBarMoveToBeat.mockClear();
     playbackBarDestroy.mockClear();
+    playbackBeatCallback = null;
     requestMicrophoneStream.mockReset();
     requestMicrophoneStream.mockResolvedValue({ getTracks: () => [] });
     openAudioSession.mockReset();
@@ -151,6 +153,7 @@ describe('SheetMusicReading controller behavior', () => {
 
   afterEach(() => {
     localStorage.clear();
+    delete globalThis.__GT_SHEET_MUSIC_READING_BARS__;
   });
 
   it('mount renders score and syncs initial controls from persisted state', () => {
@@ -174,7 +177,7 @@ describe('SheetMusicReading controller behavior', () => {
     feature.mount();
 
     document.getElementById('btn-sheet-play').click();
-    expect(playbackStart).toHaveBeenCalledWith(80, 4, 16);
+    expect(playbackStart).toHaveBeenCalledWith(80, 4, 4);
     expect(document.getElementById('btn-sheet-play').textContent).toBe('⏹ Stop');
 
     document.getElementById('btn-sheet-play').click();
@@ -217,5 +220,30 @@ describe('SheetMusicReading controller behavior', () => {
     expect(localStorage.getItem('sheetMusic_active')).toBe('true');
     expect(document.getElementById('btn-sheet-active-mode').classList.contains('active')).toBe(true);
     expect(requestMicrophoneStream).toHaveBeenCalledTimes(1);
+  });
+
+  it('active mode with playback advances current note by metronome beat and marks misses', async () => {
+    globalThis.__GT_SHEET_MUSIC_READING_BARS__ = [[
+      { name: 'E', octave: 2, vfKey: 'e/3', string: 6, fret: 0 },
+      { name: 'A', octave: 2, vfKey: 'a/3', string: 5, fret: 0 },
+      { name: 'D', octave: 3, vfKey: 'd/4', string: 4, fret: 0 },
+      { name: 'G', octave: 3, vfKey: 'g/4', string: 3, fret: 0 },
+    ]];
+    localStorage.setItem('sheetMusic_active', 'true');
+
+    const feature = createSheetMusicReadingFeature();
+    feature.mount();
+    await Promise.resolve();
+    await Promise.resolve();
+
+    document.getElementById('btn-sheet-play').click();
+    expect(playbackBeatCallback).toBeTypeOf('function');
+
+    playbackBeatCallback({ barIndex: 0, beatIndex: 0, globalBeat: 0 });
+    expect(document.getElementById('sheet-music-current-note').textContent).toBe('E2');
+
+    playbackBeatCallback({ barIndex: 0, beatIndex: 1, globalBeat: 1 });
+    expect(document.getElementById('sheet-music-current-note').textContent).toBe('A2');
+    expect(playbackBarMoveToBeat).toHaveBeenCalledWith(0, 1, 4);
   });
 });

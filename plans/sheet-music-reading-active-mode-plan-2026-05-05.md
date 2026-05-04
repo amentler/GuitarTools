@@ -1,8 +1,10 @@
 # Plan: Noten lesen mit optionalem Aktiv- und Metronom-Modus
 
 **Erstellt:** 2026-05-05  
-**Status:** Phase 1 und Phase 2 (Aktiv ohne Metronom) begonnen; getrennte
-Aktiv-/Metronom-UI und sequentielle Mic-Erkennung in Umsetzung
+**Status:** Kernumsetzung abgeschlossen; `sheetMusicReading` trägt jetzt
+passiven Modus, aktiven Sequenzmodus und aktiven Metronom-Modus. Die frühere
+Übung `sheetMusicMic` ist aus der Navigation entfernt und als Legacy-Redirect
+umgestellt.
 
 ---
 
