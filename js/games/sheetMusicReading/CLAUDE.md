@@ -4,6 +4,8 @@ Zeigt 4 zufällige Takte in C-Dur auf einer Notenzeile an.
 Metronom (BPM-Slider), wählbare Taktart (2/4–6/8), bewegender Playback-Cursor.
 Endlos-Modus: unbegrenzt neue Takte, auto-scrollend.
 Optional: Tabs unterhalb der Notenzeile.
+Optionaler Aktiv-Modus: Mikrofon-basierte, sequentielle Tonprüfung ohne
+Metronom-Zwang. `Aktiv` und `Metronom` sind getrennte Modi.
 
 ## Dateien
 
@@ -22,6 +24,10 @@ Optional: Tabs unterhalb der Notenzeile.
 - `appendRow(container, bars, showTab, timeSig)` → `{ notationDiv, staveLayout, rowDiv, vw }` (endless mode; appends row)
 - Shared: `_renderNotation(bars, timeSig)` – VexFlow rendering into new `notation-wrapper` div
 - `staveLayout`: `Array<{ noteStartX, noteEndX }>` – VexFlow-Koordinaten je Takt für `PlaybackBar`
+- Noten- und Tab-Rendering respektiert optional `note.status`:
+  - `current` → orange
+  - `correct` → grün
+  - `wrong` → rot
 - Renderingbasis: VexFlow (CDN), viewBox `vw×240`; `vw` is dynamic via `calcFirstBarWidth(tsw, REST_BAR_W, marginW) + 3×REST_BAR_W`
 - `REST_BAR_W=128`; `firstBarW≈208` computed to equalise bar-0 note area with bars 1–3 (no trailing gap)
 
@@ -40,9 +46,17 @@ Optional: Tabs unterhalb der Notenzeile.
 
 ### `sheetMusicReading.js`
 - `startExercise()` / `stopExercise()`
-- Zustand: `{ bars, showTab, bpm, timeSig, endless, settings }`
-- localStorage-Persistenz: `sheetMusic_bpm`, `sheetMusic_timeSig`, `sheetMusic_showTab`, `sheetMusic_endless`
-- Buttons: `#btn-sheet-play` (Play/Stop), `#btn-new-bars`, `#btn-show-tab`, `#btn-endless-mode`
+- Zustand enthält zusätzlich den optionalen Aktivmodus:
+  - `active`, `currentBarIndex`, `currentBeatIndex`
+  - `isListening`, `isLocked`
+  - `matchState`, `onsetGateState`
+- Audio im Aktivmodus:
+  - `requestMicrophoneStream`
+  - `openAudioSession` / `closeAudioSession`
+  - `classifyFrame` + `updateMatchState`
+  - `getRecommendedFftSize` pro Zielnote
+- localStorage-Persistenz: `sheetMusic_active`, `sheetMusic_bpm`, `sheetMusic_timeSig`, `sheetMusic_showTab`, `sheetMusic_endless`
+- Buttons: `#btn-sheet-active-mode`, `#btn-sheet-play` (Play/Stop), `#btn-new-bars`, `#btn-show-tab`, `#btn-endless-mode`
 - Slider: `#sheet-music-bpm-slider` (40–240), `#sheet-music-fret-range-slider`
 - Select: `#sheet-music-time-sig` (2/4|3/4|4/4|3/8|6/8)
 - `wired`-Flag verhindert doppeltes Event-Listener-Wiring
@@ -52,16 +66,20 @@ Optional: Tabs unterhalb der Notenzeile.
 | Phase | Schritt | Status |
 |-------|---------|--------|
 | Phase 1 | Metronome Integration (`playbackController.js`) | ✅ |
+| Phase 1 | Separater Aktiv-Schalter + Mic-on-demand | ✅ |
 | Phase 1 | UI Controls (BPM, Taktart, Play/Stop) | ✅ |
 | Phase 1 | `getTimeSignatureConfig` / `validateTimeSignature` | ✅ |
 | Phase 2 | `playbackBar.js` (Overlay + Positionsberechnung) | ✅ |
 | Phase 2 | Playback bar mit Exercise verdrahtet | ✅ |
-| Phase 2 | Note-Highlighting (aktuell gespielte Note) | ⬜ |
+| Phase 2 | Aktiver Modus ohne Metronom (sequentielle Tonprüfung) | ✅ |
+| Phase 2 | Note-Highlighting (aktuell gespielte Note) | ✅ |
+| Phase 3 | Aktiver Modus mit Metronom (zeitgebunden) | ⬜ |
 | Phase 3 | Multiple Time Signatures in VexFlow-Rendering | ✅ |
 | Phase 4 | Endless Mode + Auto-Scrolling | ✅ |
 | Phase 5 | Polish (Keyboard-Shortcuts, Fehlerbehandlung) | ✅ |
 
-Detailplan: `plans/backlog.md` → "Plan: Enhanced Noten lesen"
+Aktueller Detailplan:
+`plans/sheet-music-reading-active-mode-plan-2026-05-05.md`
 
 ## AI Collaboration & Documentation
 

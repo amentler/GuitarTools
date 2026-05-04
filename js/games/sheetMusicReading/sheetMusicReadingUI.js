@@ -3,6 +3,11 @@ export function resolveSheetMusicUI(root = document) {
     view: root.getElementById?.('view-sheet-music') ?? document.getElementById('view-sheet-music'),
     container: root.getElementById?.('score-container') ?? document.getElementById('score-container'),
     poolWarning: root.getElementById?.('sheet-music-pool-warning') ?? document.getElementById('sheet-music-pool-warning'),
+    permission: root.getElementById?.('sheet-music-permission') ?? document.getElementById('sheet-music-permission'),
+    status: root.getElementById?.('sheet-music-status') ?? document.getElementById('sheet-music-status'),
+    currentNote: root.getElementById?.('sheet-music-current-note') ?? document.getElementById('sheet-music-current-note'),
+    feedback: root.getElementById?.('sheet-music-feedback') ?? document.getElementById('sheet-music-feedback'),
+    activeBtn: root.getElementById?.('btn-sheet-active-mode') ?? document.getElementById('btn-sheet-active-mode'),
     newBarsBtn: root.getElementById?.('btn-new-bars') ?? document.getElementById('btn-new-bars'),
     showTabBtn: root.getElementById?.('btn-show-tab') ?? document.getElementById('btn-show-tab'),
     endlessBtn: root.getElementById?.('btn-endless-mode') ?? document.getElementById('btn-endless-mode'),
@@ -23,6 +28,7 @@ export function syncSheetMusicUI(ui, state, syncFretSlider, syncStringToggles, u
   if (ui.bpmSlider) ui.bpmSlider.value = String(state.bpm);
   if (ui.bpmLabel) ui.bpmLabel.textContent = String(state.bpm);
   if (ui.timeSigSelect) ui.timeSigSelect.value = state.timeSig;
+  if (ui.activeBtn) ui.activeBtn.classList.toggle('active', Boolean(state.active));
   if (ui.showTabBtn) ui.showTabBtn.classList.toggle('active', state.showTab);
   if (ui.endlessBtn) ui.endlessBtn.classList.toggle('active', state.endless);
 

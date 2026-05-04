@@ -18,6 +18,11 @@ const TAB_STAFF_L = 20;
 const TAB_STAFF_R = 885;
 const STR_SP      = 13;
 const STR_COUNT   = 6;
+const STATUS_COLORS = {
+  correct: '#2ecc71',
+  wrong: '#e74c3c',
+  current: '#ff6b35',
+};
 
 function tabEl(tag, attrs = {}, text) {
   const e = document.createElementNS('http://www.w3.org/2000/svg', tag);
@@ -74,6 +79,7 @@ function renderTab(tabDiv, bars) {
       const sy   = 8 + (note.string - 1) * STR_SP;
       const txt  = String(note.fret);
       const bgW  = txt.length > 1 ? 16 : 12;
+      const color = STATUS_COLORS[note.status] ?? null;
 
       svg.appendChild(tabEl('rect', {
         x: x - bgW / 2, y: sy - 6, width: bgW, height: 12,
@@ -81,7 +87,7 @@ function renderTab(tabDiv, bars) {
       }));
       svg.appendChild(tabEl('text', {
         x, y: sy,
-        fill: 'var(--color-text)', 'font-size': 11, 'font-family': 'monospace',
+        fill: color ?? 'var(--color-text)', 'font-size': 11, 'font-family': 'monospace',
         'text-anchor': 'middle', 'dominant-baseline': 'middle',
       }, txt));
     }
@@ -169,9 +175,19 @@ function _renderNotation(bars, timeSignature = '4/4') {
 
   for (let bi = 0; bi < bars.length; bi++) {
     const stave = staves[bi];
-    const notes = bars[bi].map(n =>
-      new StaveNote({ clef: 'treble', keys: [n.vfKey], duration: vexflowDuration })
-    );
+    const notes = bars[bi].map(n => {
+      const staveNote = new StaveNote({ clef: 'treble', keys: [n.vfKey], duration: vexflowDuration });
+      const color = STATUS_COLORS[n.status] ?? null;
+      if (color) {
+        try {
+          staveNote.setStyle({ fillStyle: color, strokeStyle: color });
+        } catch { /* ignore if unsupported */ }
+        try {
+          staveNote.setKeyStyle(0, { fillStyle: color, strokeStyle: color });
+        } catch { /* ignore */ }
+      }
+      return staveNote;
+    });
 
     const voice = new Voice({ num_beats: beatsPerBar, beat_value: beatValue });
     try { voice.setMode(Voice.Mode.SOFT); } catch { /* VexFlow version compatibility */ }

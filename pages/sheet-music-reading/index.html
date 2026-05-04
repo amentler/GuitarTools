@@ -11,8 +11,17 @@
     <gt-exercise-header title="Noten lesen"></gt-exercise-header>
 
     <div class="exercise-subheader">
+      <button id="btn-sheet-active-mode" class="btn-mode">Aktiv</button>
       <button id="btn-show-tab" class="btn-mode">Tabs anzeigen</button>
       <button id="btn-endless-mode" class="btn-mode">∞ Endlos</button>
+    </div>
+
+    <p id="sheet-music-permission" class="tuner-permission u-hidden"></p>
+
+    <div id="sheet-music-status" class="sheet-music-status u-hidden">
+      <span class="sheet-mic-label">Zielnote:</span>
+      <span id="sheet-music-current-note" class="sheet-mic-current-note">–</span>
+      <span id="sheet-music-feedback" class="feedback-text"></span>
     </div>
 
     <!-- PLAYBACK: Play/Stop · BPM · Time Signature -->

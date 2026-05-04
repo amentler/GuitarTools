@@ -8,6 +8,7 @@ import { PlaybackBar } from './playbackBar.js';
 import { wireStringToggles, syncStringToggles, wireFretSlider, syncFretSlider } from '../../utils/settings.js';
 import {
   loadSheetMusicPrefs,
+  saveSheetMusicActive,
   saveSheetMusicBpm,
   saveSheetMusicTimeSig,
   saveSheetMusicShowTab,
@@ -18,6 +19,24 @@ import {
   syncSheetMusicUI,
   setPlaybackButtonState,
 } from './sheetMusicReadingUI.js';
+import {
+  classifyFrame,
+  createMatchState,
+  updateMatchState,
+  getRecommendedFftSize,
+} from '../../shared/audio/fastNoteMatcher.js';
+import {
+  createOnsetGateState,
+  updateOnsetGate,
+  isOnsetGateOpen,
+  consumeOnsetGate,
+} from '../../shared/audio/noteOnsetGate.js';
+import { requestMicrophoneStream } from '../../shared/audio/microphoneService.js';
+import {
+  createAudioSessionState,
+  openAudioSession,
+  closeAudioSession,
+} from '../../shared/audio/audioSessionService.js';
 
 // Number of bars per rendered row (matches the 4-bar VexFlow layout).
 const BARS_PER_ROW = 4;
@@ -25,18 +44,30 @@ const BARS_PER_ROW = 4;
 const LOOKAHEAD_ROWS = 2;
 // Minimum notes in the pool before showing the "too few notes" warning.
 const MIN_POOL_SIZE = 3;
+const SUCCESS_PAUSE_MS = 600;
+const ANALYZE_INTERVAL_MS = 50;
 
 export function createSheetMusicReadingFeature() {
   let wired = false;
   let ui = null;
   const prefs = loadSheetMusicPrefs();
+  const audioSession = createAudioSessionState({ currentFftSize: 0 });
+  let analyzeIntervalId = null;
 
   let state = {
+    active: prefs.active,
     bars:    [],
     showTab: prefs.showTab,
     bpm: prefs.bpm,
     timeSig: prefs.timeSig,
     endless: prefs.endless,
+    currentBarIndex: 0,
+    currentBeatIndex: 0,
+    isListening: false,
+    isLocked: false,
+    successTimeout: null,
+    matchState: createMatchState(),
+    onsetGateState: createOnsetGateState(),
     settings: {
       maxFret: 3,
       activeStrings: [0, 1, 2, 3, 4, 5],
@@ -62,6 +93,308 @@ export function createSheetMusicReadingFeature() {
     return getTimeSignatureConfig(state.timeSig) || getTimeSignatureConfig('4/4');
   }
 
+  function getCurrentNote() {
+    const { currentBarIndex: bi, currentBeatIndex: ni } = state;
+    if (bi < 0 || bi >= state.bars.length) return null;
+    return state.bars[bi]?.[ni] ?? null;
+  }
+
+  function getNextNote() {
+    let bi = state.currentBarIndex;
+    let ni = state.currentBeatIndex + 1;
+    if (bi < 0 || bi >= state.bars.length) return null;
+    if (ni >= state.bars[bi].length) {
+      bi++;
+      ni = 0;
+    }
+    if (bi >= state.bars.length) return null;
+    return state.bars[bi]?.[ni] ?? null;
+  }
+
+  function getNotePitch(note) {
+    return note ? `${note.name}${note.octave}` : null;
+  }
+
+  function clearSuccessTimeout() {
+    if (!state.successTimeout) return;
+    clearTimeout(state.successTimeout);
+    state.successTimeout = null;
+  }
+
+  function clearNoteStatuses() {
+    for (const bar of state.bars) {
+      for (const note of bar) {
+        delete note.status;
+      }
+    }
+  }
+
+  function markCurrentNote() {
+    if (!state.active) return;
+    const note = getCurrentNote();
+    if (note) note.status = 'current';
+  }
+
+  function resetActiveSequenceState() {
+    clearSuccessTimeout();
+    state.currentBarIndex = 0;
+    state.currentBeatIndex = 0;
+    state.matchState = createMatchState();
+    state.onsetGateState = createOnsetGateState();
+    state.isLocked = false;
+
+    if (!state.active) {
+      clearNoteStatuses();
+      return;
+    }
+
+    for (const bar of state.bars) {
+      for (const note of bar) {
+        note.status = 'pending';
+      }
+    }
+    markCurrentNote();
+  }
+
+  function updateCurrentNoteDisplay() {
+    if (!ui?.currentNote) return;
+    if (!state.active) {
+      ui.currentNote.textContent = '–';
+      return;
+    }
+    const note = getCurrentNote();
+    if (note) {
+      ui.currentNote.textContent = `${note.name}${note.octave}`;
+    } else if (state.currentBarIndex === -1) {
+      ui.currentNote.textContent = '✓';
+    } else {
+      ui.currentNote.textContent = '–';
+    }
+  }
+
+  function updateFeedback(kind = null, text = '') {
+    if (!ui?.feedback) return;
+    ui.feedback.className = 'feedback-text';
+    if (!state.active) {
+      ui.feedback.textContent = '';
+      return;
+    }
+    if (kind === 'correct') {
+      ui.feedback.textContent = text || 'Richtig! ✓';
+      ui.feedback.classList.add('correct');
+      return;
+    }
+    if (kind === 'wrong') {
+      ui.feedback.textContent = text || 'Falsch!';
+      ui.feedback.classList.add('wrong');
+      return;
+    }
+    ui.feedback.textContent = text;
+  }
+
+  function syncActiveUiVisibility() {
+    if (!ui?.status || !ui?.permission) return;
+    ui.status.classList.toggle('u-hidden', !state.active);
+    if (!state.active) {
+      ui.permission.classList.add('u-hidden');
+    }
+  }
+
+  function renderCurrentScore() {
+    if (state.endless && allRowDivs.length > 0) return;
+    const result = renderScore(
+      ui.container,
+      state.bars,
+      state.showTab,
+      state.timeSig,
+    );
+
+    if (result?.notationDiv && result?.staveLayout) {
+      playbackBar.render(result.notationDiv, result.staveLayout, result.vw);
+      if (!isPlaying) playbackBar.hide();
+    }
+  }
+
+  function applyTargetFftSize() {
+    if (!audioSession.analyser || !state.active) return;
+    const note = getCurrentNote();
+    if (!note) return;
+    const targetPitch = `${note.name}${note.octave}`;
+    const recommended = getRecommendedFftSize(targetPitch, audioSession.audioCtx?.sampleRate ?? 44100);
+    if (recommended !== audioSession.currentFftSize) {
+      audioSession.analyser.fftSize = recommended;
+      audioSession.currentFftSize = recommended;
+    }
+  }
+
+  async function stopListening() {
+    clearInterval(analyzeIntervalId);
+    analyzeIntervalId = null;
+    clearSuccessTimeout();
+    state.isListening = false;
+    await closeAudioSession(audioSession, {
+      reset: session => {
+        session.currentFftSize = 0;
+      },
+    });
+  }
+
+  async function startListening() {
+    if (state.isListening || !state.active) return;
+
+    ui.permission.classList.remove('u-hidden');
+    ui.permission.textContent = 'Mikrofon-Zugriff wird benötigt…';
+
+    let microphoneStream;
+    try {
+      microphoneStream = await requestMicrophoneStream();
+    } catch {
+      ui.permission.textContent = 'Mikrofon nicht verfügbar. Bitte Zugriff erlauben.';
+      return;
+    }
+
+    try {
+      await openAudioSession(audioSession, {
+        stream: microphoneStream,
+        fftSize: 4096,
+        AudioContextCtor: AudioContext,
+      });
+    } catch {
+      ui.permission.classList.remove('u-hidden');
+      ui.permission.textContent = 'Audio-Kontext konnte nicht gestartet werden. Bitte Seite neu laden.';
+      return;
+    }
+
+    ui.permission.classList.add('u-hidden');
+    state.isListening = true;
+    applyTargetFftSize();
+    analyzeIntervalId = setInterval(analyzeFrame, ANALYZE_INTERVAL_MS);
+  }
+
+  function advanceToNextNote() {
+    let bi = state.currentBarIndex;
+    let ni = state.currentBeatIndex + 1;
+    if (ni >= state.bars[bi].length) {
+      bi++;
+      ni = 0;
+    }
+    if (bi >= state.bars.length) {
+      handleSequenceComplete();
+      return;
+    }
+    state.currentBarIndex = bi;
+    state.currentBeatIndex = ni;
+    markCurrentNote();
+  }
+
+  function handleSequenceComplete() {
+    if (state.endless) {
+      regenerate();
+      applyTargetFftSize();
+      updateFeedback();
+      return;
+    }
+
+    state.currentBarIndex = -1;
+    state.currentBeatIndex = -1;
+    state.matchState = createMatchState();
+    state.onsetGateState = consumeOnsetGate(state.onsetGateState);
+    state.isLocked = false;
+    renderCurrentScore();
+    updateCurrentNoteDisplay();
+    updateFeedback('correct', 'Alle Noten gespielt! ✓');
+  }
+
+  function handleCorrectNote() {
+    state.matchState = createMatchState();
+    state.onsetGateState = consumeOnsetGate(state.onsetGateState);
+
+    const note = getCurrentNote();
+    const acceptedPitch = getNotePitch(note);
+    const nextNote = getNextNote();
+    const repeatsSamePitch = getNotePitch(nextNote) === acceptedPitch;
+    if (note) note.status = 'correct';
+
+    renderCurrentScore();
+    updateFeedback('correct');
+
+    if (repeatsSamePitch) {
+      advanceToNextNote();
+      applyTargetFftSize();
+      renderCurrentScore();
+      updateCurrentNoteDisplay();
+      updateFeedback();
+      return;
+    }
+
+    state.isLocked = true;
+    clearSuccessTimeout();
+    state.successTimeout = setTimeout(() => {
+      state.successTimeout = null;
+      state.isLocked = false;
+      advanceToNextNote();
+      if (state.currentBarIndex !== -1) {
+        applyTargetFftSize();
+        renderCurrentScore();
+        updateCurrentNoteDisplay();
+        updateFeedback();
+      }
+    }, SUCCESS_PAUSE_MS);
+  }
+
+  function analyzeFrame() {
+    if (!state.active || !state.isListening || !audioSession.analyser || state.isLocked) return;
+
+    const targetNote = getCurrentNote();
+    if (!targetNote) return;
+
+    const buffer = new Float32Array(audioSession.analyser.fftSize);
+    audioSession.analyser.getFloatTimeDomainData(buffer);
+
+    const gate = updateOnsetGate(state.onsetGateState, buffer);
+    state.onsetGateState = gate.nextState;
+
+    const targetPitch = `${targetNote.name}${targetNote.octave}`;
+    const frameResult = classifyFrame(buffer, audioSession.audioCtx.sampleRate, targetPitch);
+    let effective = frameResult.status === 'wrong'
+      ? { ...frameResult, status: 'unsure' }
+      : frameResult;
+
+    if (!isOnsetGateOpen(state.onsetGateState)) {
+      effective = { ...effective, status: 'unsure' };
+    }
+
+    const { nextState, event } = updateMatchState(state.matchState, effective);
+    state.matchState = nextState;
+
+    if (event === 'accept') {
+      handleCorrectNote();
+    }
+  }
+
+  async function setActiveMode(nextActive) {
+    if (state.active === nextActive) return;
+    state.active = nextActive;
+    saveSheetMusicActive(state.active);
+    syncSettingsUI();
+    syncActiveUiVisibility();
+
+    if (!state.active) {
+      await stopListening();
+      resetActiveSequenceState();
+      renderCurrentScore();
+      updateCurrentNoteDisplay();
+      updateFeedback();
+      return;
+    }
+
+    resetActiveSequenceState();
+    renderCurrentScore();
+    updateCurrentNoteDisplay();
+    updateFeedback();
+    startListening();
+  }
+
   // ── Pool warning ────────────────────────────────────────────────────────
   function updatePoolWarning() {
     const el = ui?.poolWarning;
@@ -73,18 +406,11 @@ export function createSheetMusicReadingFeature() {
     updatePoolWarning();
     const config = getTimeSigConfig();
     state.bars = generateBars(BARS_PER_ROW, config.beatsPerBar, getNotesPool());
-
-    const result = renderScore(
-      ui.container,
-      state.bars,
-      state.showTab,
-      state.timeSig,
-    );
-
-    // Rebuild the playback bar overlay over the new notation SVG
-    if (result?.notationDiv && result?.staveLayout) {
-      playbackBar.render(result.notationDiv, result.staveLayout, result.vw);
-      if (!isPlaying) playbackBar.hide();
+    resetActiveSequenceState();
+    renderCurrentScore();
+    updateCurrentNoteDisplay();
+    if (state.active && state.isListening) {
+      applyTargetFftSize();
     }
   }
 
@@ -235,6 +561,8 @@ export function createSheetMusicReadingFeature() {
   // ── Settings sync ───────────────────────────────────────────────────────
   function syncSettingsUI() {
     syncSheetMusicUI(ui, state, syncFretSlider, syncStringToggles, updatePoolWarning);
+    syncActiveUiVisibility();
+    updateCurrentNoteDisplay();
   }
 
   // ── Exercise lifecycle ──────────────────────────────────────────────────
@@ -248,6 +576,11 @@ export function createSheetMusicReadingFeature() {
         stopPlayback();
         if (state.endless) cleanupEndlessState();
         regenerate();
+        updateFeedback();
+      });
+
+      ui.activeBtn.addEventListener('click', () => {
+        void setActiveMode(!state.active);
       });
 
       // Tab toggle
@@ -256,12 +589,7 @@ export function createSheetMusicReadingFeature() {
         saveSheetMusicShowTab(state.showTab);
         ui.showTabBtn.classList.toggle('active', state.showTab);
         if (!isPlaying) {
-          renderScore(
-            ui.container,
-            state.bars,
-            state.showTab,
-            state.timeSig,
-          );
+          renderCurrentScore();
         }
       });
 
@@ -300,6 +628,7 @@ export function createSheetMusicReadingFeature() {
         stopPlayback();
         if (state.endless) cleanupEndlessState();
         regenerate();
+        updateFeedback();
       });
 
       // String toggles
@@ -311,6 +640,7 @@ export function createSheetMusicReadingFeature() {
           stopPlayback();
           if (state.endless) cleanupEndlessState();
           regenerate();
+          updateFeedback();
         },
       );
 
@@ -355,11 +685,20 @@ export function createSheetMusicReadingFeature() {
     }
 
     syncSettingsUI();
+    updateFeedback();
+    if (ui.permission) {
+      ui.permission.classList.add('u-hidden');
+      ui.permission.textContent = '';
+    }
+    if (state.active) {
+      startListening();
+    }
   }
 
   function unmount() {
     stopPlayback();
     if (state.endless) cleanupEndlessState();
+    void stopListening();
     ui = null;
   }
 

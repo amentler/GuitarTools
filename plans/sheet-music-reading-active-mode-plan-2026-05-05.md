@@ -1,7 +1,8 @@
 # Plan: Noten lesen mit optionalem Aktiv- und Metronom-Modus
 
 **Erstellt:** 2026-05-05  
-**Status:** Ideen-Phase — noch nicht implementiert
+**Status:** Phase 1 und Phase 2 (Aktiv ohne Metronom) begonnen; getrennte
+Aktiv-/Metronom-UI und sequentielle Mic-Erkennung in Umsetzung
 
 ---
 
@@ -277,4 +278,3 @@ Nach Abschluss der Gesamtaufgabe soll gelten:
 - Im ersten aktiven Ausbauschritt wird nur `active && !metronome` umgesetzt.
 - Die zeitgebundene Erkennung `active && metronome` ist ausdrücklich die letzte
   Phase.
-

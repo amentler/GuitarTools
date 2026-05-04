@@ -1240,6 +1240,15 @@ input[type="range"] {
   min-height: 2rem;
 }
 
+.sheet-music-status {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  min-height: 2rem;
+}
+
 .sheet-mic-label {
   font-size: 0.9rem;
   color: var(--color-text-muted);

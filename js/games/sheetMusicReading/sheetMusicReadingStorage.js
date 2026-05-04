@@ -4,6 +4,7 @@ const LS_BPM = 'sheetMusic_bpm';
 const LS_TIMESIG = 'sheetMusic_timeSig';
 const LS_TAB = 'sheetMusic_showTab';
 const LS_ENDLESS = 'sheetMusic_endless';
+const LS_ACTIVE = 'sheetMusic_active';
 
 function getSheetMusicStorage(storage = globalThis.localStorage) {
   return createStorageService({ storage });
@@ -13,6 +14,7 @@ export function loadSheetMusicPrefs(storage = globalThis.localStorage) {
   const sharedStorage = getSheetMusicStorage(storage);
 
   return {
+    active: sharedStorage.getBoolean(LS_ACTIVE, { defaultValue: false }),
     showTab: sharedStorage.getBoolean(LS_TAB, { defaultValue: false }),
     bpm: sharedStorage.getNumber(LS_BPM, {
       defaultValue: 80,
@@ -25,6 +27,10 @@ export function loadSheetMusicPrefs(storage = globalThis.localStorage) {
 
 export function saveSheetMusicBpm(value, storage = globalThis.localStorage) {
   getSheetMusicStorage(storage).set(LS_BPM, value);
+}
+
+export function saveSheetMusicActive(value, storage = globalThis.localStorage) {
+  getSheetMusicStorage(storage).set(LS_ACTIVE, value);
 }
 
 export function saveSheetMusicTimeSig(value, storage = globalThis.localStorage) {

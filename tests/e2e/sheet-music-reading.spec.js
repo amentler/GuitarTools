@@ -15,8 +15,13 @@ test.describe('Sheet Music Reading', () => {
   });
 
   test('Toggle buttons change state', async ({ page }) => {
+    const activeBtn = page.locator('#btn-sheet-active-mode');
     const tabBtn = page.locator('#btn-show-tab');
     const endlessBtn = page.locator('#btn-endless-mode');
+
+    await expect(activeBtn).not.toHaveClass(/active/);
+    await activeBtn.click();
+    await expect(activeBtn).toHaveClass(/active/);
 
     await expect(tabBtn).not.toHaveClass(/active/);
     await tabBtn.click();

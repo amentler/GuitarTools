@@ -24,6 +24,9 @@ const playbackBarHide = vi.fn();
 const playbackBarShow = vi.fn();
 const playbackBarMoveToBeat = vi.fn();
 const playbackBarDestroy = vi.fn();
+const requestMicrophoneStream = vi.fn();
+const openAudioSession = vi.fn();
+const closeAudioSession = vi.fn();
 
 vi.mock('../../js/games/sheetMusicReading/sheetMusicSVG.js', () => ({
   renderScore,
@@ -57,6 +60,21 @@ vi.mock('../../js/utils/settings.js', () => ({
   syncFretSlider: vi.fn(),
 }));
 
+vi.mock('../../js/shared/audio/microphoneService.js', () => ({
+  requestMicrophoneStream,
+}));
+
+vi.mock('../../js/shared/audio/audioSessionService.js', () => ({
+  createAudioSessionState: (overrides = {}) => ({
+    audioCtx: null,
+    analyser: null,
+    stream: null,
+    ...overrides,
+  }),
+  openAudioSession,
+  closeAudioSession,
+}));
+
 vi.mock('../../js/games/sheetMusicReading/sheetMusicLogic.js', async () => {
   const actual = await vi.importActual('../../js/games/sheetMusicReading/sheetMusicLogic.js');
   return {
@@ -71,6 +89,12 @@ function buildDom() {
     <section id="view-sheet-music" class="view active">
       <div id="score-container"></div>
       <div id="sheet-music-pool-warning" hidden></div>
+      <p id="sheet-music-permission" class="u-hidden"></p>
+      <div id="sheet-music-status" class="u-hidden">
+        <span id="sheet-music-current-note">–</span>
+        <span id="sheet-music-feedback"></span>
+      </div>
+      <button id="btn-sheet-active-mode">Aktiv</button>
       <button id="btn-new-bars">Neu</button>
       <button id="btn-show-tab">Tab</button>
       <button id="btn-endless-mode">Endless</button>
@@ -109,6 +133,19 @@ describe('SheetMusicReading controller behavior', () => {
     playbackBarShow.mockClear();
     playbackBarMoveToBeat.mockClear();
     playbackBarDestroy.mockClear();
+    requestMicrophoneStream.mockReset();
+    requestMicrophoneStream.mockResolvedValue({ getTracks: () => [] });
+    openAudioSession.mockReset();
+    openAudioSession.mockImplementation(async session => {
+      session.audioCtx = { sampleRate: 44100 };
+      session.analyser = {
+        fftSize: 4096,
+        getFloatTimeDomainData: buffer => buffer.fill(0),
+      };
+      return session;
+    });
+    closeAudioSession.mockReset();
+    closeAudioSession.mockResolvedValue(undefined);
     ({ createSheetMusicReadingFeature } = await import('../../js/games/sheetMusicReading/sheetMusicReading.js'));
   });
 
@@ -153,5 +190,32 @@ describe('SheetMusicReading controller behavior', () => {
     feature.unmount();
 
     expect(playbackStop).toHaveBeenCalled();
+  });
+
+  it('restores active mode from localStorage and starts microphone setup', async () => {
+    localStorage.setItem('sheetMusic_active', 'true');
+
+    const feature = createSheetMusicReadingFeature();
+    feature.mount();
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(document.getElementById('btn-sheet-active-mode').classList.contains('active')).toBe(true);
+    expect(document.getElementById('sheet-music-status').classList.contains('u-hidden')).toBe(false);
+    expect(document.getElementById('sheet-music-current-note').textContent).toBe('E2');
+    expect(requestMicrophoneStream).toHaveBeenCalledTimes(1);
+  });
+
+  it('active toggle persists and starts microphone setup on demand', async () => {
+    const feature = createSheetMusicReadingFeature();
+    feature.mount();
+
+    document.getElementById('btn-sheet-active-mode').click();
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(localStorage.getItem('sheetMusic_active')).toBe('true');
+    expect(document.getElementById('btn-sheet-active-mode').classList.contains('active')).toBe(true);
+    expect(requestMicrophoneStream).toHaveBeenCalledTimes(1);
   });
 });
