@@ -20,6 +20,8 @@ const PAGE_PRECACHED_URLS = [
   'pages/akkordfolgen-trainer/bootstrap.js',
   'pages/chord-playing-essentia/index.html',
   'pages/chord-playing-essentia/bootstrap.js',
+  'pages/chord-recorder/index.html',
+  'pages/chord-recorder/bootstrap.js',
   'pages/fretboard-tone-recognition/index.html',
   'pages/fretboard-tone-recognition/bootstrap.js',
   'pages/guitar-tuner/index.html',
