@@ -2,10 +2,15 @@ import { CHORDS, CHORD_META } from '../../data/akkordData.js';
 import { chordStringToFretboardIndex } from '../../domain/chords/chordFretboardMapping.js';
 import { createStorageService } from '../../shared/storage/storageService.js';
 import { buildVariationList } from './chordRecorderVariations.js';
+import { runQualityGates } from './chordRecorderQuality.js';
+import { createChordRecorderAudio, generateRandom5 } from './chordRecorderAudio.js';
+import { createChordRecorderUI } from './chordRecorderUI.js';
 
 const STORAGE_PREFIX = 'chord-recorder-';
 const ROOT_ORDER = ['A', 'C', 'D', 'E', 'F', 'G', 'H'];
 const TYPE_ORDER = ['Dur', 'Moll', 'Dom7', 'Maj7', 'Min7', 'Dim', 'Sus', 'Add'];
+const SINGLE_STRUM_MS = 4000;
+const PRE_COUNTDOWN = [3, 2, 1];
 
 const GUITAR_SIZES = ['Vollgröße', '7/8', '3/4', '1/2', '1/4', 'Unbekannt'];
 const GUITAR_STRINGS = ['Steel', 'Nylon'];
@@ -19,6 +24,8 @@ const STRUM_MODI = [
   { value: 'multi1', label: 'Multi 1 Takt' },
   { value: 'multi2', label: 'Multi 2 Takte' },
 ];
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
 function getSortedChordNames() {
   return Object.keys(CHORDS)
@@ -144,8 +151,7 @@ export function createChordRecorderTool({
     });
   }
 
-  async function mount(rootEl) {
-    root = rootEl;
+  function renderSetup() {
     root.innerHTML = `
       <div class="chord-recorder">
 
@@ -209,6 +215,96 @@ export function createChordRecorderTool({
     renderChordGrid();
     updateVariationCount();
     updateStartButton();
+
+    root.querySelector('#cr-start-btn')?.addEventListener('click', startSession);
+  }
+
+  async function runVariation(audio, ui, index, total) {
+    const positions = CHORDS[selectedChord];
+    const config = getConfig();
+    const variations = buildVariationList(config);
+    const variation = variations[index];
+
+    ui.render(selectedChord, positions, variation, index, total);
+
+    // Pre-recording countdown 3-2-1
+    for (const n of PRE_COUNTDOWN) {
+      ui.setPhase('countdown', n);
+      const result = await Promise.race([sleep(1000), ui.nextAction()]);
+      if (result === 'stop') return 'stop';
+      if (typeof result === 'string') return 'next';
+    }
+
+    // Onset detection
+    let onsetResolve;
+    const onsetPromise = new Promise(resolve => { onsetResolve = resolve; });
+    audio.startOnsetWatch(() => {
+      audio.stopOnsetWatch();
+      onsetResolve('onset');
+    });
+
+    ui.setPhase('listening');
+    const listenResult = await Promise.race([onsetPromise, ui.nextAction()]);
+    audio.stopOnsetWatch();
+
+    if (listenResult !== 'onset') {
+      return listenResult === 'stop' ? 'stop' : 'next';
+    }
+
+    // Recording
+    const recPromise = audio.recordForDuration(SINGLE_STRUM_MS);
+    const steps = Math.floor(SINGLE_STRUM_MS / 1000);
+    for (let t = steps; t >= 1; t--) {
+      ui.setPhase('recording', t);
+      await sleep(1000);
+    }
+    const { samples, sampleRate, durationSec } = await recPromise;
+
+    // Quality gates
+    const quality = runQualityGates(samples, sampleRate, durationSec);
+
+    // Clear any accidental button presses during recording
+    ui.clearQueue();
+    ui.showResult(quality);
+
+    // Download WAV with temp filename
+    const safeName = selectedChord.replace(/[^0-9a-zA-Z]/g, '').toLowerCase();
+    audio.downloadWav(samples, sampleRate, `${safeName}_${generateRandom5()}.wav`);
+
+    return ui.nextAction();
+  }
+
+  async function startSession() {
+    const config = getConfig();
+    const variations = buildVariationList(config);
+    if (!selectedChord || variations.length === 0) return;
+
+    const audio = createChordRecorderAudio();
+    const ui = createChordRecorderUI(root);
+
+    try {
+      await audio.open();
+    } catch (err) {
+      root.innerHTML = `<p class="cr-error">Mikrofon-Fehler: ${err.message}</p>
+        <button type="button" class="btn-back" onclick="history.back()">← Zurück</button>`;
+      return;
+    }
+
+    let i = 0;
+    while (i < variations.length) {
+      const action = await runVariation(audio, ui, i, variations.length);
+      if (action === 'stop') break;
+      if (action === 'repeat') continue;
+      i++;
+    }
+
+    audio.close();
+    renderSetup();
+  }
+
+  async function mount(rootEl) {
+    root = rootEl;
+    renderSetup();
   }
 
   return { mount };
