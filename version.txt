@@ -1,1 +1,1 @@
-Version 0.57 | 2026-05-04 22:12 | ed23ca3 | Update
+Version 0.58 | 2026-05-04 22:21 | 6ed3243 | Update

@@ -20,7 +20,7 @@ Sobald ein Akkord ausgewählt ist, erscheint ein **„Aufnahme starten"**-Button
 ```
 ┌─────────────────────────────────────────────────┐
 │  ① INSTRUMENT                                   │
-│  Gitarrentyp: [Akustik Steel        ▾]          │
+│  Größe:   [Vollgröße  ▾]   Saiten: [Steel ▾]   │
 └─────────────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────────────┐
@@ -43,11 +43,19 @@ Sobald ein Akkord ausgewählt ist, erscheint ein **„Aufnahme starten"**-Button
 
 Einstellungen unter ① und ② bleiben über Sessions hinweg erhalten (localStorage).
 
-### Gitarrentyp-Optionen
-- Akustik Nylon
-- Akustik Steel
-- E-Gitarre clean
-- Kindergitarre 1/4 / 1/2 / 3/4
+### Gitarren-Konfiguration (zwei unabhängige Felder)
+
+**Größe:**
+- Vollgröße
+- 7/8
+- 3/4
+- 1/2
+- 1/4
+- Unbekannt
+
+**Saiten:**
+- Nylon
+- Steel
 
 ### Verfügbare Techniken (Checkboxen)
 Nur aktivierte Techniken fließen in den Variationsdurchlauf ein.
@@ -83,10 +91,9 @@ Finger + Fingernagel × laut + leise × Single = **4 Variationen × 2 Wiederholu
 
 Das Tool stoppt automatisch (Hinweis + Akkord-Auswahl erscheint) wenn:
 
-- **5 Minuten** Gesamtzeit erreicht, ODER
-- **5 Wiederholungen** einer Variation aufgenommen (über mehrere Sessions summiert — im localStorage gespeichert)
+- **5 Minuten** Gesamtzeit der aktuellen Session erreicht
 
-Begründung: Datenmüdigkeit und Qualitätsverlust nach zu vielen Wiederholungen in einem Stück. 5 Minuten pro Akkord sind genug.
+Begründung: Datenmüdigkeit und Qualitätsverlust nach zu vielen Wiederholungen in einem Stück. Der Nutzer entscheidet selbst, wie viele Sessions er pro Akkord macht — kein localStorage-Tracking der Wiederholungen.
 
 ---
 
@@ -187,7 +194,8 @@ emoll_plektrum_leise_multi1_7c9b.wav
 {
   "chord": "G-Dur",
   "chordKey": "G-Dur",
-  "guitarType": "acoustic-steel-full",
+  "guitarSize": "full",
+  "guitarStrings": "steel",
   "volume": "laut",
   "technique": "fingernagel",
   "strumMode": "single",
@@ -249,6 +257,6 @@ js/tools/chordRecorder/
 
 ## Spätere Erweiterung (Phase 2)
 
-- **Mehrere Akkorde:** Session geht automatisch alle Akkorde durch, die im localStorage noch < 5 Fixtures haben.
+- **Mehrere Akkorde:** Session geht automatisch alle Akkorde durch, die laut Coverage-Report noch unterversorgt sind.
 - **BPM-Einstellung** im Setup (Standard: 80 BPM).
 - **Review-Modus:** Aufnahmen nachträglich abhören und taggen.
