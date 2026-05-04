@@ -51,4 +51,4 @@ jobs:
 
       - run: npm ci
 
-      - run: npm run test:audio
+      - run: npm run test:audio:ci
