@@ -1,7 +1,9 @@
 # Plan: Recorder-interne Verwaltungsansicht fuer Chord-Recordings
 
 **Erstellt:** 2026-05-05  
-**Status:** Geplant; noch nicht implementiert.
+**Status:** Weitgehend umgesetzt; recorder-interne Verwaltungsansicht,
+Playback, Loeschlogik und Regressionstests sind vorhanden. Ein moeglicher
+Restpunkt ist die explizite Navigation-Sperre waehrend aktiver Aufnahme.
 
 ---
 
@@ -163,7 +165,7 @@ Nach Abschluss der Aufgabe soll gelten:
 
 ## Phasen
 
-### Phase 1: View-State und Zustandsmodell
+### Phase 1: View-State und Zustandsmodell ✅
 
 **Ziel**
 
@@ -173,8 +175,10 @@ Nach Abschluss der Aufgabe soll gelten:
 **Validierung**
 
 - View-Wechsel funktioniert ohne Verlust von Auswahl- und Setup-Zustand.
+- Umgesetzt in `chordRecorder.js`, abgesichert durch
+  `tests/unit/chordRecorderController.test.js`.
 
-### Phase 2: Menueumbau in der Aufnahmeansicht
+### Phase 2: Menueumbau in der Aufnahmeansicht ✅
 
 **Ziel**
 
@@ -184,8 +188,10 @@ Nach Abschluss der Aufgabe soll gelten:
 **Validierung**
 
 - Aufnahmeansicht zeigt nur noch die gewuenschten Recorder-Aktionen.
+- Umgesetzt: `Alles herunterladen` und `Verwaltung` in `record`,
+  globales Loeschen nur noch in `manage`.
 
-### Phase 3: Recording-Store konsolidieren
+### Phase 3: Recording-Store konsolidieren ✅
 
 **Ziel**
 
@@ -197,8 +203,10 @@ Nach Abschluss der Aufgabe soll gelten:
 
 - Neue Aufnahmen erscheinen im Store und sind fuer Download und Verwaltung
   identisch verfuegbar.
+- Umgesetzt ueber `chordRecorderFiles.js` inklusive
+  `removeRecordingByBaseName()`.
 
-### Phase 4: Verwaltungsansicht implementieren
+### Phase 4: Verwaltungsansicht implementieren ✅
 
 **Ziel**
 
@@ -208,8 +216,10 @@ Nach Abschluss der Aufgabe soll gelten:
 **Validierung**
 
 - Takes sind nur in `manage` sichtbar und dort vollstaendig bedienbar.
+- Umgesetzt mit Listenansicht, Leerzustand, Einzelloeschen,
+  `Alle Aufnahmen loeschen` und `Zurueck zur Aufnahme`.
 
-### Phase 5: Playback-Steuerung absichern
+### Phase 5: Playback-Steuerung absichern ✅
 
 **Ziel**
 
@@ -218,8 +228,10 @@ Nach Abschluss der Aufgabe soll gelten:
 **Validierung**
 
 - Kein Parallel-Playback, kein haengender Zustand bei Loeschen oder View-Wechsel.
+- Umgesetzt ueber gekapseltes Playback im Recorder-Controller; abgesichert
+  durch Controller-Tests.
 
-### Phase 6: Regressionen und Tests
+### Phase 6: Regressionen und Tests ✅
 
 **Ziel**
 
@@ -229,19 +241,32 @@ Nach Abschluss der Aufgabe soll gelten:
 **Validierung**
 
 - Aufnahmefluss, Verwaltungsfluss und Download funktionieren gemeinsam stabil.
+- Abgedeckt durch:
+  - `tests/unit/chordRecorderController.test.js`
+  - `tests/unit/chordRecorderFiles.test.js`
+  - `tests/unit/chordRecorderPageSmoke.test.js`
+  - bestehende Recorder-Unit-Tests fuer Quality, Variationen und ZIP.
 
 ---
 
 ## Risiken / Offene Fragen
 
-- Falls Aufnahmen aktuell noch nicht als sauberer Session-Datensatz modelliert
-  sind, muss der Store vor der UI nachgezogen werden.
-- Falls fuer Playback `ObjectURL`s verwendet werden, muessen diese bei
-  Einzelloeschen, Gesamtes-Loeschen und View-Abbau freigegeben werden.
 - Falls waehrend einer laufenden Aufnahme in die Verwaltung gewechselt werden
   koennte, braucht es eine klare Sperre oder einen definierten Abbruch.
-- Die Verwaltungsansicht sollte keine zweite parallele Wahrheit neben dem
-  Download-Store aufbauen.
+- `ObjectURL`s werden bereits bei Stop, Loeschung und View-Wechsel freigegeben;
+  das sollte bei kuenftigen Recorder-Refactorings beibehalten werden.
+
+---
+
+## Umsetzungsstand
+
+- Recorder-interne Verwaltungsansicht ist implementiert.
+- Takes sind nur in der Verwaltungsansicht sichtbar.
+- Einzel- und Gesamtes-Loeschen aktualisieren denselben Session-Store wie der
+  ZIP-Download.
+- Playback ist auf einen aktiven Take begrenzt und raeumt beim Verlassen der
+  Verwaltungsansicht auf.
+- Seiteneinstieg des Recorders ist per Page-Smoke-Test abgesichert.
 
 ---
 
