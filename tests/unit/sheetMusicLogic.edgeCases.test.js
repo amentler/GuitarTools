@@ -11,27 +11,30 @@ import {
 
 describe('generateBars – edge cases', () => {
   it('single-note pool: every note is that note', () => {
-    const single = [NOTES[5]];
-    const bars   = generateBars(2, 4, single);
+    const single  = [NOTES[5]];
+    const bars    = generateBars(2, 4, single);
+    const noteKey = n => `${n.name}${n.octave}|${n.string}|${n.fret}`;
     for (const bar of bars) {
-      for (const note of bar) expect(note).toBe(single[0]);
+      for (const note of bar) expect(noteKey(note)).toBe(noteKey(single[0]));
     }
   });
 
   it('two-note pool: only those two notes appear', () => {
-    const two  = [NOTES[0], NOTES[1]];
-    const bars = generateBars(4, 4, two);
-    const set  = new Set(two);
+    const two     = [NOTES[0], NOTES[1]];
+    const bars    = generateBars(4, 4, two);
+    const noteKey = n => `${n.name}${n.octave}|${n.string}|${n.fret}`;
+    const keySet  = new Set(two.map(noteKey));
     for (const bar of bars) {
-      for (const note of bar) expect(set.has(note)).toBe(true);
+      for (const note of bar) expect(keySet.has(noteKey(note))).toBe(true);
     }
   });
 
   it('empty pool falls back to NOTES', () => {
-    const bars = generateBars(2, 4, []);
-    const set  = new Set(NOTES);
+    const bars    = generateBars(2, 4, []);
+    const noteKey = n => `${n.name}${n.octave}|${n.string}|${n.fret}`;
+    const keySet  = new Set(NOTES.map(noteKey));
     for (const bar of bars) {
-      for (const note of bar) expect(set.has(note)).toBe(true);
+      for (const note of bar) expect(keySet.has(noteKey(note))).toBe(true);
     }
   });
 
@@ -71,12 +74,13 @@ describe('getFilteredNotes – edge cases', () => {
 
 describe('EndlessBarGenerator – edge cases', () => {
   it('single-note pool does not crash', () => {
-    const gen  = new EndlessBarGenerator(4, [NOTES[0]]);
-    const bars = gen.nextBatch(4);
+    const gen     = new EndlessBarGenerator(4, [NOTES[0]]);
+    const bars    = gen.nextBatch(4);
+    const noteKey = n => `${n.name}${n.octave}|${n.string}|${n.fret}`;
     expect(bars).toHaveLength(4);
     for (const bar of bars) {
       expect(bar).toHaveLength(4);
-      for (const note of bar) expect(note).toBe(NOTES[0]);
+      for (const note of bar) expect(noteKey(note)).toBe(noteKey(NOTES[0]));
     }
   });
 

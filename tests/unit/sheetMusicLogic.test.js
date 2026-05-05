@@ -13,11 +13,12 @@ describe('generateBars', () => {
 
   it('ensures every generated note is part of NOTES', () => {
     const bars = generateBars();
-    const validNotes = new Set(NOTES);
+    const noteKey = n => `${n.name}${n.octave}|${n.string}|${n.fret}`;
+    const validKeys = new Set(NOTES.map(noteKey));
 
     for (const bar of bars) {
       for (const note of bar) {
-        expect(validNotes.has(note)).toBe(true);
+        expect(validKeys.has(noteKey(note))).toBe(true);
       }
     }
   });
@@ -25,10 +26,12 @@ describe('generateBars', () => {
   it('keeps interval jumps between consecutive notes at most 2 indices', () => {
     const bars = generateBars(6, 6);
     const flatNotes = bars.flat();
+    const noteKey = n => `${n.name}${n.octave}|${n.string}|${n.fret}`;
+    const noteIndex = n => NOTES.findIndex(ref => noteKey(ref) === noteKey(n));
 
     for (let i = 1; i < flatNotes.length; i++) {
-      const previousIndex = NOTES.indexOf(flatNotes[i - 1]);
-      const currentIndex = NOTES.indexOf(flatNotes[i]);
+      const previousIndex = noteIndex(flatNotes[i - 1]);
+      const currentIndex = noteIndex(flatNotes[i]);
       expect(Math.abs(currentIndex - previousIndex)).toBeLessThanOrEqual(2);
     }
   });
@@ -44,22 +47,24 @@ describe('generateBars', () => {
   it('only uses notes from the provided notesPool', () => {
     const pool = getFilteredNotes(1, [0, 5]); // fret 0–1, strings E2 and E4
     const bars = generateBars(4, 4, pool);
-    const poolSet = new Set(pool);
+    const noteKey = n => `${n.name}${n.octave}|${n.string}|${n.fret}`;
+    const poolKeys = new Set(pool.map(noteKey));
 
     for (const bar of bars) {
       for (const note of bar) {
-        expect(poolSet.has(note)).toBe(true);
+        expect(poolKeys.has(noteKey(note))).toBe(true);
       }
     }
   });
 
   it('falls back to NOTES when notesPool is empty', () => {
     const bars = generateBars(4, 4, []);
-    const validNotes = new Set(NOTES);
+    const noteKey = n => `${n.name}${n.octave}|${n.string}|${n.fret}`;
+    const validKeys = new Set(NOTES.map(noteKey));
 
     for (const bar of bars) {
       for (const note of bar) {
-        expect(validNotes.has(note)).toBe(true);
+        expect(validKeys.has(noteKey(note))).toBe(true);
       }
     }
   });

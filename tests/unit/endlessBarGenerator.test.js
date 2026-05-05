@@ -29,8 +29,10 @@ describe('EndlessBarGenerator – structure', () => {
   it('notes come from the supplied notesPool', () => {
     const gen = new EndlessBarGenerator(4, POOL_3);
     const bars = gen.nextBatch(4);
+    const noteKey = n => `${n.name}${n.octave}|${n.string}|${n.fret}`;
+    const poolKeys = new Set(POOL_3.map(noteKey));
     for (const bar of bars) {
-      for (const note of bar) expect(POOL_3).toContain(note);
+      for (const note of bar) expect(poolKeys.has(noteKey(note))).toBe(true);
     }
   });
 
@@ -53,9 +55,11 @@ describe('EndlessBarGenerator – melodic continuity', () => {
     const gen = new EndlessBarGenerator(4, NOTES);
     const bars = gen.nextBatch(8);
     const flat = bars.flat();
+    const noteKey = n => `${n.name}${n.octave}|${n.string}|${n.fret}`;
+    const noteIndex = n => NOTES.findIndex(ref => noteKey(ref) === noteKey(n));
     for (let i = 1; i < flat.length; i++) {
-      const a = NOTES.indexOf(flat[i - 1]);
-      const b = NOTES.indexOf(flat[i]);
+      const a = noteIndex(flat[i - 1]);
+      const b = noteIndex(flat[i]);
       expect(Math.abs(a - b)).toBeLessThanOrEqual(2);
     }
   });
@@ -66,8 +70,10 @@ describe('EndlessBarGenerator – melodic continuity', () => {
     const batch2 = gen.nextBatch(4);
     const lastNote  = batch1.at(-1).at(-1);
     const firstNote = batch2[0][0];
-    const a = NOTES.indexOf(lastNote);
-    const b = NOTES.indexOf(firstNote);
+    const noteKey = n => `${n.name}${n.octave}|${n.string}|${n.fret}`;
+    const noteIndex = n => NOTES.findIndex(ref => noteKey(ref) === noteKey(n));
+    const a = noteIndex(lastNote);
+    const b = noteIndex(firstNote);
     expect(Math.abs(a - b)).toBeLessThanOrEqual(2);
   });
 });
@@ -77,8 +83,10 @@ describe('EndlessBarGenerator – pool and settings updates', () => {
     const gen = new EndlessBarGenerator(4, NOTES);
     gen.setNotesPool(POOL_3);
     const bars = gen.nextBatch(4);
+    const noteKey = n => `${n.name}${n.octave}|${n.string}|${n.fret}`;
+    const poolKeys = new Set(POOL_3.map(noteKey));
     for (const bar of bars) {
-      for (const note of bar) expect(POOL_3).toContain(note);
+      for (const note of bar) expect(poolKeys.has(noteKey(note))).toBe(true);
     }
   });
 
@@ -104,8 +112,10 @@ describe('EndlessBarGenerator – pool and settings updates', () => {
     const gen = new EndlessBarGenerator(4, []);
     const bars = gen.nextBatch(4);
     expect(bars).toHaveLength(4);
+    const noteKey = n => `${n.name}${n.octave}|${n.string}|${n.fret}`;
+    const validKeys = new Set(NOTES.map(noteKey));
     for (const bar of bars) {
-      for (const note of bar) expect(NOTES).toContain(note);
+      for (const note of bar) expect(validKeys.has(noteKey(note))).toBe(true);
     }
   });
 

@@ -1,3 +1,1 @@
-# Intentionally left empty.
-# Version + service-worker sync runs in .husky/pre-commit after lint-staged so
-# the generated files are part of the actual commit snapshot.
+scripts/auto-update-version.sh "$1"

@@ -172,10 +172,11 @@ describe('generateBars with time signature configs', () => {
   it('all generated notes are valid for non-default time signatures', () => {
     const config = getTimeSignatureConfig('6/8');
     const bars = generateBars(4, config.beatsPerBar);
-    const validNotes = new Set(NOTES);
+    const noteKey = n => `${n.name}${n.octave}|${n.string}|${n.fret}`;
+    const validKeys = new Set(NOTES.map(noteKey));
     for (const bar of bars) {
       for (const note of bar) {
-        expect(validNotes.has(note)).toBe(true);
+        expect(validKeys.has(noteKey(note))).toBe(true);
       }
     }
   });
