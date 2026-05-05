@@ -1,7 +1,8 @@
 #!/bin/bash
 
 # auto-update-version.sh
-# Staff Engineer implementation of version.txt auto-update with incrementing numbers.
+# Hook-owned version/cache metadata updater.
+# Called from .husky/prepare-commit-msg; agents must not edit version.txt manually.
 
 normalize_version_counter() {
     local version=$1
@@ -126,7 +127,8 @@ main() {
     git add version.txt
     echo "Auto-updated version.txt to $NEW_VERSION"
 
-    # 5. Sync sw.js CACHE_VERSION with version.txt
+    # 5. Sync sw.js CACHE_VERSION with version.txt.
+    #    This may leave the next version/cache bump staged immediately after a commit.
     sync_sw_cache_version
 }
 

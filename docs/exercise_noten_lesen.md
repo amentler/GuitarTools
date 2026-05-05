@@ -6,4 +6,6 @@
 3. Adjusted the container/layout to ensure adequate space so notes are not clipped.
 
 ### Version Update
-- Updated version to reflect changes made on 2026-04-03.
+- Kein manueller Versionsschritt mehr noetig.
+- `version.txt` und `sw.js` werden durch den `prepare-commit-msg`-Hook
+  automatisch nachgezogen.

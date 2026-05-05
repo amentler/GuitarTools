@@ -95,7 +95,7 @@ mit eigenem `index.html` und `bootstrap.js`.
 ```text
 index.html          – Startseite / Menü
 style.css           – Globale Styles
-version.txt         – Versionsanzeige
+version.txt         – Versionsanzeige; wird automatisch durch den Commit-Hook gepflegt
 manifest.json       – PWA-Manifest
 sw.js               – Service Worker
 pages/
@@ -118,6 +118,16 @@ plans/              – Aktive und archivierte Planungsdokumente
 
 Eine genauere Beschreibung der Schichten und Konventionen steht in
 [docs/architecture.md](docs/architecture.md).
+
+### Versions- und Cache-Metadaten
+
+- `version.txt` wird nicht manuell gepflegt.
+- `.husky/prepare-commit-msg` ruft `scripts/auto-update-version.sh` auf und
+  erzeugt pro Commit automatisch die naechste Versionszeile.
+- Derselbe Hook synchronisiert auch `sw.js` `CACHE_VERSION`.
+- Nach einem Commit kann dadurch bereits die naechste Versions-/Cache-Metadaten-
+  aenderung im Index liegen. Vor weiteren Commits oder Sync-Schritten daher
+  immer `git status` pruefen.
 
 ---
 

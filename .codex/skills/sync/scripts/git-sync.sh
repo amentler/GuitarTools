@@ -3,8 +3,6 @@ set -euo pipefail
 
 TEST_CMD=""
 SKIP_TESTS=0
-VERSION_FILE=""
-VERSION_NOTE="sync update"
 COMMIT_MESSAGE=""
 PULL_REMOTE="origin"
 MERGE_BRANCH="main"
@@ -54,8 +52,6 @@ Usage:
 Options:
   --test-cmd "<cmd>"          Test command to run (for example: "npm test")
   --skip-tests                Skip tests (only when already confirmed as passed)
-  --version-file <path>       Version file to update (optional)
-  --version-note "<text>"     Note suffix for version line (default: "sync update")
   --commit-message "<text>"   Commit message (required)
   --pull-remote <name>        Remote for pull (default: origin)
   --merge-branch <name>       Base branch to merge into current branch (default: main)
@@ -73,14 +69,6 @@ while [[ $# -gt 0 ]]; do
     --skip-tests)
       SKIP_TESTS=1
       shift
-      ;;
-    --version-file)
-      VERSION_FILE="${2:-}"
-      shift 2
-      ;;
-    --version-note)
-      VERSION_NOTE="${2:-}"
-      shift 2
       ;;
     --commit-message)
       COMMIT_MESSAGE="${2:-}"
@@ -136,25 +124,6 @@ elif has_non_markdown_changes "$CHANGED_FILES"; then
   eval "$TEST_CMD"
 else
   echo "Only Markdown changes detected; skipping tests."
-fi
-
-if [[ -n "$VERSION_FILE" ]]; then
-  if [[ -f "$VERSION_FILE" ]]; then
-    TS="$(date -u '+%Y-%m-%d %H:%M UTC')"
-    NEW_LINE="Version ${TS} | ${VERSION_NOTE}"
-    if head -n 1 "$VERSION_FILE" | grep -q '^Version '; then
-      TMP_FILE="$(mktemp)"
-      { echo "$NEW_LINE"; tail -n +2 "$VERSION_FILE"; } > "$TMP_FILE"
-      mv "$TMP_FILE" "$VERSION_FILE"
-      echo "Updated first line in ${VERSION_FILE}"
-    else
-      echo "$NEW_LINE" >> "$VERSION_FILE"
-      echo "Appended version line to ${VERSION_FILE}"
-    fi
-  else
-    echo "Version file not found: ${VERSION_FILE}" >&2
-    exit 2
-  fi
 fi
 
 git add -A

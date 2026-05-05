@@ -42,7 +42,11 @@ Qualitätsmanagement (Ist):
 ## 4) Commit-Checkliste (verbindlich)
 
 Vor jedem Commit:
-- `version.txt` aktualisieren
-- Format strikt einhalten: `Version YYYY-MM-DD HH:MM | label`
-- Label muss den Change benennen (z. B. `ton spielen layout update 3`)
-- Danach erst `npm run lint`/`npm test` und Commit erstellen
+- `version.txt` **nicht** manuell bearbeiten
+- `version.txt` und `sw.js` werden durch `.husky/prepare-commit-msg` via
+  `scripts/auto-update-version.sh` automatisch aktualisiert und gestaged
+- Commit-Titel sauber formulieren, da er in `version.txt` landet
+- Danach `git status` prüfen, weil der Hook nach dem Commit bereits die naechste
+  Version/CACHE-Metadatenaenderung vorbereiten kann
+- Dann erst `npm run lint`/`npm test` und Commit bzw. Folge-Commit sauber
+  abschliessen
