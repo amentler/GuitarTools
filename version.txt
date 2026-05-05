@@ -1,1 +1,1 @@
-Version 0.75 | 2026-05-05 08:40 | 05ca035 | Level-Meter, Auto-Advance, Pause-Toggle
+Version 0.76 | 2026-05-05 09:15 | 5c6eb9c | fix: Clipping-Toleranz prozentbasiert (> 0,5 %)

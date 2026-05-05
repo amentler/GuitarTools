@@ -33,36 +33,43 @@ function makeOnsetSamples(sampleRate, onsetOffsetSec = 0.5, amplitude = 0.5) {
 // ── checkClipping ─────────────────────────────────────────────────────────────
 
 describe('checkClipping', () => {
-  it('erkennt Clipping bei Peak > 0.95', () => {
-    const s = makeSamples(1024, 0.3);
-    s[500] = 0.96;
-    expect(checkClipping(s)).toBe(true);
-  });
-
-  it('erkennt Clipping bei negativem Peak < -0.95', () => {
-    const s = makeSamples(1024, 0.3);
-    s[500] = -0.96;
-    expect(checkClipping(s)).toBe(true);
-  });
-
-  it('kein Clipping bei Peak <= 0.95', () => {
-    expect(checkClipping(makeSamples(1024, 0.5))).toBe(false);
+  it('kein Clipping bei Signal unterhalb der Schwelle', () => {
+    expect(checkClipping(makeSamples(SR * 3, 0.5))).toBe(false);
   });
 
   it('kein Clipping bei Nullvektor', () => {
-    expect(checkClipping(makeSamples(1024, 0))).toBe(false);
+    expect(checkClipping(makeSamples(SR * 3, 0))).toBe(false);
   });
 
-  it('Grenzwert genau 0.95 → kein Clipping', () => {
-    const s = makeSamples(1024, 0.0);
-    s[0] = 0.95;
+  it('einzelner Peak ist ok — kurzer Anschlag-Transient (< 0,5 %)', () => {
+    const s = makeSamples(SR * 3, 0.3);
+    s[500] = 0.96;   // ein einzelner Sample → 0,001 % → kein Fail
     expect(checkClipping(s)).toBe(false);
   });
 
-  it('Grenzwert 0.951 → Clipping', () => {
-    const s = makeSamples(1024, 0.0);
-    s[0] = 0.951;
+  it('kurzes Clipping beim Anschlag (< 0,5 %) → kein Fail', () => {
+    const s = makeSamples(SR * 3, 0.3);
+    const clipCount = Math.floor(s.length * 0.003); // 0,3 %
+    for (let i = 0; i < clipCount; i++) s[i] = 0.96;
+    expect(checkClipping(s)).toBe(false);
+  });
+
+  it('anhaltendes Clipping (> 0,5 %) → Fail', () => {
+    const s = makeSamples(SR * 3, 0.3);
+    const clipCount = Math.floor(s.length * 0.01); // 1 %
+    for (let i = 0; i < clipCount; i++) s[i] = 0.96;
     expect(checkClipping(s)).toBe(true);
+  });
+
+  it('negativer Peak zählt ebenfalls', () => {
+    const s = makeSamples(SR * 3, 0.3);
+    const clipCount = Math.floor(s.length * 0.01);
+    for (let i = 0; i < clipCount; i++) s[i] = -0.96;
+    expect(checkClipping(s)).toBe(true);
+  });
+
+  it('komplett clippender Vektor → Fail', () => {
+    expect(checkClipping(makeSamples(SR * 3, 0.96))).toBe(true);
   });
 });
 
@@ -167,7 +174,9 @@ describe('runQualityGates', () => {
 
   it('Clipping → passed: false, failReasons enthält "clipping"', () => {
     const s = makeOnsetSamples(SR, 0.2, 0.5);
-    s[SR] = 0.99;
+    // Mehr als 0,5 % der Samples clippend machen
+    const clipCount = Math.floor(s.length * 0.01);
+    for (let i = 0; i < clipCount; i++) s[SR + i] = 0.99;
     const result = runQualityGates(s, SR, 3.0);
     expect(result.passed).toBe(false);
     expect(result.failReasons).toContain('clipping');
@@ -202,7 +211,8 @@ describe('runQualityGates', () => {
 
   it('mehrere FAIL-Gates gleichzeitig', () => {
     const s = makeSamples(SR * 3, 0.0);
-    s[0] = 0.96;
+    const clipCount = Math.floor(s.length * 0.01);
+    for (let i = 0; i < clipCount; i++) s[i] = 0.96;
     const result = runQualityGates(s, SR, 1.0);
     expect(result.passed).toBe(false);
     expect(result.failReasons).toContain('clipping');
