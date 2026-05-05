@@ -97,42 +97,36 @@ sync_sw_cache_version() {
 
 main() {
     local COMMIT_MSG_FILE=$1
-    local COMMIT_SOURCE=$2
 
-    # 1. Guard: Only update version.txt if it is NOT already staged.
-    # This avoids overwriting manual version bumps.
-    if ! git diff --cached --name-only | grep -qx "version.txt"; then
-        # 2. Extract current version number from version.txt or, if necessary,
-        # recover the last valid numeric version from git history.
-        CURRENT_VERSION=$(extract_current_version "version.txt")
+    # 1. Always auto-generate version.txt – never trust manually staged content.
+    #    Agents must NOT manually edit version.txt; the hook owns this file.
+    CURRENT_VERSION=$(extract_current_version "version.txt")
 
-        # 3. Increment the counter while keeping the public format in 0.x.
-        NEW_VERSION=$(bump_version "$CURRENT_VERSION")
+    # 2. Increment the counter while keeping the public format in 0.x.
+    NEW_VERSION=$(bump_version "$CURRENT_VERSION")
 
-        TIMESTAMP=$(date "+%Y-%m-%d %H:%M")
-        HASH=$(git rev-parse --short HEAD 2>/dev/null || echo "initial")
+    TIMESTAMP=$(date "+%Y-%m-%d %H:%M")
+    HASH=$(git rev-parse --short HEAD 2>/dev/null || echo "initial")
 
-        # 4. Extract title if possible
-        TITLE=""
-        if [ -n "$COMMIT_MSG_FILE" ] && [ -f "$COMMIT_MSG_FILE" ]; then
-            # Read the first non-comment line from the commit message file
-            TITLE=$(grep -v '^#' "$COMMIT_MSG_FILE" | head -n 1 | xargs)
-        fi
-
-        if [ -z "$TITLE" ]; then
-            TITLE="Update"
-        fi
-
-        # 5. Update the file
-        echo "Version $NEW_VERSION | $TIMESTAMP | $HASH | $TITLE" > version.txt
-
-        # 6. Stage the change
-        git add version.txt
-
-        echo "Auto-updated version.txt to $NEW_VERSION"
+    # 3. Extract title from commit message file (written by git before pre-commit).
+    #    Fall back to reading .git/COMMIT_EDITMSG directly if no path was given.
+    TITLE=""
+    if [ -z "$COMMIT_MSG_FILE" ]; then
+        COMMIT_MSG_FILE="$(git rev-parse --git-dir 2>/dev/null)/COMMIT_EDITMSG"
+    fi
+    if [ -f "$COMMIT_MSG_FILE" ]; then
+        TITLE=$(grep -v '^#' "$COMMIT_MSG_FILE" | head -n 1 | xargs)
+    fi
+    if [ -z "$TITLE" ]; then
+        TITLE="Update"
     fi
 
-    # 7. Sync sw.js CACHE_VERSION with version.txt
+    # 4. Write and stage version.txt.
+    echo "Version $NEW_VERSION | $TIMESTAMP | $HASH | $TITLE" > version.txt
+    git add version.txt
+    echo "Auto-updated version.txt to $NEW_VERSION"
+
+    # 5. Sync sw.js CACHE_VERSION with version.txt
     sync_sw_cache_version
 }
 

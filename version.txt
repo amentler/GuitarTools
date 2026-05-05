@@ -1,1 +1,1 @@
-Version 0.81 | 2026-05-05 16:53 | d30f205 | fix: Noten lesen in Übungen mit Gitarre + Noten-Status-Bug
+Version 0.82 | 2026-05-05 18:09 | 40572ba | fix: Noten lesen in Übungen-mit-Gitarre + Noten-Status-Bug beheben
