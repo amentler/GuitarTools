@@ -37,12 +37,22 @@ export function createChordRecorderUI(container) {
 
         <div class="cr-rec-fretboard"></div>
 
+        <div class="cr-level-wrap">
+          <div id="cr-level-bar" class="cr-level-bar"></div>
+        </div>
+
         <div class="cr-rec-display">
           <div id="cr-countdown" class="cr-countdown"></div>
           <div id="cr-status" class="cr-status-text"></div>
         </div>
 
         <div id="cr-result" class="cr-result u-hidden"></div>
+
+        <div id="cr-auto-advance" class="cr-auto-advance u-hidden">
+          <span class="cr-auto-label">Weiter in</span>
+          <strong id="cr-auto-num"></strong>
+          <button type="button" id="cr-pause-btn" class="cr-btn cr-btn--pause" data-action="pause">⏸</button>
+        </div>
 
         <div class="cr-rec-controls">
           <button type="button" class="cr-btn cr-btn--stop"   data-action="stop">⛔ Stop</button>
@@ -72,6 +82,15 @@ export function createChordRecorderUI(container) {
     }
   }
 
+  function setLevel(rms) {
+    const el = container.querySelector('#cr-level-bar');
+    if (!el) return;
+    const pct = Math.min(100, Math.round(rms * 150));
+    el.style.width = `${pct}%`;
+    const cls = pct >= 85 ? 'clip' : pct >= 65 ? 'warn' : '';
+    el.className = `cr-level-bar${cls ? ` ${cls}` : ''}`;
+  }
+
   function setPhase(phase, num = null) {
     const cdEl = container.querySelector('#cr-countdown');
     const stEl = container.querySelector('#cr-status');
@@ -80,6 +99,24 @@ export function createChordRecorderUI(container) {
     stEl.textContent = phase === 'listening' ? 'Warte auf Anschlag…'
       : phase === 'recording' ? 'Aufnahme läuft…'
       : '';
+  }
+
+  function showBeats(totalBeats) {
+    const cdEl = container.querySelector('#cr-countdown');
+    const stEl = container.querySelector('#cr-status');
+    if (!cdEl) return;
+    cdEl.innerHTML = `<div class="cr-beat-row">${
+      Array.from({ length: totalBeats }, (_, i) =>
+        `<div class="cr-beat-dot${i % 4 === 0 ? ' downbeat' : ''}" data-beat="${i + 1}"></div>`
+      ).join('')
+    }</div>`;
+    if (stEl) stEl.textContent = 'Aufnahme läuft…';
+  }
+
+  function setBeat(n) {
+    container.querySelectorAll('.cr-beat-dot').forEach((dot, i) => {
+      dot.classList.toggle('active', i + 1 === n);
+    });
   }
 
   function showResult(quality) {
@@ -95,5 +132,24 @@ export function createChordRecorderUI(container) {
     }
   }
 
-  return { render, setPhase, showResult, nextAction, clearQueue };
+  function setAutoCountdown(n, paused) {
+    const wrap = container.querySelector('#cr-auto-advance');
+    const numEl = container.querySelector('#cr-auto-num');
+    const btn   = container.querySelector('#cr-pause-btn');
+    if (!wrap || !numEl || !btn) return;
+    wrap.classList.remove('u-hidden');
+    numEl.textContent = n;
+    btn.textContent = paused ? '▶' : '⏸';
+    btn.title = paused ? 'Fortfahren' : 'Pause';
+  }
+
+  function hideAutoCountdown() {
+    container.querySelector('#cr-auto-advance')?.classList.add('u-hidden');
+  }
+
+  return {
+    render, setLevel, setPhase, showBeats, setBeat,
+    showResult, setAutoCountdown, hideAutoCountdown,
+    nextAction, clearQueue,
+  };
 }

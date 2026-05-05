@@ -3,11 +3,6 @@ import { requestMicrophoneStream, stopMicrophoneStream } from '../../shared/audi
 const FFT_SIZE = 2048;
 const ONSET_RMS_THRESHOLD = 0.05;
 
-export function generateRandom5() {
-  const chars = '0123456789abcdefghijklmnopqrstuvwxyz';
-  return Array.from({ length: 5 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
-}
-
 export function encodeWav(samples, sampleRate) {
   const n = samples.length;
   const buf = new ArrayBuffer(44 + n * 2);
@@ -35,7 +30,8 @@ export function createChordRecorderAudio() {
   let audioCtx = null;
   let analyser = null;
   let stream = null;
-  let rafId = null;
+  let onsetRafId = null;
+  let levelRafId = null;
 
   async function open() {
     stream = await requestMicrophoneStream({
@@ -60,14 +56,30 @@ export function createChordRecorderAudio() {
       if (Math.sqrt(sum / buf.length) >= ONSET_RMS_THRESHOLD) {
         onOnset();
       } else {
-        rafId = requestAnimationFrame(loop);
+        onsetRafId = requestAnimationFrame(loop);
       }
     }
-    rafId = requestAnimationFrame(loop);
+    onsetRafId = requestAnimationFrame(loop);
   }
 
   function stopOnsetWatch() {
-    if (rafId !== null) { cancelAnimationFrame(rafId); rafId = null; }
+    if (onsetRafId !== null) { cancelAnimationFrame(onsetRafId); onsetRafId = null; }
+  }
+
+  function startLevelWatch(onLevel) {
+    const buf = new Float32Array(FFT_SIZE);
+    function loop() {
+      analyser.getFloatTimeDomainData(buf);
+      let sum = 0;
+      for (const s of buf) sum += s * s;
+      onLevel(Math.sqrt(sum / buf.length));
+      levelRafId = requestAnimationFrame(loop);
+    }
+    levelRafId = requestAnimationFrame(loop);
+  }
+
+  function stopLevelWatch() {
+    if (levelRafId !== null) { cancelAnimationFrame(levelRafId); levelRafId = null; }
   }
 
   async function recordForDuration(durationMs) {
@@ -92,20 +104,13 @@ export function createChordRecorderAudio() {
     });
   }
 
-  function downloadWav(samples, sampleRate, filename) {
-    const blob = encodeWav(samples, sampleRate);
-    const url = URL.createObjectURL(blob);
-    const a = Object.assign(document.createElement('a'), { href: url, download: filename });
-    a.click();
-    setTimeout(() => URL.revokeObjectURL(url), 5000);
-  }
-
   function close() {
     stopOnsetWatch();
+    stopLevelWatch();
     if (analyser) { analyser.disconnect(); analyser = null; }
     if (audioCtx) { audioCtx.close(); audioCtx = null; }
     if (stream) { stopMicrophoneStream(stream); stream = null; }
   }
 
-  return { open, startOnsetWatch, stopOnsetWatch, recordForDuration, downloadWav, close };
+  return { open, startOnsetWatch, stopOnsetWatch, startLevelWatch, stopLevelWatch, recordForDuration, close };
 }

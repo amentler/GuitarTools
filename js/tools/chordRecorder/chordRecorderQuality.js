@@ -1,4 +1,5 @@
 const CLIPPING_THRESHOLD = 0.95;
+const CLIPPING_MAX_RATIO = 0.005; // > 0,5 % geclippter Samples → Fail
 const QUIET_RMS_THRESHOLD = 0.01;
 const MIN_DURATION_SEC = 1.5;
 const ONSET_WINDOW_SIZE = 1024;
@@ -15,10 +16,11 @@ function rms(samples, start = 0, end = samples.length) {
 }
 
 export function checkClipping(samples) {
+  let clipped = 0;
   for (let i = 0; i < samples.length; i++) {
-    if (Math.abs(samples[i]) > CLIPPING_THRESHOLD) return true;
+    if (Math.abs(samples[i]) > CLIPPING_THRESHOLD) clipped++;
   }
-  return false;
+  return (clipped / samples.length) > CLIPPING_MAX_RATIO;
 }
 
 export function checkTooQuiet(samples) {
