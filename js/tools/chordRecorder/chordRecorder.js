@@ -3,8 +3,17 @@ import { chordStringToFretboardIndex } from '../../domain/chords/chordFretboardM
 import { createStorageService } from '../../shared/storage/storageService.js';
 import { buildVariationList } from './chordRecorderVariations.js';
 import { runQualityGates } from './chordRecorderQuality.js';
-import { createChordRecorderAudio, generateRandom5 } from './chordRecorderAudio.js';
+import { createChordRecorderAudio, encodeWav } from './chordRecorderAudio.js';
 import { createChordRecorderUI } from './chordRecorderUI.js';
+import {
+  generateRandom5,
+  toChordKey,
+  buildFileName,
+  buildSidecarJson,
+  addRecording,
+  downloadBlob,
+  downloadJson,
+} from './chordRecorderFiles.js';
 
 const STORAGE_PREFIX = 'chord-recorder-';
 const ROOT_ORDER = ['A', 'C', 'D', 'E', 'F', 'G', 'H'];
@@ -263,15 +272,28 @@ export function createChordRecorderTool({
     // Quality gates
     const quality = runQualityGates(samples, sampleRate, durationSec);
 
-    // Clear any accidental button presses during recording
+    // Clear any accidental button presses during recording, then show result
     ui.clearQueue();
     ui.showResult(quality);
 
-    // Download WAV with temp filename
-    const safeName = selectedChord.replace(/[^0-9a-zA-Z]/g, '').toLowerCase();
-    audio.downloadWav(samples, sampleRate, `${safeName}_${generateRandom5()}.wav`);
+    // Wait for user action to determine any flags
+    const action = await ui.nextAction();
+    const userFlags = (action === 'buzz' || action === 'muted') ? [action] : [];
 
-    return ui.nextAction();
+    // Build filename and sidecar
+    const chordKey = toChordKey(selectedChord);
+    const baseName = buildFileName(variation, chordKey, generateRandom5());
+    const sidecar = buildSidecarJson(selectedChord, chordKey, variation, config, quality, {
+      sampleRate, durationSec, userFlags,
+    });
+
+    // Encode, store, and download
+    const wavBlob = encodeWav(samples, sampleRate);
+    addRecording({ baseName, wavBlob, sidecar });
+    downloadBlob(wavBlob, `${baseName}.wav`);
+    downloadJson(sidecar, `${baseName}.json`);
+
+    return action;
   }
 
   async function startSession() {

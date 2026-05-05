@@ -3,11 +3,6 @@ import { requestMicrophoneStream, stopMicrophoneStream } from '../../shared/audi
 const FFT_SIZE = 2048;
 const ONSET_RMS_THRESHOLD = 0.05;
 
-export function generateRandom5() {
-  const chars = '0123456789abcdefghijklmnopqrstuvwxyz';
-  return Array.from({ length: 5 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
-}
-
 export function encodeWav(samples, sampleRate) {
   const n = samples.length;
   const buf = new ArrayBuffer(44 + n * 2);
@@ -92,14 +87,6 @@ export function createChordRecorderAudio() {
     });
   }
 
-  function downloadWav(samples, sampleRate, filename) {
-    const blob = encodeWav(samples, sampleRate);
-    const url = URL.createObjectURL(blob);
-    const a = Object.assign(document.createElement('a'), { href: url, download: filename });
-    a.click();
-    setTimeout(() => URL.revokeObjectURL(url), 5000);
-  }
-
   function close() {
     stopOnsetWatch();
     if (analyser) { analyser.disconnect(); analyser = null; }
@@ -107,5 +94,5 @@ export function createChordRecorderAudio() {
     if (stream) { stopMicrophoneStream(stream); stream = null; }
   }
 
-  return { open, startOnsetWatch, stopOnsetWatch, recordForDuration, downloadWav, close };
+  return { open, startOnsetWatch, stopOnsetWatch, recordForDuration, close };
 }
