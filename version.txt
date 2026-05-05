@@ -1,1 +1,1 @@
-Version 0.76 | 2026-05-05 09:15 | 5c6eb9c | fix: Clipping-Toleranz prozentbasiert (> 0,5 %)
+Version 0.77 | 2026-05-05 14:31 | 5917873 | Update

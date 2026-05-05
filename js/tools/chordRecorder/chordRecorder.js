@@ -11,7 +11,6 @@ import {
   buildFileName,
   buildSidecarJson,
   addRecording,
-  clearRecordings,
   getRecordingCount,
   downloadAllAsZip,
 } from './chordRecorderFiles.js';
@@ -81,6 +80,7 @@ export function createChordRecorderTool({
 } = {}) {
   let root = null;
   let selectedChord = null;
+  let currentView = 'record';
 
   function getConfig() {
     return {
@@ -127,6 +127,9 @@ export function createChordRecorderTool({
       nameEl.className = 'cr-chord-name';
       nameEl.textContent = chordName;
       card.appendChild(nameEl);
+      if (selectedChord === chordName) {
+        card.classList.add('cr-chord-card--selected');
+      }
 
       const fretboard = document.createElement('gt-fretboard');
       fretboard.setAttribute('frets', '5');
@@ -147,6 +150,11 @@ export function createChordRecorderTool({
 
       container.appendChild(card);
     }
+  }
+
+  function setView(viewName) {
+    currentView = viewName;
+    renderCurrentView();
   }
 
   function bindInstrumentControls() {
@@ -189,10 +197,10 @@ export function createChordRecorderTool({
   function updateToolMenu() {
     const count = getRecordingCount();
     const downloadBtn = root?.querySelector('#cr-download-all');
-    const clearBtn    = root?.querySelector('#cr-clear-all');
+    const manageBtn   = root?.querySelector('#cr-manage-recordings');
     const countEl     = root?.querySelector('#cr-rec-count');
     if (downloadBtn) downloadBtn.disabled = count === 0;
-    if (clearBtn)    clearBtn.disabled    = count === 0;
+    if (manageBtn) manageBtn.disabled = false;
     if (countEl) {
       countEl.textContent = count === 0
         ? 'Keine Aufnahmen gespeichert'
@@ -200,7 +208,7 @@ export function createChordRecorderTool({
     }
   }
 
-  function renderSetup() {
+  function renderRecordView() {
     root.innerHTML = `
       <div class="chord-recorder">
 
@@ -208,8 +216,8 @@ export function createChordRecorderTool({
           <button id="cr-download-all" type="button" class="cr-btn cr-btn--tool" disabled>
             ⬇ Alles herunterladen
           </button>
-          <button id="cr-clear-all" type="button" class="cr-btn cr-btn--tool cr-btn--danger" disabled>
-            🗑 Aufnahmen löschen
+          <button id="cr-manage-recordings" type="button" class="cr-btn cr-btn--tool">
+            Verwaltung
           </button>
           <span id="cr-rec-count" class="cr-rec-count"></span>
         </div>
@@ -287,13 +295,42 @@ export function createChordRecorderTool({
       await downloadAllAsZip('chord-recordings');
     });
 
-    root.querySelector('#cr-clear-all')?.addEventListener('click', () => {
-      const count = getRecordingCount();
-      if (count > 0 && confirm(`${count} Aufnahme${count !== 1 ? 'n' : ''} unwiderruflich löschen?`)) {
-        clearRecordings();
-        updateToolMenu();
-      }
-    });
+    root.querySelector('#cr-manage-recordings')?.addEventListener('click', () => setView('manage'));
+  }
+
+  function renderManageView() {
+    const count = getRecordingCount();
+    root.innerHTML = `
+      <div class="chord-recorder">
+        <div class="cr-tool-menu">
+          <button id="cr-back-to-record" type="button" class="cr-btn cr-btn--tool">
+            ← Zurück zur Aufnahme
+          </button>
+          <span id="cr-rec-count" class="cr-rec-count"></span>
+        </div>
+
+        <section class="cr-section">
+          <h2 class="cr-section-title">Recording-Verwaltung</h2>
+          <p class="cr-manage-copy">
+            ${count === 0
+              ? 'Noch keine Aufnahmen in dieser Session.'
+              : `${count} Aufnahme${count !== 1 ? 'n' : ''} in dieser Session gespeichert.`}
+          </p>
+        </section>
+      </div>
+    `;
+
+    root.querySelector('#cr-back-to-record')?.addEventListener('click', () => setView('record'));
+    updateToolMenu();
+  }
+
+  function renderCurrentView() {
+    if (!root) return;
+    if (currentView === 'manage') {
+      renderManageView();
+      return;
+    }
+    renderRecordView();
   }
 
   async function runVariation(audio, ui, index, total) {
@@ -406,12 +443,12 @@ export function createChordRecorderTool({
     }
 
     audio.close();
-    renderSetup();
+    renderCurrentView();
   }
 
   async function mount(rootEl) {
     root = rootEl;
-    renderSetup();
+    renderCurrentView();
   }
 
   return { mount };
