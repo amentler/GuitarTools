@@ -30,7 +30,8 @@ export function createChordRecorderAudio() {
   let audioCtx = null;
   let analyser = null;
   let stream = null;
-  let rafId = null;
+  let onsetRafId = null;
+  let levelRafId = null;
 
   async function open() {
     stream = await requestMicrophoneStream({
@@ -55,14 +56,30 @@ export function createChordRecorderAudio() {
       if (Math.sqrt(sum / buf.length) >= ONSET_RMS_THRESHOLD) {
         onOnset();
       } else {
-        rafId = requestAnimationFrame(loop);
+        onsetRafId = requestAnimationFrame(loop);
       }
     }
-    rafId = requestAnimationFrame(loop);
+    onsetRafId = requestAnimationFrame(loop);
   }
 
   function stopOnsetWatch() {
-    if (rafId !== null) { cancelAnimationFrame(rafId); rafId = null; }
+    if (onsetRafId !== null) { cancelAnimationFrame(onsetRafId); onsetRafId = null; }
+  }
+
+  function startLevelWatch(onLevel) {
+    const buf = new Float32Array(FFT_SIZE);
+    function loop() {
+      analyser.getFloatTimeDomainData(buf);
+      let sum = 0;
+      for (const s of buf) sum += s * s;
+      onLevel(Math.sqrt(sum / buf.length));
+      levelRafId = requestAnimationFrame(loop);
+    }
+    levelRafId = requestAnimationFrame(loop);
+  }
+
+  function stopLevelWatch() {
+    if (levelRafId !== null) { cancelAnimationFrame(levelRafId); levelRafId = null; }
   }
 
   async function recordForDuration(durationMs) {
@@ -89,10 +106,11 @@ export function createChordRecorderAudio() {
 
   function close() {
     stopOnsetWatch();
+    stopLevelWatch();
     if (analyser) { analyser.disconnect(); analyser = null; }
     if (audioCtx) { audioCtx.close(); audioCtx = null; }
     if (stream) { stopMicrophoneStream(stream); stream = null; }
   }
 
-  return { open, startOnsetWatch, stopOnsetWatch, recordForDuration, close };
+  return { open, startOnsetWatch, stopOnsetWatch, startLevelWatch, stopLevelWatch, recordForDuration, close };
 }

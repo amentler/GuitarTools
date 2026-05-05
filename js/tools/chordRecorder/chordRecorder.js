@@ -23,10 +23,30 @@ const SINGLE_STRUM_MS = 4000;
 const BEAT_MS = 750; // 80 BPM
 const PRE_COUNTDOWN = [3, 2, 1];
 
+const AUTO_ADVANCE_SEC = 5;
+
 function getDurationMs(strumModus) {
   if (strumModus === 'multi1') return 4 * BEAT_MS;
   if (strumModus === 'multi2') return 8 * BEAT_MS;
   return SINGLE_STRUM_MS;
+}
+
+async function autoAdvanceOrWait(ui) {
+  let paused = false;
+  let t = AUTO_ADVANCE_SEC;
+  while (t >= 1) {
+    ui.setAutoCountdown(t, paused);
+    const res = await Promise.race([
+      paused ? new Promise(() => {}) : sleep(1000).then(() => 'tick'),
+      ui.nextAction(),
+    ]);
+    if (res === 'tick') { t--; continue; }
+    if (res === 'pause') { paused = !paused; continue; }
+    ui.hideAutoCountdown();
+    return res;
+  }
+  ui.hideAutoCountdown();
+  return 'next';
 }
 
 const GUITAR_SIZES = ['Vollgröße', '7/8', '3/4', '1/2', '1/4', 'Unbekannt'];
@@ -300,11 +320,15 @@ export function createChordRecorderTool({
       onsetResolve('onset');
     });
 
+    // Level watch runs from listening through end of recording
+    audio.startLevelWatch(rms => ui.setLevel(rms));
+
     ui.setPhase('listening');
     const listenResult = await Promise.race([onsetPromise, ui.nextAction()]);
     audio.stopOnsetWatch();
 
     if (listenResult !== 'onset') {
+      audio.stopLevelWatch();
       return listenResult === 'stop' ? 'stop' : 'next';
     }
 
@@ -328,6 +352,7 @@ export function createChordRecorderTool({
     }
 
     const { samples, sampleRate, durationSec } = await recPromise;
+    audio.stopLevelWatch();
 
     // Quality gates
     const quality = runQualityGates(samples, sampleRate, durationSec);
@@ -336,8 +361,10 @@ export function createChordRecorderTool({
     ui.clearQueue();
     ui.showResult(quality);
 
-    // Wait for user action to determine any flags
-    const action = await ui.nextAction();
+    // Auto-advance after 5s if passed, otherwise wait for manual action
+    const action = quality.passed
+      ? await autoAdvanceOrWait(ui)
+      : await ui.nextAction();
     const userFlags = (action === 'buzz' || action === 'muted') ? [action] : [];
 
     // Build filename and sidecar

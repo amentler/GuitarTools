@@ -1,1 +1,1 @@
-Version 0.74 | 2026-05-05 08:32 | 6a1c5a4 | Start-Button auch über Akkord-Grid
+Version 0.75 | 2026-05-05 08:40 | 05ca035 | Level-Meter, Auto-Advance, Pause-Toggle
