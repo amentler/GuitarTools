@@ -1,1 +1,1 @@
-Version 0.72 | 2026-05-05 08:18 | c8ccae0 | fix Countdown bis 0
+Version 0.73 | 2026-05-05 08:25 | 8c9f92d | kein Download nach jeder Aufnahme

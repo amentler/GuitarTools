@@ -13,8 +13,6 @@ import {
   addRecording,
   clearRecordings,
   getRecordingCount,
-  downloadBlob,
-  downloadJson,
   downloadAllAsZip,
 } from './chordRecorderFiles.js';
 
@@ -346,11 +344,9 @@ export function createChordRecorderTool({
       sampleRate, durationSec, userFlags,
     });
 
-    // Encode, store, and download
+    // Encode and store (download happens via ZIP on setup screen)
     const wavBlob = encodeWav(samples, sampleRate);
     addRecording({ baseName, wavBlob, sidecar });
-    downloadBlob(wavBlob, `${baseName}.wav`);
-    downloadJson(sidecar, `${baseName}.json`);
 
     return action;
   }
