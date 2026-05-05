@@ -2,7 +2,7 @@
 
 Zeigt 4 zufällige Takte in C-Dur auf einer Notenzeile an.
 Metronom (BPM-Slider), wählbare Taktart (2/4–6/8), bewegender Playback-Cursor.
-Endlos-Modus: unbegrenzt neue Takte, auto-scrollend.
+Endlos-Modus: 3-zeiliges Sliding-Window, auto-scrollend.
 Optional: Tabs unterhalb der Notenzeile.
 Optionaler Aktiv-Modus: Mikrofon-basierte Tonprüfung.
 `Aktiv` und `Metronom` sind getrennte Modi:
@@ -48,6 +48,8 @@ Optionaler Aktiv-Modus: Mikrofon-basierte Tonprüfung.
 
 ### `sheetMusicReading.js`
 - `startExercise()` / `stopExercise()`
+- Passiver Endlosmodus verwendet ein 3-Zeilen-Fenster; beim Zeilenwechsel wird
+  weich zur naechsten Zeile gescrollt und danach die aelteste Zeile entfernt
 - Zustand enthält zusätzlich den optionalen Aktivmodus:
   - `active`, `currentBarIndex`, `currentBeatIndex`
   - `isListening`, `isLocked`

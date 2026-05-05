@@ -28,6 +28,7 @@ const playbackBarDestroy = vi.fn();
 const requestMicrophoneStream = vi.fn();
 const openAudioSession = vi.fn();
 const closeAudioSession = vi.fn();
+let mockedRowIndex = 0;
 
 vi.mock('../../js/games/sheetMusicReading/sheetMusicSVG.js', () => ({
   renderScore,
@@ -113,6 +114,15 @@ function buildDom() {
       </div>
     </section>
   `;
+  const container = document.getElementById('score-container');
+  Object.defineProperty(container, 'clientHeight', {
+    configurable: true,
+    value: 540,
+  });
+  container.scrollTop = 0;
+  container.scrollTo = vi.fn(({ top = 0 }) => {
+    container.scrollTop = top;
+  });
 }
 
 describe('SheetMusicReading controller behavior', () => {
@@ -122,6 +132,7 @@ describe('SheetMusicReading controller behavior', () => {
     vi.resetModules();
     buildDom();
     localStorage.clear();
+    mockedRowIndex = 0;
     renderScore.mockClear();
     appendRow.mockClear();
     playbackStart.mockClear();
@@ -137,6 +148,49 @@ describe('SheetMusicReading controller behavior', () => {
     playbackBeatCallback = null;
     requestMicrophoneStream.mockReset();
     requestMicrophoneStream.mockResolvedValue({ getTracks: () => [] });
+    renderScore.mockImplementation(container => {
+      const notationDiv = document.createElement('div');
+      container.innerHTML = '';
+      container.appendChild(notationDiv);
+      return {
+        notationDiv,
+        staveLayout: { barXs: [0, 100, 200, 300] },
+        vw: 400,
+      };
+    });
+    appendRow.mockImplementation((container, bars, showTab) => {
+      const rowDiv = document.createElement('div');
+      rowDiv.className = 'score-row';
+      const notationDiv = document.createElement('div');
+      notationDiv.className = 'notation-wrapper';
+      rowDiv.appendChild(notationDiv);
+      if (showTab) {
+        const tabDiv = document.createElement('div');
+        tabDiv.className = 'tab-wrapper';
+        rowDiv.appendChild(tabDiv);
+      }
+
+      const rowHeight = showTab ? 180 : 120;
+      const rowOffset = mockedRowIndex * rowHeight;
+      mockedRowIndex += 1;
+
+      Object.defineProperty(rowDiv, 'offsetHeight', {
+        configurable: true,
+        value: rowHeight,
+      });
+      Object.defineProperty(rowDiv, 'offsetTop', {
+        configurable: true,
+        value: rowOffset,
+      });
+
+      container.appendChild(rowDiv);
+      return {
+        notationDiv,
+        staveLayout: { barXs: [0, 100, 200, 300] },
+        rowDiv,
+        vw: 400,
+      };
+    });
     openAudioSession.mockReset();
     openAudioSession.mockImplementation(async session => {
       session.audioCtx = { sampleRate: 44100 };
@@ -245,5 +299,36 @@ describe('SheetMusicReading controller behavior', () => {
     playbackBeatCallback({ barIndex: 0, beatIndex: 1, globalBeat: 1 });
     expect(document.getElementById('sheet-music-current-note').textContent).toBe('A2');
     expect(playbackBarMoveToBeat).toHaveBeenCalledWith(0, 1, 4);
+  });
+
+  it('keeps exactly three endless rows and shifts them with tabs enabled', () => {
+    vi.useFakeTimers();
+    localStorage.setItem('sheetMusic_showTab', 'true');
+
+    const feature = createSheetMusicReadingFeature();
+    feature.mount();
+
+    document.getElementById('btn-endless-mode').click();
+    document.getElementById('btn-sheet-play').click();
+
+    const container = document.getElementById('score-container');
+    expect(container.children).toHaveLength(3);
+    expect(appendRow).toHaveBeenCalledTimes(3);
+    expect(appendRow).toHaveBeenNthCalledWith(1, container, expect.any(Array), true, '4/4');
+
+    playbackBeatCallback({ barIndex: 4, beatIndex: 0 });
+    expect(container.scrollTo).toHaveBeenCalledWith(expect.objectContaining({
+      behavior: 'smooth',
+      top: expect.any(Number),
+    }));
+
+    vi.advanceTimersByTime(420);
+
+    expect(container.children).toHaveLength(3);
+    expect(appendRow).toHaveBeenCalledTimes(4);
+    expect(playbackBarDestroy).toHaveBeenCalledTimes(1);
+    expect(container.querySelectorAll('.tab-wrapper')).toHaveLength(3);
+
+    vi.useRealTimers();
   });
 });

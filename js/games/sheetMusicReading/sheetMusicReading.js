@@ -1,6 +1,6 @@
 import {
   generateBars, getFilteredNotes, getTimeSignatureConfig,
-  EndlessBarGenerator, calcScrollTarget,
+  EndlessBarGenerator,
 } from './sheetMusicLogic.js';
 import { renderScore, appendRow } from './sheetMusicSVG.js';
 import { PlaybackController } from './playbackController.js';
@@ -40,8 +40,9 @@ import {
 
 // Number of bars per rendered row (matches the 4-bar VexFlow layout).
 const BARS_PER_ROW = 4;
-// How many rows ahead of the current position to keep pre-rendered.
-const LOOKAHEAD_ROWS = 2;
+const ENDLESS_VISIBLE_ROWS = 3;
+const ENDLESS_SCROLL_TARGET_FRACTION = 0.33;
+const ENDLESS_SCROLL_SHIFT_DELAY_MS = 420;
 // Minimum notes in the pool before showing the "too few notes" warning.
 const MIN_POOL_SIZE = 3;
 const SUCCESS_PAUSE_MS = 600;
@@ -90,6 +91,9 @@ export function createSheetMusicReadingFeature() {
   let allRowDivs       = [];
   let allPlaybackBars  = [];
   let allStaveLayouts  = [];
+  let endlessFirstRowIndex = 0;
+  let endlessShiftTimeoutId = null;
+  let pendingEndlessRowAsset = null;
 
   function getNotesPool() {
     return getFilteredNotes(state.settings.maxFret, state.settings.activeStrings);
@@ -506,26 +510,97 @@ export function createSheetMusicReadingFeature() {
   }
 
   // ── Endless mode helpers ────────────────────────────────────────────────
-  function appendEndlessRow() {
+  function buildEndlessRow(container = ui.container) {
     const bars      = endlessGen.nextBatch(BARS_PER_ROW);
-    const container = ui.container;
     const { notationDiv, staveLayout, rowDiv, vw } = appendRow(
       container, bars, state.showTab, state.timeSig,
     );
     const bar = new PlaybackBar();
     bar.render(notationDiv, staveLayout, vw);
     bar.hide();
-    allRowDivs.push(rowDiv);
-    allPlaybackBars.push(bar);
-    allStaveLayouts.push(staveLayout);
+    return { rowDiv, playbackBar: bar, staveLayout };
+  }
+
+  function appendEndlessRow(container = ui.container) {
+    const asset = buildEndlessRow(container);
+    allRowDivs.push(asset.rowDiv);
+    allPlaybackBars.push(asset.playbackBar);
+    allStaveLayouts.push(asset.staveLayout);
+    return asset;
+  }
+
+  function disposePendingEndlessRowAsset() {
+    if (!pendingEndlessRowAsset) return;
+    pendingEndlessRowAsset.playbackBar.destroy();
+    pendingEndlessRowAsset.rowDiv.remove();
+    pendingEndlessRowAsset = null;
+  }
+
+  function clearEndlessShiftTimeout() {
+    if (!endlessShiftTimeoutId) return;
+    clearTimeout(endlessShiftTimeoutId);
+    endlessShiftTimeoutId = null;
+    disposePendingEndlessRowAsset();
+  }
+
+  function getEndlessScrollTarget(container, rowDiv) {
+    if (!container || !rowDiv) return 0;
+    const target = rowDiv.offsetTop - container.clientHeight * ENDLESS_SCROLL_TARGET_FRACTION;
+    return Math.max(0, target);
+  }
+
+  function shiftEndlessWindowToRow(absoluteRowIndex) {
+    if (endlessShiftTimeoutId) return;
+    if (absoluteRowIndex <= endlessFirstRowIndex) return;
+
+    const localRowIndex = absoluteRowIndex - endlessFirstRowIndex;
+    const currentRowDiv = allRowDivs[localRowIndex];
+    const container = ui?.container;
+    if (!container || !currentRowDiv) return;
+
+    const scratch = document.createElement('div');
+    pendingEndlessRowAsset = buildEndlessRow(scratch);
+
+    container.scrollTo({
+      top: getEndlessScrollTarget(container, currentRowDiv),
+      behavior: 'smooth',
+    });
+
+    endlessShiftTimeoutId = setTimeout(() => {
+      endlessShiftTimeoutId = null;
+
+      const nextAsset = pendingEndlessRowAsset;
+      pendingEndlessRowAsset = null;
+      if (!nextAsset) return;
+
+      const removedRowDiv = allRowDivs.shift() ?? null;
+      const removedPlaybackBar = allPlaybackBars.shift() ?? null;
+      allStaveLayouts.shift();
+
+      const removedHeight = removedRowDiv?.offsetHeight ?? 0;
+      removedPlaybackBar?.destroy();
+      removedRowDiv?.remove();
+
+      container.appendChild(nextAsset.rowDiv);
+      allRowDivs.push(nextAsset.rowDiv);
+      allPlaybackBars.push(nextAsset.playbackBar);
+      allStaveLayouts.push(nextAsset.staveLayout);
+      endlessFirstRowIndex += 1;
+
+      if (removedHeight > 0) {
+        container.scrollTop = Math.max(0, container.scrollTop - removedHeight);
+      }
+    }, ENDLESS_SCROLL_SHIFT_DELAY_MS);
   }
 
   function cleanupEndlessState() {
+    clearEndlessShiftTimeout();
     allPlaybackBars.forEach(bar => bar.destroy());
     allRowDivs      = [];
     allPlaybackBars = [];
     allStaveLayouts = [];
     endlessGen      = null;
+    endlessFirstRowIndex = 0;
     const container = ui?.container;
     if (container) {
       container.classList.remove('score-container--endless');
@@ -580,12 +655,13 @@ export function createSheetMusicReadingFeature() {
     allRowDivs      = [];
     allPlaybackBars = [];
     allStaveLayouts = [];
+    endlessFirstRowIndex = 0;
+    clearEndlessShiftTimeout();
 
     const config = getTimeSigConfig();
     endlessGen = new EndlessBarGenerator(config.beatsPerBar, getNotesPool());
 
-    // Pre-render initial rows
-    for (let i = 0; i < 1 + LOOKAHEAD_ROWS; i++) appendEndlessRow();
+    for (let i = 0; i < ENDLESS_VISIBLE_ROWS; i++) appendEndlessRow();
 
     // Show first row's playback bar
     allPlaybackBars[0].show();
@@ -593,34 +669,22 @@ export function createSheetMusicReadingFeature() {
     playback.onBeat(({ barIndex, beatIndex }) => {
       const rowIndex   = Math.floor(barIndex / BARS_PER_ROW);
       const barInRow   = barIndex % BARS_PER_ROW;
+      const visibleRowIndex = rowIndex - endlessFirstRowIndex;
 
       // Show only the current row's playback bar
       allPlaybackBars.forEach((bar, i) => {
-        if (i === rowIndex) bar.show(); else bar.hide();
+        if (i === visibleRowIndex) bar.show(); else bar.hide();
       });
 
       // Move the playback bar within the current row
-      if (allPlaybackBars[rowIndex]) {
-        allPlaybackBars[rowIndex].moveToBeat(
+      if (allPlaybackBars[visibleRowIndex]) {
+        allPlaybackBars[visibleRowIndex].moveToBeat(
           barInRow, beatIndex, config.beatsPerBar,
         );
       }
 
-      // Auto-scroll when entering a new row
-      if (barInRow === 0 && beatIndex === 0 && rowIndex > 0) {
-        const rowDiv         = allRowDivs[rowIndex];
-        const firstRowHeight = allRowDivs[0]?.offsetHeight || 240;
-        if (rowDiv) {
-          const scrollTarget = calcScrollTarget(
-            rowIndex, firstRowHeight, container.clientHeight,
-          );
-          container.scrollTo({ top: scrollTarget, behavior: 'smooth' });
-        }
-      }
-
-      // Pre-generate: ensure LOOKAHEAD_ROWS rows are rendered ahead
-      while (allRowDivs.length <= rowIndex + LOOKAHEAD_ROWS) {
-        appendEndlessRow();
+      if (barInRow === 0 && beatIndex === 0 && rowIndex > endlessFirstRowIndex) {
+        shiftEndlessWindowToRow(rowIndex);
       }
     });
 
