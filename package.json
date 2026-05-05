@@ -15,7 +15,7 @@
     "fingerprint:fixtures": "node scripts/generate-essentia-fingerprint-fixtures.mjs",
     "jsfingerprint": "node scripts/chord-recognition-jsfingerprint.mjs",
     "lint": "eslint .",
-    "prepare": "husky"
+    "prepare": "husky && git config merge.ours.driver true"
   },
   "lint-staged": {
     "*.js": [
