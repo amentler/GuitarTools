@@ -1,1 +1,1 @@
-Version 0.73 | 2026-05-05 08:25 | 8c9f92d | kein Download nach jeder Aufnahme
+Version 0.74 | 2026-05-05 08:32 | 6a1c5a4 | Start-Button auch über Akkord-Grid

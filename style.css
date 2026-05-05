@@ -1732,6 +1732,13 @@ input[type="range"] {
   line-height: 1.2;
 }
 
+.cr-section-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
 .cr-start-container {
   display: flex;
   justify-content: center;

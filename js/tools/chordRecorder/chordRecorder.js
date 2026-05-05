@@ -83,11 +83,9 @@ export function createChordRecorderTool({
   }
 
   function updateStartButton() {
-    const btn = root?.querySelector('#cr-start-btn');
-    if (!btn) return;
     const config = getConfig();
     const ready = selectedChord && config.techniken.length > 0 && config.strumModi.length > 0;
-    btn.classList.toggle('u-hidden', !ready);
+    root?.querySelectorAll('[data-start]').forEach(btn => btn.classList.toggle('u-hidden', !ready));
   }
 
   function renderChordGrid() {
@@ -238,12 +236,17 @@ export function createChordRecorderTool({
         </section>
 
         <section class="cr-section">
-          <h2 class="cr-section-title">③ Akkord wählen</h2>
+          <div class="cr-section-header">
+            <h2 class="cr-section-title">③ Akkord wählen</h2>
+            <button type="button" class="btn-start u-hidden" data-start>
+              Aufnahme starten
+            </button>
+          </div>
           <div id="cr-chord-grid" class="cr-chord-grid"></div>
         </section>
 
         <div class="cr-start-container">
-          <button id="cr-start-btn" type="button" class="btn-start u-hidden">
+          <button type="button" class="btn-start u-hidden" data-start>
             Aufnahme starten
           </button>
         </div>
@@ -258,7 +261,7 @@ export function createChordRecorderTool({
     updateStartButton();
     updateToolMenu();
 
-    root.querySelector('#cr-start-btn')?.addEventListener('click', startSession);
+    root.querySelectorAll('[data-start]').forEach(btn => btn.addEventListener('click', startSession));
 
     root.querySelector('#cr-download-all')?.addEventListener('click', async () => {
       await downloadAllAsZip('chord-recordings');
