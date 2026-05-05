@@ -1,1 +1,1 @@
-Version 0.85 | 2026-05-05 18:17 | 9d47a1f | Merge remote-tracking branch origin/main
+Version 0.86 | 2026-05-05 21:07 | 6f00d02 | feat: keep sheet music endless mode at three rows
