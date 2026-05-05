@@ -1,1 +1,1 @@
-Version 0.71 | 2026-05-05 08:08 | 65c16cc | Chord Recorder Phasen 6+7
+Version 0.72 | 2026-05-05 08:18 | c8ccae0 | fix Countdown bis 0

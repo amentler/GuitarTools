@@ -313,9 +313,9 @@ export function createChordRecorderTool({
 
     if (variation.strumModus === 'single') {
       const steps = Math.floor(durationMs / 1000);
-      for (let t = steps; t >= 1; t--) {
+      for (let t = steps; t >= 0; t--) {
         ui.setPhase('recording', t);
-        await sleep(1000);
+        if (t > 0) await sleep(1000);
       }
     } else {
       const totalBeats = durationMs / BEAT_MS;
