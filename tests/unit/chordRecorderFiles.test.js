@@ -1,9 +1,14 @@
 import { describe, it, expect } from 'vitest';
 import {
+  addRecording,
   generateRandom5,
+  getAllRecordings,
+  getRecordingCount,
+  removeRecordingByBaseName,
   toChordKey,
   buildFileName,
   buildSidecarJson,
+  clearRecordings,
 } from '../../js/tools/chordRecorder/chordRecorderFiles.js';
 
 // ── generateRandom5 ───────────────────────────────────────────────────────────
@@ -136,5 +141,26 @@ describe('buildSidecarJson', () => {
     const s = buildSidecarJson('C-Dur', 'cdur', variation, c, quality, meta);
     expect(s.guitarStrings).toBe('Nylon');
     expect(s.guitarSize).toBe('3/4');
+  });
+});
+
+// ── in-memory store ───────────────────────────────────────────────────────────
+
+describe('recording store', () => {
+  it('adds, lists and removes recordings by base name', () => {
+    clearRecordings();
+    addRecording({ baseName: 'take-a', wavBlob: new Blob(['a']), sidecar: { chord: 'A-Dur' } });
+    addRecording({ baseName: 'take-b', wavBlob: new Blob(['b']), sidecar: { chord: 'H-Dur' } });
+
+    expect(getRecordingCount()).toBe(2);
+    expect(getAllRecordings().map(entry => entry.baseName)).toEqual(['take-a', 'take-b']);
+
+    const removed = removeRecordingByBaseName('take-a');
+
+    expect(removed?.baseName).toBe('take-a');
+    expect(getRecordingCount()).toBe(1);
+    expect(getAllRecordings().map(entry => entry.baseName)).toEqual(['take-b']);
+
+    clearRecordings();
   });
 });

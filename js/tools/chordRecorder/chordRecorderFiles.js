@@ -136,6 +136,13 @@ export function getAllRecordings() {
   return [..._store];
 }
 
+export function removeRecordingByBaseName(baseName) {
+  const index = _store.findIndex(entry => entry.baseName === baseName);
+  if (index < 0) return null;
+  const [removed] = _store.splice(index, 1);
+  return removed;
+}
+
 export function clearRecordings() {
   _store.length = 0;
 }

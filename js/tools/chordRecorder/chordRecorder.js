@@ -11,8 +11,11 @@ import {
   buildFileName,
   buildSidecarJson,
   addRecording,
+  clearRecordings,
+  getAllRecordings,
   getRecordingCount,
   downloadAllAsZip,
+  removeRecordingByBaseName,
 } from './chordRecorderFiles.js';
 
 const STORAGE_PREFIX = 'chord-recorder-';
@@ -81,6 +84,7 @@ export function createChordRecorderTool({
   let root = null;
   let selectedChord = null;
   let currentView = 'record';
+  let activePlayback = null;
 
   function getConfig() {
     return {
@@ -153,7 +157,81 @@ export function createChordRecorderTool({
   }
 
   function setView(viewName) {
+    stopPlayback();
     currentView = viewName;
+    renderCurrentView();
+  }
+
+  function stopPlayback() {
+    if (!activePlayback) return;
+    activePlayback.audio.pause();
+    activePlayback.audio.currentTime = 0;
+    URL.revokeObjectURL(activePlayback.url);
+    activePlayback = null;
+  }
+
+  function formatTakeTimestamp(recordedAt) {
+    const date = new Date(recordedAt);
+    if (Number.isNaN(date.getTime())) return '';
+    return date.toLocaleString('de-DE', {
+      dateStyle: 'short',
+      timeStyle: 'short',
+    });
+  }
+
+  function formatTakeLabel(sidecar) {
+    return [
+      sidecar.technique,
+      sidecar.volume,
+      sidecar.strumMode,
+      `Take ${sidecar.repeatIndex}/2`,
+    ].join(' · ');
+  }
+
+  function getManageItemStatus(sidecar) {
+    if (!sidecar?.quality?.passed) return 'Fehler';
+    if (sidecar.quality.warnReasons?.length) return `Warnung: ${sidecar.quality.warnReasons.join(', ')}`;
+    return 'OK';
+  }
+
+  function playRecording(baseName) {
+    const recording = getAllRecordings().find(entry => entry.baseName === baseName);
+    if (!recording) return;
+    if (activePlayback?.baseName === baseName) {
+      stopPlayback();
+      renderCurrentView();
+      return;
+    }
+
+    stopPlayback();
+    const url = URL.createObjectURL(recording.wavBlob);
+    const audio = new Audio(url);
+    activePlayback = { baseName, audio, url };
+    audio.addEventListener('ended', () => {
+      stopPlayback();
+      renderCurrentView();
+    }, { once: true });
+    void audio.play().catch(() => {
+      stopPlayback();
+      renderCurrentView();
+    });
+    renderCurrentView();
+  }
+
+  function deleteRecording(baseName) {
+    if (activePlayback?.baseName === baseName) {
+      stopPlayback();
+    }
+    removeRecordingByBaseName(baseName);
+    renderCurrentView();
+  }
+
+  function clearAllRecordingsWithConfirm() {
+    const count = getRecordingCount();
+    if (count === 0) return;
+    if (!confirm(`${count} Aufnahme${count !== 1 ? 'n' : ''} unwiderruflich löschen?`)) return;
+    stopPlayback();
+    clearRecordings();
     renderCurrentView();
   }
 
@@ -299,28 +377,66 @@ export function createChordRecorderTool({
   }
 
   function renderManageView() {
-    const count = getRecordingCount();
+    const recordings = getAllRecordings().slice().reverse();
+    const count = recordings.length;
     root.innerHTML = `
       <div class="chord-recorder">
         <div class="cr-tool-menu">
           <button id="cr-back-to-record" type="button" class="cr-btn cr-btn--tool">
             ← Zurück zur Aufnahme
           </button>
+          <button id="cr-clear-all" type="button" class="cr-btn cr-btn--tool cr-btn--danger" ${count === 0 ? 'disabled' : ''}>
+            🗑 Alle Aufnahmen löschen
+          </button>
           <span id="cr-rec-count" class="cr-rec-count"></span>
         </div>
 
         <section class="cr-section">
           <h2 class="cr-section-title">Recording-Verwaltung</h2>
-          <p class="cr-manage-copy">
-            ${count === 0
-              ? 'Noch keine Aufnahmen in dieser Session.'
-              : `${count} Aufnahme${count !== 1 ? 'n' : ''} in dieser Session gespeichert.`}
-          </p>
+          ${count === 0 ? `
+            <p class="cr-manage-copy">Noch keine Aufnahmen in dieser Session.</p>
+          ` : `
+            <div class="cr-manage-list">
+              ${recordings.map(({ baseName, sidecar }) => `
+                <article class="cr-manage-item" data-recording="${baseName}">
+                  <div class="cr-manage-meta">
+                    <strong class="cr-manage-title">${sidecar.chord}</strong>
+                    <span class="cr-manage-subtitle">${formatTakeLabel(sidecar)}</span>
+                    <span class="cr-manage-subtitle">${formatTakeTimestamp(sidecar.recordedAt)}</span>
+                    <span class="cr-manage-subtitle">Status: ${getManageItemStatus(sidecar)}</span>
+                  </div>
+                  <div class="cr-manage-actions">
+                    <button
+                      type="button"
+                      class="cr-btn cr-btn--tool"
+                      data-play-recording="${baseName}"
+                    >
+                      ${activePlayback?.baseName === baseName ? 'Stoppen' : 'Anhören'}
+                    </button>
+                    <button
+                      type="button"
+                      class="cr-btn cr-btn--danger"
+                      data-delete-recording="${baseName}"
+                    >
+                      Löschen
+                    </button>
+                  </div>
+                </article>
+              `).join('')}
+            </div>
+          `}
         </section>
       </div>
     `;
 
     root.querySelector('#cr-back-to-record')?.addEventListener('click', () => setView('record'));
+    root.querySelector('#cr-clear-all')?.addEventListener('click', clearAllRecordingsWithConfirm);
+    root.querySelectorAll('[data-play-recording]').forEach(btn => {
+      btn.addEventListener('click', () => playRecording(btn.dataset.playRecording));
+    });
+    root.querySelectorAll('[data-delete-recording]').forEach(btn => {
+      btn.addEventListener('click', () => deleteRecording(btn.dataset.deleteRecording));
+    });
     updateToolMenu();
   }
 
