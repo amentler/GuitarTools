@@ -5,7 +5,6 @@ As an AI agent working on this project, you MUST adhere to the following rules:
 ## 1. Documentation & Plan Updates
 - **AFTER EVERY COMPLETED TASK**, you MUST update the corresponding `.md` files (plans in `plans/`, `CLAUDE.md`, or this `GEMINI.md`).
 - **Automated Versioning:** The `prepare-commit-msg` hook automatically regenerates `/version.txt` with the next numeric version, current timestamp, base hash, and commit title on every commit. Manual edits are overwritten and should not be attempted.
-
 - **Hook-owned metadata:** The same hook also syncs `sw.js` `CACHE_VERSION`. After a successful commit, the next version/cache bump may already remain staged for the following commit. Always inspect `git status` after commits and sync flows.
 - **NO COMMIT WITHOUT VERSION UPDATE:** Every commit will include the hook-generated `version.txt` update automatically; agents must not maintain that file by hand.
 - Ensure that the project status, next steps, and architectural changes are accurately reflected in the documentation.

@@ -1,1 +1,1 @@
-Version 0.84 | 2026-05-05 18:11 | af5813c | build: sync cache version metadata
+Version 0.84 | 2026-05-05 18:13 | 320a284 | docs: version.txt-Hinweis in GEMINI.md und /implementplan entfernt

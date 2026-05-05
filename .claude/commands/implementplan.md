@@ -19,7 +19,7 @@ Wenn kein konkreter Dateiname angegeben wurde, liste die Dateien in `plans/` und
 
 3. **Lint** – führe nach erfolgreichen Tests `npm run lint` aus und behebe alle Warnungen/Fehler.
 
-4. **version.txt aktualisieren** – trage das aktuelle Datum und die Uhrzeit ein (Format: `Version YYYY-MM-DD HH:MM`).
+4. **version.txt NICHT anfassen** – sie wird automatisch vom `prepare-commit-msg`-Hook generiert.
 
 5. **Plandatei archivieren** – verschiebe die verwendete Plandatei mit `mv plans/<name>.md plans/old/<name>.md` in den Archivordner. Lege `plans/old/` an, falls es noch nicht existiert.
 
