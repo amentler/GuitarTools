@@ -1,1 +1,1 @@
-Version 0.82 | 2026-05-05 18:09 | 40572ba | fix: Noten lesen in Übungen-mit-Gitarre + Noten-Status-Bug beheben
+Version 0.83 | 2026-05-05 18:11 | 73d6af9 | Merge remote-tracking branch origin/main
