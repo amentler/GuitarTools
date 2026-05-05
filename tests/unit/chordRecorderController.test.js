@@ -157,4 +157,26 @@ describe('chordRecorder controller', () => {
     expect(pauseMock).toHaveBeenCalledTimes(1);
     expect(globalThis.URL.revokeObjectURL).toHaveBeenCalledWith('blob:test');
   });
+
+  it('disables management navigation while a recording session is starting', async () => {
+    const tool = createChordRecorderTool({
+      storageService: createMockStorageService(),
+      createAudioSession: () => ({
+        open: () => new Promise(() => {}),
+        close: vi.fn(),
+      }),
+    });
+
+    await tool.mount(document.getElementById('root'));
+
+    document.querySelector('.cr-chord-card').click();
+    document.querySelector('[data-start]').click();
+    await Promise.resolve();
+
+    const manageButton = document.getElementById('cr-manage-recordings');
+    expect(manageButton?.disabled).toBe(true);
+
+    manageButton.click();
+    expect(document.getElementById('cr-chord-grid')).not.toBeNull();
+  });
 });

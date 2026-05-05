@@ -80,11 +80,13 @@ function getSortedChordNames() {
 
 export function createChordRecorderTool({
   storageService = createStorageService({ prefix: STORAGE_PREFIX }),
+  createAudioSession = createChordRecorderAudio,
 } = {}) {
   let root = null;
   let selectedChord = null;
   let currentView = 'record';
   let activePlayback = null;
+  let isSessionActive = false;
 
   function getConfig() {
     return {
@@ -157,6 +159,7 @@ export function createChordRecorderTool({
   }
 
   function setView(viewName) {
+    if (isSessionActive) return;
     stopPlayback();
     currentView = viewName;
     renderCurrentView();
@@ -278,7 +281,7 @@ export function createChordRecorderTool({
     const manageBtn   = root?.querySelector('#cr-manage-recordings');
     const countEl     = root?.querySelector('#cr-rec-count');
     if (downloadBtn) downloadBtn.disabled = count === 0;
-    if (manageBtn) manageBtn.disabled = false;
+    if (manageBtn) manageBtn.disabled = isSessionActive;
     if (countEl) {
       countEl.textContent = count === 0
         ? 'Keine Aufnahmen gespeichert'
@@ -539,27 +542,34 @@ export function createChordRecorderTool({
     const variations = buildVariationList(config);
     if (!selectedChord || variations.length === 0) return;
 
-    const audio = createChordRecorderAudio();
+    isSessionActive = true;
+    updateToolMenu();
+
+    const audio = createAudioSession();
     const ui = createChordRecorderUI(root);
 
     try {
       await audio.open();
     } catch (err) {
+      isSessionActive = false;
       root.innerHTML = `<p class="cr-error">Mikrofon-Fehler: ${err.message}</p>
         <button type="button" class="btn-back" onclick="history.back()">← Zurück</button>`;
       return;
     }
 
-    let i = 0;
-    while (i < variations.length) {
-      const action = await runVariation(audio, ui, i, variations.length);
-      if (action === 'stop') break;
-      if (action === 'repeat') continue;
-      i++;
+    try {
+      let i = 0;
+      while (i < variations.length) {
+        const action = await runVariation(audio, ui, i, variations.length);
+        if (action === 'stop') break;
+        if (action === 'repeat') continue;
+        i++;
+      }
+    } finally {
+      audio.close();
+      isSessionActive = false;
+      renderCurrentView();
     }
-
-    audio.close();
-    renderCurrentView();
   }
 
   async function mount(rootEl) {
