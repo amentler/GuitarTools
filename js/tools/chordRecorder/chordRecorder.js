@@ -22,7 +22,7 @@ const SINGLE_STRUM_MS = 4000;
 const PRE_COUNTDOWN = [3, 2, 1];
 
 const GUITAR_SIZES = ['Vollgröße', '7/8', '3/4', '1/2', '1/4', 'Unbekannt'];
-const GUITAR_STRINGS = ['Steel', 'Nylon'];
+const GUITAR_STRINGS = ['Nylon', 'Steel'];
 const TECHNIKEN = [
   { value: 'finger',      label: 'Finger' },
   { value: 'fingernagel', label: 'Fingernagel' },
@@ -57,7 +57,7 @@ export function createChordRecorderTool({
   function getConfig() {
     return {
       guitarSize:    storageService.getString('guitarSize', { defaultValue: 'Vollgröße' }),
-      guitarStrings: storageService.getString('guitarStrings', { defaultValue: 'Steel' }),
+      guitarStrings: storageService.getString('guitarStrings', { defaultValue: 'Nylon' }),
       techniken: TECHNIKEN
         .map(t => t.value)
         .filter(v => storageService.getBoolean(`technik-${v}`, { defaultValue: v !== 'plektrum' })),
@@ -135,7 +135,7 @@ export function createChordRecorderTool({
     });
 
     if (sizeSelect) sizeSelect.value = storageService.getString('guitarSize', { defaultValue: 'Vollgröße' });
-    if (stringsSelect) stringsSelect.value = storageService.getString('guitarStrings', { defaultValue: 'Steel' });
+    if (stringsSelect) stringsSelect.value = storageService.getString('guitarStrings', { defaultValue: 'Nylon' });
   }
 
   function bindVariantControls() {
