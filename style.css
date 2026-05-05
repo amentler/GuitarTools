@@ -1858,3 +1858,62 @@ input[type="range"] {
   padding: 2rem;
   font-size: 1rem;
 }
+
+/* === Chord Recorder — Tool Menu === */
+
+.cr-tool-menu {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  padding: 0.75rem 1rem;
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+  width: 100%;
+}
+
+.cr-btn--tool {
+  padding: 0.4rem 0.85rem;
+  font-size: 0.82rem;
+}
+
+.cr-btn--danger { border-color: #c0392b; color: #c0392b; }
+.cr-btn--danger:hover:not(:disabled) { background: #fdf0ee; }
+
+.cr-rec-count {
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+  margin-left: auto;
+}
+
+/* === Chord Recorder — Beat Metronome === */
+
+.cr-beat-row {
+  display: flex;
+  gap: 0.65rem;
+  justify-content: center;
+  align-items: center;
+  padding: 0.75rem 0;
+}
+
+.cr-beat-dot {
+  width: 1rem;
+  height: 1rem;
+  border-radius: 50%;
+  background: var(--color-border);
+  border: 2px solid transparent;
+  transition: background 0.07s, transform 0.07s;
+}
+
+.cr-beat-dot.downbeat {
+  border-color: var(--color-accent);
+}
+
+.cr-beat-dot.active {
+  background: var(--color-accent-alt);
+  transform: scale(1.45);
+}
+
+.cr-beat-dot.downbeat.active {
+  background: var(--color-accent);
+}

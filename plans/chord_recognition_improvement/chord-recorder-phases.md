@@ -77,7 +77,7 @@ runQualityGates(clippedSamples, ...) → { passed: false, failReasons: ['clippin
 
 ---
 
-## Phase 4 — Aufnahme-Grundflow (Single Strum)
+## Phase 4 — Aufnahme-Grundflow (Single Strum) ✅ (v0.65)
 
 **Ziel:** Single-Strum-Aufnahme läuft komplett durch — Einzähler, Onset, Countdown, Quality Gates, Download.
 
@@ -99,7 +99,7 @@ Nutzt `microphoneService.js` aus `js/shared/audio/` (bereits vorhanden).
 
 ---
 
-## Phase 5 — Dateiausgabe + Sidecar-JSON
+## Phase 5 — Dateiausgabe + Sidecar-JSON ✅ (v0.69)
 
 **Ziel:** Jede Aufnahme erhält den korrekten Dateinamen und eine vollständige Sidecar-JSON. Alle Aufnahmen werden in-memory gesammelt.
 
@@ -145,7 +145,7 @@ buildSidecarJson(variation, meta)   // → JSON-Objekt mit allen Feldern
 
 ---
 
-## Phase 6 — Multi-Strum + Visuelles Metronom
+## Phase 6 — Multi-Strum + Visuelles Metronom ✅ (v0.71)
 
 **Ziel:** Multi-Strum-Modi (1 Takt / 2 Takte) mit visuellem Metronom funktionieren.
 
@@ -161,7 +161,7 @@ buildSidecarJson(variation, meta)   // → JSON-Objekt mit allen Feldern
 
 ---
 
-## Phase 7 — Tool-Menü: ZIP-Download + Clear
+## Phase 7 — Tool-Menü: ZIP-Download + Clear ✅ (v0.71)
 
 **Ziel:** Gesamtdownload und Speicher leeren funktionieren.
 

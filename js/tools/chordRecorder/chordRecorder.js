@@ -11,15 +11,25 @@ import {
   buildFileName,
   buildSidecarJson,
   addRecording,
+  clearRecordings,
+  getRecordingCount,
   downloadBlob,
   downloadJson,
+  downloadAllAsZip,
 } from './chordRecorderFiles.js';
 
 const STORAGE_PREFIX = 'chord-recorder-';
 const ROOT_ORDER = ['A', 'C', 'D', 'E', 'F', 'G', 'H'];
 const TYPE_ORDER = ['Dur', 'Moll', 'Dom7', 'Maj7', 'Min7', 'Dim', 'Sus', 'Add'];
 const SINGLE_STRUM_MS = 4000;
+const BEAT_MS = 750; // 80 BPM
 const PRE_COUNTDOWN = [3, 2, 1];
+
+function getDurationMs(strumModus) {
+  if (strumModus === 'multi1') return 4 * BEAT_MS;
+  if (strumModus === 'multi2') return 8 * BEAT_MS;
+  return SINGLE_STRUM_MS;
+}
 
 const GUITAR_SIZES = ['Vollgröße', '7/8', '3/4', '1/2', '1/4', 'Unbekannt'];
 const GUITAR_STRINGS = ['Nylon', 'Steel'];
@@ -160,9 +170,33 @@ export function createChordRecorderTool({
     });
   }
 
+  function updateToolMenu() {
+    const count = getRecordingCount();
+    const downloadBtn = root?.querySelector('#cr-download-all');
+    const clearBtn    = root?.querySelector('#cr-clear-all');
+    const countEl     = root?.querySelector('#cr-rec-count');
+    if (downloadBtn) downloadBtn.disabled = count === 0;
+    if (clearBtn)    clearBtn.disabled    = count === 0;
+    if (countEl) {
+      countEl.textContent = count === 0
+        ? 'Keine Aufnahmen gespeichert'
+        : `${count} Aufnahme${count !== 1 ? 'n' : ''} gespeichert`;
+    }
+  }
+
   function renderSetup() {
     root.innerHTML = `
       <div class="chord-recorder">
+
+        <div class="cr-tool-menu">
+          <button id="cr-download-all" type="button" class="cr-btn cr-btn--tool" disabled>
+            ⬇ Alles herunterladen
+          </button>
+          <button id="cr-clear-all" type="button" class="cr-btn cr-btn--tool cr-btn--danger" disabled>
+            🗑 Aufnahmen löschen
+          </button>
+          <span id="cr-rec-count" class="cr-rec-count"></span>
+        </div>
 
         <section class="cr-section">
           <h2 class="cr-section-title">① Instrument</h2>
@@ -224,8 +258,21 @@ export function createChordRecorderTool({
     renderChordGrid();
     updateVariationCount();
     updateStartButton();
+    updateToolMenu();
 
     root.querySelector('#cr-start-btn')?.addEventListener('click', startSession);
+
+    root.querySelector('#cr-download-all')?.addEventListener('click', async () => {
+      await downloadAllAsZip('chord-recordings');
+    });
+
+    root.querySelector('#cr-clear-all')?.addEventListener('click', () => {
+      const count = getRecordingCount();
+      if (count > 0 && confirm(`${count} Aufnahme${count !== 1 ? 'n' : ''} unwiderruflich löschen?`)) {
+        clearRecordings();
+        updateToolMenu();
+      }
+    });
   }
 
   async function runVariation(audio, ui, index, total) {
@@ -260,13 +307,25 @@ export function createChordRecorderTool({
       return listenResult === 'stop' ? 'stop' : 'next';
     }
 
-    // Recording
-    const recPromise = audio.recordForDuration(SINGLE_STRUM_MS);
-    const steps = Math.floor(SINGLE_STRUM_MS / 1000);
-    for (let t = steps; t >= 1; t--) {
-      ui.setPhase('recording', t);
-      await sleep(1000);
+    // Recording — duration and display depend on strum mode
+    const durationMs = getDurationMs(variation.strumModus);
+    const recPromise = audio.recordForDuration(durationMs);
+
+    if (variation.strumModus === 'single') {
+      const steps = Math.floor(durationMs / 1000);
+      for (let t = steps; t >= 1; t--) {
+        ui.setPhase('recording', t);
+        await sleep(1000);
+      }
+    } else {
+      const totalBeats = durationMs / BEAT_MS;
+      ui.showBeats(totalBeats);
+      for (let b = 1; b <= totalBeats; b++) {
+        ui.setBeat(b);
+        await sleep(BEAT_MS);
+      }
     }
+
     const { samples, sampleRate, durationSec } = await recPromise;
 
     // Quality gates

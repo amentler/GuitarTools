@@ -82,6 +82,24 @@ export function createChordRecorderUI(container) {
       : '';
   }
 
+  function showBeats(totalBeats) {
+    const cdEl = container.querySelector('#cr-countdown');
+    const stEl = container.querySelector('#cr-status');
+    if (!cdEl) return;
+    cdEl.innerHTML = `<div class="cr-beat-row">${
+      Array.from({ length: totalBeats }, (_, i) =>
+        `<div class="cr-beat-dot${i % 4 === 0 ? ' downbeat' : ''}" data-beat="${i + 1}"></div>`
+      ).join('')
+    }</div>`;
+    if (stEl) stEl.textContent = 'Aufnahme läuft…';
+  }
+
+  function setBeat(n) {
+    container.querySelectorAll('.cr-beat-dot').forEach((dot, i) => {
+      dot.classList.toggle('active', i + 1 === n);
+    });
+  }
+
   function showResult(quality) {
     const el = container.querySelector('#cr-result');
     if (!el) return;
@@ -95,5 +113,5 @@ export function createChordRecorderUI(container) {
     }
   }
 
-  return { render, setPhase, showResult, nextAction, clearQueue };
+  return { render, setPhase, showBeats, setBeat, showResult, nextAction, clearQueue };
 }

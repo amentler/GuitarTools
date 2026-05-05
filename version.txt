@@ -1,1 +1,1 @@
-Version 0.70 | 2026-05-05 07:24 | b40046c | fix Nylon default
+Version 0.71 | 2026-05-05 08:08 | 65c16cc | Chord Recorder Phasen 6+7
