@@ -64,7 +64,7 @@ export function generateBars(numBars = 4, beatsPerBar = 4, notesPool = NOTES) {
       const lo = Math.max(0, idx - 2);
       const hi = Math.min(n - 1, idx + 2);
       idx = lo + Math.floor(Math.random() * (hi - lo + 1));
-      return notes[idx];
+      return { ...notes[idx] };
     })
   );
 }
@@ -96,7 +96,7 @@ export class EndlessBarGenerator {
         const lo = Math.max(0, this._idx - 2);
         const hi = Math.min(n - 1, this._idx + 2);
         this._idx = lo + Math.floor(Math.random() * (hi - lo + 1));
-        return notes[this._idx];
+        return { ...notes[this._idx] };
       })
     );
   }
