@@ -1,1 +1,1 @@
-Version 0.87 | 2026-05-06 23:55 | 1946363 | feat(chordRecorder): persist recordings in IndexedDB + confirm on delete
+Version 0.88 | 2026-05-06 23:55 | 89eca13 | docs: add legato plan, architecture review, and E2E legato test skeleton
