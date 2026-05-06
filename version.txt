@@ -1,1 +1,1 @@
-Version 0.89 | 2026-05-06 23:55 | 040afd6 | chore: bump version to 0.87 and sync service worker cache
+Version 0.90 | 2026-05-06 23:55 | 1d66759 | chore: bump version to 0.88 and sync service worker cache
