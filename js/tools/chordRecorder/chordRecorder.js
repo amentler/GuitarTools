@@ -16,6 +16,7 @@ import {
   getRecordingCount,
   downloadAllAsZip,
   removeRecordingByBaseName,
+  initStore,
 } from './chordRecorderFiles.js';
 
 const STORAGE_PREFIX = 'chord-recorder-';
@@ -222,6 +223,7 @@ export function createChordRecorderTool({
   }
 
   function deleteRecording(baseName) {
+    if (!confirm('Diese Aufnahme unwiderruflich löschen?')) return;
     if (activePlayback?.baseName === baseName) {
       stopPlayback();
     }
@@ -574,6 +576,7 @@ export function createChordRecorderTool({
 
   async function mount(rootEl) {
     root = rootEl;
+    await initStore();
     renderCurrentView();
   }
 

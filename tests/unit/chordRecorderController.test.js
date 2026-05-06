@@ -107,6 +107,7 @@ describe('chordRecorder controller', () => {
     expect(document.body.textContent).toContain('Anhören');
     expect(document.getElementById('cr-clear-all')).not.toBeNull();
 
+    globalThis.confirm = vi.fn(() => true);
     document.querySelector('[data-delete-recording="gdur_take_1"]').click();
 
     expect(document.body.textContent).toContain('Noch keine Aufnahmen in dieser Session.');
