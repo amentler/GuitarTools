@@ -1,1 +1,1 @@
-Version 0.98 | 2026-05-07 21:44 | dbc26ce | docs: plan complete chord family coverage
+Version 0.99 | 2026-05-07 22:12 | d1a2cdb | feat: complete chord catalog and import fixtures
