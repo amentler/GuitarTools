@@ -44,7 +44,7 @@ const TYPE_INTERVALS = {
  *   "H-Moll"    → { root: 'H',   type: 'Moll' }
  *   "Fis-dim"   → { root: 'Fis', type: 'dim'  }
  *   "G7"        → { root: 'G',   type: '7'    }
- *   "H7 (B7)"   → { root: 'H',   type: '7'    }
+ *   "H7"        → { root: 'H',   type: '7'    }
  *
  * @param {string} chordName
  * @returns {{ root: string, type: string } | null}
@@ -52,7 +52,7 @@ const TYPE_INTERVALS = {
 export function parseChordName(chordName) {
   if (!chordName || typeof chordName !== 'string') return null;
 
-  // Strip trailing annotations like " (B7)" or " (1-Finger)"
+  // Strip trailing annotations like " (1-Finger)"
   const cleaned = chordName.replace(/\s*\([^)]*\)\s*$/, '').trim();
 
   // Format: ROOT-TYPE  e.g. "C-Dur", "Fis-Moll", "H-dim"

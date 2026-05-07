@@ -1,0 +1,19 @@
+{
+  "chord": "E-Dur",
+  "chordKey": "edur",
+  "guitarSize": "Vollgröße",
+  "guitarStrings": "Nylon",
+  "volume": "leise",
+  "technique": "finger",
+  "strumMode": "single",
+  "repeatIndex": 2,
+  "quality": {
+    "passed": true,
+    "failReasons": [],
+    "warnReasons": [],
+    "userFlags": []
+  },
+  "recordedAt": "2026-05-07T19:58:19.752Z",
+  "sampleRate": 48000,
+  "durationSeconds": 4
+}

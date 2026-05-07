@@ -6,11 +6,6 @@
 
 export const ROMAN_NUMERALS = ['I', 'ii', 'iii', 'IV', 'V', 'vi', 'vii°'];
 
-// Some chord names in akkordData.js differ from the theoretical name – map them here.
-const CHORD_NAME_OVERRIDES = {
-  'H7': 'H7 (B7)',
-};
-
 /**
  * All 12 major keys with their diatonic triads (I–vii°) in German notation.
  * The order follows the circle of fifths starting at C.
@@ -57,8 +52,7 @@ function getChordName(key, degree, isBlues) {
   if (!isBlues || (degree !== 0 && degree !== 3 && degree !== 4)) return triadName;
   const m = triadName.match(/^(.+)-Dur$/);
   if (!m) return triadName;
-  const raw7th = `${m[1]}7`;
-  return CHORD_NAME_OVERRIDES[raw7th] ?? raw7th;
+  return `${m[1]}7`;
 }
 
 /**

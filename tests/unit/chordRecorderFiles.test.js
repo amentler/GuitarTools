@@ -34,7 +34,7 @@ describe('generateRandom5', () => {
 
 describe('toChordKey', () => {
   it('G-Dur → gdur', () => expect(toChordKey('G-Dur')).toBe('gdur'));
-  it('H7 (B7) → h7b7', () => expect(toChordKey('H7 (B7)')).toBe('h7b7'));
+  it('H7 → h7', () => expect(toChordKey('H7')).toBe('h7'));
   it('F-Dur (klein) → fdurklein', () => expect(toChordKey('F-Dur (klein)')).toBe('fdurklein'));
   it('G-Dur (1-Finger) → gdur1finger', () => expect(toChordKey('G-Dur (1-Finger)')).toBe('gdur1finger'));
   it('G-Dur (Rock) → gdurrock', () => expect(toChordKey('G-Dur (Rock)')).toBe('gdurrock'));

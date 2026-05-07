@@ -1,0 +1,19 @@
+{
+  "chord": "E-Moll",
+  "chordKey": "emoll",
+  "guitarSize": "Vollgröße",
+  "guitarStrings": "Nylon",
+  "volume": "leise",
+  "technique": "finger",
+  "strumMode": "single",
+  "repeatIndex": 2,
+  "quality": {
+    "passed": true,
+    "failReasons": [],
+    "warnReasons": [],
+    "userFlags": []
+  },
+  "recordedAt": "2026-05-07T19:59:12.849Z",
+  "sampleRate": 48000,
+  "durationSeconds": 4
+}

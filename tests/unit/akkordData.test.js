@@ -1,5 +1,12 @@
 import { describe, it, expect } from 'vitest';
-import { CHORDS, CHORD_CATEGORIES, validateFingerData } from '../../js/data/akkordData.js';
+import {
+  CHORDS,
+  CHORD_CATEGORIES,
+  CHORD_FAMILIES,
+  CHORD_META,
+  CHORD_ROOTS,
+  validateFingerData,
+} from '../../js/data/akkordData.js';
 import { getChordNotes } from '../../js/utils/chordDetectionUtils.js';
 
 function pitchClasses(chordName) {
@@ -62,6 +69,36 @@ describe('CHORDS integrity', () => {
           expect(pos.finger, `${name} string ${pos.string}: finger must not be set on muted string`).toBeUndefined();
         }
       }
+    }
+  });
+});
+
+describe('12-Grundton-Matrix', () => {
+  it('bildet alle Standard-Akkordfamilien fuer alle 12 deutschen Grundtoene ab', () => {
+    for (const root of CHORD_ROOTS) {
+      for (const family of CHORD_FAMILIES) {
+        const chordName = family.name(root);
+        expect(CHORDS, `${chordName} fehlt in CHORDS`).toHaveProperty(chordName);
+        expect(CHORD_META, `${chordName} fehlt in CHORD_META`).toHaveProperty(chordName);
+        expect(CHORD_META[chordName]).toMatchObject({
+          rootNote: root,
+          chordType: family.chordType,
+        });
+      }
+    }
+  });
+
+  it('verwendet H7 statt des historischen Alias', () => {
+    const legacyAlias = `H7 (${String.fromCharCode(66)}7)`;
+    expect(CHORDS).toHaveProperty('H7');
+    expect(CHORD_META.H7).toMatchObject({ rootNote: 'H', chordType: 'Dom7' });
+    expect(CHORDS).not.toHaveProperty(legacyAlias);
+    expect(CHORD_META).not.toHaveProperty(legacyAlias);
+  });
+
+  it('enthaelt neue Beispielakkorde aus den fehlenden Grundtonfamilien', () => {
+    for (const chordName of ['B-Dur', 'Cis-Moll', 'Dis7', 'Fismaj7', 'Gism7b5', 'Badd9']) {
+      expect(CHORDS, `${chordName} fehlt`).toHaveProperty(chordName);
     }
   });
 });

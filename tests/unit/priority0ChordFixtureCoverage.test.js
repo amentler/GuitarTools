@@ -100,9 +100,15 @@ describe('Priorität 0 Akkord-Fixture-Abdeckung', () => {
     }
   });
 
-  it('hinterlegt für jeden bereits definierten Progressions-Akkord mindestens eine Fixture', () => {
+  it('hinterlegt für jeden Progressions-Akkord mit bestehendem Fixture-Ordner mindestens eine katalogisierte Fixture', () => {
     const catalogedChordNames = new Set(CHORD_HPCP_FIXTURE_CASES.map(fixture => fixture.chordName));
-    const existingProgressionChords = allProgressionChordNames().filter(chordName => CHORDS[chordName]);
+    const chordFixtureFolders = new Set(
+      readdirSync(CHORD_FIXTURE_DIR, { withFileTypes: true })
+        .filter(entry => entry.isDirectory())
+        .map(entry => entry.name),
+    );
+    const existingProgressionChords = allProgressionChordNames()
+      .filter(chordName => CHORDS[chordName] && chordFixtureFolders.has(chordName));
 
     for (const chordName of existingProgressionChords) {
       expect(

@@ -1,0 +1,19 @@
+{
+  "chord": "Amaj7",
+  "chordKey": "amaj7",
+  "guitarSize": "Vollgröße",
+  "guitarStrings": "Nylon",
+  "volume": "laut",
+  "technique": "finger",
+  "strumMode": "single",
+  "repeatIndex": 1,
+  "quality": {
+    "passed": true,
+    "failReasons": [],
+    "warnReasons": [],
+    "userFlags": []
+  },
+  "recordedAt": "2026-05-07T19:54:42.484Z",
+  "sampleRate": 48000,
+  "durationSeconds": 4
+}

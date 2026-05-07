@@ -1,0 +1,19 @@
+{
+  "chord": "Cmaj7",
+  "chordKey": "cmaj7",
+  "guitarSize": "Vollgröße",
+  "guitarStrings": "Nylon",
+  "volume": "laut",
+  "technique": "finger",
+  "strumMode": "single",
+  "repeatIndex": 1,
+  "quality": {
+    "passed": true,
+    "failReasons": [],
+    "warnReasons": [],
+    "userFlags": []
+  },
+  "recordedAt": "2026-05-07T19:56:30.366Z",
+  "sampleRate": 48000,
+  "durationSeconds": 4
+}

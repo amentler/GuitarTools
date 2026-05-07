@@ -71,7 +71,7 @@ export function createChordRecorderUI(container) {
     if (positions) {
       const fbContainer = container.querySelector('.cr-rec-fretboard');
       const fb = document.createElement('gt-fretboard');
-      fb.setAttribute('frets', '5');
+      fb.setAttribute('frets', String(Math.max(5, ...positions.filter(p => !p.muted).map(p => p.fret))));
       fb.positions = positions.map(p => ({
         stringIndex: chordStringToFretboardIndex(p.string),
         fret: p.muted ? 0 : p.fret,

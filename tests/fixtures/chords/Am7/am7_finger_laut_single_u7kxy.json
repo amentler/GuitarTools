@@ -1,0 +1,21 @@
+{
+  "chord": "Am7",
+  "chordKey": "am7",
+  "guitarSize": "Vollgröße",
+  "guitarStrings": "Nylon",
+  "volume": "laut",
+  "technique": "finger",
+  "strumMode": "single",
+  "repeatIndex": 2,
+  "quality": {
+    "passed": true,
+    "failReasons": [],
+    "warnReasons": [
+      "highSilenceRatio"
+    ],
+    "userFlags": []
+  },
+  "recordedAt": "2026-05-07T19:55:48.316Z",
+  "sampleRate": 48000,
+  "durationSeconds": 4
+}

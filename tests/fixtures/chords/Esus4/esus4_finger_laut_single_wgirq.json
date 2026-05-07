@@ -1,0 +1,19 @@
+{
+  "chord": "Esus4",
+  "chordKey": "esus4",
+  "guitarSize": "Vollgröße",
+  "guitarStrings": "Nylon",
+  "volume": "laut",
+  "technique": "finger",
+  "strumMode": "single",
+  "repeatIndex": 2,
+  "quality": {
+    "passed": true,
+    "failReasons": [],
+    "warnReasons": [],
+    "userFlags": []
+  },
+  "recordedAt": "2026-05-07T20:00:47.580Z",
+  "sampleRate": 48000,
+  "durationSeconds": 4
+}

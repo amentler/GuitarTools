@@ -21,8 +21,8 @@ import {
 import { isChordSufficient } from './chordInventoryLogic.js';
 
 const STORAGE_PREFIX = 'chord-recorder-';
-const ROOT_ORDER = ['A', 'C', 'D', 'E', 'F', 'G', 'H'];
-const TYPE_ORDER = ['Dur', 'Moll', 'Dom7', 'Maj7', 'Min7', 'Dim', 'Sus', 'Add'];
+const ROOT_ORDER = ['A', 'B', 'H', 'C', 'Cis', 'D', 'Dis', 'E', 'F', 'Fis', 'G', 'Gis'];
+const TYPE_ORDER = ['Dur', 'Moll', 'Dom7', 'Maj7', 'Min7', 'Dim', 'Halbvermindert', 'Sus2', 'Sus4', '7Sus4', 'Add9'];
 const SINGLE_STRUM_MS = 4000;
 const BEAT_MS = 750; // 80 BPM
 const PRE_COUNTDOWN = [4, 3, 2, 1];
@@ -185,7 +185,7 @@ export function createChordRecorderTool({
       }
 
       const fretboard = document.createElement('gt-fretboard');
-      fretboard.setAttribute('frets', '5');
+      fretboard.setAttribute('frets', String(Math.max(5, ...positions.filter(p => !p.muted).map(p => p.fret))));
       fretboard.positions = positions.map(p => ({
         stringIndex: chordStringToFretboardIndex(p.string),
         fret: p.muted ? 0 : p.fret,

@@ -52,8 +52,8 @@ describe('parseChordName', () => {
     expect(parseChordName('C7')).toEqual({ root: 'C', type: '7' });
   });
 
-  it('strips annotation: H7 (B7) → root H, type 7', () => {
-    expect(parseChordName('H7 (B7)')).toEqual({ root: 'H', type: '7' });
+  it('parses H7 → root H, type 7', () => {
+    expect(parseChordName('H7')).toEqual({ root: 'H', type: '7' });
   });
 
   it('returns null for unknown chord name', () => {
@@ -206,8 +206,8 @@ describe('getExpectedNoteClasses', () => {
     expect(getExpectedNoteClasses('E7')).toEqual(['E', 'G#', 'B', 'D']);
   });
 
-  it('H7 (B7) annotation stripped correctly → [B, D#, F#, A]', () => {
-    expect(getExpectedNoteClasses('H7 (B7)')).toEqual(['B', 'D#', 'F#', 'A']);
+  it('H7 → [B, D#, F#, A]', () => {
+    expect(getExpectedNoteClasses('H7')).toEqual(['B', 'D#', 'F#', 'A']);
   });
 
   // Edge cases
@@ -375,8 +375,8 @@ describe('matchDetectedNotes', () => {
     expect(result.confidence).toBe(1);
   });
 
-  it('H7 (B7): correctly matches [B, D#, F#, A]', () => {
-    const result = matchDetectedNotes(['B', 'D#', 'F#', 'A'], 'H7 (B7)');
+  it('H7: correctly matches [B, D#, F#, A]', () => {
+    const result = matchDetectedNotes(['B', 'D#', 'F#', 'A'], 'H7');
     expect(result.isMatch).toBe(true);
     expect(result.confidence).toBe(1);
   });

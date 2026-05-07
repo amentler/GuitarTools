@@ -7,7 +7,7 @@
  * using cosine similarity. Templates are derived from akkordData.js.
  */
 
-import { CHORDS } from '../../data/akkordData.js';
+import { CHORD_RECOGNITION_CHORDS } from '../../data/akkordData.js';
 import { getChordNotes } from '../../domain/chords/chordDetectionLogic.js';
 
 // Pitch-class bin: C=0, C#=1, D=2, D#=3, E=4, F=5, F#=6, G=7, G#=8, A=9, A#=10, B=11
@@ -737,14 +737,14 @@ function passesCoreEvidence({
 }
 
 /**
- * Builds a 12-bin binary template for every chord in akkordData.
+ * Builds a 12-bin binary template for every curated recognition chord.
  * Each bin is 1 if the pitch class is part of the chord, 0 otherwise.
  *
  * @returns {Object.<string, Float32Array>} map from chord name to 12-bin template
  */
 export function buildChordTemplates() {
   const templates = {};
-  for (const chordName of Object.keys(CHORDS)) {
+  for (const chordName of Object.keys(CHORD_RECOGNITION_CHORDS)) {
     const notes = getChordNotes(chordName);
     const template = new Float32Array(12);
     for (const { note } of notes) {

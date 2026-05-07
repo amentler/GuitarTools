@@ -1,0 +1,19 @@
+{
+  "chord": "G-Dur (1-Finger)",
+  "chordKey": "gdur1finger",
+  "guitarSize": "Vollgröße",
+  "guitarStrings": "Nylon",
+  "volume": "leise",
+  "technique": "finger",
+  "strumMode": "single",
+  "repeatIndex": 1,
+  "quality": {
+    "passed": true,
+    "failReasons": [],
+    "warnReasons": [],
+    "userFlags": []
+  },
+  "recordedAt": "2026-05-07T20:01:53.570Z",
+  "sampleRate": 48000,
+  "durationSeconds": 4
+}

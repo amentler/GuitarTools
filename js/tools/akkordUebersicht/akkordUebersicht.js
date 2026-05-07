@@ -1,8 +1,8 @@
 import { CHORDS, CHORD_META } from '../../data/akkordData.js';
 import { chordStringToFretboardIndex } from '../../domain/chords/chordFretboardMapping.js';
 
-const ROOT_ORDER = ['A', 'C', 'D', 'E', 'F', 'G', 'H'];
-const TYPE_ORDER = ['Dur', 'Moll', 'Dom7', 'Maj7', 'Min7', 'Dim', 'Sus', 'Add'];
+const ROOT_ORDER = ['A', 'B', 'H', 'C', 'Cis', 'D', 'Dis', 'E', 'F', 'Fis', 'G', 'Gis'];
+const TYPE_ORDER = ['Dur', 'Moll', 'Dom7', 'Maj7', 'Min7', 'Dim', 'Halbvermindert', 'Sus2', 'Sus4', '7Sus4', 'Add9'];
 
 const filter = { rootNote: '', chordType: '' };
 let initialized = false;
@@ -59,7 +59,7 @@ function renderGrid() {
     diagramEl.className = 'akkord-uebersicht-diagram';
     
     const fretboard = document.createElement('gt-fretboard');
-    fretboard.setAttribute('frets', '5');
+    fretboard.setAttribute('frets', String(Math.max(5, ...positions.filter(p => !p.muted).map(p => p.fret))));
     fretboard.positions = positions.map(p => ({
       stringIndex: chordStringToFretboardIndex(p.string),
       fret: p.muted ? 0 : p.fret,

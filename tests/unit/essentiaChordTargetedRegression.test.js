@@ -82,20 +82,20 @@ describe('Targeted chord regressions', () => {
     expect(aSus2Result.isCorrect).toBe(false);
   });
 
-  it('erkennt E7 nicht fälschlich als H7 (B7)', () => {
+  it('erkennt E7 nicht fälschlich als H7', () => {
     const avgHpcp = getFixtureAverageHpcp('E7', 'E7/01.wav');
     const bassSupportByChord = extractBassSupportMapFromWav('E7/01.wav', ALL_CHORD_NAMES);
     const e7Result = matchHpcpToChord(avgHpcp, 'E7', TEMPLATES, undefined, { bassSupportByChord });
-    const h7Result = matchHpcpToChord(avgHpcp, 'H7 (B7)', TEMPLATES, undefined, { bassSupportByChord });
+    const h7Result = matchHpcpToChord(avgHpcp, 'H7', TEMPLATES, undefined, { bassSupportByChord });
 
     expect(e7Result.isCorrect).toBe(true);
     expect(h7Result.isCorrect).toBe(false);
   });
 
-  it('akzeptiert H7 (B7) trotz Alias-Klammer als echten Dominantseptakkord', () => {
-    for (const wavFile of ['H7 (B7)/01.wav', 'H7 (B7)/h7_steel.wav']) {
-      const h7Result = getMatchResult('H7 (B7)', wavFile, 'H7 (B7)');
-      expect(h7Result.isCorrect, `${wavFile} sollte als H7 (B7) akzeptiert werden`).toBe(true);
+  it('akzeptiert H7 als echten Dominantseptakkord', () => {
+    for (const wavFile of ['H7/01.wav', 'H7/h7_steel.wav']) {
+      const h7Result = getMatchResult('H7', wavFile, 'H7');
+      expect(h7Result.isCorrect, `${wavFile} sollte als H7 akzeptiert werden`).toBe(true);
     }
   });
 
@@ -165,7 +165,7 @@ describe('Targeted chord regressions', () => {
       ['E-Dur', 'E-Dur/edur_steel1.wav', 'E7'],
       ['E-Dur', 'E-Dur/emaj.wav', 'E7'],
       ['G-Dur', 'G-Dur/g_chord.wav', 'G7'],
-      ['H-Dur', 'H-Dur/01.wav', 'H7 (B7)'],
+      ['H-Dur', 'H-Dur/01.wav', 'H7'],
     ];
 
     for (const [chordName, wavFile, dominantChordName] of cases) {

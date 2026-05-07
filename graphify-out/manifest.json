@@ -8,8 +8,8 @@
     "hash": "c9ea0a1eef92066d758f442bfbd3037a"
   },
   "/home/azureuserhauptmann/privat/GuitarToolsALT/sw.js": {
-    "mtime": 1778169067.1392007,
-    "hash": "a7da005a7895d37e4450a2d852c4d940"
+    "mtime": 1778184636.7786555,
+    "hash": "62a749a32e5bc2e038b38de9ea9401d2"
   },
   "/home/azureuserhauptmann/privat/GuitarToolsALT/vitest.config.js": {
     "mtime": 1777738797.000946,
@@ -20,16 +20,16 @@
     "hash": "f2ddf252475b6646ee340d73cd91557a"
   },
   "/home/azureuserhauptmann/privat/GuitarToolsALT/scripts/import-drop-fixtures.mjs": {
-    "mtime": 1778168932.7355456,
-    "hash": "cf01ee99863eb65910f394bde0227f39"
+    "mtime": 1778184612.9367492,
+    "hash": "496b2a62abf13e3659d521c9aad058a3"
   },
   "/home/azureuserhauptmann/privat/GuitarToolsALT/scripts/chord-recognition-fingerprint.mjs": {
     "mtime": 1777809906.0308495,
     "hash": "ada6750da7561d28ca654276bebb642b"
   },
   "/home/azureuserhauptmann/privat/GuitarToolsALT/scripts/introduce-chord-fixture.mjs": {
-    "mtime": 1777930079.2543721,
-    "hash": "48b94c251a7db4e89cd00ae6859ed058"
+    "mtime": 1778184612.9367492,
+    "hash": "98931faec74e8f62db56f76ad8a1579c"
   },
   "/home/azureuserhauptmann/privat/GuitarToolsALT/scripts/generate-chord-inventory.mjs": {
     "mtime": 1778168932.7355456,
@@ -40,8 +40,8 @@
     "hash": "9e2f5f15f679e21aac312a320b4b8f6c"
   },
   "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/helpers/chordHpcpFixtureCatalog.js": {
-    "mtime": 1777842637.9590943,
-    "hash": "e1cdb4c6059a65cb0b5bd1fa746a96c0"
+    "mtime": 1778184649.5111277,
+    "hash": "87e3f9778bb717c793c795aac2d0a02f"
   },
   "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/helpers/essentiaDetectionHarness.js": {
     "mtime": 1777738796.7038574,
@@ -104,8 +104,8 @@
     "hash": "2b8ab9a0494eaf9a1457f59bb412e5e0"
   },
   "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/unit/essentiaChordTargetedRegression.test.js": {
-    "mtime": 1777759235.3795667,
-    "hash": "3b236ba8862a78252c5d3b6da3b8fee3"
+    "mtime": 1778184613.5217466,
+    "hash": "053b2f25c3fcfa3db865e6effaf8ad14"
   },
   "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/unit/akkordfolgenSync.test.js": {
     "mtime": 1777738796.702851,
@@ -168,8 +168,8 @@
     "hash": "75c5b5b4a5b55ffd56a6afdfc91d9db7"
   },
   "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/unit/chordRecorderFiles.test.js": {
-    "mtime": 1777984361.107892,
-    "hash": "94578bcb9ee71bfa21428359d8cfa271"
+    "mtime": 1778184613.5217466,
+    "hash": "577e8b361b238983c934e26d370ac1cd"
   },
   "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/unit/architectureBoundaryGuards.test.js": {
     "mtime": 1777738796.7034724,
@@ -252,8 +252,8 @@
     "hash": "adc443b3a0947adea684b73c9994c328"
   },
   "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/unit/akkordfolgenChordMatcher.test.js": {
-    "mtime": 1777738796.7028067,
-    "hash": "8c9fb93dbcbac39a44129ccec4d00294"
+    "mtime": 1778184613.5217466,
+    "hash": "a6e7d06f8d39fe34b3ce165c7046ebaa"
   },
   "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/unit/essentiaChordNearUiSession.test.js": {
     "mtime": 1777848096.4789505,
@@ -312,8 +312,8 @@
     "hash": "a7468f302a8b063a7c56b4964be65e41"
   },
   "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/unit/akkordData.test.js": {
-    "mtime": 1777738796.7027686,
-    "hash": "c7b7ad5a21734ae321af60d071cb3171"
+    "mtime": 1778184613.5207467,
+    "hash": "84ae2f0597bb0ea665f3c6e22f75eb99"
   },
   "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/unit/pitchLogic.test.js": {
     "mtime": 1777759235.3795667,
@@ -360,8 +360,8 @@
     "hash": "4227887c2fc3f035cb9917c34c58c318"
   },
   "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/unit/priority0ChordFixtureCoverage.test.js": {
-    "mtime": 1777754002.5477452,
-    "hash": "7e6f113117ff9048796d2467e0d60522"
+    "mtime": 1778184613.5227468,
+    "hash": "f44d2867ebb7770485d262cd3131e876"
   },
   "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/unit/playbackBar.test.js": {
     "mtime": 1777738796.7030768,
@@ -756,8 +756,8 @@
     "hash": "4af4372e5ef23f1d6914000f1b5bddff"
   },
   "/home/azureuserhauptmann/privat/GuitarToolsALT/js/games/chordExerciseEssentia/essentiaChordLogic.js": {
-    "mtime": 1777842637.9040945,
-    "hash": "67ca2d023bc370c78aad20055f6a25ed"
+    "mtime": 1778184613.4897468,
+    "hash": "41ee54ff2a514139b949c405ba9716c3"
   },
   "/home/azureuserhauptmann/privat/GuitarToolsALT/js/games/akkordfolgenTrainer/akkordfolgenUI.js": {
     "mtime": 1777738797.1977606,
@@ -768,16 +768,16 @@
     "hash": "96ae2aad1c157e30e5518de72aee89d6"
   },
   "/home/azureuserhauptmann/privat/GuitarToolsALT/js/games/akkordfolgenTrainer/akkordfolgenChordMatcher.js": {
-    "mtime": 1777738797.1976776,
-    "hash": "355770ed8d4728206925a23a71b016a1"
+    "mtime": 1778184613.488747,
+    "hash": "6033ccb346cb9eb37ab264dfe68e62fb"
   },
   "/home/azureuserhauptmann/privat/GuitarToolsALT/js/games/akkordfolgenTrainer/akkordfolgenAudioSession.js": {
     "mtime": 1777738797.1977916,
     "hash": "e2633b6e82cdf47d1ee07ddf464c112f"
   },
   "/home/azureuserhauptmann/privat/GuitarToolsALT/js/games/akkordfolgenTrainer/akkordfolgenLogic.js": {
-    "mtime": 1777738797.197855,
-    "hash": "7ae82aa877f180ac16a194672c4f4b8e"
+    "mtime": 1778184613.488747,
+    "hash": "205fc1cacb7d238fdc92d51127a7c009"
   },
   "/home/azureuserhauptmann/privat/GuitarToolsALT/js/games/sheetMusicReading/sheetMusicSVG.js": {
     "mtime": 1777935564.6889226,
@@ -868,8 +868,8 @@
     "hash": "1cfcee7331de75242347c73d4a75c93c"
   },
   "/home/azureuserhauptmann/privat/GuitarToolsALT/js/data/akkordData.js": {
-    "mtime": 1777738797.1990132,
-    "hash": "7f088575d224edd9228e4aab73ded18a"
+    "mtime": 1778184613.488747,
+    "hash": "3e97266037425d0837d06bbaff3e2215"
   },
   "/home/azureuserhauptmann/privat/GuitarToolsALT/js/lib/essentia/essentia-wasm.web.js": {
     "mtime": 1777738797.1991508,
@@ -920,8 +920,8 @@
     "hash": "166d81c432a0380da2280debaa5554d1"
   },
   "/home/azureuserhauptmann/privat/GuitarToolsALT/js/tools/akkordUebersicht/akkordUebersicht.js": {
-    "mtime": 1777738797.198786,
-    "hash": "36bd34e05887fa5ad2fc74e923324103"
+    "mtime": 1778184613.4897468,
+    "hash": "8093f2342446dc7801c31529611ed546"
   },
   "/home/azureuserhauptmann/privat/GuitarToolsALT/js/tools/metronome/metronome.js": {
     "mtime": 1777738797.1983328,
@@ -936,16 +936,16 @@
     "hash": "948947d5d7bbd6ae4c91a7824e653fca"
   },
   "/home/azureuserhauptmann/privat/GuitarToolsALT/js/tools/chordRecorder/chordRecorder.js": {
-    "mtime": 1778181316.8171713,
-    "hash": "129b8b948beb58ff0a03cbe1b8f5db15"
+    "mtime": 1778184613.4897468,
+    "hash": "eec2811b905ce01cb3ebb844b26fb7e2"
   },
   "/home/azureuserhauptmann/privat/GuitarToolsALT/js/tools/chordRecorder/chordRecorderFiles.js": {
     "mtime": 1778168932.7345457,
     "hash": "678c730a3fb4e6baec91078e58f94fa7"
   },
   "/home/azureuserhauptmann/privat/GuitarToolsALT/js/tools/chordRecorder/chordRecorderUI.js": {
-    "mtime": 1778181316.8171713,
-    "hash": "233b06f71b1d11087f4f44291740a8ab"
+    "mtime": 1778184613.4907467,
+    "hash": "a50a9fdaba24db6641d8bdbe3a90ddc9"
   },
   "/home/azureuserhauptmann/privat/GuitarToolsALT/js/tools/chordRecorder/chordRecorderQuality.js": {
     "mtime": 1777984139.1078398,
@@ -984,8 +984,8 @@
     "hash": "00ef135fb82dec6872d89acf5be0cfa1"
   },
   "/home/azureuserhauptmann/privat/GuitarToolsALT/version.txt": {
-    "mtime": 1778169067.125081,
-    "hash": "e720ff884be9835701bd79f3cc955b9f"
+    "mtime": 1778184636.7776556,
+    "hash": "dcc204246b15e97911100ed50bc45682"
   },
   "/home/azureuserhauptmann/privat/GuitarToolsALT/README.md": {
     "mtime": 1777997732.8639417,
@@ -1010,6 +1010,10 @@
   "/home/azureuserhauptmann/privat/GuitarToolsALT/docs/ci-quality-roadmap.md": {
     "mtime": 1777738796.643229,
     "hash": "1518707c51287ce64419881ebe063f02"
+  },
+  "/home/azureuserhauptmann/privat/GuitarToolsALT/plans/complete-12-root-chord-families-2026-05-07.md": {
+    "mtime": 1778184613.1667483,
+    "hash": "fa003c37008e779b8361f559d6f42d91"
   },
   "/home/azureuserhauptmann/privat/GuitarToolsALT/plans/noten-spielen-legato-plan-2026-05-05.md": {
     "mtime": 1778168932.7345457,
@@ -1060,8 +1064,8 @@
     "hash": "611c514081f655ba2723c18bfb28cd58"
   },
   "/home/azureuserhauptmann/privat/GuitarToolsALT/pages/akkord-uebersicht/index.html": {
-    "mtime": 1777738797.2032526,
-    "hash": "1df1272658e17ddbdaa8204bf1766444"
+    "mtime": 1778184613.4907467,
+    "hash": "da8f8d16f193334f0e150deae4e0a21a"
   },
   "/home/azureuserhauptmann/privat/GuitarToolsALT/pages/sheet-music-reading/index.html": {
     "mtime": 1777935564.6889226,
@@ -1171,21 +1175,45 @@
     "mtime": 1777842637.9430943,
     "hash": "b8d27358eb6a97315ca603510934a4f9"
   },
+  "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/fixtures/chords/Dsus2/dsus2_finger_laut_single_vb97d.wav": {
+    "mtime": 1778184613.005749,
+    "hash": "7eae01955f12db955f84f53ee8e3f25c"
+  },
+  "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/fixtures/chords/Dsus2/dsus2_finger_leise_single_mhztu.wav": {
+    "mtime": 1778184613.0107489,
+    "hash": "af9c7a9073002d72faa5d63f15d726f5"
+  },
+  "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/fixtures/chords/Dsus2/dsus2_finger_laut_single_8z0m5.wav": {
+    "mtime": 1778184613.003749,
+    "hash": "2cf5af1572eae5cadfc82f4ff29fd4dd"
+  },
+  "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/fixtures/chords/Dsus2/dsus2_finger_leise_single_c911v.wav": {
+    "mtime": 1778184613.008749,
+    "hash": "2f18061e7bf83edaa82bd1ae1c5c0f84"
+  },
   "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/fixtures/chords/Cmaj7/cmaj7.wav": {
     "mtime": 1777738796.6834974,
     "hash": "f4d418681201ac3742e9d94fc098abf0"
   },
+  "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/fixtures/chords/Cmaj7/cmaj7_finger_leise_single_t6ojd.wav": {
+    "mtime": 1778184644.906798,
+    "hash": "d29e22d6006638f59a79e7b594eba4fa"
+  },
+  "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/fixtures/chords/Cmaj7/cmaj7_finger_laut_single_i88je.wav": {
+    "mtime": 1778184644.9055402,
+    "hash": "f1fd6be1a761e76741146d09333fbca4"
+  },
+  "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/fixtures/chords/Cmaj7/cmaj7_finger_laut_single_ra4kf.wav": {
+    "mtime": 1778184644.9061887,
+    "hash": "0835ce862204e1c9a2fc4f5c65665e83"
+  },
+  "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/fixtures/chords/Cmaj7/cmaj7_finger_leise_single_z3gkl.wav": {
+    "mtime": 1778184644.9074502,
+    "hash": "a0a61edf66573cdcdf622e181f057235"
+  },
   "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/fixtures/chords/Cmaj7/cmaj7_2.wav": {
     "mtime": 1777842637.9400945,
     "hash": "34b2e255f7728d930fa23de30e8bbd76"
-  },
-  "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/fixtures/chords/H7 (B7)/01.wav": {
-    "mtime": 1777738796.6734369,
-    "hash": "38cf195ec1e5073665db55158f91ea08"
-  },
-  "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/fixtures/chords/H7 (B7)/h7_steel.wav": {
-    "mtime": 1777738796.6738198,
-    "hash": "042706ecc597aead33d5881c90021963"
   },
   "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/fixtures/chords/E7/01.wav": {
     "mtime": 1777738796.6695464,
@@ -1203,9 +1231,17 @@
     "mtime": 1777738796.6898043,
     "hash": "a2872283db2a0295c23fbca8298d97f0"
   },
+  "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/fixtures/chords/E-Moll/emoll_finger_leise_single_v45w0.wav": {
+    "mtime": 1778184644.9116678,
+    "hash": "342b70a466a528be7340332987f2e06c"
+  },
   "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/fixtures/chords/E-Moll/emin_plektrum.wav": {
     "mtime": 1777842637.9450943,
     "hash": "af5edd331b5f8f5725d4175943299dde"
+  },
+  "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/fixtures/chords/E-Moll/emoll_finger_laut_single_x8aqf.wav": {
+    "mtime": 1778184644.9104898,
+    "hash": "942bee5b322fc23eb9218d59fe1b1e8c"
   },
   "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/fixtures/chords/E-Moll/emoll_3.wav": {
     "mtime": 1777738796.6883562,
@@ -1214,6 +1250,10 @@
   "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/fixtures/chords/E-Moll/eminor_chord.wav": {
     "mtime": 1777738796.6888676,
     "hash": "f44e6bb0ea2cd211d83df37ffb83bbee"
+  },
+  "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/fixtures/chords/E-Moll/emoll_finger_leise_single_s7uj5.wav": {
+    "mtime": 1778184644.9122431,
+    "hash": "7e8d74eed40a3274d2192fb732525ff2"
   },
   "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/fixtures/chords/E-Moll/emoll_4.wav": {
     "mtime": 1777738796.6907573,
@@ -1230,6 +1270,10 @@
   "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/fixtures/chords/E-Moll/emoll_steel2.wav": {
     "mtime": 1777738796.6901724,
     "hash": "cc4f55d3c21fb36135d2cc4df44fe037"
+  },
+  "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/fixtures/chords/E-Moll/emoll_finger_laut_single_azujb.wav": {
+    "mtime": 1778184644.911061,
+    "hash": "7d2199d4ddc0f2adaba3ed85c4e18e64"
   },
   "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/fixtures/chords/G7/03.wav": {
     "mtime": 1777738796.6993363,
@@ -1263,9 +1307,25 @@
     "mtime": 1777738796.6806984,
     "hash": "c5c2ad6b0f97cf35f5c4d058cf1c996a"
   },
+  "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/fixtures/chords/Amaj7/amaj7_finger_leise_single_943ic.wav": {
+    "mtime": 1778184644.9018552,
+    "hash": "d4bb0c7f914db68f1010ef7fb29a991c"
+  },
+  "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/fixtures/chords/Amaj7/amaj7_finger_laut_single_k3htl.wav": {
+    "mtime": 1778184644.901223,
+    "hash": "6c915a4b44444d5df3ff4b022e9b662c"
+  },
+  "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/fixtures/chords/Amaj7/amaj7_finger_laut_single_hdfxe.wav": {
+    "mtime": 1778184644.9006248,
+    "hash": "eea8c8b1f0b0d4ac9cf4ef1559ffd168"
+  },
   "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/fixtures/chords/Amaj7/amaj7_2.wav": {
     "mtime": 1777842637.9250944,
     "hash": "8a9b0a4631c05bfe505fdf71829b0dd6"
+  },
+  "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/fixtures/chords/Amaj7/amaj7_finger_leise_single_qrans.wav": {
+    "mtime": 1778184644.9024584,
+    "hash": "45251134de9133181ead121ea242c629"
   },
   "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/fixtures/chords/H-Moll/01.wav": {
     "mtime": 1777738796.6730204,
@@ -1279,9 +1339,25 @@
     "mtime": 1777738796.6678421,
     "hash": "5773a6c8587db1d5deaa6b4a8ecd1a2a"
   },
+  "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/fixtures/chords/G-Dur/gdur_finger_leise_single_21dib.wav": {
+    "mtime": 1778184644.9230762,
+    "hash": "2614bb3febcf5a8edcc5258082e5bca2"
+  },
+  "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/fixtures/chords/G-Dur/gdur_finger_laut_single_0iv7r.wav": {
+    "mtime": 1778184644.921881,
+    "hash": "577148c779b71089a8b73ba554a20ece"
+  },
+  "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/fixtures/chords/G-Dur/gdur_finger_leise_single_smcej.wav": {
+    "mtime": 1778184644.9225004,
+    "hash": "cd167edc8f3b988974715990ef13b2c3"
+  },
   "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/fixtures/chords/G-Dur/g_chord.wav": {
     "mtime": 1777738796.691146,
     "hash": "751c04d591152500d9d536e9c850dc76"
+  },
+  "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/fixtures/chords/G-Dur/gdur_finger_laut_single_a9rys.wav": {
+    "mtime": 1778184644.9212961,
+    "hash": "feb529e2bb436852fa3aa6c43536e511"
   },
   "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/fixtures/chords/Gsus2/gsus2.wav": {
     "mtime": 1777842637.9560943,
@@ -1295,13 +1371,29 @@
     "mtime": 1777842637.9280944,
     "hash": "c4df4af701d3bf6d402be4de04bcb2dd"
   },
+  "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/fixtures/chords/C7/c7_finger_leise_single_yonfj.wav": {
+    "mtime": 1778184612.990749,
+    "hash": "8392e398e82d0cc725fda09177dba861"
+  },
   "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/fixtures/chords/C7/c7.wav": {
     "mtime": 1777738796.6938918,
     "hash": "63792ff2c15ccf20566af3dea9f03516"
   },
+  "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/fixtures/chords/C7/c7_finger_laut_single_pccao.wav": {
+    "mtime": 1778184612.984749,
+    "hash": "2365272624bb44a7bfa3bd0a0dc33cea"
+  },
+  "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/fixtures/chords/C7/c7_finger_laut_single_5iose.wav": {
+    "mtime": 1778184612.981749,
+    "hash": "f15b8d475c65bdb0e8734355da600064"
+  },
   "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/fixtures/chords/C7/c7_steel.wav": {
     "mtime": 1777738796.6942525,
     "hash": "3a57956e5e16d7e52dfeef18e0f24964"
+  },
+  "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/fixtures/chords/C7/c7_finger_leise_single_yjxqh.wav": {
+    "mtime": 1778184612.987749,
+    "hash": "5efce9acb4f91d750c6e4c22997e1bb6"
   },
   "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/fixtures/chords/C7/c7_2.wav": {
     "mtime": 1777842637.9350944,
@@ -1311,9 +1403,25 @@
     "mtime": 1777811014.6682522,
     "hash": "dd06ae3e8334d917bdc558e463fdf4a0"
   },
+  "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/fixtures/chords/Esus4/esus4_finger_leise_single_8gjet.wav": {
+    "mtime": 1778184644.9176998,
+    "hash": "4150340201d351815ae9ed5f0718a898"
+  },
   "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/fixtures/chords/Esus4/esus4.wav": {
     "mtime": 1777738796.6867175,
     "hash": "576fb682d7597c613e641a4f80a92d8b"
+  },
+  "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/fixtures/chords/Esus4/esus4_finger_laut_single_wgirq.wav": {
+    "mtime": 1778184644.916059,
+    "hash": "be887e3a96813c7895d53dee6116a89a"
+  },
+  "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/fixtures/chords/Esus4/esus4_finger_leise_single_m2sjd.wav": {
+    "mtime": 1778184644.9168787,
+    "hash": "3ce97684c7044c8f483fbe25195f42ca"
+  },
+  "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/fixtures/chords/Esus4/esus4_finger_laut_single_vxucg.wav": {
+    "mtime": 1778184644.9151893,
+    "hash": "942f01ed27d1ac61fe11f11bb7167873"
   },
   "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/fixtures/chords/G7sus4/g7sus4.wav": {
     "mtime": 1777842637.9510944,
@@ -1323,9 +1431,25 @@
     "mtime": 1777842637.9540944,
     "hash": "6d756eadc58e9946dca23bcd9cfe9c28"
   },
+  "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/fixtures/chords/D7/d7_finger_laut_single_gkd3w.wav": {
+    "mtime": 1778184612.992749,
+    "hash": "08487c99476352491223a8a4077235aa"
+  },
   "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/fixtures/chords/D7/d7_steel.wav": {
     "mtime": 1777738796.6964989,
     "hash": "bcc6278cb47cc8f56c341a222370fa31"
+  },
+  "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/fixtures/chords/D7/d7_finger_leise_single_q4c1h.wav": {
+    "mtime": 1778184613.0007489,
+    "hash": "1e863d47bfbcb3a2d228547765266e1e"
+  },
+  "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/fixtures/chords/D7/d7_finger_laut_single_vktmx.wav": {
+    "mtime": 1778184612.995749,
+    "hash": "5dd9a165a230be2e53a4a03d64f4c797"
+  },
+  "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/fixtures/chords/D7/d7_finger_leise_single_putmu.wav": {
+    "mtime": 1778184612.998749,
+    "hash": "9562a72b6b5a9b11576ac0af5890cfa1"
   },
   "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/fixtures/chords/D7/d7.wav": {
     "mtime": 1777738796.6960778,
@@ -1335,9 +1459,25 @@
     "mtime": 1777738796.6703434,
     "hash": "2bda226cd001a0b66193a5576f5f4169"
   },
+  "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/fixtures/chords/Em7/em7_finger_laut_single_ayiai.wav": {
+    "mtime": 1778184644.9128296,
+    "hash": "9ad9c678ca6ad26404ecbc4ea7d20b03"
+  },
   "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/fixtures/chords/Em7/em7.wav": {
     "mtime": 1777738796.6859772,
     "hash": "ef146da1336d6e7b7bf7ea7bda974d07"
+  },
+  "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/fixtures/chords/Em7/em7_finger_laut_single_wzyqi.wav": {
+    "mtime": 1778184644.9134371,
+    "hash": "155d0f140ebea85361e7acc506ee9155"
+  },
+  "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/fixtures/chords/Em7/em7_finger_leise_single_2ssbl.wav": {
+    "mtime": 1778184644.9140265,
+    "hash": "2a0710e64a7178dc88ed5ae24070f557"
+  },
+  "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/fixtures/chords/Em7/em7_finger_leise_single_g2lsl.wav": {
+    "mtime": 1778184644.9146192,
+    "hash": "8792771245e7eed4f6a5991d10ca2744"
   },
   "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/fixtures/chords/Emaj7/emaj7.wav": {
     "mtime": 1777738796.6863332,
@@ -1346,6 +1486,14 @@
   "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/fixtures/chords/G-Moll/01.wav": {
     "mtime": 1777738796.6721373,
     "hash": "29c0e553edcb5e6b960599c37fa2f159"
+  },
+  "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/fixtures/chords/G-Moll/gmoll_finger_laut_single_ia2bq.wav": {
+    "mtime": 1778184644.9236872,
+    "hash": "5db15fd495911e00884c76d4aca90c85"
+  },
+  "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/fixtures/chords/G-Moll/gmoll_finger_laut_single_0gzky.wav": {
+    "mtime": 1778184644.924351,
+    "hash": "d1da2dd9407cc6e4688f7e7eb6339d5e"
   },
   "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/fixtures/chords/H-Dur/01.wav": {
     "mtime": 1777738796.6725843,
@@ -1367,6 +1515,18 @@
     "mtime": 1777738796.6957493,
     "hash": "1a026f6ee843bbe92092183e056080fd"
   },
+  "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/fixtures/chords/C-Dur/cdur_finger_leise_single_upuwb.wav": {
+    "mtime": 1778184612.979749,
+    "hash": "87b2d1450af13c841e24f61d3ec25cb3"
+  },
+  "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/fixtures/chords/C-Dur/cdur_finger_laut_single_51d2f.wav": {
+    "mtime": 1778184612.9707491,
+    "hash": "e2eb4250ec88a7970f446694cde15225"
+  },
+  "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/fixtures/chords/C-Dur/cdur_finger_laut_single_i6rnt.wav": {
+    "mtime": 1778184612.9737492,
+    "hash": "1ed50f68747796cf984db622cdd360ab"
+  },
   "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/fixtures/chords/C-Dur/cmaj_plektrum.wav": {
     "mtime": 1777842637.9320943,
     "hash": "bab45122a466c1a6d3ad90b91be835a6"
@@ -1378,6 +1538,10 @@
   "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/fixtures/chords/C-Dur/c_chord.wav": {
     "mtime": 1777738796.6870918,
     "hash": "38ad8f69f0ddaa228c3480d8151adf30"
+  },
+  "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/fixtures/chords/C-Dur/cdur_finger_leise_single_gguh2.wav": {
+    "mtime": 1778184612.976749,
+    "hash": "42d236545a3e0b3bf4aca45a5eb219cb"
   },
   "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/fixtures/chords/C-Dur/synth.wav": {
     "mtime": 1777738796.6874614,
@@ -1391,13 +1555,41 @@
     "mtime": 1777842637.9300945,
     "hash": "c53aa54f0b7ae33d7629d3c711f663c2"
   },
+  "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/fixtures/chords/C-Dur (1-Finger)/cdur1finger_finger_laut_single_qtau3.wav": {
+    "mtime": 1778184612.961749,
+    "hash": "796ab5c673ed13b3dbb254e0aff13e44"
+  },
+  "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/fixtures/chords/C-Dur (1-Finger)/cdur1finger_finger_laut_single_zvgqz.wav": {
+    "mtime": 1778184612.9637492,
+    "hash": "913a848678390fd7fcf0c18b8790ef08"
+  },
+  "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/fixtures/chords/C-Dur (1-Finger)/cdur1finger_finger_leise_single_8nlz1.wav": {
+    "mtime": 1778184612.965749,
+    "hash": "8d83d4471cfc0ee43033cf20e7299a7f"
+  },
   "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/fixtures/chords/C-Dur (1-Finger)/csimp.wav": {
     "mtime": 1777738796.69357,
     "hash": "5c4acc109932087290446d911d1ea631"
   },
+  "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/fixtures/chords/C-Dur (1-Finger)/cdur1finger_finger_leise_single_zj1ui.wav": {
+    "mtime": 1778184612.968749,
+    "hash": "847f10ca1ced1cd7cba11685180fa22b"
+  },
+  "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/fixtures/chords/A-Dur/adur_finger_laut_single_pvvdo.wav": {
+    "mtime": 1778184612.9437492,
+    "hash": "4000356b3ec280dc40fe88ab9ab55138"
+  },
+  "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/fixtures/chords/A-Dur/adur_finger_leise_single_q1870.wav": {
+    "mtime": 1778184612.948749,
+    "hash": "da5e79207c35934568086a4650e1539e"
+  },
   "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/fixtures/chords/A-Dur/amaj_slow.wav": {
     "mtime": 1777842637.9130945,
     "hash": "60764878cb99124d72732f959cfcac37"
+  },
+  "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/fixtures/chords/A-Dur/adur_finger_laut_single_cnijb.wav": {
+    "mtime": 1778184612.9407492,
+    "hash": "9857bbfd3c65a4fe5c9938a85e392f40"
   },
   "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/fixtures/chords/A-Dur/amaj.wav": {
     "mtime": 1777738796.6916459,
@@ -1407,6 +1599,10 @@
     "mtime": 1777842637.9080944,
     "hash": "61fbfa93fc2a87afd486a07065d88f8f"
   },
+  "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/fixtures/chords/A-Dur/adur_finger_leise_single_j768g.wav": {
+    "mtime": 1778184612.9457493,
+    "hash": "04be87928e6db292966cd33fa82cf202"
+  },
   "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/fixtures/chords/A-Dur/adur_steel.wav": {
     "mtime": 1777738796.6919374,
     "hash": "1dafa94e03ca4bdfa7a54e5b13769591"
@@ -1414,6 +1610,14 @@
   "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/fixtures/chords/A-Dur/amaj_6.wav": {
     "mtime": 1777842637.9100945,
     "hash": "e73b37de4e2f21737d606ce9b0bfdf2d"
+  },
+  "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/fixtures/chords/H7/01.wav": {
+    "mtime": 1777738796.6734369,
+    "hash": "38cf195ec1e5073665db55158f91ea08"
+  },
+  "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/fixtures/chords/H7/h7_steel.wav": {
+    "mtime": 1777738796.6738198,
+    "hash": "042706ecc597aead33d5881c90021963"
   },
   "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/fixtures/chords/Cadd9/cadd9.wav": {
     "mtime": 1777738796.6821616,
@@ -1539,9 +1743,21 @@
     "mtime": 1777738796.677784,
     "hash": "ee972c9ffb66f80f4f0c18b4f318f5bf"
   },
+  "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/fixtures/chords/E-Dur/edur_finger_leise_single_xlsho.wav": {
+    "mtime": 1778184644.9098222,
+    "hash": "f4fd100d81ce53d4802d165649b765b6"
+  },
+  "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/fixtures/chords/E-Dur/edur_finger_laut_single_7vemp.wav": {
+    "mtime": 1778184644.9086235,
+    "hash": "ae69e1586918985a34134ccf2ba9ee2d"
+  },
   "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/fixtures/chords/E-Dur/edur_steel1.wav": {
     "mtime": 1777738796.6975265,
     "hash": "f9b598d1417c4c1808a18fbce8ce992d"
+  },
+  "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/fixtures/chords/E-Dur/edur_finger_laut_single_3amgm.wav": {
+    "mtime": 1778184644.9080236,
+    "hash": "362a6de41d3938653efd3409286879b4"
   },
   "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/fixtures/chords/E-Dur/emaj.wav": {
     "mtime": 1777738796.6970043,
@@ -1554,6 +1770,10 @@
   "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/fixtures/chords/E-Dur/edur_steel2.wav": {
     "mtime": 1777738796.6977959,
     "hash": "03eeaec5205c8cdd4b08ddab3e35193a"
+  },
+  "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/fixtures/chords/E-Dur/edur_finger_leise_single_997g9.wav": {
+    "mtime": 1778184644.9092004,
+    "hash": "23cdcc242b88a85233cf740f5cfaab44"
   },
   "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/fixtures/chords/Adim/adim_4.wav": {
     "mtime": 1777842637.9200945,
@@ -1571,6 +1791,18 @@
     "mtime": 1777738796.6682265,
     "hash": "b9f25fc7f6c835fb2e6c5700e555da16"
   },
+  "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/fixtures/chords/A7/a7_finger_leise_single_whap7.wav": {
+    "mtime": 1778184644.8999712,
+    "hash": "377455891e72c9edd80b4c0c0626acaa"
+  },
+  "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/fixtures/chords/A7/a7_finger_leise_single_yal0l.wav": {
+    "mtime": 1778184644.8993764,
+    "hash": "750baa7c0237cf98830c3c77045b3e5b"
+  },
+  "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/fixtures/chords/A7/a7_finger_laut_single_rfm04.wav": {
+    "mtime": 1778184644.8980258,
+    "hash": "146805acfa5cfb0f4ede0d108305f0ca"
+  },
   "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/fixtures/chords/A7/a7_3.wav": {
     "mtime": 1777842637.9150944,
     "hash": "8b8d6e01caf337f910c88713aca19728"
@@ -1578,6 +1810,10 @@
   "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/fixtures/chords/A7/a7_steel.wav": {
     "mtime": 1777738796.6686332,
     "hash": "d0349c884f04d529b7ebecde102619a4"
+  },
+  "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/fixtures/chords/A7/a7_finger_laut_single_psodo.wav": {
+    "mtime": 1778184644.8987641,
+    "hash": "a790ef7361e6e35824af3406ff6b8455"
   },
   "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/fixtures/chords/Asus2/01.wav": {
     "mtime": 1777738796.6810849,
@@ -1595,9 +1831,25 @@
     "mtime": 1777738796.6947646,
     "hash": "b73af184502c59b352aab37cf5142ac5"
   },
+  "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/fixtures/chords/Am7/am7_finger_leise_single_pyxdj.wav": {
+    "mtime": 1778184644.904317,
+    "hash": "cad3a2754e31104dc6ee91c81e1558fa"
+  },
+  "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/fixtures/chords/Am7/am7_finger_leise_single_mq5di.wav": {
+    "mtime": 1778184644.904901,
+    "hash": "2734d547dd548026ad1100e661aa9ef0"
+  },
+  "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/fixtures/chords/Am7/am7_finger_laut_single_s2mst.wav": {
+    "mtime": 1778184644.903029,
+    "hash": "4186bd8cb1d5277d0ff47ec1197d1c87"
+  },
   "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/fixtures/chords/Am7/am7.wav": {
     "mtime": 1777738796.6803284,
     "hash": "93eccc6eb92e3934c2dd28db2af0db30"
+  },
+  "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/fixtures/chords/Am7/am7_finger_laut_single_u7kxy.wav": {
+    "mtime": 1778184644.9036782,
+    "hash": "968df6c592cb563b42e3eea29141b938"
   },
   "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/fixtures/chords/Am7/amin7_2.wav": {
     "mtime": 1777842637.9220943,
@@ -1623,13 +1875,45 @@
     "mtime": 1777738796.6846557,
     "hash": "d40178b0aeed6189e43723273e4cf858"
   },
+  "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/fixtures/chords/G-Dur (1-Finger)/gdur1finger_finger_laut_single_vmimy.wav": {
+    "mtime": 1778184644.9193425,
+    "hash": "5dc5f0af20835b911bcd099c4eb006dd"
+  },
+  "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/fixtures/chords/G-Dur (1-Finger)/gdur1finger_finger_leise_single_axmpy.wav": {
+    "mtime": 1778184644.9200387,
+    "hash": "95ac255494fccaeb56e0995131518d7e"
+  },
+  "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/fixtures/chords/G-Dur (1-Finger)/gdur1finger_finger_leise_single_y1ptz.wav": {
+    "mtime": 1778184644.920659,
+    "hash": "7efd309f0dfcec89283da5d2a2c8432e"
+  },
   "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/fixtures/chords/G-Dur (1-Finger)/gsimp.wav": {
     "mtime": 1777738796.6986158,
     "hash": "bdf48a7ea53b9dc6e1948e01c9123693"
   },
+  "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/fixtures/chords/G-Dur (1-Finger)/gdur1finger_finger_laut_single_3mabz.wav": {
+    "mtime": 1778184644.9185157,
+    "hash": "4e5471c61e3f2671df64e02c89fd4405"
+  },
+  "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/fixtures/chords/A-Moll/amoll_finger_leise_single_9z9u3.wav": {
+    "mtime": 1778184612.9567492,
+    "hash": "7cde7dc4451e364dc55ac5927cc73019"
+  },
+  "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/fixtures/chords/A-Moll/amoll_finger_laut_single_vhez0.wav": {
+    "mtime": 1778184612.9537492,
+    "hash": "efed1f8f33663027fe34d57a6b2be649"
+  },
+  "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/fixtures/chords/A-Moll/amoll_finger_laut_single_c2cmv.wav": {
+    "mtime": 1778184612.9507492,
+    "hash": "7194afa0e8ca0600870c06f4c4a53789"
+  },
   "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/fixtures/chords/A-Moll/amin.wav": {
     "mtime": 1777738796.6927538,
     "hash": "daf9a2061e02a907610fde71a6b48cc1"
+  },
+  "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/fixtures/chords/A-Moll/amoll_finger_leise_single_cg9pw.wav": {
+    "mtime": 1778184612.958749,
+    "hash": "96260e06f691195cfa5fddcfc36b551c"
   },
   "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/fixtures/chords/A-Moll/amoll_steel.wav": {
     "mtime": 1777738796.6930385,
