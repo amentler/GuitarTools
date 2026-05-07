@@ -1,19 +1,11 @@
 ---
-name: sync
-description: >
-  GuitarTools Git-Sync: staged, schnelle Tests (ohne Audio), optional langsame Tests
-  (mit Audio), commit, pull, push. Verwenden wenn der Nutzer "sync" schreibt oder
-  Änderungen committen und pushen will.
+description: GuitarTools Git-Sync: schnelle Tests (ohne Audio), optional langsame Tests (mit Audio), commit, pull, push. Verwenden wenn der Nutzer "sync" schreibt oder Änderungen committen und pushen will.
 ---
-
-# Sync – GuitarTools
-
-Führt den vollständigen Sync-Workflow durch: Tests → Commit → Pull → Push.
 
 ## Entscheidungsbaum vor dem Start
 
 1. **Was hat sich geändert?** → `git status` + `git diff --name-only HEAD`
-2. **Nur Markdown?** → Schnelle und langsame Tests überspringen.
+2. **Nur Markdown?** → Tests überspringen.
 3. **Nicht-Markdown-Änderungen?** → Schnelle Tests laufen lassen.
 4. **Audio-Fixtures geändert** (`tests/fixtures/**`) **oder Nutzer hat explizit nach Audio-Tests gefragt?** → Langsame Tests ebenfalls laufen lassen.
 5. **Commit-Message:** Aus dem Kontext der Änderungen ableiten oder den Nutzer fragen.
@@ -41,15 +33,13 @@ npm run test:audio
   --merge-branch main
 ```
 
-`--skip-tests` wird übergeben, weil Tests im vorherigen Schritt bereits gelaufen sind.  
-Bei reinen Markdown-Änderungen ebenfalls `--skip-tests` (kein Test-CMD nötig).
+`--skip-tests` wird übergeben, weil Tests im vorherigen Schritt bereits gelaufen sind.
+Bei reinen Markdown-Änderungen ebenfalls `--skip-tests`.
 
 ## Repo-Besonderheiten
 
-- `version.txt` und `sw.js` werden vom `prepare-commit-msg`-Hook automatisch
-  aktualisiert und gestaged — **nie manuell anfassen**.
-- Nach dem Commit können diese Dateien bereits für den *nächsten* Commit gestaged
-  sein. `git status` nach jedem Commit prüfen.
+- `version.txt` und `sw.js` werden vom `prepare-commit-msg`-Hook automatisch aktualisiert und gestaged — **nie manuell anfassen**.
+- Nach dem Commit können diese Dateien bereits für den *nächsten* Commit gestaged sein. `git status` nach jedem Commit prüfen.
 - Branch ist `main`; Merge-Schritt entfällt (current == merge-branch).
 
 ## Regeln
