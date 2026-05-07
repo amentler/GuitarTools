@@ -26,6 +26,7 @@ import {
   getRecommendedFftSize,
 } from '../../shared/audio/fastNoteMatcher.js';
 import {
+  ONSET_REATTACK_SPIKE_FACTOR,
   createOnsetGateState,
   updateOnsetGate,
   isOnsetGateOpen,
@@ -374,7 +375,9 @@ export function createSheetMusicReadingFeature() {
     const buffer = new Float32Array(audioSession.analyser.fftSize);
     audioSession.analyser.getFloatTimeDomainData(buffer);
 
-    const gate = updateOnsetGate(state.onsetGateState, buffer);
+    const gate = updateOnsetGate(state.onsetGateState, buffer, {
+      reattackSpikeFactor: ONSET_REATTACK_SPIKE_FACTOR,
+    });
     state.onsetGateState = gate.nextState;
 
     const targetPitch = `${targetNote.name}${targetNote.octave}`;

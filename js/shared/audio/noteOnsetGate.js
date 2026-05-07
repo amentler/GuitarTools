@@ -10,6 +10,8 @@ export const ONSET_BASELINE_ALPHA = 0.12;
 export const ONSET_COOLDOWN_FRAMES = 4;
 export const ONSET_WINDOW_FRAMES = 10;
 export const ONSET_REATTACK_MIN_DELTA = 0.015;
+/** Separate spike factor for re-attack during sustain (used by legato exercises). */
+export const ONSET_REATTACK_SPIKE_FACTOR = 1.5;
 
 export function computeFrameRms(samples) {
   let sumSquares = 0;
@@ -46,6 +48,7 @@ export function updateOnsetGate(state, samplesOrRms, options = {}) {
 
   const minRms = options.minRms ?? ONSET_MIN_RMS;
   const spikeFactor = options.spikeFactor ?? ONSET_SPIKE_FACTOR;
+  const reattackSpikeFactor = options.reattackSpikeFactor ?? spikeFactor;
   const releaseFactor = options.releaseFactor ?? ONSET_RELEASE_FACTOR;
   const baselineAlpha = options.baselineAlpha ?? ONSET_BASELINE_ALPHA;
   const cooldownFrames = options.cooldownFrames ?? ONSET_COOLDOWN_FRAMES;
@@ -69,7 +72,7 @@ export function updateOnsetGate(state, samplesOrRms, options = {}) {
     && cooldownFramesRemaining === 0
     && trackedFloor !== null
     && rms > state.lastRms
-    && rms >= trackedFloor * spikeFactor
+    && rms >= trackedFloor * reattackSpikeFactor
     && (rms - trackedFloor) >= reattackMinDelta;
 
   if (!state.wasAboveThreshold && rms >= armThreshold && cooldownFramesRemaining === 0) {

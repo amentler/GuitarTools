@@ -1,6 +1,7 @@
 const CORE_PRECACHED_URLS = [
   'icons/icon.svg',
   'index.html',
+  'tests/fixtures/chord-inventory.json',
   'js/lib/essentia/essentia-wasm.web.js',
   'js/lib/essentia/essentia-wasm.web.wasm',
   'js/lib/essentia/essentia.js-core.umd.js',

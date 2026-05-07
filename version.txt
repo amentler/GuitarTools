@@ -1,1 +1,1 @@
-Version 0.87 | 2026-05-05 23:32 | 3521e50 | fix: hide string labels in fretboard exercise
+Version 0.94 | 2026-05-07 14:00 | 5b33c39 | fix: increase chord recorder variation label font size and weight
