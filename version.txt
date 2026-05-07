@@ -1,1 +1,1 @@
-Version 0.86 | 2026-05-05 21:07 | 6f00d02 | feat: keep sheet music endless mode at three rows
+Version 0.87 | 2026-05-05 23:32 | 3521e50 | fix: hide string labels in fretboard exercise
