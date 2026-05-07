@@ -1,0 +1,19 @@
+{
+  "chord": "A-Dur",
+  "chordKey": "adur",
+  "guitarSize": "Vollgröße",
+  "guitarStrings": "Nylon",
+  "volume": "leise",
+  "technique": "finger",
+  "strumMode": "single",
+  "repeatIndex": 2,
+  "quality": {
+    "passed": true,
+    "failReasons": [],
+    "warnReasons": [],
+    "userFlags": []
+  },
+  "recordedAt": "2026-05-07T18:48:22.433Z",
+  "sampleRate": 48000,
+  "durationSeconds": 4
+}

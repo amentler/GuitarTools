@@ -21,22 +21,6 @@ async function ensureDir(dirPath) {
   await fs.mkdir(dirPath, { recursive: true });
 }
 
-/** Gibt einen freien Dateipfad zurück; bei Kollision: stem_2.wav, stem_3.wav … */
-async function freeFilePath(dir, fileName) {
-  const ext = path.extname(fileName);
-  const stem = path.basename(fileName, ext);
-  let candidate = path.join(dir, fileName);
-  let n = 2;
-  while (true) {
-    try {
-      await fs.access(candidate);
-      candidate = path.join(dir, `${stem}_${n}${ext}`);
-      n++;
-    } catch {
-      return candidate;
-    }
-  }
-}
 
 function extractZip(zipPath, outDir) {
   const script = `import zipfile,sys; zipfile.ZipFile(sys.argv[1]).extractall(sys.argv[2])`;
@@ -95,9 +79,12 @@ async function processZip(zipPath) {
       const destDir = path.join(CHORDS_DIR, chordName);
       await ensureDir(destDir);
 
-      const dest = await freeFilePath(destDir, wavFile);
-      await fs.rename(path.join(tmpDir, wavFile), dest);
-      console.log(`  → ${path.relative(REPO_ROOT, dest)}${qualityHint}`);
+      const destWav  = path.join(destDir, wavFile);
+      const destJson = path.join(destDir, jsonFile);
+      await fs.rename(path.join(tmpDir, wavFile),  destWav);
+      await fs.rename(path.join(tmpDir, jsonFile), destJson);
+
+      console.log(`  → ${path.relative(REPO_ROOT, destWav)}${qualityHint}`);
       imported++;
     }
 

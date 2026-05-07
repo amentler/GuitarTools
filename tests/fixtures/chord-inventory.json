@@ -1,4 +1,257 @@
 {
-  "generatedAt": "2026-05-07T15:30:52.148Z",
-  "recordings": []
+  "generatedAt": "2026-05-07T19:07:03.188Z",
+  "recordings": [
+    {
+      "chord": "A-Dur",
+      "chordKey": "adur",
+      "guitarSize": "Vollgröße",
+      "guitarStrings": "Nylon",
+      "technique": "finger",
+      "strumMode": "single",
+      "volume": "laut"
+    },
+    {
+      "chord": "A-Dur",
+      "chordKey": "adur",
+      "guitarSize": "Vollgröße",
+      "guitarStrings": "Nylon",
+      "technique": "finger",
+      "strumMode": "single",
+      "volume": "laut"
+    },
+    {
+      "chord": "A-Dur",
+      "chordKey": "adur",
+      "guitarSize": "Vollgröße",
+      "guitarStrings": "Nylon",
+      "technique": "finger",
+      "strumMode": "single",
+      "volume": "leise"
+    },
+    {
+      "chord": "A-Dur",
+      "chordKey": "adur",
+      "guitarSize": "Vollgröße",
+      "guitarStrings": "Nylon",
+      "technique": "finger",
+      "strumMode": "single",
+      "volume": "leise"
+    },
+    {
+      "chord": "A-Moll",
+      "chordKey": "amoll",
+      "guitarSize": "Vollgröße",
+      "guitarStrings": "Nylon",
+      "technique": "finger",
+      "strumMode": "single",
+      "volume": "laut"
+    },
+    {
+      "chord": "A-Moll",
+      "chordKey": "amoll",
+      "guitarSize": "Vollgröße",
+      "guitarStrings": "Nylon",
+      "technique": "finger",
+      "strumMode": "single",
+      "volume": "laut"
+    },
+    {
+      "chord": "A-Moll",
+      "chordKey": "amoll",
+      "guitarSize": "Vollgröße",
+      "guitarStrings": "Nylon",
+      "technique": "finger",
+      "strumMode": "single",
+      "volume": "leise"
+    },
+    {
+      "chord": "A-Moll",
+      "chordKey": "amoll",
+      "guitarSize": "Vollgröße",
+      "guitarStrings": "Nylon",
+      "technique": "finger",
+      "strumMode": "single",
+      "volume": "leise"
+    },
+    {
+      "chord": "C-Dur",
+      "chordKey": "cdur",
+      "guitarSize": "Vollgröße",
+      "guitarStrings": "Nylon",
+      "technique": "finger",
+      "strumMode": "single",
+      "volume": "laut"
+    },
+    {
+      "chord": "C-Dur",
+      "chordKey": "cdur",
+      "guitarSize": "Vollgröße",
+      "guitarStrings": "Nylon",
+      "technique": "finger",
+      "strumMode": "single",
+      "volume": "laut"
+    },
+    {
+      "chord": "C-Dur",
+      "chordKey": "cdur",
+      "guitarSize": "Vollgröße",
+      "guitarStrings": "Nylon",
+      "technique": "finger",
+      "strumMode": "single",
+      "volume": "leise"
+    },
+    {
+      "chord": "C-Dur",
+      "chordKey": "cdur",
+      "guitarSize": "Vollgröße",
+      "guitarStrings": "Nylon",
+      "technique": "finger",
+      "strumMode": "single",
+      "volume": "leise"
+    },
+    {
+      "chord": "C-Dur (1-Finger)",
+      "chordKey": "cdur1finger",
+      "guitarSize": "Vollgröße",
+      "guitarStrings": "Nylon",
+      "technique": "finger",
+      "strumMode": "single",
+      "volume": "laut"
+    },
+    {
+      "chord": "C-Dur (1-Finger)",
+      "chordKey": "cdur1finger",
+      "guitarSize": "Vollgröße",
+      "guitarStrings": "Nylon",
+      "technique": "finger",
+      "strumMode": "single",
+      "volume": "laut"
+    },
+    {
+      "chord": "C-Dur (1-Finger)",
+      "chordKey": "cdur1finger",
+      "guitarSize": "Vollgröße",
+      "guitarStrings": "Nylon",
+      "technique": "finger",
+      "strumMode": "single",
+      "volume": "leise"
+    },
+    {
+      "chord": "C-Dur (1-Finger)",
+      "chordKey": "cdur1finger",
+      "guitarSize": "Vollgröße",
+      "guitarStrings": "Nylon",
+      "technique": "finger",
+      "strumMode": "single",
+      "volume": "leise"
+    },
+    {
+      "chord": "C7",
+      "chordKey": "c7",
+      "guitarSize": "Vollgröße",
+      "guitarStrings": "Nylon",
+      "technique": "finger",
+      "strumMode": "single",
+      "volume": "laut"
+    },
+    {
+      "chord": "C7",
+      "chordKey": "c7",
+      "guitarSize": "Vollgröße",
+      "guitarStrings": "Nylon",
+      "technique": "finger",
+      "strumMode": "single",
+      "volume": "laut"
+    },
+    {
+      "chord": "C7",
+      "chordKey": "c7",
+      "guitarSize": "Vollgröße",
+      "guitarStrings": "Nylon",
+      "technique": "finger",
+      "strumMode": "single",
+      "volume": "leise"
+    },
+    {
+      "chord": "C7",
+      "chordKey": "c7",
+      "guitarSize": "Vollgröße",
+      "guitarStrings": "Nylon",
+      "technique": "finger",
+      "strumMode": "single",
+      "volume": "leise"
+    },
+    {
+      "chord": "D7",
+      "chordKey": "d7",
+      "guitarSize": "Vollgröße",
+      "guitarStrings": "Nylon",
+      "technique": "finger",
+      "strumMode": "single",
+      "volume": "laut"
+    },
+    {
+      "chord": "D7",
+      "chordKey": "d7",
+      "guitarSize": "Vollgröße",
+      "guitarStrings": "Nylon",
+      "technique": "finger",
+      "strumMode": "single",
+      "volume": "laut"
+    },
+    {
+      "chord": "D7",
+      "chordKey": "d7",
+      "guitarSize": "Vollgröße",
+      "guitarStrings": "Nylon",
+      "technique": "finger",
+      "strumMode": "single",
+      "volume": "leise"
+    },
+    {
+      "chord": "D7",
+      "chordKey": "d7",
+      "guitarSize": "Vollgröße",
+      "guitarStrings": "Nylon",
+      "technique": "finger",
+      "strumMode": "single",
+      "volume": "leise"
+    },
+    {
+      "chord": "Dsus2",
+      "chordKey": "dsus2",
+      "guitarSize": "Vollgröße",
+      "guitarStrings": "Nylon",
+      "technique": "finger",
+      "strumMode": "single",
+      "volume": "laut"
+    },
+    {
+      "chord": "Dsus2",
+      "chordKey": "dsus2",
+      "guitarSize": "Vollgröße",
+      "guitarStrings": "Nylon",
+      "technique": "finger",
+      "strumMode": "single",
+      "volume": "laut"
+    },
+    {
+      "chord": "Dsus2",
+      "chordKey": "dsus2",
+      "guitarSize": "Vollgröße",
+      "guitarStrings": "Nylon",
+      "technique": "finger",
+      "strumMode": "single",
+      "volume": "leise"
+    },
+    {
+      "chord": "Dsus2",
+      "chordKey": "dsus2",
+      "guitarSize": "Vollgröße",
+      "guitarStrings": "Nylon",
+      "technique": "finger",
+      "strumMode": "single",
+      "volume": "leise"
+    }
+  ]
 }

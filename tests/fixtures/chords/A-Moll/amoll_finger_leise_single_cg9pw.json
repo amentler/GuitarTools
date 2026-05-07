@@ -1,0 +1,19 @@
+{
+  "chord": "A-Moll",
+  "chordKey": "amoll",
+  "guitarSize": "Vollgröße",
+  "guitarStrings": "Nylon",
+  "volume": "leise",
+  "technique": "finger",
+  "strumMode": "single",
+  "repeatIndex": 2,
+  "quality": {
+    "passed": true,
+    "failReasons": [],
+    "warnReasons": [],
+    "userFlags": []
+  },
+  "recordedAt": "2026-05-07T18:49:21.311Z",
+  "sampleRate": 48000,
+  "durationSeconds": 4
+}

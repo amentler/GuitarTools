@@ -1,0 +1,19 @@
+{
+  "chord": "C-Dur",
+  "chordKey": "cdur",
+  "guitarSize": "Vollgröße",
+  "guitarStrings": "Nylon",
+  "volume": "leise",
+  "technique": "finger",
+  "strumMode": "single",
+  "repeatIndex": 1,
+  "quality": {
+    "passed": true,
+    "failReasons": [],
+    "warnReasons": [],
+    "userFlags": []
+  },
+  "recordedAt": "2026-05-07T18:50:56.989Z",
+  "sampleRate": 48000,
+  "durationSeconds": 4
+}

@@ -1,0 +1,19 @@
+{
+  "chord": "D7",
+  "chordKey": "d7",
+  "guitarSize": "Vollgröße",
+  "guitarStrings": "Nylon",
+  "volume": "laut",
+  "technique": "finger",
+  "strumMode": "single",
+  "repeatIndex": 2,
+  "quality": {
+    "passed": true,
+    "failReasons": [],
+    "warnReasons": [],
+    "userFlags": []
+  },
+  "recordedAt": "2026-05-07T18:52:33.886Z",
+  "sampleRate": 48000,
+  "durationSeconds": 4
+}
