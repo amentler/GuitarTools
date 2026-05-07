@@ -1,1 +1,1 @@
-Version 0.93 | 2026-05-07 12:32 | 6b00736 | feat: add importzip skill and drop zone for chord recorder ZIPs
+Version 0.94 | 2026-05-07 14:00 | 5b33c39 | fix: increase chord recorder variation label font size and weight

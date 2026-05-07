@@ -1724,6 +1724,17 @@ input[type="range"] {
   background: var(--color-card-hover, #fff0e8);
 }
 
+.cr-chord-dot {
+  display: block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: transparent;
+}
+
+.cr-chord-dot--ok      { background: var(--color-success, #22c55e); }
+.cr-chord-dot--missing { background: var(--color-error,   #ef4444); }
+
 .cr-chord-name {
   font-size: 0.8rem;
   font-weight: 700;

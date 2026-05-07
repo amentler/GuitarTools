@@ -132,6 +132,9 @@ async function main() {
 
   console.log(`\nFertig: ${totalImported} WAVs importiert, ${failed} ZIPs fehlgeschlagen.`);
 
+  execFileSync('node', [new URL('./generate-chord-inventory.mjs', import.meta.url).pathname],
+    { stdio: 'inherit' });
+
   if (totalImported > 0) {
     console.log('\nNächste Schritte:');
     console.log('  node scripts/introduce-chord-fixture.mjs');

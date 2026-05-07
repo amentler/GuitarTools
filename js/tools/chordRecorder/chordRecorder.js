@@ -18,6 +18,7 @@ import {
   removeRecordingByBaseName,
   initStore,
 } from './chordRecorderFiles.js';
+import { isChordSufficient } from './chordInventoryLogic.js';
 
 const STORAGE_PREFIX = 'chord-recorder-';
 const ROOT_ORDER = ['A', 'C', 'D', 'E', 'F', 'G', 'H'];
@@ -79,6 +80,19 @@ function getSortedChordNames() {
     });
 }
 
+async function loadInventory() {
+  const url = '../../tests/fixtures/chord-inventory.json';
+  try {
+    const res = await fetch(url, { cache: 'no-store' });
+    if (res.ok) return res.json();
+  } catch { /* network unavailable, try cache */ }
+  try {
+    const res = await fetch(url);
+    if (res.ok) return res.json();
+  } catch { /* cache miss */ }
+  return { recordings: [] };
+}
+
 export function createChordRecorderTool({
   storageService = createStorageService({ prefix: STORAGE_PREFIX }),
   createAudioSession = createChordRecorderAudio,
@@ -88,6 +102,7 @@ export function createChordRecorderTool({
   let currentView = 'record';
   let activePlayback = null;
   let isSessionActive = false;
+  let inventory = { recordings: [] };
 
   function getConfig() {
     return {
@@ -113,6 +128,16 @@ export function createChordRecorderTool({
     const config = getConfig();
     const ready = selectedChord && config.techniken.length > 0 && config.strumModi.length > 0;
     root?.querySelectorAll('[data-start]').forEach(btn => btn.classList.toggle('u-hidden', !ready));
+  }
+
+  function updateDots() {
+    const config = getConfig();
+    root?.querySelectorAll('.cr-chord-card').forEach(card => {
+      const chordKey = toChordKey(card.dataset.chord);
+      const ok = isChordSufficient(inventory.recordings, chordKey, config);
+      const dot = card.querySelector('.cr-chord-dot');
+      if (dot) dot.className = `cr-chord-dot ${ok ? 'cr-chord-dot--ok' : 'cr-chord-dot--missing'}`;
+    });
   }
 
   function renderChordGrid() {
@@ -147,6 +172,10 @@ export function createChordRecorderTool({
         label: p.finger ? String(p.finger) : null,
       }));
       card.appendChild(fretboard);
+
+      const dot = document.createElement('span');
+      dot.className = 'cr-chord-dot';
+      card.appendChild(dot);
 
       card.addEventListener('click', () => {
         container.querySelectorAll('.cr-chord-card').forEach(c => c.classList.remove('cr-chord-card--selected'));
@@ -246,9 +275,11 @@ export function createChordRecorderTool({
 
     sizeSelect?.addEventListener('change', e => {
       storageService.set('guitarSize', e.target.value);
+      updateDots();
     });
     stringsSelect?.addEventListener('change', e => {
       storageService.set('guitarStrings', e.target.value);
+      updateDots();
     });
 
     if (sizeSelect) sizeSelect.value = storageService.getString('guitarSize', { defaultValue: 'Vollgröße' });
@@ -263,6 +294,7 @@ export function createChordRecorderTool({
         storageService.set(key, String(cb.checked));
         updateVariationCount();
         updateStartButton();
+        updateDots();
       });
     });
 
@@ -273,6 +305,7 @@ export function createChordRecorderTool({
         storageService.set(key, String(cb.checked));
         updateVariationCount();
         updateStartButton();
+        updateDots();
       });
     });
   }
@@ -370,6 +403,7 @@ export function createChordRecorderTool({
     renderChordGrid();
     updateVariationCount();
     updateStartButton();
+    updateDots();
     updateToolMenu();
 
     root.querySelectorAll('[data-start]').forEach(btn => btn.addEventListener('click', startSession));
@@ -576,7 +610,8 @@ export function createChordRecorderTool({
 
   async function mount(rootEl) {
     root = rootEl;
-    await initStore();
+    const [inv] = await Promise.all([loadInventory(), initStore()]);
+    inventory = inv;
     renderCurrentView();
   }
 
