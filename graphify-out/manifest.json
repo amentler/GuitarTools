@@ -8,8 +8,8 @@
     "hash": "c9ea0a1eef92066d758f442bfbd3037a"
   },
   "/home/azureuserhauptmann/privat/GuitarToolsALT/sw.js": {
-    "mtime": 1778184636.7786555,
-    "hash": "62a749a32e5bc2e038b38de9ea9401d2"
+    "mtime": 1778184758.129212,
+    "hash": "b01903f50425958fb097823c8c6f5659"
   },
   "/home/azureuserhauptmann/privat/GuitarToolsALT/vitest.config.js": {
     "mtime": 1777738797.000946,
@@ -178,6 +178,10 @@
   "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/unit/gtFretboard.test.js": {
     "mtime": 1777738796.7008486,
     "hash": "acf06a6f90a0e17eeebfc01b76c61a72"
+  },
+  "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/unit/sheetMusicReadingRecognition.test.js": {
+    "mtime": 1778185895.5512502,
+    "hash": "07a79eeaf2673b1a12ffe0f3adb147bd"
   },
   "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/unit/pageStructureSmoke.test.js": {
     "mtime": 1777936128.1193604,
@@ -783,6 +787,10 @@
     "mtime": 1777935564.6889226,
     "hash": "337e94f23851943dcea26e5d758d3027"
   },
+  "/home/azureuserhauptmann/privat/GuitarToolsALT/js/games/sheetMusicReading/sheetMusicRecognition.js": {
+    "mtime": 1778185868.7425034,
+    "hash": "976feade7fafdc821e3b8b9b01d611b1"
+  },
   "/home/azureuserhauptmann/privat/GuitarToolsALT/js/games/sheetMusicReading/playbackBar.js": {
     "mtime": 1777738797.1974037,
     "hash": "8173cdc84edbb9b69b825d70b978d32c"
@@ -800,8 +808,8 @@
     "hash": "28b0825f72987d3d9bc1a0121c2d8ba5"
   },
   "/home/azureuserhauptmann/privat/GuitarToolsALT/js/games/sheetMusicReading/sheetMusicReading.js": {
-    "mtime": 1778168932.7335458,
-    "hash": "70257477f226bb03969b149ec51a73f3"
+    "mtime": 1778185888.1994352,
+    "hash": "c3101d1a62b74a0a0c5481e7325a0c4d"
   },
   "/home/azureuserhauptmann/privat/GuitarToolsALT/js/games/sheetMusicReading/playbackController.js": {
     "mtime": 1777738797.197438,
@@ -984,8 +992,8 @@
     "hash": "00ef135fb82dec6872d89acf5be0cfa1"
   },
   "/home/azureuserhauptmann/privat/GuitarToolsALT/version.txt": {
-    "mtime": 1778184636.7776556,
-    "hash": "dcc204246b15e97911100ed50bc45682"
+    "mtime": 1778184758.115213,
+    "hash": "c3c80583c1053c691d8ad758125165e0"
   },
   "/home/azureuserhauptmann/privat/GuitarToolsALT/README.md": {
     "mtime": 1777997732.8639417,
@@ -1104,8 +1112,8 @@
     "hash": "7e2399fc4fca252735007a76dcb70598"
   },
   "/home/azureuserhauptmann/privat/GuitarToolsALT/js/games/sheetMusicReading/CLAUDE.md": {
-    "mtime": 1778005352.6894317,
-    "hash": "55fce67abd573cd44cde28f751e7a6d5"
+    "mtime": 1778185914.776345,
+    "hash": "8a51d2ea21fbb71cfa3e3357e0acad29"
   },
   "/home/azureuserhauptmann/privat/GuitarToolsALT/js/games/akkordTrainer/CLAUDE.md": {
     "mtime": 1777738797.196215,

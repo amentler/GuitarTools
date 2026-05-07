@@ -59,6 +59,10 @@ Optionaler Aktiv-Modus: Mikrofon-basierte Tonprüfung.
   - `openAudioSession` / `closeAudioSession`
   - `classifyFrame` + `updateMatchState`
   - `getRecommendedFftSize` pro Zielnote
+  - `sheetMusicRecognition.js` legt eine bewusst weichere Uebungs-Akzeptanz
+    ueber den strengen Shared-Matcher: groessere Cent-Toleranz, direkte
+    Annahme eines verwertbaren Treffers und Oktavgleichheit als Treffer
+    (z. B. D3-Subharmonik als D2), weil die Uebung kein Tuner ist.
 - Test-/Legacy-Hooks:
   - `?active=1` aktiviert den Aktivmodus direkt beim Laden
   - `window.__GT_SHEET_MUSIC_READING_BARS__` injiziert deterministische Notenfolgen

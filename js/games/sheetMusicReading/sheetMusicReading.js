@@ -22,9 +22,13 @@ import {
 import {
   classifyFrame,
   createMatchState,
-  updateMatchState,
   getRecommendedFftSize,
 } from '../../shared/audio/fastNoteMatcher.js';
+import {
+  SHEET_MUSIC_CENTS_TOLERANCE,
+  softenSheetMusicFrameResult,
+  updateSheetMusicMatchState,
+} from './sheetMusicRecognition.js';
 import {
   ONSET_REATTACK_SPIKE_FACTOR,
   createOnsetGateState,
@@ -381,7 +385,12 @@ export function createSheetMusicReadingFeature() {
     state.onsetGateState = gate.nextState;
 
     const targetPitch = `${targetNote.name}${targetNote.octave}`;
-    const frameResult = classifyFrame(buffer, audioSession.audioCtx.sampleRate, targetPitch);
+    const frameResult = softenSheetMusicFrameResult(
+      classifyFrame(buffer, audioSession.audioCtx.sampleRate, targetPitch, {
+        tolerateCents: SHEET_MUSIC_CENTS_TOLERANCE,
+      }),
+      targetPitch,
+    );
     let effective = frameResult.status === 'wrong'
       ? { ...frameResult, status: 'unsure' }
       : frameResult;
@@ -390,7 +399,7 @@ export function createSheetMusicReadingFeature() {
       effective = { ...effective, status: 'unsure' };
     }
 
-    const { nextState, event } = updateMatchState(state.matchState, effective);
+    const { nextState, event } = updateSheetMusicMatchState(state.matchState, effective);
     state.matchState = nextState;
 
     if (event === 'accept') {
