@@ -1,1 +1,1 @@
-Version 0.95 | 2026-05-07 17:49 | b73c02f | Merge origin/main into main
+Version 0.96 | 2026-05-07 17:51 | d241e1a | feat(chordRecorder): add multi-chord recording sequence

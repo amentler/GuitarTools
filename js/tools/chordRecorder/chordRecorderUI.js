@@ -98,6 +98,7 @@ export function createChordRecorderUI(container) {
     cdEl.textContent = num !== null ? String(num) : '';
     stEl.textContent = phase === 'listening' ? 'Warte auf Anschlag…'
       : phase === 'recording' ? 'Aufnahme läuft…'
+      : phase === 'ended' ? 'Aufnahme beendet'
       : '';
   }
 

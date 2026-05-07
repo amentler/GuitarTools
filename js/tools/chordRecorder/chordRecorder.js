@@ -25,9 +25,9 @@ const ROOT_ORDER = ['A', 'C', 'D', 'E', 'F', 'G', 'H'];
 const TYPE_ORDER = ['Dur', 'Moll', 'Dom7', 'Maj7', 'Min7', 'Dim', 'Sus', 'Add'];
 const SINGLE_STRUM_MS = 4000;
 const BEAT_MS = 750; // 80 BPM
-const PRE_COUNTDOWN = [3, 2, 1];
+const PRE_COUNTDOWN = [4, 3, 2, 1];
 
-const AUTO_ADVANCE_SEC = 5;
+const AUTO_ADVANCE_SEC = 4;
 
 function getDurationMs(strumModus) {
   if (strumModus === 'multi1') return 4 * BEAT_MS;
@@ -516,7 +516,7 @@ export function createChordRecorderTool({
 
     ui.render(chordName, positions, variation, index, total);
 
-    // Pre-recording countdown 3-2-1
+    // Pre-recording countdown 4-3-2-1
     for (const n of PRE_COUNTDOWN) {
       ui.setPhase('countdown', n);
       const result = await Promise.race([sleep(1000), ui.nextAction()]);
@@ -550,10 +550,11 @@ export function createChordRecorderTool({
 
     if (variation.strumModus === 'single') {
       const steps = Math.floor(durationMs / 1000);
-      for (let t = steps; t >= 0; t--) {
+      for (let t = steps; t >= 1; t--) {
         ui.setPhase('recording', t);
-        if (t > 0) await sleep(1000);
+        await sleep(1000);
       }
+      ui.setPhase('ended', 0);
     } else {
       const totalBeats = durationMs / BEAT_MS;
       ui.showBeats(totalBeats);
@@ -561,6 +562,7 @@ export function createChordRecorderTool({
         ui.setBeat(b);
         await sleep(BEAT_MS);
       }
+      ui.setPhase('ended');
     }
 
     const { samples, sampleRate, durationSec } = await recPromise;
@@ -573,7 +575,7 @@ export function createChordRecorderTool({
     ui.clearQueue();
     ui.showResult(quality);
 
-    // Auto-advance after 5s if passed, otherwise wait for manual action
+    // Auto-advance after 4s if passed, otherwise wait for manual action
     const action = quality.passed
       ? await autoAdvanceOrWait(ui)
       : await ui.nextAction();
