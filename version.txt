@@ -1,1 +1,1 @@
-Version 0.99 | 2026-05-07 22:12 | d1a2cdb | feat: complete chord catalog and import fixtures
+Version 0.100 | 2026-05-07 22:58 | d4eb0fa | fix: relax sheet music note recognition
