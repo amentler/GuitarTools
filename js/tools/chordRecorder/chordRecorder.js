@@ -98,7 +98,7 @@ export function createChordRecorderTool({
   createAudioSession = createChordRecorderAudio,
 } = {}) {
   let root = null;
-  let selectedChord = null;
+  let selectedChords = [];
   let currentView = 'record';
   let activePlayback = null;
   let isSessionActive = false;
@@ -119,14 +119,20 @@ export function createChordRecorderTool({
 
   function updateVariationCount() {
     const config = getConfig();
-    const count = buildVariationList(config).length;
+    const perChordCount = buildVariationList(config).length;
+    const totalCount = perChordCount * selectedChords.length;
     const el = root?.querySelector('#cr-variation-count');
-    if (el) el.textContent = `${count} Aufnahmen geplant`;
+    if (!el) return;
+    if (selectedChords.length === 0) {
+      el.textContent = `${perChordCount} Aufnahmen pro Akkord`;
+      return;
+    }
+    el.textContent = `${selectedChords.length} Akkorde · ${totalCount} Aufnahmen geplant`;
   }
 
   function updateStartButton() {
     const config = getConfig();
-    const ready = selectedChord && config.techniken.length > 0 && config.strumModi.length > 0;
+    const ready = selectedChords.length > 0 && config.techniken.length > 0 && config.strumModi.length > 0;
     root?.querySelectorAll('[data-start]').forEach(btn => btn.classList.toggle('u-hidden', !ready));
   }
 
@@ -138,6 +144,21 @@ export function createChordRecorderTool({
       const dot = card.querySelector('.cr-chord-dot');
       if (dot) dot.className = `cr-chord-dot ${ok ? 'cr-chord-dot--ok' : 'cr-chord-dot--missing'}`;
     });
+  }
+
+  function toggleChordSelection(chordName) {
+    if (selectedChords.includes(chordName)) {
+      selectedChords = selectedChords.filter(name => name !== chordName);
+    } else {
+      selectedChords = [...selectedChords, chordName];
+    }
+  }
+
+  function buildRecordingPlan(config) {
+    const variations = buildVariationList(config);
+    return getSortedChordNames()
+      .filter(chordName => selectedChords.includes(chordName))
+      .flatMap(chordName => variations.map(variation => ({ chordName, variation })));
   }
 
   function renderChordGrid() {
@@ -159,7 +180,7 @@ export function createChordRecorderTool({
       nameEl.className = 'cr-chord-name';
       nameEl.textContent = chordName;
       card.appendChild(nameEl);
-      if (selectedChord === chordName) {
+      if (selectedChords.includes(chordName)) {
         card.classList.add('cr-chord-card--selected');
       }
 
@@ -178,9 +199,9 @@ export function createChordRecorderTool({
       card.appendChild(dot);
 
       card.addEventListener('click', () => {
-        container.querySelectorAll('.cr-chord-card').forEach(c => c.classList.remove('cr-chord-card--selected'));
-        card.classList.add('cr-chord-card--selected');
-        selectedChord = chordName;
+        toggleChordSelection(chordName);
+        card.classList.toggle('cr-chord-card--selected', selectedChords.includes(chordName));
+        updateVariationCount();
         updateStartButton();
       });
 
@@ -488,13 +509,12 @@ export function createChordRecorderTool({
     renderRecordView();
   }
 
-  async function runVariation(audio, ui, index, total) {
-    const positions = CHORDS[selectedChord];
+  async function runPlanStep(audio, ui, planStep, index, total) {
+    const { chordName, variation } = planStep;
+    const positions = CHORDS[chordName];
     const config = getConfig();
-    const variations = buildVariationList(config);
-    const variation = variations[index];
 
-    ui.render(selectedChord, positions, variation, index, total);
+    ui.render(chordName, positions, variation, index, total);
 
     // Pre-recording countdown 3-2-1
     for (const n of PRE_COUNTDOWN) {
@@ -560,9 +580,9 @@ export function createChordRecorderTool({
     const userFlags = (action === 'buzz' || action === 'muted') ? [action] : [];
 
     // Build filename and sidecar
-    const chordKey = toChordKey(selectedChord);
+    const chordKey = toChordKey(chordName);
     const baseName = buildFileName(variation, chordKey, generateRandom5());
-    const sidecar = buildSidecarJson(selectedChord, chordKey, variation, config, quality, {
+    const sidecar = buildSidecarJson(chordName, chordKey, variation, config, quality, {
       sampleRate, durationSec, userFlags,
     });
 
@@ -575,8 +595,8 @@ export function createChordRecorderTool({
 
   async function startSession() {
     const config = getConfig();
-    const variations = buildVariationList(config);
-    if (!selectedChord || variations.length === 0) return;
+    const recordingPlan = buildRecordingPlan(config);
+    if (recordingPlan.length === 0) return;
 
     isSessionActive = true;
     updateToolMenu();
@@ -595,8 +615,8 @@ export function createChordRecorderTool({
 
     try {
       let i = 0;
-      while (i < variations.length) {
-        const action = await runVariation(audio, ui, i, variations.length);
+      while (i < recordingPlan.length) {
+        const action = await runPlanStep(audio, ui, recordingPlan[i], i, recordingPlan.length);
         if (action === 'stop') break;
         if (action === 'repeat') continue;
         i++;

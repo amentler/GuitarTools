@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createChordRecorderTool } from '../../js/tools/chordRecorder/chordRecorder.js';
-import { addRecording, clearRecordings } from '../../js/tools/chordRecorder/chordRecorderFiles.js';
+import { addRecording, clearRecordings, getAllRecordings } from '../../js/tools/chordRecorder/chordRecorderFiles.js';
 
 function createMockStorageService(initialValues = {}) {
   const values = new Map(Object.entries(initialValues));
@@ -22,6 +22,7 @@ function createMockStorageService(initialValues = {}) {
 
 describe('chordRecorder controller', () => {
   beforeEach(() => {
+    vi.useRealTimers();
     clearRecordings();
     document.body.innerHTML = '<div id="root"></div>';
     globalThis.URL.createObjectURL = vi.fn(() => 'blob:test');
@@ -66,6 +67,8 @@ describe('chordRecorder controller', () => {
 
     const firstChord = document.querySelector('.cr-chord-card');
     firstChord.click();
+    const secondChord = document.querySelectorAll('.cr-chord-card')[1];
+    secondChord.click();
 
     document.getElementById('cr-manage-recordings').click();
 
@@ -76,6 +79,25 @@ describe('chordRecorder controller', () => {
 
     expect(document.getElementById('cr-guitar-size')?.value).toBe('7/8');
     expect(document.querySelector('[data-strum-modus="multi1"]')?.checked).toBe(true);
+    expect(document.querySelectorAll('.cr-chord-card--selected')).toHaveLength(2);
+  });
+
+  it('allows toggling multiple chord selections in the record view', async () => {
+    const tool = createChordRecorderTool({
+      storageService: createMockStorageService(),
+    });
+
+    await tool.mount(document.getElementById('root'));
+
+    const cards = document.querySelectorAll('.cr-chord-card');
+    cards[0].click();
+    cards[1].click();
+
+    expect(document.querySelectorAll('.cr-chord-card--selected')).toHaveLength(2);
+    expect(document.getElementById('cr-variation-count')?.textContent).toContain('2 Akkorde');
+
+    cards[0].click();
+
     expect(document.querySelectorAll('.cr-chord-card--selected')).toHaveLength(1);
   });
 
@@ -179,5 +201,57 @@ describe('chordRecorder controller', () => {
 
     manageButton.click();
     expect(document.getElementById('cr-chord-grid')).not.toBeNull();
+  });
+
+  it('records multiple selected chords in sorted sequence order', async () => {
+    vi.useFakeTimers();
+
+    const open = vi.fn().mockResolvedValue();
+    const close = vi.fn();
+    const recordForDuration = vi.fn().mockResolvedValue({
+      samples: Float32Array.from({ length: 44100 * 2 }, () => 0.1),
+      sampleRate: 44100,
+      durationSec: 2,
+    });
+    const audioSession = {
+      open,
+      close,
+      startOnsetWatch(callback) {
+        callback();
+      },
+      stopOnsetWatch: vi.fn(),
+      startLevelWatch: vi.fn(),
+      stopLevelWatch: vi.fn(),
+      recordForDuration,
+    };
+
+    const tool = createChordRecorderTool({
+      storageService: createMockStorageService({
+        'technik-finger': 'true',
+        'technik-fingernagel': 'false',
+        'technik-plektrum': 'false',
+        'strumModus-single': 'true',
+        'strumModus-multi1': 'false',
+        'strumModus-multi2': 'false',
+      }),
+      createAudioSession: () => audioSession,
+    });
+
+    await tool.mount(document.getElementById('root'));
+
+    document.querySelector('[data-chord="G-Dur"]').click();
+    document.querySelector('[data-chord="A-Dur"]').click();
+
+    document.querySelector('[data-start]').click();
+
+    await vi.runAllTimersAsync();
+
+    expect(recordForDuration).toHaveBeenCalledTimes(8);
+    expect(getAllRecordings().map(entry => entry.sidecar.chord)).toEqual([
+      'A-Dur', 'A-Dur', 'A-Dur', 'A-Dur',
+      'G-Dur', 'G-Dur', 'G-Dur', 'G-Dur',
+    ]);
+    expect(open).toHaveBeenCalledTimes(1);
+    expect(close).toHaveBeenCalledTimes(1);
   });
 });
