@@ -1,1 +1,1 @@
-Version 0.100 | 2026-05-07 22:58 | d4eb0fa | fix: relax sheet music note recognition
+Version 0.101 | 2026-05-07 22:59 | 6caa4d4 | chore: commit version metadata
