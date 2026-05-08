@@ -49,7 +49,7 @@ export function createChordRecorderUI(container) {
         <div id="cr-result" class="cr-result u-hidden"></div>
 
         <div id="cr-auto-advance" class="cr-auto-advance u-hidden">
-          <span class="cr-auto-label">Weiter in</span>
+          <span class="cr-auto-label">Countdown</span>
           <strong id="cr-auto-num"></strong>
           <button type="button" id="cr-pause-btn" class="cr-btn cr-btn--pause" data-action="pause">⏸</button>
         </div>
@@ -148,9 +148,21 @@ export function createChordRecorderUI(container) {
     container.querySelector('#cr-auto-advance')?.classList.add('u-hidden');
   }
 
+  function setRepeatMode(mode) {
+    const btn = container.querySelector('[data-action="repeat"]');
+    if (!btn) return;
+    btn.textContent = mode === 'last' ? '↩ Letzte wiederholen' : '↩ Wiederholen';
+  }
+
+  function setSessionFlagState(flags = []) {
+    container.querySelectorAll('[data-action="buzz"], [data-action="muted"]').forEach(btn => {
+      btn.classList.toggle('cr-btn--flag-active', flags.includes(btn.dataset.action));
+    });
+  }
+
   return {
     render, setLevel, setPhase, showBeats, setBeat,
     showResult, setAutoCountdown, hideAutoCountdown,
-    nextAction, clearQueue,
+    setRepeatMode, setSessionFlagState, nextAction, clearQueue,
   };
 }

@@ -101,7 +101,7 @@ describe('chordRecorder controller', () => {
     expect(document.querySelectorAll('.cr-chord-card--selected')).toHaveLength(1);
   });
 
-  it('manages recordings only inside the management view', async () => {
+  it('lists recordings in the record view and keeps management actions in the management view', async () => {
     addRecording({
       baseName: 'gdur_take_1',
       wavBlob: new Blob(['wav'], { type: 'audio/wav' }),
@@ -122,7 +122,10 @@ describe('chordRecorder controller', () => {
 
     await tool.mount(document.getElementById('root'));
 
-    expect(document.body.textContent).not.toContain('Anhören');
+    expect(document.body.textContent).toContain('G-Dur');
+    expect(document.body.textContent).toContain('Anhören');
+    expect(document.getElementById('cr-clear-all')).toBeNull();
+
     document.getElementById('cr-manage-recordings').click();
 
     expect(document.body.textContent).toContain('G-Dur');
@@ -133,6 +136,42 @@ describe('chordRecorder controller', () => {
     document.querySelector('[data-delete-recording="gdur_take_1"]').click();
 
     expect(document.body.textContent).toContain('Noch keine Aufnahmen in dieser Session.');
+  });
+
+  it('toggles stored recording flags from the record view and management view', async () => {
+    addRecording({
+      baseName: 'gdur_take_1',
+      wavBlob: new Blob(['wav'], { type: 'audio/wav' }),
+      sidecar: {
+        chord: 'G-Dur',
+        technique: 'finger',
+        volume: 'laut',
+        strumMode: 'single',
+        repeatIndex: 1,
+        recordedAt: '2026-05-05T12:00:00.000Z',
+        quality: { passed: true, warnReasons: [], userFlags: [] },
+      },
+    });
+
+    const tool = createChordRecorderTool({
+      storageService: createMockStorageService(),
+    });
+
+    await tool.mount(document.getElementById('root'));
+
+    document.querySelector('[data-toggle-flag="buzz"]').click();
+
+    expect(getAllRecordings()[0].sidecar.quality.userFlags).toEqual(['buzz']);
+    expect(document.body.textContent).toContain('Bewertung: Schnarren');
+
+    document.getElementById('cr-manage-recordings').click();
+
+    expect(document.body.textContent).toContain('Bewertung: Schnarren');
+
+    document.querySelector('[data-toggle-flag="buzz"]').click();
+
+    expect(getAllRecordings()[0].sidecar.quality.userFlags).toEqual([]);
+    expect(document.body.textContent).toContain('Bewertung: Keine Bewertung');
   });
 
   it('stops active playback when leaving the management view', async () => {
@@ -252,6 +291,60 @@ describe('chordRecorder controller', () => {
       'G-Dur', 'G-Dur', 'G-Dur', 'G-Dur',
     ]);
     expect(open).toHaveBeenCalledTimes(1);
+    expect(close).toHaveBeenCalledTimes(1);
+  });
+
+  it('can repeat the last saved recording during the next pre-countdown', async () => {
+    vi.useFakeTimers();
+
+    const open = vi.fn().mockResolvedValue();
+    const close = vi.fn();
+    const recordForDuration = vi.fn().mockResolvedValue({
+      samples: Float32Array.from({ length: 44100 * 2 }, () => 0.1),
+      sampleRate: 44100,
+      durationSec: 2,
+    });
+    const audioSession = {
+      open,
+      close,
+      startOnsetWatch(callback) {
+        callback();
+      },
+      stopOnsetWatch: vi.fn(),
+      startLevelWatch: vi.fn(),
+      stopLevelWatch: vi.fn(),
+      recordForDuration,
+    };
+
+    const tool = createChordRecorderTool({
+      storageService: createMockStorageService({
+        'technik-finger': 'true',
+        'technik-fingernagel': 'false',
+        'technik-plektrum': 'false',
+        'strumModus-single': 'true',
+        'strumModus-multi1': 'false',
+        'strumModus-multi2': 'false',
+      }),
+      createAudioSession: () => audioSession,
+    });
+
+    await tool.mount(document.getElementById('root'));
+
+    document.querySelector('[data-chord="A-Dur"]').click();
+    document.querySelector('[data-start]').click();
+    await vi.advanceTimersByTimeAsync(9000);
+
+    expect(getAllRecordings()).toHaveLength(1);
+    expect(document.querySelector('[data-action="repeat"]')?.textContent).toContain('Letzte wiederholen');
+
+    document.querySelector('[data-action="repeat"]').click();
+    await vi.advanceTimersByTimeAsync(1);
+
+    expect(getAllRecordings()).toHaveLength(0);
+
+    document.querySelector('[data-action="stop"]').click();
+    await vi.advanceTimersByTimeAsync(1);
+
     expect(close).toHaveBeenCalledTimes(1);
   });
 });

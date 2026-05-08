@@ -5,6 +5,7 @@ import {
   getAllRecordings,
   getRecordingCount,
   removeRecordingByBaseName,
+  updateRecording,
   toChordKey,
   buildFileName,
   buildSidecarJson,
@@ -160,6 +161,32 @@ describe('recording store', () => {
     expect(removed?.baseName).toBe('take-a');
     expect(getRecordingCount()).toBe(1);
     expect(getAllRecordings().map(entry => entry.baseName)).toEqual(['take-b']);
+
+    clearRecordings();
+  });
+
+  it('updates a stored recording by base name', () => {
+    clearRecordings();
+    addRecording({
+      baseName: 'take-a',
+      wavBlob: new Blob(['a']),
+      sidecar: { chord: 'A-Dur', quality: { userFlags: [] } },
+    });
+
+    const updated = updateRecording('take-a', entry => ({
+      ...entry,
+      sidecar: {
+        ...entry.sidecar,
+        quality: {
+          ...entry.sidecar.quality,
+          userFlags: ['buzz'],
+        },
+      },
+    }));
+
+    expect(updated?.sidecar.quality.userFlags).toEqual(['buzz']);
+    expect(getAllRecordings()[0].sidecar.quality.userFlags).toEqual(['buzz']);
+    expect(updateRecording('missing', entry => entry)).toBeNull();
 
     clearRecordings();
   });

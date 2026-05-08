@@ -216,6 +216,17 @@ export function removeRecordingByBaseName(baseName) {
   return removed;
 }
 
+export function updateRecording(baseName, updater) {
+  const index = _store.findIndex(entry => entry.baseName === baseName);
+  if (index < 0) return null;
+  const current = _store[index];
+  const updated = updater(current);
+  if (!updated) return null;
+  _store[index] = updated;
+  void dbPut(updated).catch(() => {});
+  return updated;
+}
+
 export function clearRecordings() {
   _store.length = 0;
   void dbClear().catch(() => {});

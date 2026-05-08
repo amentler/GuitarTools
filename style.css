@@ -1913,6 +1913,11 @@ input[type="range"] {
 .cr-btn--stop  { border-color: #c0392b; color: #c0392b; }
 .cr-btn--next  { border-color: var(--color-accent); color: var(--color-accent); }
 .cr-btn--flag  { font-size: 0.8rem; color: var(--color-text-muted); }
+.cr-btn--flag-active {
+  border-color: var(--color-accent);
+  background: var(--color-card-hover, #fff0e8);
+  color: var(--color-accent);
+}
 
 .cr-error {
   text-align: center;
@@ -1987,6 +1992,11 @@ input[type="range"] {
   display: flex;
   flex-wrap: wrap;
   gap: 0.6rem;
+}
+
+.cr-recordings-panel {
+  border-top: 1px solid var(--color-border);
+  padding-top: 1rem;
 }
 
 @media (max-width: 640px) {

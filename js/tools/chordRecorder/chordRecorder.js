@@ -16,6 +16,7 @@ import {
   getRecordingCount,
   downloadAllAsZip,
   removeRecordingByBaseName,
+  updateRecording,
   initStore,
 } from './chordRecorderFiles.js';
 import { isChordSufficient } from './chordInventoryLogic.js';
@@ -27,30 +28,10 @@ const SINGLE_STRUM_MS = 4000;
 const BEAT_MS = 750; // 80 BPM
 const PRE_COUNTDOWN = [4, 3, 2, 1];
 
-const AUTO_ADVANCE_SEC = 4;
-
 function getDurationMs(strumModus) {
   if (strumModus === 'multi1') return 4 * BEAT_MS;
   if (strumModus === 'multi2') return 8 * BEAT_MS;
   return SINGLE_STRUM_MS;
-}
-
-async function autoAdvanceOrWait(ui) {
-  let paused = false;
-  let t = AUTO_ADVANCE_SEC;
-  while (t >= 1) {
-    ui.setAutoCountdown(t, paused);
-    const res = await Promise.race([
-      paused ? new Promise(() => {}) : sleep(1000).then(() => 'tick'),
-      ui.nextAction(),
-    ]);
-    if (res === 'tick') { t--; continue; }
-    if (res === 'pause') { paused = !paused; continue; }
-    ui.hideAutoCountdown();
-    return res;
-  }
-  ui.hideAutoCountdown();
-  return 'next';
 }
 
 const GUITAR_SIZES = ['Vollgröße', '7/8', '3/4', '1/2', '1/4', 'Unbekannt'];
@@ -103,6 +84,7 @@ export function createChordRecorderTool({
   let activePlayback = null;
   let isSessionActive = false;
   let inventory = { recordings: [] };
+  let latestRecordingBaseName = null;
 
   function getConfig() {
     return {
@@ -248,6 +230,62 @@ export function createChordRecorderTool({
     return 'OK';
   }
 
+  function getUserFlags(sidecar) {
+    return Array.isArray(sidecar?.quality?.userFlags) ? sidecar.quality.userFlags : [];
+  }
+
+  function formatUserFlags(sidecar) {
+    const flags = getUserFlags(sidecar);
+    if (flags.length === 0) return 'Keine Bewertung';
+    return flags.map(flag => flag === 'buzz' ? 'Schnarren' : flag === 'muted' ? 'Muted' : flag).join(', ');
+  }
+
+  function renderFlagButtons(baseName, sidecar, extraClass = '') {
+    const flags = getUserFlags(sidecar);
+    return `
+      <button
+        type="button"
+        class="cr-btn cr-btn--flag${flags.includes('buzz') ? ' cr-btn--flag-active' : ''}${extraClass ? ` ${extraClass}` : ''}"
+        data-toggle-flag="buzz"
+        data-recording="${baseName}"
+      >
+        Schnarren
+      </button>
+      <button
+        type="button"
+        class="cr-btn cr-btn--flag${flags.includes('muted') ? ' cr-btn--flag-active' : ''}${extraClass ? ` ${extraClass}` : ''}"
+        data-toggle-flag="muted"
+        data-recording="${baseName}"
+      >
+        Muted
+      </button>
+    `;
+  }
+
+  function toggleRecordingFlag(baseName, flag, { rerender = true } = {}) {
+    const updated = updateRecording(baseName, entry => {
+      const sidecar = entry.sidecar ?? {};
+      const quality = sidecar.quality ?? {};
+      const flags = Array.isArray(quality.userFlags) ? quality.userFlags : [];
+      const userFlags = flags.includes(flag)
+        ? flags.filter(item => item !== flag)
+        : [...flags, flag];
+      return {
+        ...entry,
+        sidecar: {
+          ...sidecar,
+          quality: {
+            ...quality,
+            userFlags,
+          },
+        },
+      };
+    });
+    if (!updated) return;
+    if (rerender) renderCurrentView();
+    return updated;
+  }
+
   function playRecording(baseName) {
     const recording = getAllRecordings().find(entry => entry.baseName === baseName);
     if (!recording) return;
@@ -345,6 +383,55 @@ export function createChordRecorderTool({
     }
   }
 
+  function renderRecordingsPanel() {
+    const recordings = getAllRecordings().slice().reverse();
+    if (recordings.length === 0) {
+      return `
+        <section class="cr-section cr-recordings-panel">
+          <h2 class="cr-section-title">Gespeicherte Aufnahmen</h2>
+          <p class="cr-manage-copy">Noch keine Aufnahmen in dieser Session.</p>
+        </section>
+      `;
+    }
+
+    return `
+      <section class="cr-section cr-recordings-panel">
+        <h2 class="cr-section-title">Gespeicherte Aufnahmen</h2>
+        <div class="cr-manage-list cr-recordings-list">
+          ${recordings.map(({ baseName, sidecar }) => `
+            <article class="cr-manage-item cr-recording-item" data-recording="${baseName}">
+              <div class="cr-manage-meta">
+                <strong class="cr-manage-title">${sidecar.chord}</strong>
+                <span class="cr-manage-subtitle">${formatTakeLabel(sidecar)}</span>
+                <span class="cr-manage-subtitle">${formatTakeTimestamp(sidecar.recordedAt)}</span>
+                <span class="cr-manage-subtitle">Bewertung: ${formatUserFlags(sidecar)}</span>
+              </div>
+              <div class="cr-manage-actions">
+                <button
+                  type="button"
+                  class="cr-btn cr-btn--tool"
+                  data-play-recording="${baseName}"
+                >
+                  ${activePlayback?.baseName === baseName ? 'Stoppen' : 'Anhören'}
+                </button>
+                ${renderFlagButtons(baseName, sidecar)}
+              </div>
+            </article>
+          `).join('')}
+        </div>
+      </section>
+    `;
+  }
+
+  function bindRecordingListActions() {
+    root.querySelectorAll('[data-play-recording]').forEach(btn => {
+      btn.addEventListener('click', () => playRecording(btn.dataset.playRecording));
+    });
+    root.querySelectorAll('[data-toggle-flag]').forEach(btn => {
+      btn.addEventListener('click', () => toggleRecordingFlag(btn.dataset.recording, btn.dataset.toggleFlag));
+    });
+  }
+
   function renderRecordView() {
     root.innerHTML = `
       <div class="chord-recorder">
@@ -416,6 +503,8 @@ export function createChordRecorderTool({
           </button>
         </div>
 
+        ${renderRecordingsPanel()}
+
       </div>
     `;
 
@@ -434,6 +523,7 @@ export function createChordRecorderTool({
     });
 
     root.querySelector('#cr-manage-recordings')?.addEventListener('click', () => setView('manage'));
+    bindRecordingListActions();
   }
 
   function renderManageView() {
@@ -464,6 +554,7 @@ export function createChordRecorderTool({
                     <span class="cr-manage-subtitle">${formatTakeLabel(sidecar)}</span>
                     <span class="cr-manage-subtitle">${formatTakeTimestamp(sidecar.recordedAt)}</span>
                     <span class="cr-manage-subtitle">Status: ${getManageItemStatus(sidecar)}</span>
+                    <span class="cr-manage-subtitle">Bewertung: ${formatUserFlags(sidecar)}</span>
                   </div>
                   <div class="cr-manage-actions">
                     <button
@@ -473,6 +564,7 @@ export function createChordRecorderTool({
                     >
                       ${activePlayback?.baseName === baseName ? 'Stoppen' : 'Anhören'}
                     </button>
+                    ${renderFlagButtons(baseName, sidecar)}
                     <button
                       type="button"
                       class="cr-btn cr-btn--danger"
@@ -491,9 +583,7 @@ export function createChordRecorderTool({
 
     root.querySelector('#cr-back-to-record')?.addEventListener('click', () => setView('record'));
     root.querySelector('#cr-clear-all')?.addEventListener('click', clearAllRecordingsWithConfirm);
-    root.querySelectorAll('[data-play-recording]').forEach(btn => {
-      btn.addEventListener('click', () => playRecording(btn.dataset.playRecording));
-    });
+    bindRecordingListActions();
     root.querySelectorAll('[data-delete-recording]').forEach(btn => {
       btn.addEventListener('click', () => deleteRecording(btn.dataset.deleteRecording));
     });
@@ -509,20 +599,62 @@ export function createChordRecorderTool({
     renderRecordView();
   }
 
-  async function runPlanStep(audio, ui, planStep, index, total) {
+  async function runPreCountdown(ui, lastRecordingBaseName) {
+    let paused = false;
+    ui.setRepeatMode(lastRecordingBaseName ? 'last' : 'current');
+    const lastRecording = lastRecordingBaseName
+      ? getAllRecordings().find(entry => entry.baseName === lastRecordingBaseName)
+      : null;
+    ui.setSessionFlagState(getUserFlags(lastRecording?.sidecar));
+    for (let i = 0; i < PRE_COUNTDOWN.length;) {
+      const n = PRE_COUNTDOWN[i];
+      ui.setPhase('countdown', n);
+      ui.setAutoCountdown(n, paused);
+      const result = await Promise.race([
+        paused ? new Promise(() => {}) : sleep(1000).then(() => 'tick'),
+        ui.nextAction(),
+      ]);
+      if (result === 'tick') {
+        i++;
+        continue;
+      }
+      if (result === 'pause') {
+        paused = !paused;
+        continue;
+      }
+      if ((result === 'buzz' || result === 'muted') && lastRecordingBaseName) {
+        const updated = toggleRecordingFlag(lastRecordingBaseName, result, { rerender: false });
+        ui.setSessionFlagState(getUserFlags(updated?.sidecar));
+        continue;
+      }
+      if (result === 'buzz' || result === 'muted') {
+        continue;
+      }
+      if (result === 'repeat' && lastRecordingBaseName) {
+        ui.hideAutoCountdown();
+        return 'repeat-last';
+      }
+      if (result === 'repeat') {
+        i = 0;
+        continue;
+      }
+      ui.hideAutoCountdown();
+      return result === 'stop' ? 'stop' : 'next';
+    }
+    ui.hideAutoCountdown();
+    return 'ready';
+  }
+
+  async function runPlanStep(audio, ui, planStep, index, total, lastRecordingBaseName) {
     const { chordName, variation } = planStep;
     const positions = CHORDS[chordName];
     const config = getConfig();
 
     ui.render(chordName, positions, variation, index, total);
 
-    // Pre-recording countdown 4-3-2-1
-    for (const n of PRE_COUNTDOWN) {
-      ui.setPhase('countdown', n);
-      const result = await Promise.race([sleep(1000), ui.nextAction()]);
-      if (result === 'stop') return 'stop';
-      if (typeof result === 'string') return 'next';
-    }
+    const countdownResult = await runPreCountdown(ui, lastRecordingBaseName);
+    if (countdownResult !== 'ready') return countdownResult;
+    ui.setRepeatMode('current');
 
     // Onset detection
     let onsetResolve;
@@ -575,10 +707,7 @@ export function createChordRecorderTool({
     ui.clearQueue();
     ui.showResult(quality);
 
-    // Auto-advance after 4s if passed, otherwise wait for manual action
-    const action = quality.passed
-      ? await autoAdvanceOrWait(ui)
-      : await ui.nextAction();
+    const action = quality.passed ? 'next' : await ui.nextAction();
     const userFlags = (action === 'buzz' || action === 'muted') ? [action] : [];
 
     // Build filename and sidecar
@@ -591,6 +720,7 @@ export function createChordRecorderTool({
     // Encode and store (download happens via ZIP on setup screen)
     const wavBlob = encodeWav(samples, sampleRate);
     addRecording({ baseName, wavBlob, sidecar });
+    latestRecordingBaseName = baseName;
 
     return action;
   }
@@ -618,8 +748,16 @@ export function createChordRecorderTool({
     try {
       let i = 0;
       while (i < recordingPlan.length) {
-        const action = await runPlanStep(audio, ui, recordingPlan[i], i, recordingPlan.length);
+        const action = await runPlanStep(audio, ui, recordingPlan[i], i, recordingPlan.length, latestRecordingBaseName);
         if (action === 'stop') break;
+        if (action === 'repeat-last') {
+          if (latestRecordingBaseName) {
+            removeRecordingByBaseName(latestRecordingBaseName);
+            latestRecordingBaseName = getAllRecordings().at(-1)?.baseName ?? null;
+          }
+          i = Math.max(0, i - 1);
+          continue;
+        }
         if (action === 'repeat') continue;
         i++;
       }
@@ -634,6 +772,7 @@ export function createChordRecorderTool({
     root = rootEl;
     const [inv] = await Promise.all([loadInventory(), initStore()]);
     inventory = inv;
+    latestRecordingBaseName = getAllRecordings().at(-1)?.baseName ?? null;
     renderCurrentView();
   }
 
