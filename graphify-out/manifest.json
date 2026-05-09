@@ -8,8 +8,8 @@
     "hash": "c9ea0a1eef92066d758f442bfbd3037a"
   },
   "/home/azureuserhauptmann/privat/GuitarToolsALT/sw.js": {
-    "mtime": 1778266130.0158594,
-    "hash": "31ca553cac426426677fbab08c94f3ad"
+    "mtime": 1778318448.1057816,
+    "hash": "4a30c03b9c86700a9021b0ee27ce41b0"
   },
   "/home/azureuserhauptmann/privat/GuitarToolsALT/vitest.config.js": {
     "mtime": 1777738797.000946,
@@ -224,8 +224,8 @@
     "hash": "4408c28277f8c7facc0cdeb17af769ff"
   },
   "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/unit/guitarOnsetDetector.test.js": {
-    "mtime": 1778267025.9143128,
-    "hash": "174096416ff22b914626fe2a54f3426f"
+    "mtime": 1778337716.3459675,
+    "hash": "2064922d5406288058417b0ce27e3564"
   },
   "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/unit/essentiaBassScore.test.js": {
     "mtime": 1777738796.703359,
@@ -503,6 +503,10 @@
     "mtime": 1777936319.451351,
     "hash": "b1eebfb9535af7dfe802bcbcc5e634b7"
   },
+  "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/e2e/sheet-music-reading-single-d3.spec.js": {
+    "mtime": 1778337810.469452,
+    "hash": "3192d2dfd1aa105977bb391c8fb95219"
+  },
   "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/e2e/note-playing-permission.spec.js": {
     "mtime": 1777738796.704683,
     "hash": "f7a335316b32311adf5c60533eced89d"
@@ -524,8 +528,8 @@
     "hash": "8179768abf6b3dd00f4a61f5129e7c14"
   },
   "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/e2e/sheet-music-reading-legato.spec.js": {
-    "mtime": 1778168932.7365458,
-    "hash": "bc626e1fe98343556a42342e796a9010"
+    "mtime": 1778338235.4035938,
+    "hash": "df11194b83b07aced711c8d19b05563f"
   },
   "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/e2e/chord-playing-emoll.spec.js": {
     "mtime": 1777738796.7041733,
@@ -636,8 +640,8 @@
     "hash": "ad84e416c65e1b581465b4c9e5acf461"
   },
   "/home/azureuserhauptmann/privat/GuitarToolsALT/js/shared/audio/guitarOnsetDetector.js": {
-    "mtime": 1778266972.890654,
-    "hash": "aea0d5978226cc3881b562c0212e01c8"
+    "mtime": 1778337725.487914,
+    "hash": "05c43a95900cb565302b8be5a7d06ed4"
   },
   "/home/azureuserhauptmann/privat/GuitarToolsALT/js/shared/audio/microphoneService.js": {
     "mtime": 1777738797.1954505,
@@ -828,8 +832,8 @@
     "hash": "28b0825f72987d3d9bc1a0121c2d8ba5"
   },
   "/home/azureuserhauptmann/privat/GuitarToolsALT/js/games/sheetMusicReading/sheetMusicReading.js": {
-    "mtime": 1778266999.3154807,
-    "hash": "225b31926263a6a6207a83925378f3bd"
+    "mtime": 1778338365.238085,
+    "hash": "321bfb4a0ea589858af62b6ff21c8659"
   },
   "/home/azureuserhauptmann/privat/GuitarToolsALT/js/games/sheetMusicReading/playbackController.js": {
     "mtime": 1777738797.197438,
@@ -1012,8 +1016,8 @@
     "hash": "00ef135fb82dec6872d89acf5be0cfa1"
   },
   "/home/azureuserhauptmann/privat/GuitarToolsALT/version.txt": {
-    "mtime": 1778266130.000656,
-    "hash": "ab276ae5b626d26a9a7c360c4b29d70c"
+    "mtime": 1778318448.0916083,
+    "hash": "d201bf93c603814d5baa7fac27a6c569"
   },
   "/home/azureuserhauptmann/privat/GuitarToolsALT/README.md": {
     "mtime": 1777997732.8639417,

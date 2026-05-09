@@ -1,1 +1,1 @@
-Version 0.103 | 2026-05-08 20:48 | c20932f | test: add sheet music note fingerprint
+Version 0.104 | 2026-05-09 11:20 | 070dd99 | fix: decouple guitar onset detection

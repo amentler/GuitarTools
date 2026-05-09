@@ -63,6 +63,27 @@ describe('guitarOnsetDetector', () => {
     }
   });
 
+  it('detects a real-guitar style RMS attack when spectral energy is sparse', () => {
+    let state = createGuitarOnsetState();
+    ({ nextState: state } = updateGuitarOnsetDetector(state, {
+      frequencyData: spectrum(-120),
+      samples: samples(0.0002),
+    }));
+
+    const sparseAttack = spectrum(-120);
+    for (const bin of [10, 21, 43, 86, 172, 344, 688]) {
+      sparseAttack[bin] = -42;
+    }
+
+    const result = updateGuitarOnsetDetector(state, {
+      frequencyData: sparseAttack,
+      samples: samples(0.08),
+    });
+
+    expect(result.event).toBe('onset');
+    expect(result.activeBandRatio).toBeGreaterThan(0);
+  });
+
   it('ignores narrow-band changes that are not guitar-like broadband attacks', () => {
     let state = createGuitarOnsetState();
     ({ nextState: state } = updateGuitarOnsetDetector(state, {

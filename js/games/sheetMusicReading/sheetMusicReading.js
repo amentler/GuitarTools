@@ -47,7 +47,6 @@ const ENDLESS_SCROLL_TARGET_FRACTION = 0.33;
 const ENDLESS_SCROLL_SHIFT_DELAY_MS = 420;
 // Minimum notes in the pool before showing the "too few notes" warning.
 const MIN_POOL_SIZE = 3;
-const SUCCESS_PAUSE_MS = 600;
 const ANALYZE_INTERVAL_MS = 50;
 
 function resolveInjectedBars() {
@@ -114,22 +113,6 @@ export function createSheetMusicReadingFeature() {
     const { currentBarIndex: bi, currentBeatIndex: ni } = state;
     if (bi < 0 || bi >= state.bars.length) return null;
     return state.bars[bi]?.[ni] ?? null;
-  }
-
-  function getNextNote() {
-    let bi = state.currentBarIndex;
-    let ni = state.currentBeatIndex + 1;
-    if (bi < 0 || bi >= state.bars.length) return null;
-    if (ni >= state.bars[bi].length) {
-      bi++;
-      ni = 0;
-    }
-    if (bi >= state.bars.length) return null;
-    return state.bars[bi]?.[ni] ?? null;
-  }
-
-  function getNotePitch(note) {
-    return note ? `${note.name}${note.octave}` : null;
   }
 
   function clearSuccessTimeout() {
@@ -332,9 +315,6 @@ export function createSheetMusicReadingFeature() {
     if (note.status === 'correct' && isTimedRecognitionMode()) {
       return;
     }
-    const acceptedPitch = getNotePitch(note);
-    const nextNote = getNextNote();
-    const repeatsSamePitch = getNotePitch(nextNote) === acceptedPitch;
     note.status = 'correct';
 
     renderCurrentScore();
@@ -345,28 +325,14 @@ export function createSheetMusicReadingFeature() {
       return;
     }
 
-    if (repeatsSamePitch) {
-      advanceToNextNote();
-      applyTargetFftSize();
-      renderCurrentScore();
-      updateCurrentNoteDisplay();
-      updateFeedback();
+    advanceToNextNote();
+    if (state.currentBarIndex === -1) {
       return;
     }
-
-    state.isLocked = true;
-    clearSuccessTimeout();
-    state.successTimeout = setTimeout(() => {
-      state.successTimeout = null;
-      state.isLocked = false;
-      advanceToNextNote();
-      if (state.currentBarIndex !== -1) {
-        applyTargetFftSize();
-        renderCurrentScore();
-        updateCurrentNoteDisplay();
-        updateFeedback();
-      }
-    }, SUCCESS_PAUSE_MS);
+    applyTargetFftSize();
+    renderCurrentScore();
+    updateCurrentNoteDisplay();
+    updateFeedback();
   }
 
   function analyzeFrame() {
