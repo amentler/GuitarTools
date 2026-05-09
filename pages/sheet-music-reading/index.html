@@ -14,6 +14,7 @@
       <button id="btn-sheet-active-mode" class="btn-mode">Aktiv</button>
       <button id="btn-show-tab" class="btn-mode">Tabs anzeigen</button>
       <button id="btn-endless-mode" class="btn-mode">∞ Endlos</button>
+      <button id="btn-record" class="btn-mode">⏺ Record</button>
     </div>
 
     <p id="sheet-music-permission" class="tuner-permission u-hidden"></p>
@@ -24,9 +25,11 @@
       <span id="sheet-music-feedback" class="feedback-text"></span>
     </div>
 
-    <!-- PLAYBACK: Play/Stop · BPM · Time Signature -->
+    <!-- PLAYBACK: Play/Stop · Record · BPM · Time Signature -->
     <div class="playback-controls">
       <button id="btn-sheet-play" class="btn-play-stop">▶ Play</button>
+      <button id="btn-record-stop"   class="btn-mode u-hidden">⏹ Stop</button>
+      <button id="btn-record-cancel" class="btn-mode u-hidden">✕ Abbruch</button>
 
       <div class="playback-bpm">
         <label for="sheet-music-bpm-slider" class="settings-label">
@@ -54,6 +57,7 @@
     <div id="score-container" class="score-container"></div>
 
     <button id="btn-new-bars" class="btn-new-bars">Neue Takte</button>
+    <button id="btn-download-recordings" class="btn-new-bars u-hidden">⬇ Download</button>
 
     <!-- SETTINGS: Fret Range + String Selection -->
     <div class="settings-panel">

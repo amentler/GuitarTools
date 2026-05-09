@@ -39,6 +39,8 @@ import {
   openAudioSession,
   closeAudioSession,
 } from '../../shared/audio/audioSessionService.js';
+import { createRecorder } from './sheetMusicRecorder.js';
+import { buildZip, downloadBlob } from './sheetMusicZip.js';
 
 // Number of bars per rendered row (matches the 4-bar VexFlow layout).
 const BARS_PER_ROW = 4;
@@ -87,6 +89,10 @@ export function createSheetMusicReadingFeature() {
   const playback    = new PlaybackController();
   const playbackBar = new PlaybackBar(); // used in normal mode only
   let   isPlaying   = false;
+
+  // ── Recording state ─────────────────────────────────────────────────────
+  const recorder = createRecorder();
+  let savedRecordings = []; // Array<{ basename, wav, manifest }>
 
   // ── Endless mode state ──────────────────────────────────────────────────
   let endlessGen       = null;
@@ -484,6 +490,80 @@ export function createSheetMusicReadingFeature() {
     if (el) el.hidden = getNotesPool().length >= MIN_POOL_SIZE;
   }
 
+  // ── Recording helpers ───────────────────────────────────────────────────
+  function makeBasename(bars, bpm, timeSig) {
+    const timeSigSafe = timeSig.replace('/', '-');
+    const uniqueNoteNames = [...new Set(bars.flat().map(n => n.name))].slice(0, 8).join('');
+    const chars = '0123456789abcdefghijklmnopqrstuvwxyz';
+    const rand = Array.from({ length: 5 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+    return `${timeSigSafe}_${bpm}bpm_${uniqueNoteNames}_${rand}`;
+  }
+
+  function makeManifest(bars, bpm, timeSig) {
+    return {
+      notes: bars.flat().map(n => ({ name: n.name, octave: n.octave })),
+      bpm,
+      timeSig,
+      notesPerBeat: 1,
+      description: 'Noten lesen',
+      category: 'sheet-music-reading',
+      recordedAt: new Date().toISOString(),
+    };
+  }
+
+  function syncRecordingUI() {
+    const isRec = recorder.isRecording;
+    ui.recordBtn?.classList.toggle('u-hidden', isRec);
+    ui.recordStopBtn?.classList.toggle('u-hidden', !isRec);
+    ui.recordCancelBtn?.classList.toggle('u-hidden', !isRec);
+    if (ui.downloadBtn) ui.downloadBtn.classList.toggle('u-hidden', savedRecordings.length === 0);
+  }
+
+  async function startRecording() {
+    if (recorder.isRecording) return;
+    try {
+      await recorder.start();
+    } catch {
+      if (ui.permission) {
+        ui.permission.classList.remove('u-hidden');
+        ui.permission.textContent = 'Mikrofon nicht verfügbar. Aufnahme konnte nicht gestartet werden.';
+      }
+      return;
+    }
+    syncRecordingUI();
+  }
+
+  function stopRecording() {
+    const wav = recorder.stop();
+    if (!wav) {
+      syncRecordingUI();
+      return;
+    }
+    const basename = makeBasename(state.bars, state.bpm, state.timeSig);
+    const manifest = makeManifest(state.bars, state.bpm, state.timeSig);
+    savedRecordings.push({ basename, wav, manifest });
+    syncRecordingUI();
+  }
+
+  function cancelRecording() {
+    recorder.cancel();
+    syncRecordingUI();
+  }
+
+  function downloadRecordings() {
+    if (!savedRecordings.length) return;
+    const files = savedRecordings.flatMap(({ basename, wav, manifest }) => [
+      { name: `${basename}.wav`,  data: wav },
+      { name: `${basename}.json`, data: new TextEncoder().encode(JSON.stringify(manifest, null, 2)) },
+    ]);
+    const zip = buildZip(files);
+    downloadBlob(zip, `noten-lesen-aufnahmen-${Date.now()}.zip`, 'application/zip');
+    if (confirm('Gespeicherte Aufnahmen jetzt löschen?')) {
+      savedRecordings = [];
+      syncRecordingUI();
+    }
+  }
+
   // ── Score rendering (normal mode) ───────────────────────────────────────
   function regenerate() {
     updatePoolWarning();
@@ -759,6 +839,12 @@ export function createSheetMusicReadingFeature() {
       // Play / Stop
       ui.playBtn.addEventListener('click', togglePlayback);
 
+      // Recording controls
+      ui.recordBtn?.addEventListener('click', () => void startRecording());
+      ui.recordStopBtn?.addEventListener('click', stopRecording);
+      ui.recordCancelBtn?.addEventListener('click', cancelRecording);
+      ui.downloadBtn?.addEventListener('click', downloadRecordings);
+
       // BPM slider
       ui.bpmSlider.addEventListener('input', () => {
         state.bpm = parseInt(ui.bpmSlider.value, 10);
@@ -838,6 +924,7 @@ export function createSheetMusicReadingFeature() {
     }
 
     syncSettingsUI();
+    syncRecordingUI();
     updateFeedback();
     if (ui.permission) {
       ui.permission.classList.add('u-hidden');

@@ -72,10 +72,20 @@ Optionaler Aktiv-Modus: Mikrofon-basierte Tonprüfung.
   - `?active=1` aktiviert den Aktivmodus direkt beim Laden
   - `window.__GT_SHEET_MUSIC_READING_BARS__` injiziert deterministische Notenfolgen
 - localStorage-Persistenz: `sheetMusic_active`, `sheetMusic_bpm`, `sheetMusic_timeSig`, `sheetMusic_showTab`, `sheetMusic_endless`
-- Buttons: `#btn-sheet-active-mode`, `#btn-sheet-play` (Play/Stop), `#btn-new-bars`, `#btn-show-tab`, `#btn-endless-mode`
+- Buttons: `#btn-sheet-active-mode`, `#btn-sheet-play` (Play/Stop), `#btn-new-bars`, `#btn-show-tab`, `#btn-endless-mode`, `#btn-record`, `#btn-record-stop`, `#btn-record-cancel`, `#btn-download-recordings`
 - Slider: `#sheet-music-bpm-slider` (40–240), `#sheet-music-fret-range-slider`
 - Select: `#sheet-music-time-sig` (2/4|3/4|4/4|3/8|6/8)
 - `wired`-Flag verhindert doppeltes Event-Listener-Wiring
+
+### `sheetMusicRecorder.js`
+- `createRecorder()` → `{ start(), stop(), cancel(), isRecording }`
+- `start()`: öffnet eigenen Mic-Stream + ScriptProcessorNode (unabhängig vom Aktiv-Modus)
+- `stop()`: gibt 16-bit-mono-WAV als `Uint8Array` zurück, räumt auf; gibt `null` zurück falls keine Daten
+- `cancel()`: räumt auf, kein Rückgabewert
+
+### `sheetMusicZip.js`
+- `buildZip(files)` → `Uint8Array` – Store-ZIP ohne externe Deps, mit CRC-32
+- `downloadBlob(data, filename, mimeType)` – ObjectURL-Download-Helper
 
 ## Implementierter Stand (laut backlog.md)
 
