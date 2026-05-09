@@ -18,6 +18,10 @@ export function resolveSheetMusicUI(root = document) {
     fretSlider: root.getElementById?.('sheet-music-fret-range-slider') ?? document.getElementById('sheet-music-fret-range-slider'),
     fretLabel: root.getElementById?.('sheet-music-fret-range-label') ?? document.getElementById('sheet-music-fret-range-label'),
     stringButtons: document.querySelectorAll('#sheet-music-string-toggles .btn-string'),
+    recordBtn:       root.getElementById?.('btn-record') ?? document.getElementById('btn-record'),
+    recordStopBtn:   root.getElementById?.('btn-record-stop') ?? document.getElementById('btn-record-stop'),
+    recordCancelBtn: root.getElementById?.('btn-record-cancel') ?? document.getElementById('btn-record-cancel'),
+    downloadBtn:     root.getElementById?.('btn-download-recordings') ?? document.getElementById('btn-download-recordings'),
   };
 }
 
