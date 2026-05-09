@@ -13,24 +13,30 @@ Führt den vollständigen Sync-Workflow durch: Tests → Commit → Pull → Pus
 ## Entscheidungsbaum vor dem Start
 
 1. **Was hat sich geändert?** → `git status` + `git diff --name-only HEAD`
-2. **Nur Markdown?** → Schnelle und langsame Tests überspringen.
-3. **Nicht-Markdown-Änderungen?** → Schnelle Tests laufen lassen.
-4. **Audio-Fixtures geändert** (`tests/fixtures/**`) **oder Nutzer hat explizit nach Audio-Tests gefragt?** → Langsame Tests ebenfalls laufen lassen.
+2. **Nur Markdown?** → Tests überspringen.
+3. **Nicht-Markdown-Änderungen?** → Precommit-Tests laufen lassen.
+4. **Real-WAV-/Audio-Tests** nur laufen lassen, wenn der Nutzer sie explizit verlangt oder die Änderung genau diese langsamen Tests bzw. Audio-Erkennungspipeline betrifft.
 5. **Commit-Message:** Aus dem Kontext der Änderungen ableiten oder den Nutzer fragen.
 
 ## Workflow
 
-### Schnelle Tests (immer bei nicht-Markdown-Änderungen)
+### Precommit-Tests (immer bei nicht-Markdown-Änderungen)
 
 ```bash
-npm run test:unit
+npm run test:precommit
 ```
 
-### Langsame Tests (nur wenn Audio-Fixtures betroffen oder explizit gewünscht)
+`test:precommit` darf keine Real-WAV-Tests enthalten. Es nutzt Unit-Tests sowie schnelle
+Golden-/Frozen-Fixture-Tests, die aus JSON-Goldens/Frozen-Daten laufen.
+
+### Langsame Real-WAV-Tests (nur explizit)
 
 ```bash
-npm run test:audio
+npm run test:audio:slow
 ```
+
+Diese Tests lesen echte WAV-Dateien aus `tests/fixtures/**` und sind nicht Teil des
+normalen Precommit-/Sync-Pfads.
 
 ### Commit, Pull, Push
 
