@@ -708,7 +708,7 @@ export function createSheetMusicReadingFeature() {
     });
 
     playbackBar.show();
-    playback.start(state.bpm, config.beatsPerBar, totalBeats);
+    playback.start(state.bpm, config.beatsPerBar, totalBeats, config.beatsPerBar);
   }
 
   // ── Playback control – endless mode ─────────────────────────────────────
@@ -760,7 +760,7 @@ export function createSheetMusicReadingFeature() {
     });
 
     // 0 = no wrap (play forever)
-    playback.start(state.bpm, config.beatsPerBar, 0);
+    playback.start(state.bpm, config.beatsPerBar, 0, config.beatsPerBar);
   }
 
   function stopPlayback() {

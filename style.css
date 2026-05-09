@@ -1255,7 +1255,7 @@ input[type="range"] {
 }
 
 .sheet-mic-current-note {
-  font-size: 1.8rem;
+  font-size: 1.05rem;
   font-weight: 800;
   color: var(--color-accent-alt);
   min-width: 3rem;
