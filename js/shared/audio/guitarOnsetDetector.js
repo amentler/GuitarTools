@@ -88,7 +88,7 @@ function computeActiveBandRatio(frequencyData, options = {}) {
   return consideredBins > 0 ? activeBins / consideredBins : 0;
 }
 
-export function updateGuitarOnsetDetector(state, { frequencyData = null, samples = null } = {}, options = {}) {
+export function updateGuitarOnsetDetector(state, { frequencyData = null, samples = null, rms: providedRms = null } = {}, options = {}) {
   const minRms = options.minRms ?? GUITAR_ONSET_MIN_RMS;
   const minFlux = options.minFlux ?? GUITAR_ONSET_MIN_FLUX;
   const minBandRatio = options.minBandRatio ?? GUITAR_ONSET_MIN_BAND_RATIO;
@@ -99,7 +99,9 @@ export function updateGuitarOnsetDetector(state, { frequencyData = null, samples
   const minActiveBandRatio = options.minActiveBandRatio ?? GUITAR_ONSET_MIN_ACTIVE_BAND_RATIO;
   const dbFloor = options.dbFloor ?? GUITAR_ONSET_DB_FLOOR;
 
-  const rms = samples ? computeFrameRms(samples) : state.previousRms;
+  const rms = Number.isFinite(providedRms)
+    ? providedRms
+    : (samples ? computeFrameRms(samples) : state.previousRms);
   const currentMagnitudes = frequencyData ? toLinearMagnitudes(frequencyData, dbFloor) : null;
   const activeBandRatio = computeActiveBandRatio(frequencyData, options);
   const fluxResult = currentMagnitudes

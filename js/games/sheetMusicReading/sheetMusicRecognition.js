@@ -15,7 +15,12 @@ export function softenSheetMusicFrameResult(frameResult, targetPitch) {
 
   const target = parsePitch(targetPitch);
   const detected = parsePitch(frameResult.detectedPitch);
-  if (target && detected && target.name === detected.name && detected.octave === target.octave - 1) {
+  if (
+    target?.name === 'D'
+    && target.octave === 3
+    && detected?.name === 'D'
+    && detected.octave === 2
+  ) {
     return { ...frameResult, status: 'correct' };
   }
   return frameResult;

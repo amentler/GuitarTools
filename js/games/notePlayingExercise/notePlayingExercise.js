@@ -223,6 +223,7 @@ export function createNotePlayingExerciseFeature() {
     let frequencyData = null;
     if (typeof audioSession.analyser.getFloatFrequencyData === 'function') {
       frequencyData = new Float32Array(audioSession.analyser.frequencyBinCount ?? audioSession.analyser.fftSize / 2);
+      // Changing this capture path requires regenerating the note-onset analyser goldens.
       audioSession.analyser.getFloatFrequencyData(frequencyData);
     }
 

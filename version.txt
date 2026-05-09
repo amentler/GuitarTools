@@ -1,1 +1,1 @@
-Version 0.104 | 2026-05-09 11:20 | 070dd99 | fix: decouple guitar onset detection
+Version 0.105 | 2026-05-09 17:10 | 9640b4f | fix: restore sheet music onset recognition

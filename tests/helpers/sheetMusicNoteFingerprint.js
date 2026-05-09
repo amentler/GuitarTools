@@ -1,5 +1,7 @@
+import { existsSync, readFileSync } from 'fs';
 import { join } from 'path';
 import { readWavFile } from './wavDecoder.js';
+import { discoverNoteAudioFixtures } from './noteAudioFixtures.js';
 import {
   classifyFrame,
   createMatchState,
@@ -9,17 +11,19 @@ import {
   softenSheetMusicFrameResult,
   updateSheetMusicMatchState,
 } from '../../js/games/sheetMusicReading/sheetMusicRecognition.js';
-
-export const OPEN_STRING_NOTE_FIXTURES = [
-  { pitch: 'E2', file: 'E2/e2.wav' },
-  { pitch: 'A2', file: 'A2/a2-2.wav' },
-  { pitch: 'D3', file: 'D3/d3.wav' },
-  { pitch: 'G3', file: 'G3/g.wav' },
-  { pitch: 'B3', file: 'B3/b.wav' },
-  { pitch: 'E4', file: 'E4/e41.wav' },
-];
+import {
+  createGuitarOnsetState,
+  updateGuitarOnsetDetector,
+} from '../../js/shared/audio/guitarOnsetDetector.js';
 
 const FIXTURES_DIR = join(process.cwd(), 'tests/fixtures/audio');
+const ANALYSER_GOLDENS_DIR = join(process.cwd(), 'tests/fixtures/analyser-goldens/notes');
+const wavCache = new Map();
+
+export const NOTE_AUDIO_FIXTURES = discoverNoteAudioFixtures();
+export const OPEN_STRING_NOTE_FIXTURES = NOTE_AUDIO_FIXTURES.filter(fixture => (
+  ['E2/e2.wav', 'A2/a2-2.wav', 'D3/d3.wav', 'G3/g.wav', 'B3/b.wav', 'E4/e41.wav'].includes(fixture.file)
+));
 
 function safeDivide(num, den) {
   return den === 0 ? 0 : num / den;
@@ -36,7 +40,11 @@ function sliceCenterWindow(samples, windowSize) {
 }
 
 function classifySheetMusicFixture(fixture, targetPitch) {
-  const { samples, sampleRate } = readWavFile(join(FIXTURES_DIR, fixture.file));
+  const wavPath = join(FIXTURES_DIR, fixture.file);
+  if (!wavCache.has(wavPath)) {
+    wavCache.set(wavPath, readWavFile(wavPath));
+  }
+  const { samples, sampleRate } = wavCache.get(wavPath);
   const windowSize = getRecommendedFftSize(targetPitch, sampleRate);
   const frameResult = classifyFrame(
     sliceCenterWindow(samples, windowSize),
@@ -49,14 +57,73 @@ function classifySheetMusicFixture(fixture, targetPitch) {
   return { frameResult, softened, accepted: event === 'accept' };
 }
 
-export function evaluateOpenStringNoteFingerprint(fixtures = OPEN_STRING_NOTE_FIXTURES) {
+function uniqueTargetPitches(fixtures) {
+  return Array.from(new Set(fixtures.map(fixture => fixture.pitch))).sort((a, b) => a.localeCompare(b));
+}
+
+function loadAnalyserGolden(fixture) {
+  const goldenPath = join(ANALYSER_GOLDENS_DIR, fixture.goldenFile);
+  if (!existsSync(goldenPath)) {
+    return { missing: true, goldenPath };
+  }
+  return JSON.parse(readFileSync(goldenPath, 'utf8'));
+}
+
+function evaluateSingleNoteOnsetFixture(fixture) {
+  const golden = loadAnalyserGolden(fixture);
+  if (golden.missing) {
+    return {
+      fixture,
+      missing: true,
+      passed: false,
+      onsetCount: 0,
+      firstOnsetFrame: null,
+      firstOnsetMs: null,
+    };
+  }
+
+  let state = createGuitarOnsetState();
+  let onsetCount = 0;
+  let firstOnsetFrame = null;
+  let firstOnsetMs = null;
+
+  for (const frame of golden.frames ?? []) {
+    const result = updateGuitarOnsetDetector(state, {
+      rms: frame.rms,
+      frequencyData: Float32Array.from(frame.frequencyDb),
+    });
+    state = result.nextState;
+    if (result.event === 'onset') {
+      onsetCount++;
+      if (firstOnsetFrame === null) {
+        firstOnsetFrame = frame.index;
+        firstOnsetMs = frame.timeMs;
+      }
+    }
+  }
+
+  return {
+    fixture,
+    missing: false,
+    passed: onsetCount >= 1,
+    onsetCount,
+    firstOnsetFrame,
+    firstOnsetMs,
+    frameCount: golden.frames?.length ?? 0,
+    sampleRate: golden.capture?.sampleRate ?? null,
+    fftSize: golden.capture?.fftSize ?? null,
+  };
+}
+
+export function evaluateOpenStringNoteFingerprint(fixtures = NOTE_AUDIO_FIXTURES) {
   const cases = [];
   const counts = { tp: 0, tn: 0, fp: 0, fn: 0, total: 0, expectedPositive: 0, expectedNegative: 0 };
+  const targetPitches = uniqueTargetPitches(fixtures);
 
   for (const source of fixtures) {
-    for (const target of fixtures) {
-      const expectedPositive = source.pitch === target.pitch;
-      const result = classifySheetMusicFixture(source, target.pitch);
+    for (const targetPitch of targetPitches) {
+      const expectedPositive = source.pitch === targetPitch;
+      const result = classifySheetMusicFixture(source, targetPitch);
       const actualPositive = result.accepted;
       const kind = expectedPositive && actualPositive ? 'TP'
         : expectedPositive && !actualPositive ? 'FN'
@@ -72,7 +139,7 @@ export function evaluateOpenStringNoteFingerprint(fixtures = OPEN_STRING_NOTE_FI
         kind,
         sourcePitch: source.pitch,
         sourceFile: source.file,
-        targetPitch: target.pitch,
+        targetPitch,
         actualPositive,
         expectedPositive,
         detectedPitch: result.frameResult.detectedPitch,
@@ -93,7 +160,15 @@ export function evaluateOpenStringNoteFingerprint(fixtures = OPEN_STRING_NOTE_FI
     falseNegativeRate: safeDivide(counts.fn, counts.fn + counts.tp),
   };
 
-  return { fixtures, counts, metrics, cases };
+  const onsetCases = fixtures.map(evaluateSingleNoteOnsetFixture);
+  const onsetCounts = {
+    total: onsetCases.length,
+    passed: onsetCases.filter(row => row.passed).length,
+    failed: onsetCases.filter(row => !row.passed).length,
+    missing: onsetCases.filter(row => row.missing).length,
+  };
+
+  return { fixtures, targetPitches, counts, metrics, cases, onsetCounts, onsetCases };
 }
 
 function formatPercent(value) {
@@ -107,12 +182,13 @@ function formatCase(row) {
 }
 
 export function formatOpenStringNoteFingerprintReport(report) {
-  const { counts, metrics, cases } = report;
+  const { counts, metrics, cases, onsetCounts, onsetCases } = report;
   const lines = [
     '# Sheet Music Note Fingerprint',
     '',
-    `- fixtures: ${report.fixtures.length} open-string notes`,
-    `- matrix: ${counts.total} probes (${counts.expectedPositive} expected positives, ${counts.expectedNegative} expected negatives)`,
+    `- fixtures: ${report.fixtures.length} note WAVs`,
+    `- target pitches: ${report.targetPitches.length} (${report.targetPitches.join(', ')})`,
+    `- pitch matrix: ${counts.total} probes (${counts.expectedPositive} expected positives, ${counts.expectedNegative} expected negatives)`,
     `- confusion: TP=${counts.tp} FP=${counts.fp} FN=${counts.fn} TN=${counts.tn}`,
     `- sensitivity/recall: ${formatPercent(metrics.sensitivity)}`,
     `- specificity: ${formatPercent(metrics.specificity)}`,
@@ -127,6 +203,17 @@ export function formatOpenStringNoteFingerprintReport(report) {
     '',
     '## False Negatives',
     ...cases.filter(row => row.kind === 'FN').map(formatCase),
+    '',
+    '## Single-Note Onset Goldens',
+    `- fixtures: ${onsetCounts.total}`,
+    `- passed: ${onsetCounts.passed}`,
+    `- failed: ${onsetCounts.failed}`,
+    `- missing goldens: ${onsetCounts.missing}`,
+    '',
+    '## Onset Failures',
+    ...onsetCases
+      .filter(row => !row.passed)
+      .map(row => `${row.missing ? 'MISSING' : 'NO_ONSET'} ${row.fixture.file} (${row.fixture.pitch})`),
   ];
 
   return lines.join('\n');

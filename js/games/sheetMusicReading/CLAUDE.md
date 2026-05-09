@@ -66,8 +66,8 @@ Optionaler Aktiv-Modus: Mikrofon-basierte Tonprüfung.
   - `sheetMusicRecognition.js` legt eine bewusst weichere Uebungs-Akzeptanz
     ueber den strengen Shared-Matcher: groessere Cent-Toleranz, direkte
     Annahme eines verwertbaren Treffers und eine eng begrenzte Subharmonik-
-    Toleranz fuer Erkennung genau eine Oktave unter Ziel (z. B. D3 als D2),
-    weil die Uebung kein Tuner ist.
+    Toleranz nur fuer den bekannten D3-als-D2-Fall, weil die Uebung kein
+    Tuner ist und andere Oktavverwechslungen nicht akzeptieren darf.
 - Test-/Legacy-Hooks:
   - `?active=1` aktiviert den Aktivmodus direkt beim Laden
   - `window.__GT_SHEET_MUSIC_READING_BARS__` injiziert deterministische Notenfolgen

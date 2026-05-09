@@ -1,0 +1,254 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-09T15:44:15.579Z",
+  "generator": "scripts/generate-note-analyser-goldens.mjs",
+  "fixtureCount": 41,
+  "fixtures": [
+    {
+      "pitch": "A2",
+      "file": "A2/a2-2.wav",
+      "goldenFile": "A2/a2-2.chromium-analyser.json",
+      "frames": 70
+    },
+    {
+      "pitch": "A2",
+      "file": "A2/a2k.wav",
+      "goldenFile": "A2/a2k.chromium-analyser.json",
+      "frames": 65
+    },
+    {
+      "pitch": "A3",
+      "file": "A3/a3.wav",
+      "goldenFile": "A3/a3.chromium-analyser.json",
+      "frames": 70
+    },
+    {
+      "pitch": "A3",
+      "file": "a3.wav",
+      "goldenFile": "a3.chromium-analyser.json",
+      "frames": 70
+    },
+    {
+      "pitch": "B2",
+      "file": "B2/b2.wav",
+      "goldenFile": "B2/b2.chromium-analyser.json",
+      "frames": 70
+    },
+    {
+      "pitch": "B2",
+      "file": "b2.wav",
+      "goldenFile": "b2.chromium-analyser.json",
+      "frames": 70
+    },
+    {
+      "pitch": "B3",
+      "file": "B3/b.wav",
+      "goldenFile": "B3/b.chromium-analyser.json",
+      "frames": 70
+    },
+    {
+      "pitch": "B3",
+      "file": "B3/b3-2.wav",
+      "goldenFile": "B3/b3-2.chromium-analyser.json",
+      "frames": 70
+    },
+    {
+      "pitch": "C4",
+      "file": "C4/c4.wav",
+      "goldenFile": "C4/c4.chromium-analyser.json",
+      "frames": 70
+    },
+    {
+      "pitch": "C4",
+      "file": "c4.wav",
+      "goldenFile": "c4.chromium-analyser.json",
+      "frames": 70
+    },
+    {
+      "pitch": "D3",
+      "file": "D3/d.wav",
+      "goldenFile": "D3/d.chromium-analyser.json",
+      "frames": 70
+    },
+    {
+      "pitch": "D3",
+      "file": "D3/d3_2.wav",
+      "goldenFile": "D3/d3_2.chromium-analyser.json",
+      "frames": 70
+    },
+    {
+      "pitch": "D3",
+      "file": "D3/d3_3.wav",
+      "goldenFile": "D3/d3_3.chromium-analyser.json",
+      "frames": 70
+    },
+    {
+      "pitch": "D3",
+      "file": "D3/d3_4.wav",
+      "goldenFile": "D3/d3_4.chromium-analyser.json",
+      "frames": 70
+    },
+    {
+      "pitch": "D3",
+      "file": "D3/d3_5.wav",
+      "goldenFile": "D3/d3_5.chromium-analyser.json",
+      "frames": 70
+    },
+    {
+      "pitch": "D3",
+      "file": "D3/d3_6_trimmed.wav",
+      "goldenFile": "D3/d3_6_trimmed.chromium-analyser.json",
+      "frames": 70
+    },
+    {
+      "pitch": "D3",
+      "file": "D3/d3_6.wav",
+      "goldenFile": "D3/d3_6.chromium-analyser.json",
+      "frames": 70
+    },
+    {
+      "pitch": "D3",
+      "file": "D3/d3-2.wav",
+      "goldenFile": "D3/d3-2.chromium-analyser.json",
+      "frames": 70
+    },
+    {
+      "pitch": "D3",
+      "file": "D3/d3.wav",
+      "goldenFile": "D3/d3.chromium-analyser.json",
+      "frames": 70
+    },
+    {
+      "pitch": "D3",
+      "file": "D3/d3k.wav",
+      "goldenFile": "D3/d3k.chromium-analyser.json",
+      "frames": 60
+    },
+    {
+      "pitch": "E2",
+      "file": "E2/e2-2.wav",
+      "goldenFile": "E2/e2-2.chromium-analyser.json",
+      "frames": 70
+    },
+    {
+      "pitch": "E2",
+      "file": "E2/e2.wav",
+      "goldenFile": "E2/e2.chromium-analyser.json",
+      "frames": 53
+    },
+    {
+      "pitch": "E2",
+      "file": "E2/e2k.wav",
+      "goldenFile": "E2/e2k.chromium-analyser.json",
+      "frames": 68
+    },
+    {
+      "pitch": "E3",
+      "file": "E3/e3.wav",
+      "goldenFile": "E3/e3.chromium-analyser.json",
+      "frames": 70
+    },
+    {
+      "pitch": "E3",
+      "file": "e3.wav",
+      "goldenFile": "e3.chromium-analyser.json",
+      "frames": 70
+    },
+    {
+      "pitch": "E4",
+      "file": "E4/e41.wav",
+      "goldenFile": "E4/e41.chromium-analyser.json",
+      "frames": 57
+    },
+    {
+      "pitch": "E4",
+      "file": "E4/e4k.wav",
+      "goldenFile": "E4/e4k.chromium-analyser.json",
+      "frames": 58
+    },
+    {
+      "pitch": "E4",
+      "file": "E4/e4k3.wav",
+      "goldenFile": "E4/e4k3.chromium-analyser.json",
+      "frames": 70
+    },
+    {
+      "pitch": "E4",
+      "file": "E4/e4k6.wav",
+      "goldenFile": "E4/e4k6.chromium-analyser.json",
+      "frames": 58
+    },
+    {
+      "pitch": "F2",
+      "file": "F2/f2.wav",
+      "goldenFile": "F2/f2.chromium-analyser.json",
+      "frames": 70
+    },
+    {
+      "pitch": "F2",
+      "file": "f2.wav",
+      "goldenFile": "f2.chromium-analyser.json",
+      "frames": 70
+    },
+    {
+      "pitch": "F3",
+      "file": "F3/f3.wav",
+      "goldenFile": "F3/f3.chromium-analyser.json",
+      "frames": 70
+    },
+    {
+      "pitch": "F3",
+      "file": "f3.wav",
+      "goldenFile": "f3.chromium-analyser.json",
+      "frames": 70
+    },
+    {
+      "pitch": "F4",
+      "file": "F4/f4.wav",
+      "goldenFile": "F4/f4.chromium-analyser.json",
+      "frames": 70
+    },
+    {
+      "pitch": "F4",
+      "file": "f4.wav",
+      "goldenFile": "f4.chromium-analyser.json",
+      "frames": 70
+    },
+    {
+      "pitch": "G2",
+      "file": "G2/g2_2.wav",
+      "goldenFile": "G2/g2_2.chromium-analyser.json",
+      "frames": 70
+    },
+    {
+      "pitch": "G2",
+      "file": "G2/g2.wav",
+      "goldenFile": "G2/g2.chromium-analyser.json",
+      "frames": 70
+    },
+    {
+      "pitch": "G2",
+      "file": "g2_2.wav",
+      "goldenFile": "g2_2.chromium-analyser.json",
+      "frames": 70
+    },
+    {
+      "pitch": "G2",
+      "file": "g2.wav",
+      "goldenFile": "g2.chromium-analyser.json",
+      "frames": 70
+    },
+    {
+      "pitch": "G3",
+      "file": "G3/g.wav",
+      "goldenFile": "G3/g.chromium-analyser.json",
+      "frames": 70
+    },
+    {
+      "pitch": "G3",
+      "file": "G3/g3-2.wav",
+      "goldenFile": "G3/g3-2.chromium-analyser.json",
+      "frames": 70
+    }
+  ]
+}
