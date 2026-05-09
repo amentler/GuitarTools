@@ -53,16 +53,21 @@ Optionaler Aktiv-Modus: Mikrofon-basierte Tonprüfung.
 - Zustand enthält zusätzlich den optionalen Aktivmodus:
   - `active`, `currentBarIndex`, `currentBeatIndex`
   - `isListening`, `isLocked`
-  - `matchState`, `onsetGateState`
+  - `matchState`, `onsetState`, `awaitingOnset`
 - Audio im Aktivmodus:
   - `requestMicrophoneStream`
   - `openAudioSession` / `closeAudioSession`
   - `classifyFrame` + `updateMatchState`
   - `getRecommendedFftSize` pro Zielnote
+  - `guitarOnsetDetector.js` erkennt frische Anschlaege pitch-unabhaengig
+    per breitbandigem Spektralfluss; nach einem Anschlag bleibt der
+    Erkennungsversuch offen, bis die Zielnote akzeptiert oder ein neuer
+    Anschlag als neuer Versuch erkannt wird.
   - `sheetMusicRecognition.js` legt eine bewusst weichere Uebungs-Akzeptanz
     ueber den strengen Shared-Matcher: groessere Cent-Toleranz, direkte
-    Annahme eines verwertbaren Treffers und Oktavgleichheit als Treffer
-    (z. B. D3-Subharmonik als D2), weil die Uebung kein Tuner ist.
+    Annahme eines verwertbaren Treffers und eine eng begrenzte Subharmonik-
+    Toleranz fuer Erkennung genau eine Oktave unter Ziel (z. B. D3 als D2),
+    weil die Uebung kein Tuner ist.
 - Test-/Legacy-Hooks:
   - `?active=1` aktiviert den Aktivmodus direkt beim Laden
   - `window.__GT_SHEET_MUSIC_READING_BARS__` injiziert deterministische Notenfolgen

@@ -9,11 +9,9 @@ import {
   getRecommendedFftSize,
 } from '../../shared/audio/fastNoteMatcher.js';
 import {
-  createOnsetGateState,
-  updateOnsetGate,
-  isOnsetGateOpen,
-  consumeOnsetGate,
-} from '../../shared/audio/noteOnsetGate.js';
+  createGuitarOnsetState,
+  updateGuitarOnsetDetector,
+} from '../../shared/audio/guitarOnsetDetector.js';
 import { getRandomPitch, getPositionsForPitch } from './notePlayingLogic.js';
 import { renderNoteOnStaff, renderNotePositionsTab } from './notePlayingSVG.js';
 import { wireStringToggles, syncStringToggles, wireFretSlider, syncFretSlider } from '../../utils/settings.js';
@@ -27,6 +25,7 @@ import { requestMicrophoneStream } from '../../shared/audio/microphoneService.js
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 const ANALYZE_INTERVAL_MS = 50; // matching-loop cadence
+const ONSET_TRANSIENT_GRACE_FRAMES = 6;
 
 export function createNotePlayingExerciseFeature() {
   let intervalId = null;
@@ -37,8 +36,9 @@ export function createNotePlayingExerciseFeature() {
   let state = {
     targetNote:   null,
     matchState:   createMatchState(),
-    onsetGateState: createOnsetGateState(),
-    allowRetryWithoutOnset: false,
+    onsetState: createGuitarOnsetState(),
+    awaitingOnset: true,
+    framesSinceOnset: 0,
     isLocked:     false,
     hintLevel:    0,      // 0 = no hint, 1 = note name shown, 2 = tabs shown
     score:        { correct: 0 },
@@ -71,8 +71,9 @@ export function createNotePlayingExerciseFeature() {
     state = {
       targetNote:     null,
       matchState:     createMatchState(),
-      onsetGateState: createOnsetGateState(),
-      allowRetryWithoutOnset: false,
+      onsetState:     createGuitarOnsetState(),
+      awaitingOnset:  true,
+      framesSinceOnset: 0,
       isLocked:       false,
       hintLevel:      0,
       score:          { correct: 0 },
@@ -200,8 +201,8 @@ export function createNotePlayingExerciseFeature() {
     }
     state.isLocked = false;
     state.matchState = createMatchState();
-    state.onsetGateState = consumeOnsetGate(state.onsetGateState);
-    state.allowRetryWithoutOnset = false;
+    state.awaitingOnset = true;
+    state.framesSinceOnset = 0;
     state.hintLevel = 0;
     state.targetNote = getRandomPitch(null, state.settings.maxFret, state.settings.activeStrings);
     applyTargetFftSize();
@@ -219,24 +220,32 @@ export function createNotePlayingExerciseFeature() {
     const buffer = new Float32Array(audioSession.analyser.fftSize);
     audioSession.analyser.getFloatTimeDomainData(buffer);
 
-    const prevOnsetWindowRemaining = state.onsetGateState.onsetWindowRemaining;
-    const gate = updateOnsetGate(state.onsetGateState, buffer);
-    state.onsetGateState = gate.nextState;
+    let frequencyData = null;
+    if (typeof audioSession.analyser.getFloatFrequencyData === 'function') {
+      frequencyData = new Float32Array(audioSession.analyser.frequencyBinCount ?? audioSession.analyser.fftSize / 2);
+      audioSession.analyser.getFloatFrequencyData(frequencyData);
+    }
 
-    // If the onset window just expired naturally (not via consumeOnsetGate)
-    // without producing an accept, unlock retry so the sustain phase can
-    // still be matched without requiring a new pluck. This prevents a
-    // deadlock for notes like open-D (D3) whose attack phase is long enough
-    // that YIN only stabilises after the gate has already closed.
-    if (prevOnsetWindowRemaining > 0 && gate.nextState.onsetWindowRemaining === 0 && !state.allowRetryWithoutOnset) {
-      state.allowRetryWithoutOnset = true;
+    const onset = updateGuitarOnsetDetector(state.onsetState, {
+      frequencyData,
+      samples: buffer,
+    });
+    state.onsetState = onset.nextState;
+    if (onset.event === 'onset') {
+      if (!state.awaitingOnset) {
+        state.matchState = createMatchState();
+      }
+      state.awaitingOnset = false;
+      state.framesSinceOnset = 0;
     }
 
     const frameResult = classifyFrame(buffer, audioSession.audioCtx.sampleRate, state.targetNote);
-    const gateAllowsMatch = isOnsetGateOpen(state.onsetGateState) || state.allowRetryWithoutOnset;
-    const effective = gateAllowsMatch
-      ? frameResult
-      : { ...frameResult, status: 'unsure' };
+    const isEarlyOnsetTransient = !state.awaitingOnset
+      && state.framesSinceOnset < ONSET_TRANSIENT_GRACE_FRAMES
+      && frameResult.status === 'wrong';
+    const effective = state.awaitingOnset || isEarlyOnsetTransient
+      ? { ...frameResult, status: 'unsure' }
+      : frameResult;
 
     updateDetectedNote(effective.detectedPitch);
 
@@ -246,19 +255,21 @@ export function createNotePlayingExerciseFeature() {
     if (event === 'accept') {
       handleSuccess();
     } else if (event === 'reject') {
-      // Transient attack frames can trigger a rejection before the note stabilises.
-      // Resetting the state machine here lets the current target recover even if
-      // the signal never drops low enough to produce a second onset.
       state.matchState = createMatchState();
-      state.allowRetryWithoutOnset = true;
+      state.awaitingOnset = true;
+      state.framesSinceOnset = 0;
+    }
+
+    if (!state.awaitingOnset) {
+      state.framesSinceOnset++;
     }
   }
 
   function handleSuccess() {
     state.isLocked   = true;
     state.matchState = createMatchState();
-    state.onsetGateState = consumeOnsetGate(state.onsetGateState);
-    state.allowRetryWithoutOnset = false;
+    state.awaitingOnset = true;
+    state.framesSinceOnset = 0;
     state.score.correct++;
     updateScore();
     // Always reveal the note name on success
@@ -286,8 +297,8 @@ export function createNotePlayingExerciseFeature() {
       state.settings.activeStrings
     );
     state.matchState = createMatchState();
-    state.onsetGateState = consumeOnsetGate(state.onsetGateState);
-    state.allowRetryWithoutOnset = false;
+    state.awaitingOnset = true;
+    state.framesSinceOnset = 0;
     state.isLocked = false;
     state.hintLevel = 0;
     applyTargetFftSize();

@@ -1,0 +1,111 @@
+import { describe, expect, it } from 'vitest';
+import {
+  createGuitarOnsetState,
+  updateGuitarOnsetDetector,
+} from '../../js/shared/audio/guitarOnsetDetector.js';
+
+function samples(rms, length = 2048) {
+  const buffer = new Float32Array(length);
+  buffer.fill(rms);
+  return buffer;
+}
+
+function spectrum(db, length = 1024) {
+  const data = new Float32Array(length);
+  data.fill(db);
+  return data;
+}
+
+function mixedSpectrum(baseDb, boostedDb, boostedEvery = 4, length = 1024) {
+  const data = spectrum(baseDb, length);
+  for (let i = 2; i < data.length; i += boostedEvery) {
+    data[i] = boostedDb;
+  }
+  return data;
+}
+
+describe('guitarOnsetDetector', () => {
+  it('detects a broadband spectral attack independently of pitch', () => {
+    let state = createGuitarOnsetState();
+    ({ nextState: state } = updateGuitarOnsetDetector(state, {
+      frequencyData: spectrum(-100),
+      samples: samples(0.001),
+    }));
+
+    const result = updateGuitarOnsetDetector(state, {
+      frequencyData: mixedSpectrum(-100, -20),
+      samples: samples(0.04),
+    });
+
+    expect(result.event).toBe('onset');
+    expect(result.broadbandFlux).toBeGreaterThan(0);
+    expect(result.bandRatio).toBeGreaterThan(0.075);
+  });
+
+  it('does not retrigger on a steady sustained spectrum', () => {
+    let state = createGuitarOnsetState();
+    ({ nextState: state } = updateGuitarOnsetDetector(state, {
+      frequencyData: spectrum(-100),
+      samples: samples(0.001),
+    }));
+    ({ nextState: state } = updateGuitarOnsetDetector(state, {
+      frequencyData: mixedSpectrum(-100, -20),
+      samples: samples(0.04),
+    }));
+
+    for (let i = 0; i < 12; i++) {
+      const result = updateGuitarOnsetDetector(state, {
+        frequencyData: mixedSpectrum(-100, -20),
+        samples: samples(0.035),
+      });
+      state = result.nextState;
+      expect(result.event).toBeNull();
+    }
+  });
+
+  it('ignores narrow-band changes that are not guitar-like broadband attacks', () => {
+    let state = createGuitarOnsetState();
+    ({ nextState: state } = updateGuitarOnsetDetector(state, {
+      frequencyData: spectrum(-100),
+      samples: samples(0.001),
+    }));
+
+    const narrow = spectrum(-100);
+    narrow[120] = -12;
+    narrow[121] = -12;
+
+    const result = updateGuitarOnsetDetector(state, {
+      frequencyData: narrow,
+      samples: samples(0.04),
+    });
+
+    expect(result.event).toBeNull();
+    expect(result.bandRatio).toBeLessThan(0.075);
+  });
+
+  it('detects a re-attack after cooldown while the previous note is still ringing', () => {
+    let state = createGuitarOnsetState();
+    ({ nextState: state } = updateGuitarOnsetDetector(state, {
+      frequencyData: spectrum(-100),
+      samples: samples(0.001),
+    }));
+    ({ nextState: state } = updateGuitarOnsetDetector(state, {
+      frequencyData: mixedSpectrum(-100, -24),
+      samples: samples(0.03),
+    }));
+
+    for (let i = 0; i < 4; i++) {
+      ({ nextState: state } = updateGuitarOnsetDetector(state, {
+        frequencyData: mixedSpectrum(-100, -28),
+        samples: samples(0.022),
+      }));
+    }
+
+    const reattack = updateGuitarOnsetDetector(state, {
+      frequencyData: mixedSpectrum(-100, -14),
+      samples: samples(0.045),
+    });
+
+    expect(reattack.event).toBe('onset');
+  });
+});

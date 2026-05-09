@@ -196,7 +196,9 @@ describe('SheetMusicReading controller behavior', () => {
       session.audioCtx = { sampleRate: 44100 };
       session.analyser = {
         fftSize: 4096,
+        frequencyBinCount: 2048,
         getFloatTimeDomainData: buffer => buffer.fill(0),
+        getFloatFrequencyData: buffer => buffer.fill(-120),
       };
       return session;
     });

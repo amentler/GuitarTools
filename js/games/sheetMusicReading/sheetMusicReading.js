@@ -30,12 +30,9 @@ import {
   updateSheetMusicMatchState,
 } from './sheetMusicRecognition.js';
 import {
-  ONSET_REATTACK_SPIKE_FACTOR,
-  createOnsetGateState,
-  updateOnsetGate,
-  isOnsetGateOpen,
-  consumeOnsetGate,
-} from '../../shared/audio/noteOnsetGate.js';
+  createGuitarOnsetState,
+  updateGuitarOnsetDetector,
+} from '../../shared/audio/guitarOnsetDetector.js';
 import { requestMicrophoneStream } from '../../shared/audio/microphoneService.js';
 import {
   createAudioSessionState,
@@ -79,7 +76,8 @@ export function createSheetMusicReadingFeature() {
     isLocked: false,
     successTimeout: null,
     matchState: createMatchState(),
-    onsetGateState: createOnsetGateState(),
+    onsetState: createGuitarOnsetState(),
+    awaitingOnset: true,
     settings: {
       maxFret: 3,
       activeStrings: [0, 1, 2, 3, 4, 5],
@@ -159,7 +157,8 @@ export function createSheetMusicReadingFeature() {
     state.currentBarIndex = 0;
     state.currentBeatIndex = 0;
     state.matchState = createMatchState();
-    state.onsetGateState = createOnsetGateState();
+    state.onsetState = createGuitarOnsetState();
+    state.awaitingOnset = true;
     state.isLocked = false;
 
     if (!state.active) {
@@ -317,7 +316,7 @@ export function createSheetMusicReadingFeature() {
     state.currentBarIndex = -1;
     state.currentBeatIndex = -1;
     state.matchState = createMatchState();
-    state.onsetGateState = consumeOnsetGate(state.onsetGateState);
+    state.awaitingOnset = true;
     state.isLocked = false;
     renderCurrentScore();
     updateCurrentNoteDisplay();
@@ -326,7 +325,7 @@ export function createSheetMusicReadingFeature() {
 
   function handleCorrectNote() {
     state.matchState = createMatchState();
-    state.onsetGateState = consumeOnsetGate(state.onsetGateState);
+    state.awaitingOnset = true;
 
     const note = getCurrentNote();
     if (!note) return;
@@ -379,10 +378,23 @@ export function createSheetMusicReadingFeature() {
     const buffer = new Float32Array(audioSession.analyser.fftSize);
     audioSession.analyser.getFloatTimeDomainData(buffer);
 
-    const gate = updateOnsetGate(state.onsetGateState, buffer, {
-      reattackSpikeFactor: ONSET_REATTACK_SPIKE_FACTOR,
+    let frequencyData = null;
+    if (typeof audioSession.analyser.getFloatFrequencyData === 'function') {
+      frequencyData = new Float32Array(audioSession.analyser.frequencyBinCount ?? audioSession.analyser.fftSize / 2);
+      audioSession.analyser.getFloatFrequencyData(frequencyData);
+    }
+
+    const onset = updateGuitarOnsetDetector(state.onsetState, {
+      frequencyData,
+      samples: buffer,
     });
-    state.onsetGateState = gate.nextState;
+    state.onsetState = onset.nextState;
+    if (onset.event === 'onset') {
+      if (!state.awaitingOnset) {
+        state.matchState = createMatchState();
+      }
+      state.awaitingOnset = false;
+    }
 
     const targetPitch = `${targetNote.name}${targetNote.octave}`;
     const frameResult = softenSheetMusicFrameResult(
@@ -395,7 +407,7 @@ export function createSheetMusicReadingFeature() {
       ? { ...frameResult, status: 'unsure' }
       : frameResult;
 
-    if (!isOnsetGateOpen(state.onsetGateState)) {
+    if (state.awaitingOnset) {
       effective = { ...effective, status: 'unsure' };
     }
 
@@ -427,7 +439,7 @@ export function createSheetMusicReadingFeature() {
     state.currentBarIndex = -1;
     state.currentBeatIndex = -1;
     state.matchState = createMatchState();
-    state.onsetGateState = consumeOnsetGate(state.onsetGateState);
+    state.awaitingOnset = true;
     state.isLocked = false;
     renderCurrentScore();
     updateCurrentNoteDisplay();
@@ -468,7 +480,7 @@ export function createSheetMusicReadingFeature() {
 
     setTimedCurrentNote(barIndex, beatIndex);
     state.matchState = createMatchState();
-    state.onsetGateState = createOnsetGateState();
+    state.awaitingOnset = true;
     state.isLocked = false;
     renderCurrentScore();
     updateCurrentNoteDisplay();

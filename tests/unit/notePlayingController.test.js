@@ -53,7 +53,9 @@ function buildDom() {
 function createMockAudioContext() {
   const analyser = {
     fftSize: 2048,
+    frequencyBinCount: 1024,
     getFloatTimeDomainData: vi.fn(buffer => buffer.fill(0)),
+    getFloatFrequencyData: vi.fn(buffer => buffer.fill(-120)),
   };
 
   return {
@@ -140,6 +142,7 @@ describe('NotePlaying controller behavior', () => {
       cents: 0,
     });
     mockAudio.analyser.getFloatTimeDomainData.mockImplementation(buffer => buffer.fill(0.08));
+    mockAudio.analyser.getFloatFrequencyData.mockImplementation(buffer => buffer.fill(-24));
 
     const feature = createNotePlayingExerciseFeature();
     await feature.mount(document.getElementById('view-note-play'));

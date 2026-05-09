@@ -19,9 +19,12 @@ verify whether the correct note **and octave** was played.
 
 - **Controller** (`notePlayingExercise.js`): Requests microphone, runs a
   50 ms pitch-detection loop using `classifyFrame` + `updateMatchState`
-  from `js/games/sheetMusicMic/fastNoteMatcher.js` and adapts the
+  from `js/shared/audio/fastNoteMatcher.js` and adapts the
   `AnalyserNode.fftSize` via `getRecommendedFftSize` so that low-string
   targets get a big-enough buffer for YIN to produce a reliable reading.
+  Fresh attempts are gated by the pitch-agnostic
+  `js/shared/audio/guitarOnsetDetector.js`; after an onset, pitch matching
+  stays open until the current attempt accepts or rejects.
 - **Logic** (`notePlayingLogic.js`): Pure functions with no side effects.
   Exports both octave-aware helpers and legacy note-name helpers.
 - **Rendering** (`notePlayingSVG.js`): Converts octave-aware pitch strings
@@ -76,6 +79,13 @@ two consecutive `correct` frames land. The analyser buffer size follows
 `getRecommendedFftSize`, so E2/A2 targets get ≥ 4096 samples (the YIN
 minimum at `GUITAR_MIN_FREQUENCY = 70`) instead of the legacy hard-coded
 2048 that silently broke low-string detection.
+
+Onsets are handled separately from pitch detection. The controller keeps an
+`awaitingOnset` flag and only feeds decisive pitch statuses into
+`updateMatchState` after `guitarOnsetDetector` has seen a fresh broadband
+attack. There is no time-limited onset window: slow-stabilising notes such as
+D3 can settle after the attack, while a sustained tone cannot score the next
+target without another detected attack.
 
 ## Settings
 

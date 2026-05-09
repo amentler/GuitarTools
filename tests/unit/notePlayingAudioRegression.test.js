@@ -49,9 +49,12 @@ function concatSamples(...chunks) {
   return merged;
 }
 
-function createFixtureAudioContext(samples, sampleRate) {
+function createFixtureAudioContext(samples, sampleRate, attackOffsets = [0]) {
   let cursor = 0;
+  let lastRms = 0;
+  let lastFrameStart = 0;
   const hopSize = Math.max(1, Math.floor(sampleRate * 0.05));
+  const attackDuration = Math.floor(sampleRate * 0.18);
 
   const analyser = {
     _fftSize: 2048,
@@ -61,11 +64,30 @@ function createFixtureAudioContext(samples, sampleRate) {
     set fftSize(value) {
       this._fftSize = value;
     },
+    get frequencyBinCount() {
+      return Math.floor(this._fftSize / 2);
+    },
     getFloatTimeDomainData(target) {
+      lastFrameStart = cursor;
       const end = Math.min(cursor + target.length, samples.length);
       target.fill(0);
       target.set(samples.subarray(cursor, end));
+      let sumSquares = 0;
+      for (const sample of target) sumSquares += sample * sample;
+      lastRms = Math.sqrt(sumSquares / Math.max(1, target.length));
       cursor = Math.min(cursor + hopSize, samples.length);
+    },
+    getFloatFrequencyData(target) {
+      const inAttack = attackOffsets.some(offset => (
+        lastFrameStart >= offset && lastFrameStart < offset + attackDuration
+      ));
+      const db = lastRms > 0.004
+        ? (inAttack ? -18 : -36)
+        : -120;
+      target.fill(-120);
+      for (let i = 2; i < target.length; i += 4) {
+        target[i] = db;
+      }
     },
   };
 
@@ -103,7 +125,7 @@ describe('NotePlaying audio regression', () => {
 
   it('akzeptiert G3 nach vorangehendem falschem E2 im selben Audio-Stream', async () => {
     const samples = concatSamples(WRONG_E2.samples, RIGHT_G3.samples);
-    const audioContext = createFixtureAudioContext(samples, WRONG_E2.sampleRate);
+    const audioContext = createFixtureAudioContext(samples, WRONG_E2.sampleRate, [0, WRONG_E2.samples.length]);
     const stream = { getTracks: () => [{ stop: vi.fn() }] };
 
     vi.stubGlobal('AudioContext', function MockAudioContext() {
