@@ -1,1 +1,1 @@
-Version 0.106 | 2026-05-09 17:57 | 469dfa7 | test: expand note fingerprint goldens
+Version 0.107 | 2026-05-09 19:01 | 6248ac0 | Update
