@@ -1,1 +1,1 @@
-Version 0.110 | 2026-05-09 22:44 | bc6f04c | feat(sheet-music-reading): add one-bar count-in and UI layout tweaks
+Version 0.111 | 2026-05-09 22:47 | 96dbaa9 | chore: sync auto-generated version metadata
