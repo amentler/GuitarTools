@@ -1,1 +1,1 @@
-Version 0.107 | 2026-05-09 17:27 | 78d9943 | feat: add recording feature to sheet music reading exercise
+Version 0.108 | 2026-05-09 17:29 | 5c14c7a | fix: address code review feedback - user feedback on mic failure, rename variable
