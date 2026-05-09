@@ -23,7 +23,6 @@ describe('Page structure smoke', () => {
       'guitar-tuner',
       'metronome',
       'note-playing',
-      'sheet-music-mic',
       'sheet-music-reading',
       'ton-finder',
     ]);
@@ -35,11 +34,7 @@ describe('Page structure smoke', () => {
       expect(html).toContain('<script type="module" src="./bootstrap.js"></script>');
       expect(html).not.toContain('<script type="module">');
       expect(bootstrap).toContain("import '../../js/components/index.js';");
-      if (pageDir === 'sheet-music-mic') {
-        expect(bootstrap).toContain('window.location.replace');
-      } else {
-        expect(bootstrap).toContain('.mount(root)');
-      }
+      expect(bootstrap).toContain('.mount(root)');
     }
   });
 });

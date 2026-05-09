@@ -1,8 +1,8 @@
-// Unit tests for js/games/sheetMusicMic/fastNoteMatcher.js
+// Unit tests for js/shared/audio/fastNoteMatcher.js
 //
 // Level A of the plan plans/notenzeilen-akustische-pruefung.md:
 //   A1 – classifyFrame baseline behaviour against synthetic sine signals
-//   A2 – buffer-size regression guard against the current "Noten spielen" bug
+//   A2 – buffer-size regression guard against the active sheet-music reading bug
 //   A3 – updateMatchState streak logic
 //   A4 – guitar-flavoured synthetic signals (harmonics, decay, startup impulse)
 //
@@ -168,7 +168,7 @@ describe('fastNoteMatcher – A2 buffer-size regression', () => {
   });
 
   it('A2b E2 recommendation is not the legacy 2048-sample value', () => {
-    // The current "Noten spielen" bug is caused by a hardcoded fftSize = 2048.
+    // The active sheet-music reading bug was caused by a hardcoded fftSize = 2048.
     // The adaptive recommendation must move E2 well above that so YIN can run.
     expect(getRecommendedFftSize('E2', SAMPLE_RATE)).toBeGreaterThan(2048);
   });

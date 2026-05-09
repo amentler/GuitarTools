@@ -176,23 +176,10 @@ When adding logic to `*Logic.js` files, add corresponding tests in `tests/unit/`
 
 ## Current Modules
 
-- Game modules: `js/games/tonFinder/`, `js/games/fretboardToneRecognition/`, `js/games/akkordTrainer/`, `js/games/sheetMusicReading/`, `js/games/notePlayingExercise/`, `js/games/sheetMusicMic/`
+- Game modules: `js/games/tonFinder/`, `js/games/fretboardToneRecognition/`, `js/games/akkordTrainer/`, `js/games/sheetMusicReading/`, `js/games/notePlayingExercise/`
 - Tool modules: `js/tools/guitarTuner/`, `js/tools/metronome/`
 - Data modules: `js/data/akkordData.js` (chord definitions with finger data)
 - UI components: `js/components/fretboard/` (`gt-fretboard.js`, `gt-fretboard-render.js`)
-
-## Noten spielen (sheetMusicMic)
-
-New exercise combining "Noten lesen" (sheet music) with microphone-based note recognition (like "Ton spielen").
-
-- **Location:** `js/games/sheetMusicMic/`
-  - `sheetMusicMicExercise.js` — Main controller; start button, audio pipeline, mode logic
-  - `sheetMusicMicSVG.js` — VexFlow rendering with per-note colour based on status
-  - `fastNoteMatcher.js` — Pure target-aware matcher (buffer-size guard, frame classification, streak state machine). Shared with `notePlayingExercise` to fix the legacy 2048-sample E2 bug.
-- **Mode: Einfach (easy)** — wrong notes do not penalise; keep playing until correct note lands
-- **Mode: Schwer (hard)** — 3 consecutive wrong-note frames restart the sequence from the beginning
-- **Note colours:** `current` → orange, `correct` → green, `pending` → default theme colour
-- **Pitch detection:** delegated to `fastNoteMatcher.classifyFrame` (full-range `detectPitch` with `getMinSamplesFor` guard) and `updateMatchState` (FAST_ACCEPT_STREAK = 2, FAST_REJECT_STREAK = 3, ±35 cent). Controllers call `getRecommendedFftSize` whenever the target changes so low-string targets get a ≥ 4096-sample window instead of the broken 2048.
 
 ## Adding a New Game
 

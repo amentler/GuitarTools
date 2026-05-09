@@ -22,8 +22,8 @@ As an AI agent working on this project, you MUST adhere to the following rules:
 - **Testing:** Run `npm test` to execute unit tests. Run `npm run lint` for ESLint checks. Add tests in `tests/unit/` for any logic in `*Logic.js` files.
 - **Architecture:** Follow the rules defined in [docs/architecture.md](docs/architecture.md).
 - **Pre-Commit Mandate:** You MUST run `npm run lint` and `npm test` BEFORE committing any changes; if lint reports errors, fix them before committing. Committing code with failing tests is strictly prohibited.
-- **Note-Recognition Fix:** Fixed ID mismatches for feedback elements in `sheetMusicMic`, `notePlaying`, and `akkordTrainer`. Added `audioCtx.resume()` to all audio-based exercises to ensure compatibility with standalone page loads.
-- **Unit-Test Scope (current):** `fretboardLogic`, `tunerLogic`, `tonFinderLogic`, `akkordLogic`, `sheetMusicLogic`, `metronomeLogic`, `notePlayingLogic`, `appNavigationHistory`, `exerciseHeader`, `sheetMusicMicIntegration` (677 passing tests)
+- **Note-Recognition Fix:** Fixed ID mismatches for feedback elements in `notePlaying` and `akkordTrainer`. Added `audioCtx.resume()` to all audio-based exercises to ensure compatibility with standalone page loads.
+- **Unit-Test Scope (current):** `fretboardLogic`, `tunerLogic`, `tonFinderLogic`, `akkordLogic`, `sheetMusicLogic`, `metronomeLogic`, `notePlayingLogic`, `appNavigationHistory`, `exerciseHeader`
 
 ## 3. Workflow
 - **Research -> Strategy -> Execution -> Validation**
@@ -57,7 +57,7 @@ Location: `js/components/fretboard/gt-fretboard.js`
 
 ## Current Modules
 
-- Game modules: `js/games/tonFinder/`, `js/games/fretboardToneRecognition/`, `js/games/akkordTrainer/`, `js/games/sheetMusicReading/`, `js/games/notePlayingExercise/`, `js/games/sheetMusicMic/`, `js/games/chordExerciseEssentia/`, `js/games/akkordfolgenTrainer/`
+- Game modules: `js/games/tonFinder/`, `js/games/fretboardToneRecognition/`, `js/games/akkordTrainer/`, `js/games/sheetMusicReading/`, `js/games/notePlayingExercise/`, `js/games/chordExerciseEssentia/`, `js/games/akkordfolgenTrainer/`
 - Tool modules: `js/tools/guitarTuner/`, `js/tools/metronome/`
 - UI components: `js/components/fretboard/` (`gt-fretboard.js`, `gt-fretboard-render.js`)
 - Logic modules with tests: `fretboardLogic`, `tunerLogic`, `tonFinderLogic`, `akkordLogic`, `sheetMusicLogic`, `metronomeLogic`, `notePlayingLogic`, `essentiaChordLogic`
@@ -72,14 +72,6 @@ Location: `js/components/fretboard/gt-fretboard.js`
 - **Warm-up Phase:** Anzeige wird erst nach 2 aufeinanderfolgenden gültigen Frames aktualisiert (`STABLE_CONFIRM_FRAMES`), um initiale Sprünge durch Transienten zu unterdrücken.
 - **Temporal Aging & Silence Reset:** Frequenz-Historie verwirft Werte älter als 1000ms. Bei Stille > 300ms erfolgt ein kompletter Reset des "Gedächtnisses" (Historie, stabile Frequenz, Warm-up), um saubere Saitenwechsel zu ermöglichen.
 - Analyseintervall ist 50 ms (20 Hz) mit rolling median über 5 Samples (~250 ms), damit das Stimmgerät reaktiv bleibt.
-
-## Noten spielen – sheetMusicMic
-
-- New exercise at `js/games/sheetMusicMic/` combining sheet-music display with microphone-based pitch recognition.
-- **Easy mode:** wrong notes do not restart; user keeps playing until hitting correct note.
-- **Hard mode:** 3 consecutive wrong-note frames restart the sequence from the beginning.
-- **Correct notes turn green** via VexFlow `setStyle()` on `StaveNote`.
-- Reuses `detectPitch`, `frequencyToNote`, `pushAndMedian` from `tunerLogic.js`; match streak = 3 frames.
 
 ## Note-Playing Exercise Status
 

@@ -1,4 +1,4 @@
-// Fast Note Matcher – pure logic for "Noten spielen" and "Ton spielen"
+// Fast Note Matcher – pure logic for active sheet-music reading and "Ton spielen"
 //
 // Target-aware note classification on top of the existing YIN + HPS pipeline
 // from the shared guitar pitch-detection pipeline. The matcher is intentionally conservative about octaves
@@ -21,7 +21,7 @@
 // Key concepts:
 //   * `getMinSamplesFor(sampleRate)` returns the exact YIN minimum so
 //     too-small buffers return `unsure` instead of producing garbage.
-//     This was the root cause of the broken "Noten spielen" exercise,
+//     This was the root cause of the broken active sheet-music reading path,
 //     which fed a 2048-sample buffer into the full 70 Hz – 560 Hz search
 //     range and therefore never produced a valid low-string reading.
 //   * `getRecommendedFftSize(sampleRate)` returns the smallest safe
@@ -132,7 +132,7 @@ export function getRecommendedFftSize(_targetPitch, sampleRate = 44100) {
  * smaller than `getMinSamplesFor(targetPitch, sampleRate)`, YIN physically
  * cannot produce a reliable reading and the function returns `unsure`
  * rather than falling back to an HPS-only guess. This prevents the exact
- * bug the "Noten spielen" exercise had with its hardcoded 2048-sample
+ * bug the active sheet-music reading path had with its hardcoded 2048-sample
  * analyser on E2.
  *
  * @param {Float32Array} samples

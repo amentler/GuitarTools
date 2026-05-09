@@ -97,10 +97,6 @@ Optionaler Aktiv-Modus: Mikrofon-basierte Tonprüfung.
 Aktueller Detailplan:
 `plans/sheet-music-reading-active-mode-plan-2026-05-05.md`
 
-Legacy-Migration:
-- `pages/sheet-music-mic/*` leitet auf `sheet-music-reading?active=1` weiter
-- die Menükarte „Noten spielen“ ist entfernt
-
 ## AI Collaboration & Documentation
 
 **IMPORTANT FOR ALL AGENTS (Claude, Gemini, Codex):**

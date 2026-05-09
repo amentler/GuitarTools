@@ -49,9 +49,9 @@ describe('global debug store', () => {
 
     store.enable();
     store.setPageContext({
-      pageId: 'sheet-music-mic',
-      pageTitle: 'Noten spielen',
-      url: 'https://example.test/pages/sheet-music-mic/index.html',
+      pageId: 'sheet-music-reading',
+      pageTitle: 'Noten lesen',
+      url: 'https://example.test/pages/sheet-music-reading/index.html',
     });
 
     const entry = store.addEntry('page-loaded', { phase: 'boot' });
@@ -59,7 +59,7 @@ describe('global debug store', () => {
     expect(entry).toEqual({
       at: '2026-05-01T10:15:30.000Z',
       type: 'page-loaded',
-      source: 'sheet-music-mic',
+      source: 'sheet-music-reading',
       level: 'info',
       payload: { phase: 'boot' },
     });
@@ -68,9 +68,9 @@ describe('global debug store', () => {
       debugMode: true,
       logScope: DEBUG_LOG_SCOPE,
       page: {
-        pageId: 'sheet-music-mic',
-        pageTitle: 'Noten spielen',
-        url: 'https://example.test/pages/sheet-music-mic/index.html',
+        pageId: 'sheet-music-reading',
+        pageTitle: 'Noten lesen',
+        url: 'https://example.test/pages/sheet-music-reading/index.html',
       },
       entries: [entry],
     });
@@ -183,14 +183,14 @@ describe('global debug store', () => {
     const sessionStorage = createMockStorage({
       [DEBUG_ENTRIES_SESSION_KEY]: JSON.stringify({
         page: {
-          pageId: 'sheet-music-mic',
-          pageTitle: 'Noten spielen',
-          url: 'https://example.test/pages/sheet-music-mic/index.html',
+          pageId: 'sheet-music-reading',
+          pageTitle: 'Noten lesen',
+          url: 'https://example.test/pages/sheet-music-reading/index.html',
         },
         entries: [{
           at: '2026-05-01T12:00:00.000Z',
           type: 'mounted',
-          source: 'sheet-music-mic',
+          source: 'sheet-music-reading',
           level: 'info',
           payload: { mode: 'easy' },
         }],
@@ -203,14 +203,14 @@ describe('global debug store', () => {
     });
 
     expect(store.getPageContext()).toEqual({
-      pageId: 'sheet-music-mic',
-      pageTitle: 'Noten spielen',
-      url: 'https://example.test/pages/sheet-music-mic/index.html',
+      pageId: 'sheet-music-reading',
+      pageTitle: 'Noten lesen',
+      url: 'https://example.test/pages/sheet-music-reading/index.html',
     });
     expect(store.getEntries()).toEqual([{
       at: '2026-05-01T12:00:00.000Z',
       type: 'mounted',
-      source: 'sheet-music-mic',
+      source: 'sheet-music-reading',
       level: 'info',
       payload: { mode: 'easy' },
     }]);

@@ -24,7 +24,7 @@ optionalen Parameter.
 | `js/games/sheetMusicReading/sheetMusicReading.js` | Import + Übergabe von `ONSET_REATTACK_SPIKE_FACTOR` beim `updateOnsetGate()`-Aufruf in `analyzeFrame()` |
 | `tests/unit/noteOnsetGate.test.js` | Neue Tests für `reattackSpikeFactor`-Option |
 
-**Nicht geändert:** `notePlayingExercise.js`, `fastNoteMatcher.js`, `sheetMusicMicExercise.js`
+**Nicht geändert:** `notePlayingExercise.js`, `fastNoteMatcher.js`
 (legacy), alle anderen Dateien.
 
 ---

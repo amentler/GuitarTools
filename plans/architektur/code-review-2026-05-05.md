@@ -22,7 +22,6 @@ Architektur-Spec: Logic <150 Z., Controller <300 Z.
 |---|---|---|---|
 | `js/games/chordExerciseEssentia/essentiaChordLogic.js` | 996 | 150 | HOCH |
 | `js/games/sheetMusicReading/sheetMusicReading.js` | 809 | 300 | HOCH |
-| `js/games/sheetMusicMic/sheetMusicMicExercise.js` | 672 | 300 | MITTEL |
 | `js/games/akkordfolgenTrainer/akkordfolgenTrainer.js` | 474 | 300 | MITTEL |
 | `js/tools/chordRecorder/chordRecorder.js` | 418 | 300 | NIEDRIG |
 

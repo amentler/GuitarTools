@@ -1,1 +1,1 @@
-Version 0.105 | 2026-05-09 17:10 | 9640b4f | fix: restore sheet music onset recognition
+Version 0.106 | 2026-05-09 17:57 | 469dfa7 | test: expand note fingerprint goldens

@@ -24,9 +24,6 @@ Die App läuft direkt im Browser (Desktop & Mobil) und kann dank Service Worker 
 - **Ton spielen**  
   Zielton wird vorgegeben, Erkennung über Mikrofon.
 
-- **Noten spielen**  
-  Kombination aus Notenbild und Mikrofon-Erkennung.
-
 - **Akkord spielen (Essentia, Beta)**  
   Akkorderkennung über Essentia/WebAssembly.
 
