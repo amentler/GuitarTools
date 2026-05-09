@@ -493,10 +493,10 @@ export function createSheetMusicReadingFeature() {
   // ── Recording helpers ───────────────────────────────────────────────────
   function makeBasename(bars, bpm, timeSig) {
     const timeSigSafe = timeSig.replace('/', '-');
-    const notes = [...new Set(bars.flat().map(n => n.name))].slice(0, 8).join('');
+    const uniqueNoteNames = [...new Set(bars.flat().map(n => n.name))].slice(0, 8).join('');
     const chars = '0123456789abcdefghijklmnopqrstuvwxyz';
     const rand = Array.from({ length: 5 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
-    return `${timeSigSafe}_${bpm}bpm_${notes}_${rand}`;
+    return `${timeSigSafe}_${bpm}bpm_${uniqueNoteNames}_${rand}`;
   }
 
   function makeManifest(bars, bpm, timeSig) {
@@ -524,6 +524,10 @@ export function createSheetMusicReadingFeature() {
     try {
       await recorder.start();
     } catch {
+      if (ui.permission) {
+        ui.permission.classList.remove('u-hidden');
+        ui.permission.textContent = 'Mikrofon nicht verfügbar. Aufnahme konnte nicht gestartet werden.';
+      }
       return;
     }
     syncRecordingUI();
