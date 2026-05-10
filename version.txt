@@ -1,1 +1,1 @@
-Version 0.127 | 2026-05-11 00:11 | 67a86c9 | docs: Audio-Analyse Werkzeug dokumentieren
+Version 0.128 | 2026-05-11 00:21 | 30c9c0c | Update version and service worker
