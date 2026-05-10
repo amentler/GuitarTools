@@ -1,1 +1,1 @@
-Version 0.125 | 2026-05-10 23:16 | ce71439 | fix: guard appendResult with mkdirSync to prevent ENOENT on first run
+Version 0.128 | 2026-05-11 00:21 | 30c9c0c | Update version and service worker

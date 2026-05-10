@@ -58,7 +58,7 @@ Location: `js/components/fretboard/gt-fretboard.js`
 ## Current Modules
 
 - Game modules: `js/games/tonFinder/`, `js/games/fretboardToneRecognition/`, `js/games/akkordTrainer/`, `js/games/sheetMusicReading/`, `js/games/notePlayingExercise/`, `js/games/chordExerciseEssentia/`, `js/games/akkordfolgenTrainer/`
-- Tool modules: `js/tools/guitarTuner/`, `js/tools/metronome/`
+- Tool modules: `js/tools/guitarTuner/`, `js/tools/metronome/`, `js/tools/audioAnalyse/`
 - UI components: `js/components/fretboard/` (`gt-fretboard.js`, `gt-fretboard-render.js`)
 - Logic modules with tests: `fretboardLogic`, `tunerLogic`, `tonFinderLogic`, `akkordLogic`, `sheetMusicLogic`, `metronomeLogic`, `notePlayingLogic`, `essentiaChordLogic`
 - Shared utilities: `js/utils/chordDetectionUtils.js` (shared by `akkordfolgenTrainer` and `chordExerciseEssentia`)

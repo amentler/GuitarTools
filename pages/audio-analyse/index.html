@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Audio-Analyse - Gitarren-Lerntools</title>
+  <link rel="stylesheet" href="../../style.css" />
+  <style>
+    /* ── Analyse-spezifische Styles ─────────────────────────────────────── */
+
+    .analyse-load-section {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.75rem;
+      width: 100%;
+      max-width: 640px;
+      padding: 1rem;
+    }
+
+    .analyse-load-row {
+      display: flex;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .analyse-dropzone {
+      border: 2px dashed var(--color-border);
+      border-radius: var(--radius);
+      padding: 1rem 2rem;
+      text-align: center;
+      color: var(--color-text-muted);
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
+      width: 100%;
+    }
+
+    .analyse-dropzone.dragover,
+    .analyse-dropzone:hover {
+      border-color: var(--color-accent);
+      background: var(--color-surface);
+    }
+
+    .analyse-dropzone label {
+      cursor: pointer;
+      color: var(--color-accent);
+      font-weight: 600;
+    }
+
+    #input-wav-file {
+      display: none;
+    }
+
+    /* Strategie-Anzeige */
+    .analyse-strategy-bar {
+      display: flex;
+      gap: 1rem;
+      font-size: 0.8rem;
+      color: var(--color-text-muted);
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .analyse-strategy-bar strong {
+      color: var(--color-text);
+    }
+
+    /* Status-Meldung */
+    .analyse-status {
+      font-size: 0.9rem;
+      color: var(--color-text-muted);
+      text-align: center;
+      padding: 0.5rem;
+    }
+
+    .analyse-status--error {
+      color: var(--color-wrong);
+    }
+
+    /* Statistik-Header */
+    .analyse-stats-header {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem 1rem;
+      justify-content: center;
+      padding: 0.6rem 1rem;
+      background: var(--color-surface);
+      border-radius: var(--radius);
+      font-size: 0.82rem;
+      width: 100%;
+      max-width: 800px;
+    }
+
+    .stat-item {
+      color: var(--color-text);
+    }
+
+    /* Charts-Wrapper */
+    .analyse-charts-wrapper {
+      width: 100%;
+      max-width: 900px;
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+      padding: 0 0.5rem 2rem;
+    }
+
+    .analysis-chart-block {
+      width: 100%;
+    }
+
+    .analysis-chart-label {
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: var(--color-text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      padding: 0.3rem 0 0.15rem;
+    }
+
+    .analysis-chart-svg-wrap {
+      width: 100%;
+      aspect-ratio: var(--chart-aspect, 1000 / 72);
+    }
+
+    .analysis-chart-svg-wrap svg {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    /* Crosshair Tooltip */
+    .analysis-tooltip {
+      background: rgba(30, 20, 10, 0.88);
+      color: #fff;
+      border-radius: 6px;
+      padding: 5px 10px;
+      font-size: 0.75rem;
+      white-space: nowrap;
+      pointer-events: none;
+    }
+
+    .tt-time {
+      font-weight: 700;
+      color: #7c4dff;
+    }
+
+    .tt-onset {
+      color: #e74c3c;
+      font-weight: 700;
+    }
+
+    .tt-invalid {
+      color: #aaa;
+    }
+
+    /* Legend */
+    .analyse-legend {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+      font-size: 0.76rem;
+      color: var(--color-text-muted);
+      padding: 0.4rem 0;
+      justify-content: center;
+    }
+
+    .legend-onset {
+      color: #e74c3c;
+      font-weight: 600;
+    }
+
+    .legend-invalid {
+      color: #aaa;
+    }
+  </style>
+</head>
+<body>
+  <section id="view-audio-analyse" class="view active">
+    <gt-exercise-header title="Audio-Analyse"></gt-exercise-header>
+
+    <!-- Laden-Bereich -->
+    <div class="analyse-load-section">
+      <div class="analyse-load-row">
+        <button id="btn-load-last" class="btn-play-stop">📂 Letzte Aufnahme laden</button>
+      </div>
+
+      <!-- Datei-Upload / Drag & Drop -->
+      <div id="analyse-dropzone" class="analyse-dropzone">
+        <input type="file" id="input-wav-file" accept=".wav,audio/wav" />
+        <label for="input-wav-file">WAV-Datei wählen</label>
+        &nbsp;oder hierher ziehen
+      </div>
+    </div>
+
+    <!-- Status-Meldung -->
+    <p id="analyse-status-msg" class="analyse-status u-hidden"></p>
+
+    <!-- Strategie-Anzeige -->
+    <div class="analyse-strategy-bar">
+      <span>Pitch: <strong id="analyse-strategy-pitch">—</strong></span>
+      <span>Onset: <strong id="analyse-strategy-onset">—</strong></span>
+    </div>
+
+    <!-- Statistik-Header -->
+    <div id="analyse-stats-header" class="analyse-stats-header u-hidden"></div>
+
+    <!-- Legende -->
+    <div class="analyse-legend">
+      <span class="legend-onset">— Onset-Marker</span>
+      <span>— Crosshair beim Hover</span>
+      <span class="legend-invalid">▪ Grau = Signal zu leise</span>
+    </div>
+
+    <!-- Charts -->
+    <div id="analyse-charts-wrapper" class="analyse-charts-wrapper u-hidden"></div>
+
+  </section>
+
+  <script type="module" src="./bootstrap.js"></script>
+</body>
+</html>

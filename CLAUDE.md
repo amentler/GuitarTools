@@ -177,7 +177,7 @@ When adding logic to `*Logic.js` files, add corresponding tests in `tests/unit/`
 ## Current Modules
 
 - Game modules: `js/games/tonFinder/`, `js/games/fretboardToneRecognition/`, `js/games/akkordTrainer/`, `js/games/sheetMusicReading/`, `js/games/notePlayingExercise/`
-- Tool modules: `js/tools/guitarTuner/`, `js/tools/metronome/`
+- Tool modules: `js/tools/guitarTuner/`, `js/tools/metronome/`, `js/tools/audioAnalyse/`
 - Data modules: `js/data/akkordData.js` (chord definitions with finger data)
 - UI components: `js/components/fretboard/` (`gt-fretboard.js`, `gt-fretboard-render.js`)
 
