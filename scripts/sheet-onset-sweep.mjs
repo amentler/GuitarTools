@@ -101,6 +101,7 @@ function writeResultArtifacts(runDir, spec, fixtures, results) {
 }
 
 function appendResult(runDir, result) {
+  mkdirSync(runDir, { recursive: true });
   appendFileSync(join(runDir, 'results.jsonl'), `${JSON.stringify(result)}\n`);
 }
 
