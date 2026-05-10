@@ -1,1 +1,1 @@
-Version 0.125 | 2026-05-10 21:59 | 969c7f1 | feat: register Essentia strategy in UI + show active strategies in exercise
+Version 0.126 | 2026-05-11 00:10 | ecbe9e9 | feat: Audio-Analyse Werkzeug
