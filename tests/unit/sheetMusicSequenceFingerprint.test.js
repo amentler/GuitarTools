@@ -32,6 +32,16 @@ describe('sheet music sequence fingerprint', () => {
     expect(report.strategyReports.map(row => row.strategy.key)).toEqual(
       allStrategies.map(s => s.key),
     );
+    for (const stratReport of report.strategyReports) {
+      expect(stratReport.counts.detectedOnsets).toBeGreaterThan(0);
+      expect(stratReport.counts.onsetTruePositives).toBeGreaterThan(0);
+      expect(stratReport.metrics.onsetPrecision).toBeGreaterThanOrEqual(0);
+      expect(stratReport.metrics.onsetPrecision).toBeLessThanOrEqual(1);
+      expect(stratReport.metrics.onsetRecall).toBeGreaterThanOrEqual(0);
+      expect(stratReport.metrics.onsetRecall).toBeLessThanOrEqual(1);
+      expect(stratReport.metrics.onsetF1).toBeGreaterThanOrEqual(0);
+      expect(stratReport.metrics.onsetF1).toBeLessThanOrEqual(1);
+    }
     // Evaluate correctness for each strategy independently so a failing essentia
     // strategy does NOT break the fast-note-matcher guardrail.
     for (const stratReport of report.strategyReports) {

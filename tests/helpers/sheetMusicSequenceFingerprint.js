@@ -33,6 +33,15 @@ function safeDivide(num, den) {
   return den === 0 ? 0 : num / den;
 }
 
+function countOnsetConfusion(row) {
+  const truePositives = Math.min(row.onsetCount, row.expectedCount);
+  return {
+    truePositives,
+    falsePositives: Math.max(0, row.onsetCount - row.expectedCount),
+    falseNegatives: Math.max(0, row.expectedCount - row.onsetCount),
+  };
+}
+
 function formatMs(value) {
   return Number.isFinite(value) ? `${Math.round(value)}ms` : '-';
 }
@@ -253,6 +262,22 @@ function summarizeSequenceCases(fixtures, cases, strategy) {
   const expectedNotes = evaluated.reduce((sum, row) => sum + row.expectedCount, 0);
   const acceptedNotes = evaluated.reduce((sum, row) => sum + row.acceptedCount, 0);
   const detectedOnsets = evaluated.reduce((sum, row) => sum + row.onsetCount, 0);
+  const onsetConfusion = evaluated.reduce((acc, row) => {
+    const rowCounts = countOnsetConfusion(row);
+    return {
+      truePositives: acc.truePositives + rowCounts.truePositives,
+      falsePositives: acc.falsePositives + rowCounts.falsePositives,
+      falseNegatives: acc.falseNegatives + rowCounts.falseNegatives,
+    };
+  }, { truePositives: 0, falsePositives: 0, falseNegatives: 0 });
+  const onsetPrecision = safeDivide(
+    onsetConfusion.truePositives,
+    onsetConfusion.truePositives + onsetConfusion.falsePositives,
+  );
+  const onsetRecall = safeDivide(
+    onsetConfusion.truePositives,
+    onsetConfusion.truePositives + onsetConfusion.falseNegatives,
+  );
 
   return {
     strategy,
@@ -267,6 +292,9 @@ function summarizeSequenceCases(fixtures, cases, strategy) {
       expectedNotes,
       acceptedNotes,
       detectedOnsets,
+      onsetTruePositives: onsetConfusion.truePositives,
+      onsetFalsePositives: onsetConfusion.falsePositives,
+      onsetFalseNegatives: onsetConfusion.falseNegatives,
       onsetExact: evaluated.filter(row => row.onsetStatus === 'match').length,
       onsetUnder: evaluated.filter(row => row.onsetStatus === 'under').length,
       onsetOver: evaluated.filter(row => row.onsetStatus === 'over').length,
@@ -275,6 +303,9 @@ function summarizeSequenceCases(fixtures, cases, strategy) {
       fixturePassRate: safeDivide(passed.length, evaluated.length),
       noteRecall: safeDivide(acceptedNotes, expectedNotes),
       onsetCountRatio: safeDivide(detectedOnsets, expectedNotes),
+      onsetPrecision,
+      onsetRecall,
+      onsetF1: safeDivide(2 * onsetPrecision * onsetRecall, onsetPrecision + onsetRecall),
     },
   };
 }
@@ -382,8 +413,9 @@ export function formatSheetMusicSequenceFingerprintReport(report) {
   const { counts, metrics, cases, strategyReports, onsetStrategyReports } = report;
   const strategyTable = strategyReports.map(row => (
     `| ${row.strategy.key} | ${row.counts.evaluated} | ${row.counts.passed} | ${row.counts.failed} | `
-      + `${row.counts.acceptedNotes}/${row.counts.expectedNotes} | `
-      + `${formatPercent(row.metrics.fixturePassRate)} | ${formatPercent(row.metrics.noteRecall)} |`
+      + `${row.counts.acceptedNotes}/${row.counts.expectedNotes} | ${row.counts.detectedOnsets}/${row.counts.expectedNotes} | `
+      + `${formatPercent(row.metrics.fixturePassRate)} | ${formatPercent(row.metrics.noteRecall)} | `
+      + `${formatPercent(row.metrics.onsetPrecision)} | ${formatPercent(row.metrics.onsetRecall)} | ${formatPercent(row.metrics.onsetF1)} |`
   ));
   const onsetStrategyTable = (onsetStrategyReports ?? []).map(row => (
     `| ${row.onsetStrategy.key} | ${row.counts.total} | ${row.counts.exact} | ${row.counts.under} | `
@@ -397,8 +429,8 @@ export function formatSheetMusicSequenceFingerprintReport(report) {
     `- strategies: ${report.strategies.map(strategy => strategy.key).join(', ')}`,
     '',
     '## Strategy Summary',
-    '| strategy | evaluated | passed | failed | notes | fixture pass rate | note recall |',
-    '|---|---:|---:|---:|---:|---:|---:|',
+    '| strategy | evaluated | passed | failed | notes | onsets | fixture pass rate | note recall | onset precision | onset recall | onset f1 |',
+    '|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|',
     ...strategyTable,
     '',
     '## Onset Strategy Summary',
@@ -414,8 +446,12 @@ export function formatSheetMusicSequenceFingerprintReport(report) {
     `- expected notes: ${counts.expectedNotes}`,
     `- accepted notes: ${counts.acceptedNotes}`,
     `- detected onsets: ${counts.detectedOnsets}`,
+    `- onset confusion: TP=${counts.onsetTruePositives} FP=${counts.onsetFalsePositives} FN=${counts.onsetFalseNegatives}`,
     `- fixture pass rate: ${formatPercent(metrics.fixturePassRate)}`,
     `- note recall: ${formatPercent(metrics.noteRecall)}`,
+    `- onset precision: ${formatPercent(metrics.onsetPrecision)}`,
+    `- onset recall: ${formatPercent(metrics.onsetRecall)}`,
+    `- onset f1: ${formatPercent(metrics.onsetF1)}`,
     `- onset count ratio: ${formatPercent(metrics.onsetCountRatio)}`,
     `- frame cadence: ${SHEET_FINGERPRINT_ANALYZE_INTERVAL_MS}ms`,
     '',
@@ -425,10 +461,12 @@ export function formatSheetMusicSequenceFingerprintReport(report) {
     ...cases.filter(row => !row.skipped).map(formatOnsetCase),
     '',
     '## Onset Count Summary',
-    '| exact | under | over | detected/expected | ratio |',
-    '|---:|---:|---:|---:|---:|',
+    '| exact | under | over | TP | FP | FN | detected/expected | ratio | precision | recall | f1 |',
+    '|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|',
     `| ${counts.onsetExact} | ${counts.onsetUnder} | ${counts.onsetOver} | `
-      + `${counts.detectedOnsets}/${counts.expectedNotes} | ${formatPercent(metrics.onsetCountRatio)} |`,
+      + `${counts.onsetTruePositives} | ${counts.onsetFalsePositives} | ${counts.onsetFalseNegatives} | `
+      + `${counts.detectedOnsets}/${counts.expectedNotes} | ${formatPercent(metrics.onsetCountRatio)} | `
+      + `${formatPercent(metrics.onsetPrecision)} | ${formatPercent(metrics.onsetRecall)} | ${formatPercent(metrics.onsetF1)} |`,
     '',
     '## Onset To Accept Alignment',
     '| fixture | expected notes | detected onsets | accepted notes | missing onsets | missing accepts | mismatches | avg onset->accept | first issue |',
