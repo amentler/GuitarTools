@@ -9,13 +9,14 @@ import {
   updateSheetMusicMatchState,
 } from '../../js/games/sheetMusicReading/sheetMusicRecognition.js';
 import {
-  createOnsetGateState,
-  updateOnsetGate,
-} from '../../js/shared/audio/noteOnsetGate.js';
+  createGuitarOnsetState,
+  updateGuitarOnsetDetector,
+} from '../../js/shared/audio/guitarOnsetDetector.js';
+import { computeDbSpectrum } from './chordHpcpExtraction.js';
 
 const SEQUENCES_DIR = join(process.cwd(), 'tests/fixtures/sequences');
 export const SHEET_FINGERPRINT_ANALYZE_INTERVAL_MS = 50;
-export const SHEET_FINGERPRINT_ONSET_FRAME_SIZE = 2048;
+export const SHEET_FINGERPRINT_ONSET_FRAME_SIZE = 4096;
 export const SHEET_FINGERPRINT_POSITIVE_FIXTURE_FILES = [
   'open-strings/eeeeaaaaddddgggg.wav',
   'open-strings/medium.wav',
@@ -76,21 +77,21 @@ function normalizeFrameForSheetMusicReading(frameResult) {
     : frameResult;
 }
 
-function countRmsOnsets(samples, sampleRate, options = {}) {
+function countGuitarOnsets(samples, sampleRate, options = {}) {
   const frameSize = options.onsetFrameSize ?? SHEET_FINGERPRINT_ONSET_FRAME_SIZE;
   const hopSize = options.onsetHopSize ?? Math.max(1, Math.round(
     sampleRate * ((options.analyzeIntervalMs ?? SHEET_FINGERPRINT_ANALYZE_INTERVAL_MS) / 1000),
   ));
   const timestampsMs = [];
-  let onsetGateState = createOnsetGateState();
+  let onsetState = createGuitarOnsetState();
 
   for (let offset = 0; offset + frameSize <= samples.length; offset += hopSize) {
-    const result = updateOnsetGate(
-      onsetGateState,
-      samples.subarray(offset, offset + frameSize),
-      options.onsetGateOptions,
-    );
-    onsetGateState = result.nextState;
+    const frame = samples.subarray(offset, offset + frameSize);
+    const result = updateGuitarOnsetDetector(onsetState, {
+      frequencyData: computeDbSpectrum(frame, frameSize),
+      samples: frame,
+    }, options.onsetDetectorOptions);
+    onsetState = result.nextState;
     if (result.event === 'onset') {
       timestampsMs.push(Math.round((offset / sampleRate) * 1000));
     }
@@ -217,7 +218,7 @@ function evaluateFixture(fixture, options = {}) {
 
   const { samples, sampleRate } = readWavFile(fixture.wavPath);
   const result = runSheetMusicSequenceSimulation(samples, sampleRate, fixture.expectedNotes, options);
-  const onsetResult = countRmsOnsets(samples, sampleRate, options);
+  const onsetResult = countGuitarOnsets(samples, sampleRate, options);
   const onsetDelta = onsetResult.count - fixture.expectedNotes.length;
   return {
     fixture,
@@ -365,7 +366,7 @@ export function formatSheetMusicSequenceFingerprintReport(report) {
     `- onset count ratio: ${formatPercent(metrics.onsetCountRatio)}`,
     `- frame cadence: ${SHEET_FINGERPRINT_ANALYZE_INTERVAL_MS}ms`,
     '',
-    '## RMS Onset Count',
+    '## Guitar Onset Count',
     '| fixture | expected notes | detected onsets | delta | status | onset times |',
     '|---|---:|---:|---:|---|---|',
     ...cases.filter(row => !row.skipped).map(formatOnsetCase),

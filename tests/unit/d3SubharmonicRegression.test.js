@@ -27,7 +27,7 @@
 // Existing test coverage that this complements:
 //   fastNoteMatcherAudio.test.js  → only the CENTER window (steady-state sustain)
 //   notePlayingAudioRegression.test.js → only G3 acceptance, never D3
-//   noteOnsetGateAudio.test.js    → onset events only, not pitch accuracy
+//   guitarOnsetDetector.test.js   → onset events only, not pitch accuracy
 
 import { describe, it, expect } from 'vitest';
 import { join, dirname } from 'path';

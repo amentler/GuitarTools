@@ -1,25 +1,37 @@
-# Plan: Sheet-Music-Onset-Reparatur
+# Plan: Sheet-Music-Guitar-Onset-Reparatur
 
 **Erstellt:** 2026-05-10  
-**Status:** Analyse- und Reparaturplan — noch nicht implementiert
+**Neu geschrieben:** 2026-05-10  
+**Status:** Analyse- und Reparaturplan fuer den echten Uebungs-Onset-Pfad
 
 ---
 
 ## Ziel
 
-Die Onset-Erkennung fuer Sheet-Music-Sequenzen soll zuerst stabilisiert werden,
-bevor Pitch-/Accept-Logik weiter optimiert wird. Ziel ist, dass `sfp` klar zeigt:
+Die Uebung `Noten lesen` soll schnelle und legato gespielte Gitarrenanschlaege
+zuverlaessiger als neue Onsets erkennen.
 
-- wie viele Anschlaege in einer Sequenz erkannt werden,
-- an welchen Zeitpunkten sie erkannt werden,
-- ob ein fehlgeschlagener Sequence-Fingerprint primaer an fehlenden Onsets oder an
-  fehlenden Pitch-Accepts liegt.
+Massgeblich ist nicht mehr der alte RMS-`noteOnsetGate`, sondern der echte
+Produktpfad:
+
+1. `sheetMusicReading.js` liest alle 50 ms ein `AnalyserNode`-Frame.
+2. `guitarOnsetDetector.js` bewertet Time-Domain-RMS plus Frequenzspektrum.
+3. Erst nach `event === 'onset'` wird `awaitingOnset` geloescht.
+4. Pitch-/Accept-Logik darf danach entscheiden, ob die aktuelle Note passt.
+
+`npm run sfp` soll deshalb fuer Sequenzen nur noch den Guitar-Onset-Detector
+als Onset-Wahrheit ausweisen. Pitch-/Accept-Probleme bleiben sichtbar, sind
+aber fuer diesen Plan nachrangig.
 
 ---
 
 ## Aktueller Wissensstand
 
-`npm run sfp` zeigt aktuell:
+`npm run sfp` nutzt fuer den Sequence-Onset-Count jetzt
+`updateGuitarOnsetDetector()` mit 4096-Sample-Frames, 50-ms-Hop und per FFT
+berechnetem dB-Spektrum.
+
+Aktueller Stand:
 
 | Bereich | Stand |
 |---|---:|
@@ -28,31 +40,34 @@ bevor Pitch-/Accept-Logik weiter optimiert wird. Ziel ist, dass `sfp` klar zeigt
 | Sequence failed | 3 |
 | Accepted notes | 100/128 |
 | Note recall | 78.1% |
-| Detected RMS onsets | 130/128 |
-| Onset count ratio | 101.6% |
+| Detected guitar onsets | 89/128 |
+| Onset count ratio | 69.5% |
 
-### Problematische Fixtures
+### Guitar-Onset-Counts
 
-| Fixture | Erwartete Noten | Erkannte Onsets | Akzeptierte Noten | Befund |
+| Fixture | Erwartete Noten | Guitar-Onsets | Delta | Status |
 |---|---:|---:|---:|---|
-| `open-strings/fast.wav` | 16 | 5 | 6 | Primaer Onset-Problem: zu wenige Onsets erkannt. |
-| `open-strings/aeaedgdgbebeabab.wav` | 16 | 12 | 5 | Gemischt: erst fehlende Accepts ab Note 6, spaeter fehlende Onsets ab Note 13. |
-| `sheet-music-reading/4-4_40bpm_EBGDA_1jtn8.wav` | 16 | 20 | 9 | Eher Pitch-/Accept-Problem: Onsets sind vorhanden, Accepts fehlen ab Note 10. |
+| `open-strings/aeaedgdgbebeabab_slow.wav` | 16 | 7 | -9 | under |
+| `open-strings/aeaedgdgbebeabab.wav` | 16 | 5 | -11 | under |
+| `open-strings/eeeeaaaaddddgggg.wav` | 16 | 16 | 0 | match |
+| `open-strings/fast.wav` | 16 | 1 | -15 | under |
+| `open-strings/medium.wav` | 16 | 16 | 0 | match |
+| `open-strings/slow.wav` | 16 | 14 | -2 | under |
+| `sheet-music-reading/4-4_40bpm_EBGDA_1jtn8.wav` | 16 | 15 | -1 | under |
+| `sheet-music-reading/4-4_40bpm_EGADB_9low6.wav` | 16 | 15 | -1 | under |
 
 ### Interpretation
 
-- `fast.wav` ist der wichtigste Onset-Reparaturfall, weil nur 5 von 16
-  Anschlaegen erkannt werden.
-- Die aktuelle Sequence-Erkennung ist nicht hart onset-gated: `fast.wav` kann
-  mehr Accepts als gezaehlte Onsets haben. Das ist als Diagnose akzeptabel,
-  muss aber bei der Interpretation beachtet werden.
-- Mehrere Fixtures ueberzaehlen Onsets. Die Reparatur darf also nicht nur
-  empfindlicher werden; sie muss schnelle echte Reattacks besser erkennen,
-  ohne Sustain/Decay-Rauschen als Extra-Onsets zu zaehlen.
-- Ein absoluter `minRms` ist wahrscheinlich nur als Noise-Floor geeignet. Der
-  eigentliche Onset sollte relativ zum lokalen Verlauf erkannt werden:
-  Energieanstieg, Spektral-Flux, neue aktive Frequenzbaender und Reattack
-  waehrend ausklingendem Sustain.
+- Das alte Bild "zu viele RMS-Onsets" war fuer die echte Uebung irrefuehrend.
+- Der echte Guitar-Onset-Detector zaehlt aktuell eher zu wenig als zu viel.
+- `fast.wav` ist der Hauptfall: nur der erste Anschlag wird erkannt.
+- `aeaedgdgbebeabab.wav` und besonders die Slow-Variante zeigen, dass der
+  Detector Reattacks waehrend ausklingendem Sustain oft verpasst.
+- `medium.wav` und `eeeeaaaaddddgggg.wav` sind wichtige Guardrails, weil sie
+  mit dem echten Detector exakt `16/16` treffen.
+- `sheet-music-reading/4-4_40bpm_EBGDA_1jtn8.wav` bleibt teilweise ein
+  Pitch-/Accept-Fall, ist aber fuer diesen Plan nur als Onset-Guardrail
+  relevant.
 
 ---
 
@@ -60,119 +75,148 @@ bevor Pitch-/Accept-Logik weiter optimiert wird. Ziel ist, dass `sfp` klar zeigt
 
 | Modul | Rolle |
 |---|---|
-| `js/shared/audio/noteOnsetGate.js` | RMS-basierter Onset-Gate fuer Note-/Sequenztests. |
-| `js/shared/audio/guitarOnsetDetector.js` | Spektral-/Flux-basierter Gitarren-Onset-Detector. |
-| `tests/helpers/sheetMusicSequenceFingerprint.js` | `sfp`-Sequenzdiagnose, Onset-Counts und Onset/Accept-Alignment. |
-| `tests/unit/noteOnsetGateAudio.test.js` | Reale Audio-Regressionsfaelle fuer Onset-Gating. |
-| `tests/unit/sheetMusicSequenceFingerprint.test.js` | Golden/Regression fuer aktuell gruen erkannte Sequenzen. |
+| `js/shared/audio/guitarOnsetDetector.js` | Einziger relevante Onset-Detector fuer `Noten lesen` und `Ton spielen`. |
+| `js/games/sheetMusicReading/sheetMusicReading.js` | Echter Uebungscontroller: setzt `awaitingOnset` anhand des Guitar-Onsets. |
+| `tests/helpers/sheetMusicSequenceFingerprint.js` | `sfp`-Sequenzdiagnose; zaehlt jetzt Guitar-Onsets statt RMS-Gate-Onsets. |
+| `tests/helpers/chordHpcpExtraction.js` | Liefert `computeDbSpectrum()` fuer testseitige Frequenzdaten. |
+| `tests/unit/guitarOnsetDetector.test.js` | Unit-Tests fuer Detector-Grundverhalten. |
+| `tests/unit/sheetMusicSequenceFingerprint.test.js` | Guardrail fuer aktuell gruene Sequenzen. |
+| `tests/e2e/sheet-music-reading-*.spec.js` | Realitaetsnahe Browserpfade mit Chromium-Fake-Mikrofon. |
+
+Der alte RMS-`noteOnsetGate`-Pfad wurde aus der Anwendung entfernt. Gemeinsame
+RMS-Berechnung liegt jetzt neutral in `js/shared/audio/rms.js`.
 
 ---
 
-## Todos: Analysen
+## Anforderungen
 
-- [ ] **A1: Onset-Trace pro problematischem Fixture ausgeben**
-  - Fuer `fast.wav` und `aeaedgdgbebeabab.wav` pro 50ms-Frame loggen:
-    `timeMs`, `rms`, `baselineRms`, `armThreshold`, `event`, `wasAboveThreshold`,
-    `cooldownFramesRemaining`.
-  - Ziel: erkennen, ob der Gate wegen zu hoher Baseline, Cooldown, fehlendem
-    Release oder zu niedrigem RMS-Anstieg nicht feuert.
-
-- [ ] **A2: Vergleich RMS-Gate vs. Guitar-Onset-Detector**
-  - Gleiche Fixtures mit `noteOnsetGate` und `guitarOnsetDetector` zaehlen.
-  - Ziel: pruefen, ob der spektrale Detector schnelle Reattacks besser erkennt
-    oder ob er die bekannten Overcount-Faelle verschlechtert.
-
-- [ ] **A3: Reattack-Fenster analysieren**
-  - Fuer aufeinanderfolgende erwartete Noten die Zeitabstaende der Soll-Sequenz
-    mit den erkannten Onset-Zeitpunkten vergleichen.
-  - Ziel: herausfinden, ob `cooldownFrames`, `releaseFactor` oder
-    `reattackMinDelta` schnelle Sequenzen blockieren.
-
-- [ ] **A4: Fehlende-Onset-Faelle isolieren**
-  - Fuer `fast.wav` pro erwarteter Note ein lokales Zeitfenster um die
-    erwartete Position analysieren.
-  - Ziel: zwischen "kein physischer Anschlag im Audio", "Anschlag vorhanden,
-    aber RMS-Gate sieht ihn nicht" und "Anschlag verschmilzt mit vorherigem
-    Sustain" unterscheiden.
-
-- [ ] **A5: Overcount-Faelle als Guardrails aufnehmen**
-  - `medium.wav`, `slow.wav`, `sheet-music-reading/*` als Gegenbeispiele
-    beobachten, weil sie aktuell eher zu viele Onsets liefern.
-  - Ziel: jede Reparatur gegen Under- und Overcount gleichzeitig messen.
+- `sfp` muss weiterhin direkt zeigen, wie viele echte Guitar-Onsets je Sequenz
+  erkannt werden und wann sie auftreten.
+- Onset-Arbeit darf nicht an Pitch-/Accept-Tuning gekoppelt werden.
+- Verbesserungen muessen schnelle Reattacks erkennen, ohne die exakt passenden
+  Guardrails in Overcount-Faelle zu verwandeln.
+- Der echte Produktdetector bleibt die Quelle der Wahrheit. Neue Diagnose darf
+  keine parallele Onset-Logik einfuehren, die die Uebung nicht nutzt.
 
 ---
 
-## Todos: Reparaturoptionen
+## Guardrails
 
-- [ ] **R1: Relatives RMS-Reattack-Kriterium verbessern**
-  - `minRms` nur als Noise-Floor behalten.
-  - Onset/Reattack staerker ueber relativen Anstieg gegen lokale Floor-/Decay-
-    Kurve entscheiden.
-  - Kandidaten:
-    - kuerzere lokale RMS-Historie,
-    - adaptive Baseline,
-    - Reattack relativ zu `aboveThresholdFloorRms`,
-    - begrenzter Decay-Tracker fuer Sustain.
+### Muss besser werden
 
-- [ ] **R2: Spektral-Flux als zusaetzliches Onset-Signal nutzen**
-  - `guitarOnsetDetector` oder dessen Kernlogik fuer Sheet-Sequenzen evaluieren.
-  - Vorteil: erkennt ploetzlich hinzukommende Frequenzanteile auch dann, wenn
-    Gesamtlautstaerke nicht stark steigt.
-  - Risiko: koennte bei Saitenwechseln oder Nebengeraeuschen ueberzaehlen.
+- `open-strings/fast.wav`
+  - Start: `1/16` Guitar-Onsets.
+  - Ziel: deutlich mehr erkannte Anschlaege; erste sinnvolle Schwelle `>= 8/16`.
 
-- [ ] **R3: Hybrid-Onset-Detector bauen**
-  - Onset, wenn mindestens eines gilt:
-    - signifikanter relativer RMS-Reattack,
-    - signifikanter spektraler Flux,
-    - neue aktive Frequenzbaender bei ausreichendem Noise-Floor.
-  - Danach Debounce/Cooldown anwenden, aber schnell genug fuer `fast.wav`.
+- `open-strings/aeaedgdgbebeabab.wav`
+  - Start: `5/16` Guitar-Onsets.
+  - Ziel: deutlich mehr Reattacks im Mittel-/Endteil; erste sinnvolle Schwelle
+    `>= 10/16`.
 
-- [ ] **R4: Cooldown dynamisch machen**
-  - Cooldown nicht statisch in Frames, sondern abhaengig von Tempo/Abstand oder
-    vom tatsaechlichen Signal-Release.
-  - Ziel: schnelle Noten nicht blockieren, aber Sustain-Flattern nicht zaehlen.
+- `open-strings/aeaedgdgbebeabab_slow.wav`
+  - Start: `7/16` Guitar-Onsets.
+  - Ziel: Reattacks waehrend Sustain besser erkennen; erste sinnvolle Schwelle
+    `>= 12/16`.
 
-- [ ] **R5: Onset-Gate in Sequence-Simulation optional erzwingen**
-  - Fuer Diagnose separat testen: Sequence-Accepts nur direkt nach Onset
-    erlauben.
-  - Ziel: klaeren, wie viel der aktuellen Sequence-Erkennung ohne Onset-Gating
-    durch Sustain/Pitch-Frames akzeptiert wird.
-  - Nicht sofort als Produktverhalten aktivieren; zuerst als Diagnosemodus.
+### Darf nicht schlechter werden
+
+- `open-strings/eeeeaaaaddddgggg.wav`: bleibt nahe `16/16`.
+- `open-strings/medium.wav`: bleibt nahe `16/16`.
+- `sheet-music-reading/*`: keine starken Overcounts; Zielkorridor `14..18`.
+
+---
+
+## Analysen
+
+- [ ] **A1: Guitar-Onset-Trace fuer Problem-Fixtures**
+  - Fuer `fast.wav`, `aeaedgdgbebeabab.wav` und
+    `aeaedgdgbebeabab_slow.wav` pro 50-ms-Frame ausgeben:
+    `timeMs`, `rms`, `broadbandFlux`, `bandRatio`, `activeBandRatio`,
+    `cooldownFramesRemaining`, `event`.
+  - Ziel: erkennen, ob Onsets wegen Flux-Schwelle, Band-Ratio, RMS-Attack,
+    Cooldown oder fehlender spektraler Aenderung ausfallen.
+
+- [ ] **A2: Erwartete Notenfenster gegen Onset-Zeitpunkte legen**
+  - Pro Fixture erwartete Note `#1..#16` mit naechstem erkannten Guitar-Onset
+    vergleichen.
+  - Ziel: echte systematische Luecken sichtbar machen, statt nur Gesamtcounts
+    zu betrachten.
+
+- [ ] **A3: Reattack-vs-Sustain-Faelle isolieren**
+  - Frames direkt vor und nach vermuteten fehlenden Reattacks vergleichen.
+  - Ziel: entscheiden, ob ein relativer Flux-/RMS-Anstieg vorhanden ist, aber
+    zu streng bewertet wird.
+
+- [ ] **A4: Guardrail-Trace fuer Match-Fixtures**
+  - `medium.wav` und `eeeeaaaaddddgggg.wav` tracebar machen.
+  - Ziel: verstehen, warum diese exakt funktionieren, damit Reparaturen diese
+    Eigenschaften nicht zerstoeren.
+
+---
+
+## Reparaturoptionen
+
+- [ ] **R1: Reattack-Kriterium im Guitar-Onset-Detector verbessern**
+  - Fuer Sustain-Frames einen lokalen Floor/Decay-Tracker nutzen.
+  - Reattack nicht nur als absoluter RMS-Sprung, sondern als relativer
+    Anstieg gegen den lokalen Sustain-Floor bewerten.
+  - Risiko: zu empfindlich bei Nebengeraeuschen oder Saitenresonanzen.
+
+- [ ] **R2: Spektral-Flux fuer schnelle Reattacks lokaler bewerten**
+  - Aktuell kann ein neuer Anschlag untergehen, wenn viele Baender durch
+    vorheriges Sustain bereits aktiv sind.
+  - Moegliche Richtung: positive Flux-Spitzen gegen eine kurze lokale Historie
+    statt gegen starre globale Schwellwerte bewerten.
+
+- [ ] **R3: Active-Band-Neuheit ergaenzen**
+  - Nicht nur "wie viele Bins wachsen", sondern ob neue relevante Baender
+    hinzukommen oder vorhandene Baender deutlich neu anziehen.
+  - Besonders interessant bei Saitenwechseln waehrend Sustain.
+
+- [ ] **R4: Cooldown nur dann blockierend halten, wenn das Signal stabil ist**
+  - Cooldown verhindert Doppeltaehlung, kann aber schnelle echte Anschlaege
+    unterdruecken.
+  - Moegliche Richtung: innerhalb des Cooldowns starke Spektral-Neuheit als
+    Reattack zulassen.
 
 ---
 
 ## Akzeptanzkriterien
 
-- [ ] `fast.wav` erkennt deutlich mehr echte Onsets als aktuell 5/16, ohne dass
-  die Overcount-Faelle stark schlechter werden.
-- [ ] `open-strings/aeaedgdgbebeabab.wav` verbessert sich mindestens bei den
-  fehlenden Onsets ab Note 13.
-- [ ] Aktuell gruene Sequence-Fixtures bleiben im Sequence-Fingerprint gruen.
-- [ ] `sfp` zeigt weiterhin pro Fixture:
-  - erkannte Onsets,
-  - Onset-Zeitpunkte,
-  - Onset/Accept-Alignment,
-  - konkrete Issues.
-- [ ] Es gibt mindestens einen gezielten Regressionstest fuer `fast.wav` oder
-  einen isolierten Onset-Count-Test mit realer Fixture.
+- [x] `npm run sfp` nutzt im Sequence-Onset-Teil ausschliesslich den echten
+  `guitarOnsetDetector`.
+- [ ] `fast.wav` steigt von `1/16` auf mindestens `8/16` Guitar-Onsets.
+- [ ] `aeaedgdgbebeabab.wav` steigt von `5/16` auf mindestens `10/16`.
+- [ ] `aeaedgdgbebeabab_slow.wav` steigt von `7/16` auf mindestens `12/16`.
+- [ ] `medium.wav` und `eeeeaaaaddddgggg.wav` bleiben im Zielkorridor
+  `15..17`.
+- [ ] `sheet-music-reading/*` bleiben im Zielkorridor `14..18`.
+- [ ] `tests/unit/guitarOnsetDetector.test.js` und
+  `tests/unit/sheetMusicSequenceFingerprint.test.js` laufen gruen.
+- [ ] Mindestens ein Regressionstest beschreibt den verbesserten Reattack-Fall
+  mit realer Sequenz-Fixture oder einem daraus isolierten Trace-Ausschnitt.
 
 ---
 
 ## Vorgeschlagene Reihenfolge
 
-1. A1 und A2 implementieren: Trace/Comparator ohne Verhaltensaenderung.
-2. A3/A4 auswerten: konkrete Ursache fuer `fast.wav` festhalten.
-3. R1 oder R2 als kleinste Reparatur testen.
-4. Guardrails aus A5 laufen lassen.
-5. Erst danach Hybrid/Dynamic-Cooldown angehen, falls einfache Reparatur nicht reicht.
+1. Trace-Ausgabe fuer `guitarOnsetDetector` in `sfp` oder einem gezielten
+   Diagnose-Skript ergaenzen.
+2. `fast.wav`, `aeaedgdgbebeabab.wav`, `aeaedgdgbebeabab_slow.wav`,
+   `medium.wav` und `eeeeaaaaddddgggg.wav` vergleichen.
+3. Eine kleine Detector-Aenderung testen: zuerst R1 oder R2, nicht alles auf
+   einmal.
+4. `npm run sfp` nach jeder Variante als Entscheidungsgrundlage nutzen.
+5. Erst wenn die Onset-Counts stabil besser sind, Pitch-/Accept-Themen wieder
+   separat betrachten.
 
 ---
 
 ## Offene Fragen
 
-- Soll der Produktpfad fuer Sheet-Music-Reading spaeter wirklich onset-gated
-  werden, oder bleibt Onset vorerst nur Diagnose?
-- Welches Ziel ist wichtiger: `fast.wav` moeglichst voll erkennen oder Overcount
-  bei langsameren Fixtures minimieren?
-- Sollen Import-Sanity-Checks fuer WAVs separat in den Fixture-Import wandern,
-  inklusive Clipping, Dauer, Sample-Rate und Fuehrungs-/Endstille?
+- Sollen die Mindestziele (`fast >= 8/16`, `aeaed... >= 10/16`) direkt als
+  harte Tests codiert werden oder vorerst nur als SFP-Entscheidungskriterien
+  dienen?
+- Reicht ein testseitiger FFT-Emulator fuer `sfp`, oder sollen Sequenz-Onsets
+  langfristig ueber Chromium-Analyser-Goldens wie bei den Single-Note-Onsets
+  gemessen werden?
