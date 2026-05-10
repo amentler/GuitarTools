@@ -1,1 +1,1 @@
-Version 0.121 | 2026-05-10 16:03 | 5ba2ebe | feat: add Essentia PitchYin sheet music recognition strategy with SFP integration
+Version 0.122 | 2026-05-10 20:43 | b46db95 | chore: sync sw.js and version.txt
