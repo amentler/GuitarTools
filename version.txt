@@ -1,1 +1,1 @@
-Version 0.120 | 2026-05-10 15:29 | 6d36c57 | feat: add Essentia WASM loader for Node.js test context
+Version 0.121 | 2026-05-10 16:03 | 5ba2ebe | feat: add Essentia PitchYin sheet music recognition strategy with SFP integration
