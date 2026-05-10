@@ -18,6 +18,7 @@ export const SHEET_FINGERPRINT_POSITIVE_FIXTURE_FILES = [
   'open-strings/eeeeaaaaddddgggg.wav',
   'open-strings/medium.wav',
   'open-strings/slow.wav',
+  'sheet-music-reading/4-4_40bpm_EGADB_9low6.wav',
 ];
 
 function safeDivide(num, den) {

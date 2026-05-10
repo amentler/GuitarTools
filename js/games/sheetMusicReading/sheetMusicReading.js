@@ -501,7 +501,7 @@ export function createSheetMusicReadingFeature() {
 
   function makeManifest(bars, bpm, timeSig) {
     return {
-      notes: bars.flat().map(n => ({ name: n.name, octave: n.octave })),
+      notes: bars.flat().map(n => `${n.name}${n.octave}`),
       bpm,
       timeSig,
       notesPerBeat: 1,

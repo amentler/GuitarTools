@@ -28,7 +28,14 @@ const playbackBarDestroy = vi.fn();
 const requestMicrophoneStream = vi.fn();
 const openAudioSession = vi.fn();
 const closeAudioSession = vi.fn();
+const recorderStart = vi.fn();
+const recorderStop = vi.fn();
+const recorderCancel = vi.fn();
+const buildZip = vi.fn(() => new Uint8Array([1, 2, 3]));
+const downloadBlob = vi.fn();
 let mockedRowIndex = 0;
+let recorderRecording = false;
+let recorderWav = null;
 
 vi.mock('../../js/games/sheetMusicReading/sheetMusicSVG.js', () => ({
   renderScore,
@@ -77,6 +84,22 @@ vi.mock('../../js/shared/audio/audioSessionService.js', () => ({
   closeAudioSession,
 }));
 
+vi.mock('../../js/games/sheetMusicReading/sheetMusicRecorder.js', () => ({
+  createRecorder: vi.fn(() => ({
+    get isRecording() {
+      return recorderRecording;
+    },
+    start: recorderStart,
+    stop: recorderStop,
+    cancel: recorderCancel,
+  })),
+}));
+
+vi.mock('../../js/games/sheetMusicReading/sheetMusicZip.js', () => ({
+  buildZip,
+  downloadBlob,
+}));
+
 vi.mock('../../js/games/sheetMusicReading/sheetMusicLogic.js', async () => {
   const actual = await vi.importActual('../../js/games/sheetMusicReading/sheetMusicLogic.js');
   return {
@@ -101,6 +124,10 @@ function buildDom() {
       <button id="btn-show-tab">Tab</button>
       <button id="btn-endless-mode">Endless</button>
       <button id="btn-sheet-play">▶ Play</button>
+      <button id="btn-record">Record</button>
+      <button id="btn-record-stop" class="u-hidden">Stop Recording</button>
+      <button id="btn-record-cancel" class="u-hidden">Cancel Recording</button>
+      <button id="btn-download-recordings" class="u-hidden">Download</button>
       <input id="sheet-music-bpm-slider" value="80" />
       <span id="sheet-music-bpm-label">80</span>
       <select id="sheet-music-time-sig">
@@ -204,12 +231,31 @@ describe('SheetMusicReading controller behavior', () => {
     });
     closeAudioSession.mockReset();
     closeAudioSession.mockResolvedValue(undefined);
+    recorderRecording = false;
+    recorderWav = new Uint8Array([82, 73, 70, 70]);
+    recorderStart.mockReset();
+    recorderStart.mockImplementation(async () => {
+      recorderRecording = true;
+    });
+    recorderStop.mockReset();
+    recorderStop.mockImplementation(() => {
+      recorderRecording = false;
+      return recorderWav;
+    });
+    recorderCancel.mockReset();
+    recorderCancel.mockImplementation(() => {
+      recorderRecording = false;
+    });
+    buildZip.mockClear();
+    downloadBlob.mockClear();
+    vi.stubGlobal('confirm', vi.fn(() => false));
     ({ createSheetMusicReadingFeature } = await import('../../js/games/sheetMusicReading/sheetMusicReading.js'));
   });
 
   afterEach(() => {
     localStorage.clear();
     delete globalThis.__GT_SHEET_MUSIC_READING_BARS__;
+    vi.unstubAllGlobals();
   });
 
   it('mount renders score and syncs initial controls from persisted state', () => {
@@ -342,5 +388,34 @@ describe('SheetMusicReading controller behavior', () => {
     expect(container.querySelectorAll('.tab-wrapper')).toHaveLength(3);
 
     vi.useRealTimers();
+  });
+
+  it('exports recording manifests with compact octave-aware note strings', async () => {
+    globalThis.__GT_SHEET_MUSIC_READING_BARS__ = [[
+      { name: 'E', octave: 4, vfKey: 'e/5', string: 1, fret: 0 },
+      { name: 'B', octave: 3, vfKey: 'b/4', string: 2, fret: 0 },
+    ]];
+    localStorage.setItem('sheetMusic_bpm', '40');
+
+    const feature = createSheetMusicReadingFeature();
+    feature.mount();
+
+    document.getElementById('btn-record').click();
+    await Promise.resolve();
+    document.getElementById('btn-record-stop').click();
+    document.getElementById('btn-download-recordings').click();
+
+    const files = buildZip.mock.calls.at(-1)[0];
+    const manifestFile = files.find(file => file.name.endsWith('.json'));
+    const manifest = JSON.parse(new TextDecoder().decode(manifestFile.data));
+
+    expect(manifest.notes).toEqual(['E4', 'B3']);
+    expect(manifest.bpm).toBe(40);
+    expect(manifest.category).toBe('sheet-music-reading');
+    expect(downloadBlob).toHaveBeenCalledWith(
+      expect.any(Uint8Array),
+      expect.stringMatching(/^noten-lesen-aufnahmen-\d+\.zip$/),
+      'application/zip',
+    );
   });
 });

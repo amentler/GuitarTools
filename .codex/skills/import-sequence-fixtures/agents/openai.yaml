@@ -1,0 +1,4 @@
+interface:
+  display_name: "Import Sequence Fixtures"
+  short_description: "Import sheet-music sequence fixture ZIPs from the drop folder."
+  default_prompt: "Import new sheet-music sequence fixtures from tests/fixtures/dropsequence."
