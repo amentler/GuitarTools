@@ -7,6 +7,7 @@ import { noteToFrequency } from '../../shared/audio/guitarPitchDetection.js';
 
 export const SHEET_MUSIC_RECOGNITION_STRATEGY_KEYS = {
   FAST_NOTE_MATCHER: 'fast-note-matcher',
+  ESSENTIA_PITCH_YIN: 'essentia-pitch-yin',
 };
 
 export const SHEET_MUSIC_CENTS_TOLERANCE = 70;
@@ -116,7 +117,25 @@ export const SHEET_MUSIC_RECOGNITION_STRATEGIES = [
     classifyFrame: classifyFastNoteMatcherSheetMusicFrame,
     getRecommendedFftSize,
   },
+  {
+    key: SHEET_MUSIC_RECOGNITION_STRATEGY_KEYS.ESSENTIA_PITCH_YIN,
+    label: 'Essentia PitchYin',
+    description: 'Pitch-Erkennung via Essentia.js PitchYin (WASM). Wird beim ersten Start geladen.',
+    classifyFrame(samples, sampleRate, targetPitch, options = {}) {
+      if (!_essentiaStrategyInstance) {
+        return { status: 'unsure', detectedPitch: null, hz: null, cents: null };
+      }
+      return _essentiaStrategyInstance.classifyFrame(samples, sampleRate, targetPitch, options);
+    },
+    getRecommendedFftSize,
+  },
 ];
+
+let _essentiaStrategyInstance = null;
+
+export function setEssentiaSheetMusicStrategyInstance(instance) {
+  _essentiaStrategyInstance = instance;
+}
 
 export function getSheetMusicRecognitionStrategies() {
   return SHEET_MUSIC_RECOGNITION_STRATEGIES;

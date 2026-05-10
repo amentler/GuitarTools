@@ -28,6 +28,7 @@ import {
   resolveSheetMusicRecognitionStrategy,
   SHEET_MUSIC_CENTS_TOLERANCE,
   updateSheetMusicMatchState,
+  setEssentiaSheetMusicStrategyInstance,
 } from './sheetMusicRecognition.js';
 import {
   resolveGuitarOnsetStrategy,
@@ -40,6 +41,8 @@ import {
 } from '../../shared/audio/audioSessionService.js';
 import { createRecorder } from './sheetMusicRecorder.js';
 import { buildZip, downloadBlob } from './sheetMusicZip.js';
+import { getEssentia } from '../chordExerciseEssentia/essentiaLoader.js';
+import { createEssentiaSheetMusicStrategy } from './essentiaSheetMusicStrategy.js';
 
 // Number of bars per rendered row (matches the 4-bar VexFlow layout).
 const BARS_PER_ROW = 4;
@@ -49,6 +52,26 @@ const ENDLESS_SCROLL_SHIFT_DELAY_MS = 420;
 // Minimum notes in the pool before showing the "too few notes" warning.
 const MIN_POOL_SIZE = 3;
 const ANALYZE_INTERVAL_MS = 50;
+
+// Preload Essentia WASM in the background so it is ready when the user starts.
+getEssentia().then(ess => {
+  setEssentiaSheetMusicStrategyInstance(createEssentiaSheetMusicStrategy(ess));
+}).catch(err => {
+  console.warn('[sheetMusicReading] Essentia nicht verfügbar:', err.message);
+});
+
+function updateStrategyStatus() {
+  const pitchKey = getSetting(SETTING_KEYS.SHEET_MUSIC_RECOGNITION_STRATEGY);
+  const onsetKey = getSetting(SETTING_KEYS.SHEET_MUSIC_ONSET_STRATEGY);
+
+  const pitchLabel = pitchKey ?? '—';
+  const onsetLabel = onsetKey ?? '—';
+
+  const pitchEl = document.getElementById('sheet-music-strategy-pitch');
+  const onsetEl = document.getElementById('sheet-music-strategy-onset');
+  if (pitchEl) pitchEl.textContent = pitchLabel;
+  if (onsetEl) onsetEl.textContent = onsetLabel;
+}
 
 function resolveInjectedBars() {
   const injectedBars = globalThis.__GT_SHEET_MUSIC_READING_BARS__;
@@ -927,6 +950,7 @@ export function createSheetMusicReadingFeature() {
     syncSettingsUI();
     syncRecordingUI();
     updateFeedback();
+    updateStrategyStatus();
     if (ui.permission) {
       ui.permission.classList.add('u-hidden');
       ui.permission.textContent = '';

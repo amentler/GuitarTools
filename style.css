@@ -2051,3 +2051,33 @@ input[type="range"] {
 .cr-beat-dot.downbeat.active {
   background: var(--color-accent);
 }
+
+/* ── Strategy Status Bar ─────────────────────────────────────────── */
+.strategy-status {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  margin-top: 1.5rem;
+  padding: 0.5rem 1rem;
+  border-top: 1px solid var(--color-border);
+  font-size: 0.78rem;
+  color: var(--color-text-muted);
+}
+
+.strategy-status__label {
+  font-weight: 600;
+  opacity: 0.7;
+}
+
+.strategy-status__value {
+  font-family: monospace;
+  color: var(--color-text);
+  opacity: 0.85;
+}
+
+.strategy-status__sep {
+  margin: 0 0.4rem;
+  opacity: 0.4;
+}
