@@ -2,18 +2,22 @@ import { existsSync, readdirSync, readFileSync } from 'fs';
 import { basename, dirname, join, relative } from 'path';
 import { readWavFile } from './wavDecoder.js';
 import {
-  classifyFrame,
   createMatchState,
-  getRecommendedFftSize,
 } from '../../js/shared/audio/fastNoteMatcher.js';
 import {
-  SHEET_MUSIC_CENTS_TOLERANCE,
-  softenSheetMusicFrameResult,
+  getSheetMusicRecognitionStrategies,
   updateSheetMusicMatchState,
 } from '../../js/games/sheetMusicReading/sheetMusicRecognition.js';
+import {
+  getGuitarOnsetStrategies,
+  resolveGuitarOnsetStrategy,
+  GUITAR_ONSET_STRATEGY_KEYS,
+} from '../../js/shared/audio/guitarOnsetStrategies.js';
+import { computeDbSpectrum } from './chordHpcpExtraction.js';
 
 const SEQUENCES_DIR = join(process.cwd(), 'tests/fixtures/sequences');
 export const SHEET_FINGERPRINT_ANALYZE_INTERVAL_MS = 50;
+export const SHEET_FINGERPRINT_ONSET_FRAME_SIZE = 4096;
 export const SHEET_FINGERPRINT_POSITIVE_FIXTURE_FILES = [
   'open-strings/eeeeaaaaddddgggg.wav',
   'open-strings/medium.wav',
@@ -21,8 +25,25 @@ export const SHEET_FINGERPRINT_POSITIVE_FIXTURE_FILES = [
   'sheet-music-reading/4-4_40bpm_EGADB_9low6.wav',
 ];
 
+// Manifest tempo fields are recording metadata only. Real takes can be slower,
+// faster, or unsteady, so fingerprint assertions must not depend on declared
+// bpm/tempoBpm or derive exact note timing from it.
+
 function safeDivide(num, den) {
   return den === 0 ? 0 : num / den;
+}
+
+function countOnsetConfusion(row) {
+  const truePositives = Math.min(row.onsetCount, row.expectedCount);
+  return {
+    truePositives,
+    falsePositives: Math.max(0, row.onsetCount - row.expectedCount),
+    falseNegatives: Math.max(0, row.expectedCount - row.onsetCount),
+  };
+}
+
+function formatMs(value) {
+  return Number.isFinite(value) ? `${Math.round(value)}ms` : '-';
 }
 
 function collectWavFiles(dir) {
@@ -60,14 +81,72 @@ export function discoverSheetMusicSequenceFixtures() {
   });
 }
 
-function normalizeFrameForSheetMusicReading(frameResult, targetPitch) {
-  const softened = softenSheetMusicFrameResult(frameResult, targetPitch);
-  return softened.status === 'wrong'
-    ? { ...softened, status: 'unsure' }
-    : softened;
+function normalizeFrameForSheetMusicReading(frameResult) {
+  return frameResult.status === 'wrong'
+    ? { ...frameResult, status: 'unsure' }
+    : frameResult;
+}
+
+function countGuitarOnsets(samples, sampleRate, options = {}) {
+  const frameSize = options.onsetFrameSize ?? SHEET_FINGERPRINT_ONSET_FRAME_SIZE;
+  const hopSize = options.onsetHopSize ?? Math.max(1, Math.round(
+    sampleRate * ((options.analyzeIntervalMs ?? SHEET_FINGERPRINT_ANALYZE_INTERVAL_MS) / 1000),
+  ));
+  const onsetStrategy = options.onsetStrategy
+    ?? resolveGuitarOnsetStrategy(GUITAR_ONSET_STRATEGY_KEYS.GUITAR_ONSET);
+  const timestampsMs = [];
+  let onsetState = onsetStrategy.createState();
+
+  for (let offset = 0; offset + frameSize <= samples.length; offset += hopSize) {
+    const frame = samples.subarray(offset, offset + frameSize);
+    const result = onsetStrategy.update(onsetState, {
+      frequencyData: computeDbSpectrum(frame, frameSize),
+      samples: frame,
+    }, options.onsetDetectorOptions);
+    onsetState = result.nextState;
+    if (result.event === 'onset') {
+      timestampsMs.push(Math.round((offset / sampleRate) * 1000));
+    }
+  }
+
+  return {
+    count: timestampsMs.length,
+    timestampsMs,
+    frameSize,
+    hopSize,
+  };
+}
+
+function buildOnsetAcceptAlignment(fixture, onsetTimestampsMs, result) {
+  return fixture.expectedNotes.map((expectedNote, index) => {
+    const onsetTimeMs = onsetTimestampsMs[index] ?? null;
+    const acceptTimeMs = Number.isFinite(result.acceptTimestamps[index])
+      ? Math.round(result.acceptTimestamps[index] * 1000)
+      : null;
+    const acceptedNote = result.acceptedSequence[index] ?? null;
+    const delayMs = Number.isFinite(onsetTimeMs) && Number.isFinite(acceptTimeMs)
+      ? acceptTimeMs - onsetTimeMs
+      : null;
+    const status = !Number.isFinite(onsetTimeMs) ? 'missing-onset'
+      : !Number.isFinite(acceptTimeMs) ? 'missing-accept'
+      : acceptedNote !== expectedNote ? 'mismatch'
+      : 'aligned';
+
+    return {
+      fixture: fixture.file,
+      index: index + 1,
+      expectedNote,
+      onsetTimeMs,
+      acceptTimeMs,
+      acceptedNote,
+      delayMs,
+      status,
+    };
+  });
 }
 
 export function runSheetMusicSequenceSimulation(samples, sampleRate, targetSequence, options = {}) {
+  const strategy = options.strategy ?? getSheetMusicRecognitionStrategies()[0];
   const acceptedSequence = [];
   const acceptTimestamps = [];
   const frames = [];
@@ -79,7 +158,7 @@ export function runSheetMusicSequenceSimulation(samples, sampleRate, targetSeque
   }
 
   let currentTarget = targetSequence[targetIndex];
-  let fftSize = getRecommendedFftSize(currentTarget, sampleRate);
+  let fftSize = strategy.getRecommendedFftSize(currentTarget, sampleRate);
   const hopSize = options.hopSize ?? Math.max(1, Math.round(
     sampleRate * ((options.analyzeIntervalMs ?? SHEET_FINGERPRINT_ANALYZE_INTERVAL_MS) / 1000),
   ));
@@ -87,10 +166,8 @@ export function runSheetMusicSequenceSimulation(samples, sampleRate, targetSeque
 
   while (offset + fftSize <= samples.length && targetIndex < targetSequence.length) {
     const window = samples.subarray(offset, offset + fftSize);
-    const raw = classifyFrame(window, sampleRate, currentTarget, {
-      tolerateCents: SHEET_MUSIC_CENTS_TOLERANCE,
-    });
-    const effective = normalizeFrameForSheetMusicReading(raw, currentTarget);
+    const raw = strategy.classifyFrame(window, sampleRate, currentTarget);
+    const effective = normalizeFrameForSheetMusicReading(raw);
     const { nextState, event } = updateSheetMusicMatchState(matchState, effective);
     matchState = nextState;
 
@@ -113,7 +190,7 @@ export function runSheetMusicSequenceSimulation(samples, sampleRate, targetSeque
       matchState = createMatchState();
       if (targetIndex < targetSequence.length) {
         currentTarget = targetSequence[targetIndex];
-        fftSize = getRecommendedFftSize(currentTarget, sampleRate);
+        fftSize = strategy.getRecommendedFftSize(currentTarget, sampleRate);
       }
     }
 
@@ -143,11 +220,18 @@ function evaluateFixture(fixture, options = {}) {
       sampleRate: null,
       durationSec: null,
       framesProcessed: 0,
+      onsetCount: 0,
+      onsetDelta: 0,
+      onsetStatus: 'skipped',
+      onsetTimestampsMs: [],
+      onsetAcceptAlignment: [],
     };
   }
 
   const { samples, sampleRate } = readWavFile(fixture.wavPath);
   const result = runSheetMusicSequenceSimulation(samples, sampleRate, fixture.expectedNotes, options);
+  const onsetResult = countGuitarOnsets(samples, sampleRate, options);
+  const onsetDelta = onsetResult.count - fixture.expectedNotes.length;
   return {
     fixture,
     skipped: false,
@@ -157,6 +241,11 @@ function evaluateFixture(fixture, options = {}) {
     acceptedSequence: result.acceptedSequence,
     acceptedCount: result.acceptedSequence.length,
     expectedCount: fixture.expectedNotes.length,
+    onsetCount: onsetResult.count,
+    onsetDelta,
+    onsetStatus: onsetDelta === 0 ? 'match' : (onsetDelta < 0 ? 'under' : 'over'),
+    onsetTimestampsMs: onsetResult.timestampsMs,
+    onsetAcceptAlignment: buildOnsetAcceptAlignment(fixture, onsetResult.timestampsMs, result),
     sampleRate,
     durationSec: samples.length / sampleRate,
     framesProcessed: result.framesProcessed,
@@ -165,16 +254,33 @@ function evaluateFixture(fixture, options = {}) {
   };
 }
 
-export function evaluateSheetMusicSequenceFingerprint(fixtures = discoverSheetMusicSequenceFixtures(), options = {}) {
-  const cases = fixtures.map(fixture => evaluateFixture(fixture, options));
+function summarizeSequenceCases(fixtures, cases, strategy) {
   const evaluated = cases.filter(row => !row.skipped);
   const passed = evaluated.filter(row => row.passed);
   const failed = evaluated.filter(row => !row.passed);
   const skipped = cases.filter(row => row.skipped);
   const expectedNotes = evaluated.reduce((sum, row) => sum + row.expectedCount, 0);
   const acceptedNotes = evaluated.reduce((sum, row) => sum + row.acceptedCount, 0);
+  const detectedOnsets = evaluated.reduce((sum, row) => sum + row.onsetCount, 0);
+  const onsetConfusion = evaluated.reduce((acc, row) => {
+    const rowCounts = countOnsetConfusion(row);
+    return {
+      truePositives: acc.truePositives + rowCounts.truePositives,
+      falsePositives: acc.falsePositives + rowCounts.falsePositives,
+      falseNegatives: acc.falseNegatives + rowCounts.falseNegatives,
+    };
+  }, { truePositives: 0, falsePositives: 0, falseNegatives: 0 });
+  const onsetPrecision = safeDivide(
+    onsetConfusion.truePositives,
+    onsetConfusion.truePositives + onsetConfusion.falsePositives,
+  );
+  const onsetRecall = safeDivide(
+    onsetConfusion.truePositives,
+    onsetConfusion.truePositives + onsetConfusion.falseNegatives,
+  );
 
   return {
+    strategy,
     fixtures,
     cases,
     counts: {
@@ -185,11 +291,77 @@ export function evaluateSheetMusicSequenceFingerprint(fixtures = discoverSheetMu
       skipped: skipped.length,
       expectedNotes,
       acceptedNotes,
+      detectedOnsets,
+      onsetTruePositives: onsetConfusion.truePositives,
+      onsetFalsePositives: onsetConfusion.falsePositives,
+      onsetFalseNegatives: onsetConfusion.falseNegatives,
+      onsetExact: evaluated.filter(row => row.onsetStatus === 'match').length,
+      onsetUnder: evaluated.filter(row => row.onsetStatus === 'under').length,
+      onsetOver: evaluated.filter(row => row.onsetStatus === 'over').length,
     },
     metrics: {
       fixturePassRate: safeDivide(passed.length, evaluated.length),
       noteRecall: safeDivide(acceptedNotes, expectedNotes),
+      onsetCountRatio: safeDivide(detectedOnsets, expectedNotes),
+      onsetPrecision,
+      onsetRecall,
+      onsetF1: safeDivide(2 * onsetPrecision * onsetRecall, onsetPrecision + onsetRecall),
     },
+  };
+}
+
+export function evaluateSheetMusicSequenceFingerprint(fixtures = discoverSheetMusicSequenceFixtures(), options = {}) {
+  const strategies = options.strategies ?? getSheetMusicRecognitionStrategies();
+  const onsetStrategies = options.onsetStrategies ?? getGuitarOnsetStrategies();
+
+  const strategyReports = strategies.map(strategy => {
+    const cases = fixtures.map(fixture => evaluateFixture(fixture, { ...options, strategy }));
+    return summarizeSequenceCases(fixtures, cases, strategy);
+  });
+  const defaultReport = strategyReports[0];
+
+  // Onset strategy reports: evaluate onset detection quality independently
+  // of pitch strategy, always using the default pitch strategy for consistency.
+  const onsetStrategyReports = onsetStrategies.map(onsetStrategy => {
+    const evaluated = fixtures.filter(f => f.expectedNotes.length > 0);
+    const cases = evaluated.map(fixture => {
+      const { samples, sampleRate } = readWavFile(fixture.wavPath);
+      const onsetResult = countGuitarOnsets(samples, sampleRate, { ...options, onsetStrategy });
+      const onsetDelta = onsetResult.count - fixture.expectedNotes.length;
+      return {
+        fixture,
+        expectedCount: fixture.expectedNotes.length,
+        onsetCount: onsetResult.count,
+        onsetDelta,
+        onsetStatus: onsetDelta === 0 ? 'match' : (onsetDelta < 0 ? 'under' : 'over'),
+        onsetTimestampsMs: onsetResult.timestampsMs,
+      };
+    });
+    const totalExpected = cases.reduce((s, c) => s + c.expectedCount, 0);
+    const totalDetected = cases.reduce((s, c) => s + c.onsetCount, 0);
+    return {
+      onsetStrategy,
+      cases,
+      counts: {
+        total: cases.length,
+        exact: cases.filter(c => c.onsetStatus === 'match').length,
+        under: cases.filter(c => c.onsetStatus === 'under').length,
+        over: cases.filter(c => c.onsetStatus === 'over').length,
+        totalExpected,
+        totalDetected,
+      },
+      metrics: {
+        onsetCountRatio: safeDivide(totalDetected, totalExpected),
+      },
+    };
+  });
+
+  return {
+    ...defaultReport,
+    strategies,
+    strategyReports,
+    onsetStrategies,
+    onsetStrategyReports,
   };
 }
 
@@ -200,30 +372,123 @@ function formatPercent(value) {
 function formatCase(row) {
   const accepted = row.acceptedSequence.join(' ');
   const expected = row.expectedNotes.join(' ');
-  return `- ${row.fixture.file}: accepted ${row.acceptedCount}/${row.expectedCount}`
-    + `; expected=[${expected}]; accepted=[${accepted}]`;
+  return `| ${row.fixture.file} | ${row.acceptedCount}/${row.expectedCount} | ${expected} | ${accepted} |`;
+}
+
+function formatSkippedCase(row) {
+  return `| ${row.fixture.file} | ${row.reason} |`;
+}
+
+function formatOnsetCase(row) {
+  const delta = row.onsetDelta > 0 ? `+${row.onsetDelta}` : `${row.onsetDelta}`;
+  const timestamps = row.onsetTimestampsMs.slice(0, 16).map(formatMs).join(' ');
+  const suffix = row.onsetTimestampsMs.length > 16 ? ' ...' : '';
+  return `| ${row.fixture.file} | ${row.expectedCount} | ${row.onsetCount} | ${delta} | `
+    + `${row.onsetStatus} | ${timestamps}${suffix} |`;
+}
+
+function formatAlignmentSummaryCase(row) {
+  const alignment = row.onsetAcceptAlignment;
+  const missingOnsets = alignment.filter(item => item.status === 'missing-onset').length;
+  const missingAccepts = alignment.filter(item => item.status === 'missing-accept').length;
+  const mismatches = alignment.filter(item => item.status === 'mismatch').length;
+  const delays = alignment
+    .map(item => item.delayMs)
+    .filter(Number.isFinite);
+  const averageDelay = delays.length > 0
+    ? delays.reduce((sum, delay) => sum + delay, 0) / delays.length
+    : null;
+  const firstIssue = alignment.find(item => item.status !== 'aligned');
+  return `| ${row.fixture.file} | ${row.expectedCount} | ${row.onsetCount} | ${row.acceptedCount} | `
+    + `${missingOnsets} | ${missingAccepts} | ${mismatches} | `
+    + `${formatMs(averageDelay)} | ${firstIssue ? `${firstIssue.index}:${firstIssue.status}` : '-'} |`;
+}
+
+function formatAlignmentIssueCase(item) {
+  return `| ${item.fixture} | ${item.index} | ${item.expectedNote} | ${formatMs(item.onsetTimeMs)} | `
+    + `${item.acceptedNote ?? '-'} | ${formatMs(item.acceptTimeMs)} | ${formatMs(item.delayMs)} | ${item.status} |`;
 }
 
 export function formatSheetMusicSequenceFingerprintReport(report) {
-  const { counts, metrics, cases } = report;
+  const { counts, metrics, cases, strategyReports, onsetStrategyReports } = report;
+  const strategyTable = strategyReports.map(row => (
+    `| ${row.strategy.key} | ${row.counts.evaluated} | ${row.counts.passed} | ${row.counts.failed} | `
+      + `${row.counts.acceptedNotes}/${row.counts.expectedNotes} | ${row.counts.detectedOnsets}/${row.counts.expectedNotes} | `
+      + `${formatPercent(row.metrics.fixturePassRate)} | ${formatPercent(row.metrics.noteRecall)} | `
+      + `${formatPercent(row.metrics.onsetPrecision)} | ${formatPercent(row.metrics.onsetRecall)} | ${formatPercent(row.metrics.onsetF1)} |`
+  ));
+  const onsetStrategyTable = (onsetStrategyReports ?? []).map(row => (
+    `| ${row.onsetStrategy.key} | ${row.counts.total} | ${row.counts.exact} | ${row.counts.under} | `
+      + `${row.counts.over} | ${row.counts.totalDetected}/${row.counts.totalExpected} | `
+      + `${formatPercent(row.metrics.onsetCountRatio)} |`
+  ));
   return [
     '# Sheet Music Sequence Fingerprint',
     '',
     `- fixtures: ${counts.total} sequence WAVs`,
+    `- strategies: ${report.strategies.map(strategy => strategy.key).join(', ')}`,
+    '',
+    '## Strategy Summary',
+    '| strategy | evaluated | passed | failed | notes | onsets | fixture pass rate | note recall | onset precision | onset recall | onset f1 |',
+    '|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|',
+    ...strategyTable,
+    '',
+    '## Onset Strategy Summary',
+    '| onset strategy | fixtures | exact | under | over | detected/expected | onset ratio |',
+    '|---|---:|---:|---:|---:|---:|---:|',
+    ...onsetStrategyTable,
+    '',
+    '## Default Strategy Detail',
     `- evaluated: ${counts.evaluated}`,
     `- skipped: ${counts.skipped}`,
     `- passed: ${counts.passed}`,
     `- failed: ${counts.failed}`,
     `- expected notes: ${counts.expectedNotes}`,
     `- accepted notes: ${counts.acceptedNotes}`,
+    `- detected onsets: ${counts.detectedOnsets}`,
+    `- onset confusion: TP=${counts.onsetTruePositives} FP=${counts.onsetFalsePositives} FN=${counts.onsetFalseNegatives}`,
     `- fixture pass rate: ${formatPercent(metrics.fixturePassRate)}`,
     `- note recall: ${formatPercent(metrics.noteRecall)}`,
+    `- onset precision: ${formatPercent(metrics.onsetPrecision)}`,
+    `- onset recall: ${formatPercent(metrics.onsetRecall)}`,
+    `- onset f1: ${formatPercent(metrics.onsetF1)}`,
+    `- onset count ratio: ${formatPercent(metrics.onsetCountRatio)}`,
     `- frame cadence: ${SHEET_FINGERPRINT_ANALYZE_INTERVAL_MS}ms`,
     '',
+    '## Guitar Onset Count',
+    '| fixture | expected notes | detected onsets | delta | status | onset times |',
+    '|---|---:|---:|---:|---|---|',
+    ...cases.filter(row => !row.skipped).map(formatOnsetCase),
+    '',
+    '## Onset Count Summary',
+    '| exact | under | over | TP | FP | FN | detected/expected | ratio | precision | recall | f1 |',
+    '|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|',
+    `| ${counts.onsetExact} | ${counts.onsetUnder} | ${counts.onsetOver} | `
+      + `${counts.onsetTruePositives} | ${counts.onsetFalsePositives} | ${counts.onsetFalseNegatives} | `
+      + `${counts.detectedOnsets}/${counts.expectedNotes} | ${formatPercent(metrics.onsetCountRatio)} | `
+      + `${formatPercent(metrics.onsetPrecision)} | ${formatPercent(metrics.onsetRecall)} | ${formatPercent(metrics.onsetF1)} |`,
+    '',
+    '## Onset To Accept Alignment',
+    '| fixture | expected notes | detected onsets | accepted notes | missing onsets | missing accepts | mismatches | avg onset->accept | first issue |',
+    '|---|---:|---:|---:|---:|---:|---:|---:|---|',
+    ...cases.filter(row => !row.skipped).map(formatAlignmentSummaryCase),
+    '',
+    '## Onset To Accept Issues',
+    '| fixture | # | expected | onset time | accepted | accept time | onset->accept | status |',
+    '|---|---:|---:|---:|---:|---:|---:|---|',
+    ...cases
+      .flatMap(row => row.onsetAcceptAlignment)
+      .filter(item => item.status !== 'aligned')
+      .map(formatAlignmentIssueCase),
+    '',
     '## Failures',
+    '| fixture | accepted notes | expected | accepted |',
+    '|---|---:|---|---|',
     ...cases.filter(row => !row.skipped && !row.passed).map(formatCase),
     '',
     '## Skipped',
-    ...cases.filter(row => row.skipped).map(row => `- ${row.fixture.file}: ${row.reason}`),
+    '| fixture | reason |',
+    '|---|---|',
+    ...cases.filter(row => row.skipped).map(formatSkippedCase),
   ].join('\n');
 }

@@ -3,12 +3,10 @@ import { join } from 'path';
 import { readWavFile } from './wavDecoder.js';
 import { discoverNoteAudioFixtures } from './noteAudioFixtures.js';
 import {
-  classifyFrame,
   createMatchState,
-  getRecommendedFftSize,
 } from '../../js/shared/audio/fastNoteMatcher.js';
 import {
-  softenSheetMusicFrameResult,
+  getSheetMusicRecognitionStrategies,
   updateSheetMusicMatchState,
 } from '../../js/games/sheetMusicReading/sheetMusicRecognition.js';
 import {
@@ -39,22 +37,21 @@ function sliceCenterWindow(samples, windowSize) {
   return samples.slice(start, start + windowSize);
 }
 
-function classifySheetMusicFixture(fixture, targetPitch) {
+function classifySheetMusicFixture(fixture, targetPitch, strategy) {
   const wavPath = join(FIXTURES_DIR, fixture.file);
   if (!wavCache.has(wavPath)) {
     wavCache.set(wavPath, readWavFile(wavPath));
   }
   const { samples, sampleRate } = wavCache.get(wavPath);
-  const windowSize = getRecommendedFftSize(targetPitch, sampleRate);
-  const frameResult = classifyFrame(
+  const windowSize = strategy.getRecommendedFftSize(targetPitch, sampleRate);
+  const frameResult = strategy.classifyFrame(
     sliceCenterWindow(samples, windowSize),
     sampleRate,
     targetPitch,
     { tolerateCents: 70 },
   );
-  const softened = softenSheetMusicFrameResult(frameResult, targetPitch);
-  const { event } = updateSheetMusicMatchState(createMatchState(), softened);
-  return { frameResult, softened, accepted: event === 'accept' };
+  const { event } = updateSheetMusicMatchState(createMatchState(), frameResult);
+  return { frameResult, accepted: event === 'accept' };
 }
 
 function uniqueTargetPitches(fixtures) {
@@ -115,7 +112,7 @@ function evaluateSingleNoteOnsetFixture(fixture) {
   };
 }
 
-export function evaluateOpenStringNoteFingerprint(fixtures = NOTE_AUDIO_FIXTURES) {
+function evaluateOpenStringNoteFingerprintForStrategy(fixtures, strategy) {
   const cases = [];
   const counts = { tp: 0, tn: 0, fp: 0, fn: 0, total: 0, expectedPositive: 0, expectedNegative: 0 };
   const targetPitches = uniqueTargetPitches(fixtures);
@@ -123,7 +120,7 @@ export function evaluateOpenStringNoteFingerprint(fixtures = NOTE_AUDIO_FIXTURES
   for (const source of fixtures) {
     for (const targetPitch of targetPitches) {
       const expectedPositive = source.pitch === targetPitch;
-      const result = classifySheetMusicFixture(source, targetPitch);
+      const result = classifySheetMusicFixture(source, targetPitch, strategy);
       const actualPositive = result.accepted;
       const kind = expectedPositive && actualPositive ? 'TP'
         : expectedPositive && !actualPositive ? 'FN'
@@ -144,7 +141,6 @@ export function evaluateOpenStringNoteFingerprint(fixtures = NOTE_AUDIO_FIXTURES
         expectedPositive,
         detectedPitch: result.frameResult.detectedPitch,
         frameStatus: result.frameResult.status,
-        softenedStatus: result.softened.status,
         cents: result.frameResult.cents,
       });
     }
@@ -160,6 +156,16 @@ export function evaluateOpenStringNoteFingerprint(fixtures = NOTE_AUDIO_FIXTURES
     falseNegativeRate: safeDivide(counts.fn, counts.fn + counts.tp),
   };
 
+  return { strategy, targetPitches, counts, metrics, cases };
+}
+
+export function evaluateOpenStringNoteFingerprint(fixtures = NOTE_AUDIO_FIXTURES, options = {}) {
+  const strategies = options.strategies ?? getSheetMusicRecognitionStrategies();
+  const strategyReports = strategies.map(strategy => (
+    evaluateOpenStringNoteFingerprintForStrategy(fixtures, strategy)
+  ));
+  const defaultReport = strategyReports[0];
+
   const onsetCases = fixtures.map(evaluateSingleNoteOnsetFixture);
   const onsetCounts = {
     total: onsetCases.length,
@@ -168,7 +174,17 @@ export function evaluateOpenStringNoteFingerprint(fixtures = NOTE_AUDIO_FIXTURES
     missing: onsetCases.filter(row => row.missing).length,
   };
 
-  return { fixtures, targetPitches, counts, metrics, cases, onsetCounts, onsetCases };
+  return {
+    fixtures,
+    strategies,
+    strategyReports,
+    targetPitches: defaultReport.targetPitches,
+    counts: defaultReport.counts,
+    metrics: defaultReport.metrics,
+    cases: defaultReport.cases,
+    onsetCounts,
+    onsetCases,
+  };
 }
 
 function formatPercent(value) {
@@ -177,17 +193,36 @@ function formatPercent(value) {
 
 function formatCase(row) {
   const cents = Number.isFinite(row.cents) ? `${row.cents.toFixed(1)}c` : 'n/a';
-  return `${row.kind} ${row.sourceFile} (${row.sourcePitch}) -> target ${row.targetPitch}; `
-    + `detected=${row.detectedPitch ?? 'none'}, frame=${row.frameStatus}, softened=${row.softenedStatus}, cents=${cents}`;
+  return `| ${row.kind} | ${row.sourceFile} | ${row.sourcePitch} | ${row.targetPitch} | `
+    + `${row.detectedPitch ?? 'none'} | ${row.frameStatus} | ${cents} |`;
+}
+
+function formatOnsetFailure(row) {
+  const status = row.missing ? 'MISSING' : 'NO_ONSET';
+  return `| ${status} | ${row.fixture.file} | ${row.fixture.pitch} |`;
 }
 
 export function formatOpenStringNoteFingerprintReport(report) {
-  const { counts, metrics, cases, onsetCounts, onsetCases } = report;
+  const { counts, metrics, cases, onsetCounts, onsetCases, strategyReports } = report;
+  const strategyTable = strategyReports.map(row => (
+    `| ${row.strategy.key} | ${row.counts.tp} | ${row.counts.fp} | ${row.counts.fn} | ${row.counts.tn} | `
+      + `${formatPercent(row.metrics.sensitivity)} | ${formatPercent(row.metrics.specificity)} | `
+      + `${formatPercent(row.metrics.precision)} | ${formatPercent(row.metrics.accuracy)} | `
+      + `${formatPercent(row.metrics.f1)} |`
+  ));
   const lines = [
     '# Sheet Music Note Fingerprint',
     '',
     `- fixtures: ${report.fixtures.length} note WAVs`,
     `- target pitches: ${report.targetPitches.length} (${report.targetPitches.join(', ')})`,
+    `- strategies: ${report.strategies.map(strategy => strategy.key).join(', ')}`,
+    '',
+    '## Strategy Summary',
+    '| strategy | TP | FP | FN | TN | recall | specificity | precision | accuracy | f1 |',
+    '|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|',
+    ...strategyTable,
+    '',
+    '## Default Strategy Detail',
     `- pitch matrix: ${counts.total} probes (${counts.expectedPositive} expected positives, ${counts.expectedNegative} expected negatives)`,
     `- confusion: TP=${counts.tp} FP=${counts.fp} FN=${counts.fn} TN=${counts.tn}`,
     `- sensitivity/recall: ${formatPercent(metrics.sensitivity)}`,
@@ -199,9 +234,13 @@ export function formatOpenStringNoteFingerprintReport(report) {
     `- false negative rate: ${formatPercent(metrics.falseNegativeRate)}`,
     '',
     '## False Positives',
+    '| kind | source file | source pitch | target pitch | detected | frame | cents |',
+    '|---|---|---:|---:|---:|---|---:|',
     ...cases.filter(row => row.kind === 'FP').map(formatCase),
     '',
     '## False Negatives',
+    '| kind | source file | source pitch | target pitch | detected | frame | cents |',
+    '|---|---|---:|---:|---:|---|---:|',
     ...cases.filter(row => row.kind === 'FN').map(formatCase),
     '',
     '## Single-Note Onset Goldens',
@@ -211,9 +250,11 @@ export function formatOpenStringNoteFingerprintReport(report) {
     `- missing goldens: ${onsetCounts.missing}`,
     '',
     '## Onset Failures',
+    '| status | fixture | pitch |',
+    '|---|---|---:|',
     ...onsetCases
       .filter(row => !row.passed)
-      .map(row => `${row.missing ? 'MISSING' : 'NO_ONSET'} ${row.fixture.file} (${row.fixture.pitch})`),
+      .map(formatOnsetFailure),
   ];
 
   return lines.join('\n');

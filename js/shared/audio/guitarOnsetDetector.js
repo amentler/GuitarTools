@@ -3,7 +3,7 @@
 // This module is intentionally pitch-agnostic: it only detects fresh attacks.
 // Controllers decide whether the following pitch frames match the current task.
 
-import { computeFrameRms } from './noteOnsetGate.js';
+import { computeFrameRms } from './rms.js';
 
 export const GUITAR_ONSET_MIN_RMS = 0.005;
 export const GUITAR_ONSET_MIN_FLUX = 0.018;

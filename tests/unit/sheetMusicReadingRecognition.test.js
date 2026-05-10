@@ -3,11 +3,11 @@ import { describe, expect, it } from 'vitest';
 import { join } from 'path';
 import { readWavFile } from '../helpers/wavDecoder.js';
 import {
+  classifySheetMusicFrame,
   softenSheetMusicFrameResult,
   updateSheetMusicMatchState,
 } from '../../js/games/sheetMusicReading/sheetMusicRecognition.js';
 import {
-  classifyFrame,
   createMatchState,
   getRecommendedFftSize,
 } from '../../js/shared/audio/fastNoteMatcher.js';
@@ -27,19 +27,18 @@ function sliceCenterWindow(samples, windowSize) {
 function classifySheetMusicFixture(relativePath, targetPitch) {
   const { samples, sampleRate } = readWavFile(join(FIXTURES_DIR, relativePath));
   const windowSize = getRecommendedFftSize(targetPitch, sampleRate);
-  const frameResult = classifyFrame(
+  const frameResult = classifySheetMusicFrame(
     sliceCenterWindow(samples, windowSize),
     sampleRate,
     targetPitch,
     { tolerateCents: 70 },
   );
-  const softened = softenSheetMusicFrameResult(frameResult, targetPitch);
-  const { event } = updateSheetMusicMatchState(createMatchState(), softened);
-  return { frameResult, softened, event };
+  const { event } = updateSheetMusicMatchState(createMatchState(), frameResult);
+  return { frameResult, event };
 }
 
 describe('sheetMusicReading recognition tolerance', () => {
-  it('accepts octave-equivalent detections in exercise mode', () => {
+  it('accepts the known D3 one-octave subharmonic detection in exercise mode', () => {
     const result = softenSheetMusicFrameResult({
       status: 'wrong',
       detectedPitch: 'D2',
@@ -48,6 +47,28 @@ describe('sheetMusicReading recognition tolerance', () => {
     }, 'D3');
 
     expect(result.status).toBe('correct');
+  });
+
+  it('does not accept arbitrary one-octave subharmonic detections in the softener', () => {
+    const result = softenSheetMusicFrameResult({
+      status: 'wrong',
+      detectedPitch: 'G2',
+      hz: 98,
+      cents: -1200,
+    }, 'G3');
+
+    expect(result.status).toBe('wrong');
+  });
+
+  it('does not accept same-name detections more than one octave away', () => {
+    const result = softenSheetMusicFrameResult({
+      status: 'wrong',
+      detectedPitch: 'E2',
+      hz: 82.41,
+      cents: -2400,
+    }, 'E4');
+
+    expect(result.status).toBe('wrong');
   });
 
   it('keeps different pitch classes non-correct', () => {
@@ -76,7 +97,7 @@ describe('sheetMusicReading recognition tolerance', () => {
   it('does not accept open E2 when the target note is A2', () => {
     const result = classifySheetMusicFixture('E2/e2.wav', 'A2');
 
-    expect(result.softened.status).not.toBe('correct');
+    expect(result.frameResult.status).not.toBe('correct');
     expect(result.event).not.toBe('accept');
   }, 10_000);
 
@@ -84,15 +105,27 @@ describe('sheetMusicReading recognition tolerance', () => {
     const result = classifySheetMusicFixture('E2/e2.wav', 'E4');
 
     expect(result.frameResult.detectedPitch).toBe('E2');
-    expect(result.softened.status).not.toBe('correct');
+    expect(result.frameResult.status).not.toBe('correct');
     expect(result.event).not.toBe('accept');
+  }, 10_000);
+
+  it('keeps low open E2 rejected by the sheet-music harmonic fallback for high E4', () => {
+    const { samples, sampleRate } = readWavFile(join(FIXTURES_DIR, 'E2/e2.wav'));
+    const windowSize = getRecommendedFftSize('E4', sampleRate);
+    const result = classifySheetMusicFrame(
+      sliceCenterWindow(samples, windowSize),
+      sampleRate,
+      'E4',
+    );
+
+    expect(result.status).not.toBe('correct');
   }, 10_000);
 
   it('does not accept A3 when the target note is open A2', () => {
     const result = classifySheetMusicFixture('A3/a3.wav', 'A2');
 
     expect(result.frameResult.detectedPitch).toBe('A3');
-    expect(result.softened.status).not.toBe('correct');
+    expect(result.frameResult.status).not.toBe('correct');
     expect(result.event).not.toBe('accept');
   }, 10_000);
 });

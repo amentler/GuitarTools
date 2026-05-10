@@ -20,19 +20,18 @@ import {
   setPlaybackButtonState,
 } from './sheetMusicReadingUI.js';
 import {
-  classifyFrame,
   createMatchState,
-  getRecommendedFftSize,
 } from '../../shared/audio/fastNoteMatcher.js';
+import { getSetting, SETTING_KEYS } from '../../shared/globalSettings.js';
 import {
+  classifySheetMusicFrame,
+  resolveSheetMusicRecognitionStrategy,
   SHEET_MUSIC_CENTS_TOLERANCE,
-  softenSheetMusicFrameResult,
   updateSheetMusicMatchState,
 } from './sheetMusicRecognition.js';
 import {
-  createGuitarOnsetState,
-  updateGuitarOnsetDetector,
-} from '../../shared/audio/guitarOnsetDetector.js';
+  resolveGuitarOnsetStrategy,
+} from '../../shared/audio/guitarOnsetStrategies.js';
 import { requestMicrophoneStream } from '../../shared/audio/microphoneService.js';
 import {
   createAudioSessionState,
@@ -77,7 +76,7 @@ export function createSheetMusicReadingFeature() {
     isLocked: false,
     successTimeout: null,
     matchState: createMatchState(),
-    onsetState: createGuitarOnsetState(),
+    onsetState: resolveGuitarOnsetStrategy(getSetting(SETTING_KEYS.SHEET_MUSIC_ONSET_STRATEGY)).createState(),
     awaitingOnset: true,
     settings: {
       maxFret: 3,
@@ -146,7 +145,7 @@ export function createSheetMusicReadingFeature() {
     state.currentBarIndex = 0;
     state.currentBeatIndex = 0;
     state.matchState = createMatchState();
-    state.onsetState = createGuitarOnsetState();
+    state.onsetState = resolveGuitarOnsetStrategy(getSetting(SETTING_KEYS.SHEET_MUSIC_ONSET_STRATEGY)).createState();
     state.awaitingOnset = true;
     state.isLocked = false;
 
@@ -227,7 +226,10 @@ export function createSheetMusicReadingFeature() {
     const note = getCurrentNote();
     if (!note) return;
     const targetPitch = `${note.name}${note.octave}`;
-    const recommended = getRecommendedFftSize(targetPitch, audioSession.audioCtx?.sampleRate ?? 44100);
+    const strategy = resolveSheetMusicRecognitionStrategy(
+      getSetting(SETTING_KEYS.SHEET_MUSIC_RECOGNITION_STRATEGY),
+    );
+    const recommended = strategy.getRecommendedFftSize(targetPitch, audioSession.audioCtx?.sampleRate ?? 44100);
     if (recommended !== audioSession.currentFftSize) {
       audioSession.analyser.fftSize = recommended;
       audioSession.currentFftSize = recommended;
@@ -357,7 +359,8 @@ export function createSheetMusicReadingFeature() {
       audioSession.analyser.getFloatFrequencyData(frequencyData);
     }
 
-    const onset = updateGuitarOnsetDetector(state.onsetState, {
+    const onsetStrategy = resolveGuitarOnsetStrategy(getSetting(SETTING_KEYS.SHEET_MUSIC_ONSET_STRATEGY));
+    const onset = onsetStrategy.update(state.onsetState, {
       frequencyData,
       samples: buffer,
     });
@@ -370,12 +373,10 @@ export function createSheetMusicReadingFeature() {
     }
 
     const targetPitch = `${targetNote.name}${targetNote.octave}`;
-    const frameResult = softenSheetMusicFrameResult(
-      classifyFrame(buffer, audioSession.audioCtx.sampleRate, targetPitch, {
-        tolerateCents: SHEET_MUSIC_CENTS_TOLERANCE,
-      }),
-      targetPitch,
-    );
+    const frameResult = classifySheetMusicFrame(buffer, audioSession.audioCtx.sampleRate, targetPitch, {
+      tolerateCents: SHEET_MUSIC_CENTS_TOLERANCE,
+      strategyKey: getSetting(SETTING_KEYS.SHEET_MUSIC_RECOGNITION_STRATEGY),
+    });
     let effective = frameResult.status === 'wrong'
       ? { ...frameResult, status: 'unsure' }
       : frameResult;

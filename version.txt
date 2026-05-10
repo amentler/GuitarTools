@@ -1,1 +1,1 @@
-Version 0.111 | 2026-05-09 22:47 | 96dbaa9 | chore: sync auto-generated version metadata
+Version 0.124 | 2026-05-10 21:38 | e641c8f | chore: document adaptive onset parameter plan

@@ -44,6 +44,8 @@ Each sequence needs a `.wav` file and a same-basename `.json` manifest. ZIP subd
 
 If a recorder manifest uses `bpm`, the importer copies it to `tempoBpm` while preserving the original field.
 
+Treat `bpm`, `tempoBpm`, and `notesPerBeat` as descriptive metadata only. Real recordings can be slower, faster, or unsteady, so do not make sheet fingerprint assertions depend on exact timing derived from those fields.
+
 Existing fixtures are never overwritten. Exact duplicate WAV/JSON pairs are skipped; name collisions receive a stable numeric suffix.
 
 ## Options
