@@ -7,6 +7,7 @@ import {
   formatOpenStringNoteFingerprintReport,
 } from '../tests/helpers/sheetMusicNoteFingerprint.js';
 import { getSheetMusicRecognitionStrategies } from '../js/games/sheetMusicReading/sheetMusicRecognition.js';
+import { getGuitarOnsetStrategies } from '../js/shared/audio/guitarOnsetStrategies.js';
 import { loadEssentiaForNode } from '../tests/helpers/essentiaNodeWasmLoader.js';
 import { createEssentiaSheetMusicStrategy } from '../js/games/sheetMusicReading/essentiaSheetMusicStrategy.js';
 
@@ -18,8 +19,13 @@ try {
   console.warn('[SFP] Essentia WASM not available, running without essentia-pitch-yin strategy:', err.message);
 }
 
-console.log(formatSheetMusicSequenceFingerprintReport(evaluateSheetMusicSequenceFingerprint(undefined, { strategies })));
+const onsetStrategies = getGuitarOnsetStrategies();
+
+console.log(formatSheetMusicSequenceFingerprintReport(
+  evaluateSheetMusicSequenceFingerprint(undefined, { strategies, onsetStrategies }),
+));
 console.log('');
 console.log('---');
 console.log('');
 console.log(formatOpenStringNoteFingerprintReport(evaluateOpenStringNoteFingerprint()));
+

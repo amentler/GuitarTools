@@ -30,9 +30,8 @@ import {
   updateSheetMusicMatchState,
 } from './sheetMusicRecognition.js';
 import {
-  createGuitarOnsetState,
-  updateGuitarOnsetDetector,
-} from '../../shared/audio/guitarOnsetDetector.js';
+  resolveGuitarOnsetStrategy,
+} from '../../shared/audio/guitarOnsetStrategies.js';
 import { requestMicrophoneStream } from '../../shared/audio/microphoneService.js';
 import {
   createAudioSessionState,
@@ -77,7 +76,7 @@ export function createSheetMusicReadingFeature() {
     isLocked: false,
     successTimeout: null,
     matchState: createMatchState(),
-    onsetState: createGuitarOnsetState(),
+    onsetState: resolveGuitarOnsetStrategy(getSetting(SETTING_KEYS.SHEET_MUSIC_ONSET_STRATEGY)).createState(),
     awaitingOnset: true,
     settings: {
       maxFret: 3,
@@ -146,7 +145,7 @@ export function createSheetMusicReadingFeature() {
     state.currentBarIndex = 0;
     state.currentBeatIndex = 0;
     state.matchState = createMatchState();
-    state.onsetState = createGuitarOnsetState();
+    state.onsetState = resolveGuitarOnsetStrategy(getSetting(SETTING_KEYS.SHEET_MUSIC_ONSET_STRATEGY)).createState();
     state.awaitingOnset = true;
     state.isLocked = false;
 
@@ -360,7 +359,8 @@ export function createSheetMusicReadingFeature() {
       audioSession.analyser.getFloatFrequencyData(frequencyData);
     }
 
-    const onset = updateGuitarOnsetDetector(state.onsetState, {
+    const onsetStrategy = resolveGuitarOnsetStrategy(getSetting(SETTING_KEYS.SHEET_MUSIC_ONSET_STRATEGY));
+    const onset = onsetStrategy.update(state.onsetState, {
       frequencyData,
       samples: buffer,
     });

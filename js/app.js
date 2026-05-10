@@ -4,6 +4,7 @@ import { registerServiceWorker, forceAppReload } from './shared/pwa/sw-client.js
 import { createGlobalDebugStore } from './shared/debug/index.js';
 import { getSetting, setSetting, SETTING_KEYS } from './shared/globalSettings.js';
 import { getSheetMusicRecognitionStrategies } from './games/sheetMusicReading/sheetMusicRecognition.js';
+import { getGuitarOnsetStrategies } from './shared/audio/guitarOnsetStrategies.js';
 
 async function loadVersionInfo() {
   const versionEl = document.getElementById('app-version');
@@ -90,6 +91,21 @@ function initSettings() {
       : strategies[0]?.key;
     sheetMusicStrategySelect.addEventListener('change', () => {
       setSetting(SETTING_KEYS.SHEET_MUSIC_RECOGNITION_STRATEGY, sheetMusicStrategySelect.value);
+    });
+  }
+
+  const onsetStrategySelect = document.getElementById('setting-sheet-music-onset-strategy');
+  if (onsetStrategySelect) {
+    const onsetStrategies = getGuitarOnsetStrategies();
+    onsetStrategySelect.innerHTML = onsetStrategies
+      .map(s => `<option value="${s.key}">${s.label} – ${s.description}</option>`)
+      .join('');
+    const savedOnset = getSetting(SETTING_KEYS.SHEET_MUSIC_ONSET_STRATEGY);
+    onsetStrategySelect.value = onsetStrategies.some(s => s.key === savedOnset)
+      ? savedOnset
+      : onsetStrategies[0]?.key;
+    onsetStrategySelect.addEventListener('change', () => {
+      setSetting(SETTING_KEYS.SHEET_MUSIC_ONSET_STRATEGY, onsetStrategySelect.value);
     });
   }
 }

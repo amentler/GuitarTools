@@ -9,9 +9,10 @@ import {
   updateSheetMusicMatchState,
 } from '../../js/games/sheetMusicReading/sheetMusicRecognition.js';
 import {
-  createGuitarOnsetState,
-  updateGuitarOnsetDetector,
-} from '../../js/shared/audio/guitarOnsetDetector.js';
+  getGuitarOnsetStrategies,
+  resolveGuitarOnsetStrategy,
+  GUITAR_ONSET_STRATEGY_KEYS,
+} from '../../js/shared/audio/guitarOnsetStrategies.js';
 import { computeDbSpectrum } from './chordHpcpExtraction.js';
 
 const SEQUENCES_DIR = join(process.cwd(), 'tests/fixtures/sequences');
@@ -82,12 +83,14 @@ function countGuitarOnsets(samples, sampleRate, options = {}) {
   const hopSize = options.onsetHopSize ?? Math.max(1, Math.round(
     sampleRate * ((options.analyzeIntervalMs ?? SHEET_FINGERPRINT_ANALYZE_INTERVAL_MS) / 1000),
   ));
+  const onsetStrategy = options.onsetStrategy
+    ?? resolveGuitarOnsetStrategy(GUITAR_ONSET_STRATEGY_KEYS.GUITAR_ONSET);
   const timestampsMs = [];
-  let onsetState = createGuitarOnsetState();
+  let onsetState = onsetStrategy.createState();
 
   for (let offset = 0; offset + frameSize <= samples.length; offset += hopSize) {
     const frame = samples.subarray(offset, offset + frameSize);
-    const result = updateGuitarOnsetDetector(onsetState, {
+    const result = onsetStrategy.update(onsetState, {
       frequencyData: computeDbSpectrum(frame, frameSize),
       samples: frame,
     }, options.onsetDetectorOptions);
@@ -278,16 +281,56 @@ function summarizeSequenceCases(fixtures, cases, strategy) {
 
 export function evaluateSheetMusicSequenceFingerprint(fixtures = discoverSheetMusicSequenceFixtures(), options = {}) {
   const strategies = options.strategies ?? getSheetMusicRecognitionStrategies();
+  const onsetStrategies = options.onsetStrategies ?? getGuitarOnsetStrategies();
+
   const strategyReports = strategies.map(strategy => {
     const cases = fixtures.map(fixture => evaluateFixture(fixture, { ...options, strategy }));
     return summarizeSequenceCases(fixtures, cases, strategy);
   });
   const defaultReport = strategyReports[0];
 
+  // Onset strategy reports: evaluate onset detection quality independently
+  // of pitch strategy, always using the default pitch strategy for consistency.
+  const onsetStrategyReports = onsetStrategies.map(onsetStrategy => {
+    const evaluated = fixtures.filter(f => f.expectedNotes.length > 0);
+    const cases = evaluated.map(fixture => {
+      const { samples, sampleRate } = readWavFile(fixture.wavPath);
+      const onsetResult = countGuitarOnsets(samples, sampleRate, { ...options, onsetStrategy });
+      const onsetDelta = onsetResult.count - fixture.expectedNotes.length;
+      return {
+        fixture,
+        expectedCount: fixture.expectedNotes.length,
+        onsetCount: onsetResult.count,
+        onsetDelta,
+        onsetStatus: onsetDelta === 0 ? 'match' : (onsetDelta < 0 ? 'under' : 'over'),
+        onsetTimestampsMs: onsetResult.timestampsMs,
+      };
+    });
+    const totalExpected = cases.reduce((s, c) => s + c.expectedCount, 0);
+    const totalDetected = cases.reduce((s, c) => s + c.onsetCount, 0);
+    return {
+      onsetStrategy,
+      cases,
+      counts: {
+        total: cases.length,
+        exact: cases.filter(c => c.onsetStatus === 'match').length,
+        under: cases.filter(c => c.onsetStatus === 'under').length,
+        over: cases.filter(c => c.onsetStatus === 'over').length,
+        totalExpected,
+        totalDetected,
+      },
+      metrics: {
+        onsetCountRatio: safeDivide(totalDetected, totalExpected),
+      },
+    };
+  });
+
   return {
     ...defaultReport,
     strategies,
     strategyReports,
+    onsetStrategies,
+    onsetStrategyReports,
   };
 }
 
@@ -336,11 +379,16 @@ function formatAlignmentIssueCase(item) {
 }
 
 export function formatSheetMusicSequenceFingerprintReport(report) {
-  const { counts, metrics, cases, strategyReports } = report;
+  const { counts, metrics, cases, strategyReports, onsetStrategyReports } = report;
   const strategyTable = strategyReports.map(row => (
     `| ${row.strategy.key} | ${row.counts.evaluated} | ${row.counts.passed} | ${row.counts.failed} | `
       + `${row.counts.acceptedNotes}/${row.counts.expectedNotes} | `
       + `${formatPercent(row.metrics.fixturePassRate)} | ${formatPercent(row.metrics.noteRecall)} |`
+  ));
+  const onsetStrategyTable = (onsetStrategyReports ?? []).map(row => (
+    `| ${row.onsetStrategy.key} | ${row.counts.total} | ${row.counts.exact} | ${row.counts.under} | `
+      + `${row.counts.over} | ${row.counts.totalDetected}/${row.counts.totalExpected} | `
+      + `${formatPercent(row.metrics.onsetCountRatio)} |`
   ));
   return [
     '# Sheet Music Sequence Fingerprint',
@@ -352,6 +400,11 @@ export function formatSheetMusicSequenceFingerprintReport(report) {
     '| strategy | evaluated | passed | failed | notes | fixture pass rate | note recall |',
     '|---|---:|---:|---:|---:|---:|---:|',
     ...strategyTable,
+    '',
+    '## Onset Strategy Summary',
+    '| onset strategy | fixtures | exact | under | over | detected/expected | onset ratio |',
+    '|---|---:|---:|---:|---:|---:|---:|',
+    ...onsetStrategyTable,
     '',
     '## Default Strategy Detail',
     `- evaluated: ${counts.evaluated}`,
