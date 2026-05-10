@@ -1,1 +1,1 @@
-Version 0.123 | 2026-05-10 21:00 | eab4f5d | docs: add essentia pitch-yin improvement roadmap
+Version 0.124 | 2026-05-10 21:38 | e641c8f | chore: document adaptive onset parameter plan
