@@ -35,9 +35,10 @@ Optionaler Aktiv-Modus: Mikrofon-basierte Tonprüfung.
 
 ### `playbackController.js`
 - Klasse `PlaybackController` – wrапpt `MetronomeLogic`
-- `start(bpm, beatsPerBar, totalBeats?)` – AudioContext lazy-init, Beat-Tracking
+- `start(bpm, beatsPerBar, totalBeats?, countInBeats?)` – AudioContext lazy-init, Beat-Tracking mit optionalem Einzählen
 - `stop()`, `setBpm(bpm)`, `onBeat(callback)`, `getCurrentBeat()` → `{ barIndex, beatIndex }`
-- `_globalBeat` zählt alle Beats; `_beatsPerBar` und `_totalBeats` steuern die Positionsberechnung
+- `_globalBeat` zählt alle Beats; negative `_globalBeat`-Werte sind Einzähltakte (nur Klick, kein Callback)
+- `_beatsPerBar` und `_totalBeats` steuern die Positionsberechnung
 
 ### `playbackBar.js`
 - `calcBeatX(staveLayout, barIndex, beatIndex, beatsPerBar)` → x in VexFlow-Koordinaten (pure, testbar)

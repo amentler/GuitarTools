@@ -244,4 +244,23 @@ describe('PlaybackController.onBeat callback', () => {
     pc._metronome.onBeat(1);
     expect(calls).toHaveLength(1); // no new call
   });
+
+  it('skips callback beats during count-in and starts at globalBeat=0 after that', () => {
+    const pc = new PlaybackController();
+    pc._beatsPerBar = 4;
+    pc._globalBeat = -5; // count-in of 4 beats => start at -(4 + 1)
+
+    const calls = [];
+    pc.onBeat(data => calls.push(data));
+
+    pc._metronome.onBeat(0);
+    pc._metronome.onBeat(1);
+    pc._metronome.onBeat(2);
+    pc._metronome.onBeat(3);
+    expect(calls).toHaveLength(0);
+
+    pc._metronome.onBeat(0);
+    expect(calls).toHaveLength(1);
+    expect(calls[0]).toEqual({ barIndex: 0, beatIndex: 0, globalBeat: 0 });
+  });
 });

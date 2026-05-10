@@ -57,7 +57,6 @@
     <div id="score-container" class="score-container"></div>
 
     <button id="btn-new-bars" class="btn-new-bars">Neue Takte</button>
-    <button id="btn-download-recordings" class="btn-new-bars u-hidden">⬇ Download</button>
 
     <!-- SETTINGS: Fret Range + String Selection -->
     <div class="settings-panel">
@@ -79,6 +78,15 @@
           <button class="btn-string active" data-string="5">E4</button>
         </div>
       </div>
+    </div>
+    <button id="btn-download-recordings" class="btn-new-bars u-hidden">⬇ Download</button>
+
+    <div class="strategy-status">
+      <span class="strategy-status__label">Pitch:</span>
+      <span id="sheet-music-strategy-pitch" class="strategy-status__value">—</span>
+      <span class="strategy-status__sep">·</span>
+      <span class="strategy-status__label">Onset:</span>
+      <span id="sheet-music-strategy-onset" class="strategy-status__value">—</span>
     </div>
   </section>
 
