@@ -2,13 +2,10 @@ import { existsSync, readdirSync, readFileSync } from 'fs';
 import { basename, dirname, join, relative } from 'path';
 import { readWavFile } from './wavDecoder.js';
 import {
-  classifyFrame,
   createMatchState,
-  getRecommendedFftSize,
 } from '../../js/shared/audio/fastNoteMatcher.js';
 import {
-  SHEET_MUSIC_CENTS_TOLERANCE,
-  softenSheetMusicFrameResult,
+  getSheetMusicRecognitionStrategies,
   updateSheetMusicMatchState,
 } from '../../js/games/sheetMusicReading/sheetMusicRecognition.js';
 
@@ -20,6 +17,10 @@ export const SHEET_FINGERPRINT_POSITIVE_FIXTURE_FILES = [
   'open-strings/slow.wav',
   'sheet-music-reading/4-4_40bpm_EGADB_9low6.wav',
 ];
+
+// Manifest tempo fields are recording metadata only. Real takes can be slower,
+// faster, or unsteady, so fingerprint assertions must not depend on declared
+// bpm/tempoBpm or derive exact note timing from it.
 
 function safeDivide(num, den) {
   return den === 0 ? 0 : num / den;
@@ -60,14 +61,14 @@ export function discoverSheetMusicSequenceFixtures() {
   });
 }
 
-function normalizeFrameForSheetMusicReading(frameResult, targetPitch) {
-  const softened = softenSheetMusicFrameResult(frameResult, targetPitch);
-  return softened.status === 'wrong'
-    ? { ...softened, status: 'unsure' }
-    : softened;
+function normalizeFrameForSheetMusicReading(frameResult) {
+  return frameResult.status === 'wrong'
+    ? { ...frameResult, status: 'unsure' }
+    : frameResult;
 }
 
 export function runSheetMusicSequenceSimulation(samples, sampleRate, targetSequence, options = {}) {
+  const strategy = options.strategy ?? getSheetMusicRecognitionStrategies()[0];
   const acceptedSequence = [];
   const acceptTimestamps = [];
   const frames = [];
@@ -79,7 +80,7 @@ export function runSheetMusicSequenceSimulation(samples, sampleRate, targetSeque
   }
 
   let currentTarget = targetSequence[targetIndex];
-  let fftSize = getRecommendedFftSize(currentTarget, sampleRate);
+  let fftSize = strategy.getRecommendedFftSize(currentTarget, sampleRate);
   const hopSize = options.hopSize ?? Math.max(1, Math.round(
     sampleRate * ((options.analyzeIntervalMs ?? SHEET_FINGERPRINT_ANALYZE_INTERVAL_MS) / 1000),
   ));
@@ -87,10 +88,8 @@ export function runSheetMusicSequenceSimulation(samples, sampleRate, targetSeque
 
   while (offset + fftSize <= samples.length && targetIndex < targetSequence.length) {
     const window = samples.subarray(offset, offset + fftSize);
-    const raw = classifyFrame(window, sampleRate, currentTarget, {
-      tolerateCents: SHEET_MUSIC_CENTS_TOLERANCE,
-    });
-    const effective = normalizeFrameForSheetMusicReading(raw, currentTarget);
+    const raw = strategy.classifyFrame(window, sampleRate, currentTarget);
+    const effective = normalizeFrameForSheetMusicReading(raw);
     const { nextState, event } = updateSheetMusicMatchState(matchState, effective);
     matchState = nextState;
 
@@ -113,7 +112,7 @@ export function runSheetMusicSequenceSimulation(samples, sampleRate, targetSeque
       matchState = createMatchState();
       if (targetIndex < targetSequence.length) {
         currentTarget = targetSequence[targetIndex];
-        fftSize = getRecommendedFftSize(currentTarget, sampleRate);
+        fftSize = strategy.getRecommendedFftSize(currentTarget, sampleRate);
       }
     }
 
@@ -165,8 +164,7 @@ function evaluateFixture(fixture, options = {}) {
   };
 }
 
-export function evaluateSheetMusicSequenceFingerprint(fixtures = discoverSheetMusicSequenceFixtures(), options = {}) {
-  const cases = fixtures.map(fixture => evaluateFixture(fixture, options));
+function summarizeSequenceCases(fixtures, cases, strategy) {
   const evaluated = cases.filter(row => !row.skipped);
   const passed = evaluated.filter(row => row.passed);
   const failed = evaluated.filter(row => !row.passed);
@@ -175,6 +173,7 @@ export function evaluateSheetMusicSequenceFingerprint(fixtures = discoverSheetMu
   const acceptedNotes = evaluated.reduce((sum, row) => sum + row.acceptedCount, 0);
 
   return {
+    strategy,
     fixtures,
     cases,
     counts: {
@@ -193,6 +192,21 @@ export function evaluateSheetMusicSequenceFingerprint(fixtures = discoverSheetMu
   };
 }
 
+export function evaluateSheetMusicSequenceFingerprint(fixtures = discoverSheetMusicSequenceFixtures(), options = {}) {
+  const strategies = options.strategies ?? getSheetMusicRecognitionStrategies();
+  const strategyReports = strategies.map(strategy => {
+    const cases = fixtures.map(fixture => evaluateFixture(fixture, { ...options, strategy }));
+    return summarizeSequenceCases(fixtures, cases, strategy);
+  });
+  const defaultReport = strategyReports[0];
+
+  return {
+    ...defaultReport,
+    strategies,
+    strategyReports,
+  };
+}
+
 function formatPercent(value) {
   return `${(value * 100).toFixed(1)}%`;
 }
@@ -205,11 +219,24 @@ function formatCase(row) {
 }
 
 export function formatSheetMusicSequenceFingerprintReport(report) {
-  const { counts, metrics, cases } = report;
+  const { counts, metrics, cases, strategyReports } = report;
+  const strategyTable = strategyReports.map(row => (
+    `| ${row.strategy.key} | ${row.counts.evaluated} | ${row.counts.passed} | ${row.counts.failed} | `
+      + `${row.counts.acceptedNotes}/${row.counts.expectedNotes} | `
+      + `${formatPercent(row.metrics.fixturePassRate)} | ${formatPercent(row.metrics.noteRecall)} |`
+  ));
   return [
     '# Sheet Music Sequence Fingerprint',
     '',
     `- fixtures: ${counts.total} sequence WAVs`,
+    `- strategies: ${report.strategies.map(strategy => strategy.key).join(', ')}`,
+    '',
+    '## Strategy Summary',
+    '| strategy | evaluated | passed | failed | notes | fixture pass rate | note recall |',
+    '|---|---:|---:|---:|---:|---:|---:|',
+    ...strategyTable,
+    '',
+    '## Default Strategy Detail',
     `- evaluated: ${counts.evaluated}`,
     `- skipped: ${counts.skipped}`,
     `- passed: ${counts.passed}`,

@@ -15,6 +15,7 @@ describe('sheet music sequence fingerprint', () => {
 
     expect(report.counts.total).toBe(SHEET_FINGERPRINT_POSITIVE_FIXTURE_FILES.length);
     expect(report.counts.evaluated).toBe(SHEET_FINGERPRINT_POSITIVE_FIXTURE_FILES.length);
+    expect(report.strategyReports.map(row => row.strategy.key)).toEqual(['fast-note-matcher']);
     expect(report.counts.failed, formatSheetMusicSequenceFingerprintReport(report)).toBe(0);
   }, 60_000);
 });

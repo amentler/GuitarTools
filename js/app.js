@@ -3,6 +3,7 @@ import './components/index.js';
 import { registerServiceWorker, forceAppReload } from './shared/pwa/sw-client.js';
 import { createGlobalDebugStore } from './shared/debug/index.js';
 import { getSetting, setSetting, SETTING_KEYS } from './shared/globalSettings.js';
+import { getSheetMusicRecognitionStrategies } from './games/sheetMusicReading/sheetMusicRecognition.js';
 
 async function loadVersionInfo() {
   const versionEl = document.getElementById('app-version');
@@ -74,6 +75,21 @@ function initSettings() {
     chordDetectionCheckbox.checked = getSetting(SETTING_KEYS.CHORD_DETECTION_USE_ESSENTIA);
     chordDetectionCheckbox.addEventListener('change', () => {
       setSetting(SETTING_KEYS.CHORD_DETECTION_USE_ESSENTIA, chordDetectionCheckbox.checked);
+    });
+  }
+
+  const sheetMusicStrategySelect = document.getElementById('setting-sheet-music-recognition-strategy');
+  if (sheetMusicStrategySelect) {
+    const strategies = getSheetMusicRecognitionStrategies();
+    sheetMusicStrategySelect.innerHTML = strategies
+      .map(strategy => `<option value="${strategy.key}">${strategy.label} – ${strategy.description}</option>`)
+      .join('');
+    const savedStrategy = getSetting(SETTING_KEYS.SHEET_MUSIC_RECOGNITION_STRATEGY);
+    sheetMusicStrategySelect.value = strategies.some(strategy => strategy.key === savedStrategy)
+      ? savedStrategy
+      : strategies[0]?.key;
+    sheetMusicStrategySelect.addEventListener('change', () => {
+      setSetting(SETTING_KEYS.SHEET_MUSIC_RECOGNITION_STRATEGY, sheetMusicStrategySelect.value);
     });
   }
 }

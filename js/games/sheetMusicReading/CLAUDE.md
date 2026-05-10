@@ -57,8 +57,16 @@ Optionaler Aktiv-Modus: Mikrofon-basierte Tonprüfung.
 - Audio im Aktivmodus:
   - `requestMicrophoneStream`
   - `openAudioSession` / `closeAudioSession`
-  - `classifyFrame` + `updateMatchState`
-  - `getRecommendedFftSize` pro Zielnote
+  - `sheetMusicRecognition.js` stellt eine Strategy-Registry fuer die
+    gespielte-Noten-Erkennung bereit. Aktuell implementiert und in der UI
+    sichtbar ist nur `fast-note-matcher`; spaetere Strategien muessen dasselbe
+    Frame-Result-Format liefern (`status`, `detectedPitch`, `hz`, `cents`,
+    optionale Zusatzdaten), damit Note- und Sequence-Fingerprints vergleichbar
+    bleiben.
+  - `classifyFrame` + `updateMatchState` laufen heute ueber die
+    `fast-note-matcher`-Strategie.
+  - `getRecommendedFftSize` wird ueber die aktive Strategie pro Zielnote
+    aufgeloest.
   - `guitarOnsetDetector.js` erkennt frische Anschlaege pitch-unabhaengig
     per breitbandigem Spektralfluss; nach einem Anschlag bleibt der
     Erkennungsversuch offen, bis die Zielnote akzeptiert oder ein neuer
@@ -71,7 +79,7 @@ Optionaler Aktiv-Modus: Mikrofon-basierte Tonprüfung.
 - Test-/Legacy-Hooks:
   - `?active=1` aktiviert den Aktivmodus direkt beim Laden
   - `window.__GT_SHEET_MUSIC_READING_BARS__` injiziert deterministische Notenfolgen
-- localStorage-Persistenz: `sheetMusic_active`, `sheetMusic_bpm`, `sheetMusic_timeSig`, `sheetMusic_showTab`, `sheetMusic_endless`
+- localStorage-Persistenz: `sheetMusic_active`, `sheetMusic_bpm`, `sheetMusic_timeSig`, `sheetMusic_showTab`, `sheetMusic_endless`; globale Strategy-Auswahl fuer diese Uebung: `gt_sheet_music_recognition_strategy`
 - Buttons: `#btn-sheet-active-mode`, `#btn-sheet-play` (Play/Stop), `#btn-new-bars`, `#btn-show-tab`, `#btn-endless-mode`, `#btn-record`, `#btn-record-stop`, `#btn-record-cancel`, `#btn-download-recordings`
 - Slider: `#sheet-music-bpm-slider` (40–240), `#sheet-music-fret-range-slider`
 - Select: `#sheet-music-time-sig` (2/4|3/4|4/4|3/8|6/8)

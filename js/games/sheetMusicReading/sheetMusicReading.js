@@ -20,13 +20,13 @@ import {
   setPlaybackButtonState,
 } from './sheetMusicReadingUI.js';
 import {
-  classifyFrame,
   createMatchState,
-  getRecommendedFftSize,
 } from '../../shared/audio/fastNoteMatcher.js';
+import { getSetting, SETTING_KEYS } from '../../shared/globalSettings.js';
 import {
+  classifySheetMusicFrame,
+  resolveSheetMusicRecognitionStrategy,
   SHEET_MUSIC_CENTS_TOLERANCE,
-  softenSheetMusicFrameResult,
   updateSheetMusicMatchState,
 } from './sheetMusicRecognition.js';
 import {
@@ -227,7 +227,10 @@ export function createSheetMusicReadingFeature() {
     const note = getCurrentNote();
     if (!note) return;
     const targetPitch = `${note.name}${note.octave}`;
-    const recommended = getRecommendedFftSize(targetPitch, audioSession.audioCtx?.sampleRate ?? 44100);
+    const strategy = resolveSheetMusicRecognitionStrategy(
+      getSetting(SETTING_KEYS.SHEET_MUSIC_RECOGNITION_STRATEGY),
+    );
+    const recommended = strategy.getRecommendedFftSize(targetPitch, audioSession.audioCtx?.sampleRate ?? 44100);
     if (recommended !== audioSession.currentFftSize) {
       audioSession.analyser.fftSize = recommended;
       audioSession.currentFftSize = recommended;
@@ -370,12 +373,10 @@ export function createSheetMusicReadingFeature() {
     }
 
     const targetPitch = `${targetNote.name}${targetNote.octave}`;
-    const frameResult = softenSheetMusicFrameResult(
-      classifyFrame(buffer, audioSession.audioCtx.sampleRate, targetPitch, {
-        tolerateCents: SHEET_MUSIC_CENTS_TOLERANCE,
-      }),
-      targetPitch,
-    );
+    const frameResult = classifySheetMusicFrame(buffer, audioSession.audioCtx.sampleRate, targetPitch, {
+      tolerateCents: SHEET_MUSIC_CENTS_TOLERANCE,
+      strategyKey: getSetting(SETTING_KEYS.SHEET_MUSIC_RECOGNITION_STRATEGY),
+    });
     let effective = frameResult.status === 'wrong'
       ? { ...frameResult, status: 'unsure' }
       : frameResult;
