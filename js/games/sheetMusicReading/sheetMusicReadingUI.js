@@ -22,6 +22,7 @@ export function resolveSheetMusicUI(root = document) {
     recordStopBtn:   root.getElementById?.('btn-record-stop') ?? document.getElementById('btn-record-stop'),
     recordCancelBtn: root.getElementById?.('btn-record-cancel') ?? document.getElementById('btn-record-cancel'),
     downloadBtn:     root.getElementById?.('btn-download-recordings') ?? document.getElementById('btn-download-recordings'),
+    analyseBtn:      root.getElementById?.('btn-analyse-recording') ?? document.getElementById('btn-analyse-recording'),
   };
 }
 

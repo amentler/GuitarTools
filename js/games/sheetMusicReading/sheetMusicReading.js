@@ -41,6 +41,7 @@ import {
 } from '../../shared/audio/audioSessionService.js';
 import { createRecorder } from './sheetMusicRecorder.js';
 import { buildZip, downloadBlob } from './sheetMusicZip.js';
+import { saveLastRecording } from '../../shared/audioAnalyseStorage.js';
 import { getEssentia } from '../chordExerciseEssentia/essentiaLoader.js';
 import { createEssentiaSheetMusicStrategy } from './essentiaSheetMusicStrategy.js';
 
@@ -541,6 +542,7 @@ export function createSheetMusicReadingFeature() {
     ui.recordStopBtn?.classList.toggle('u-hidden', !isRec);
     ui.recordCancelBtn?.classList.toggle('u-hidden', !isRec);
     if (ui.downloadBtn) ui.downloadBtn.classList.toggle('u-hidden', savedRecordings.length === 0);
+    if (ui.analyseBtn) ui.analyseBtn.classList.toggle('u-hidden', savedRecordings.length === 0);
   }
 
   async function startRecording() {
@@ -566,6 +568,8 @@ export function createSheetMusicReadingFeature() {
     const basename = makeBasename(state.bars, state.bpm, state.timeSig);
     const manifest = makeManifest(state.bars, state.bpm, state.timeSig);
     savedRecordings.push({ basename, wav, manifest });
+    // Automatisch in IndexedDB sichern, damit das Analyse-Werkzeug darauf zugreifen kann.
+    saveLastRecording(wav, manifest).catch(() => {});
     syncRecordingUI();
   }
 
@@ -868,6 +872,9 @@ export function createSheetMusicReadingFeature() {
       ui.recordStopBtn?.addEventListener('click', stopRecording);
       ui.recordCancelBtn?.addEventListener('click', cancelRecording);
       ui.downloadBtn?.addEventListener('click', downloadRecordings);
+      ui.analyseBtn?.addEventListener('click', () => {
+        window.location.href = '../audio-analyse/index.html';
+      });
 
       // BPM slider
       ui.bpmSlider.addEventListener('input', () => {
