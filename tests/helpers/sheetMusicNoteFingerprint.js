@@ -193,8 +193,13 @@ function formatPercent(value) {
 
 function formatCase(row) {
   const cents = Number.isFinite(row.cents) ? `${row.cents.toFixed(1)}c` : 'n/a';
-  return `${row.kind} ${row.sourceFile} (${row.sourcePitch}) -> target ${row.targetPitch}; `
-    + `detected=${row.detectedPitch ?? 'none'}, frame=${row.frameStatus}, cents=${cents}`;
+  return `| ${row.kind} | ${row.sourceFile} | ${row.sourcePitch} | ${row.targetPitch} | `
+    + `${row.detectedPitch ?? 'none'} | ${row.frameStatus} | ${cents} |`;
+}
+
+function formatOnsetFailure(row) {
+  const status = row.missing ? 'MISSING' : 'NO_ONSET';
+  return `| ${status} | ${row.fixture.file} | ${row.fixture.pitch} |`;
 }
 
 export function formatOpenStringNoteFingerprintReport(report) {
@@ -229,9 +234,13 @@ export function formatOpenStringNoteFingerprintReport(report) {
     `- false negative rate: ${formatPercent(metrics.falseNegativeRate)}`,
     '',
     '## False Positives',
+    '| kind | source file | source pitch | target pitch | detected | frame | cents |',
+    '|---|---|---:|---:|---:|---|---:|',
     ...cases.filter(row => row.kind === 'FP').map(formatCase),
     '',
     '## False Negatives',
+    '| kind | source file | source pitch | target pitch | detected | frame | cents |',
+    '|---|---|---:|---:|---:|---|---:|',
     ...cases.filter(row => row.kind === 'FN').map(formatCase),
     '',
     '## Single-Note Onset Goldens',
@@ -241,9 +250,11 @@ export function formatOpenStringNoteFingerprintReport(report) {
     `- missing goldens: ${onsetCounts.missing}`,
     '',
     '## Onset Failures',
+    '| status | fixture | pitch |',
+    '|---|---|---:|',
     ...onsetCases
       .filter(row => !row.passed)
-      .map(row => `${row.missing ? 'MISSING' : 'NO_ONSET'} ${row.fixture.file} (${row.fixture.pitch})`),
+      .map(formatOnsetFailure),
   ];
 
   return lines.join('\n');

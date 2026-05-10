@@ -18,6 +18,7 @@
     "jsfingerprint": "node scripts/chord-recognition-jsfingerprint.mjs",
     "notefingerprint": "node scripts/note-recognition-fingerprint.mjs",
     "notefingerprint:goldens": "node scripts/generate-note-analyser-goldens.mjs",
+    "sfp": "node scripts/sheet-and-note-fingerprint.mjs",
     "sheetfingerprint": "node scripts/sheet-music-sequence-fingerprint.mjs",
     "lint": "eslint .",
     "prepare": "husky && git config merge.ours.driver true"
