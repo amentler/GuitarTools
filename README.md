@@ -119,12 +119,11 @@ Eine genauere Beschreibung der Schichten und Konventionen steht in
 ### Versions- und Cache-Metadaten
 
 - `version.txt` wird nicht manuell gepflegt.
-- `.husky/prepare-commit-msg` ruft `scripts/auto-update-version.sh` auf und
-  erzeugt pro Commit automatisch die naechste Versionszeile.
+- `.husky/pre-commit` ruft `scripts/auto-update-version.sh` auf und erzeugt
+  pro Commit automatisch die naechste Versionszeile, solange `version.txt`
+  nicht bereits staged ist.
 - Derselbe Hook synchronisiert auch `sw.js` `CACHE_VERSION`.
-- Nach einem Commit kann dadurch bereits die naechste Versions-/Cache-Metadaten-
-  aenderung im Index liegen. Vor weiteren Commits oder Sync-Schritten daher
-  immer `git status` pruefen.
+- Ist `sw.js` bereits staged, bleibt auch diese Datei unveraendert.
 
 ---
 

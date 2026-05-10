@@ -1,0 +1,2 @@
+rank,id,round,score,exact,under,over,extremeOver,totalOnsets,parameters
+1,r001-0001-fbff26ad,1,-2494,1,3,39,20,156,"{""relativeReattackFactor"":1.879471,""relativeReattackMinDelta"":0.00799,""relativeFluxFactor"":4.317699,""spectralNoveltyRatio"":4.39687,""spectralNoveltyMinBins"":31,""cooldownFrames"":3,""cooldownOverrideFactor"":3.485,""cooldownOverrideMinFlux"":0.018263,""cooldownOverrideMinBandRatio"":0.05808,""analyzeIntervalMs"":39}"

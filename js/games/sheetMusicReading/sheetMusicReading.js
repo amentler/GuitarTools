@@ -51,7 +51,7 @@ const ENDLESS_SCROLL_TARGET_FRACTION = 0.33;
 const ENDLESS_SCROLL_SHIFT_DELAY_MS = 420;
 // Minimum notes in the pool before showing the "too few notes" warning.
 const MIN_POOL_SIZE = 3;
-const ANALYZE_INTERVAL_MS = 50;
+const ANALYZE_INTERVAL_MS = 41;
 
 // Preload Essentia WASM in the background so it is ready when the user starts.
 getEssentia().then(ess => {

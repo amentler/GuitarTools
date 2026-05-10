@@ -161,22 +161,19 @@ verschlechtern.
 - Fuehrt Kreuzprodukt oder Kandidatenliste aus.
 - Schreibt Ergebnis als Markdown/CSV/JSON.
 - Bewertet Score gegen Plan-Ziele:
-  - `fast >= 8`
-  - `aeaed... >= 10`
-  - `aeaed..._slow >= 12`
-  - Guardrails `15..17` bzw. `14..18`
+  - 16-Noten-Aufnahmen im Zielbereich `13..18`
+  - leichte Overcounts werden milder bewertet als leichte Undercounts
+  - extreme Under- und Overcounts bleiben starke Negativsignale
 
 Status: erledigt als Beam-Search statt vollem Kreuzprodukt. Die Start-Spec liegt
 in `plans/sheet_music_onset_repair/onset-sweep-spec.json`.
 
 ## Fachliche Testfaelle
 
-- `open-strings/fast.wav`: mindestens `8/16` Guitar-Onsets.
-- `open-strings/aeaedgdgbebeabab.wav`: mindestens `10/16` Guitar-Onsets.
-- `open-strings/aeaedgdgbebeabab_slow.wav`: mindestens `12/16` Guitar-Onsets.
-- `open-strings/medium.wav`: bleibt im Bereich `15..17`.
-- `open-strings/eeeeaaaaddddgggg.wav`: bleibt im Bereich `15..17`.
-- `sheet-music-reading/*`: bleiben im Bereich `14..18`.
+- 16-Noten-Sequenzen bleiben im Bereich `13..18`.
+- Leichte Overcounts oberhalb `18` werden milder bestraft als leichte
+  Undercounts unterhalb `13`.
+- Extreme Undercounts und extreme Guardrail-Overcounts werden hart bestraft.
 - Steady Sustain triggert nicht dauerhaft neue Onsets.
 - Narrow-band Noise wird weiterhin nicht als Gitarrenschlag erkannt.
 - Starker Schlag waehrend Cooldown kann als Reattack erkannt werden, wenn

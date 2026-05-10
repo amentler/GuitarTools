@@ -7,5 +7,5 @@
 
 ### Version Update
 - Kein manueller Versionsschritt mehr noetig.
-- `version.txt` und `sw.js` werden durch den `prepare-commit-msg`-Hook
-  automatisch nachgezogen.
+- `version.txt` und `sw.js` werden durch den `pre-commit`-Hook automatisch
+  nachgezogen, wenn sie nicht bereits staged sind.

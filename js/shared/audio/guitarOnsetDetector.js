@@ -16,13 +16,21 @@ export const GUITAR_ONSET_RMS_MIN_DELTA = 0.012;
 export const GUITAR_ONSET_SPECTRAL_ACTIVITY_DB = -90;
 export const GUITAR_ONSET_MIN_ACTIVE_BAND_RATIO = 0.003;
 export const GUITAR_ONSET_DB_FLOOR = -120;
+export const GUITAR_ONSET_RELATIVE_REATTACK_FACTOR = 3.490424;
+export const GUITAR_ONSET_RELATIVE_REATTACK_MIN_DELTA = 0.010945;
+export const GUITAR_ONSET_RELATIVE_FLUX_FACTOR = 1.4;
+export const GUITAR_ONSET_SPECTRAL_NOVELTY_RATIO = 3.331523;
+export const GUITAR_ONSET_SPECTRAL_NOVELTY_MIN_BINS = 56;
+export const GUITAR_ONSET_COOLDOWN_OVERRIDE_FACTOR = 2.584139;
+export const GUITAR_ONSET_COOLDOWN_OVERRIDE_MIN_FLUX = 0.03;
+export const GUITAR_ONSET_COOLDOWN_OVERRIDE_MIN_BAND_RATIO = 0.06936;
 
 export const DEFAULT_GUITAR_ONSET_OPTIONS = Object.freeze({
   minRms: GUITAR_ONSET_MIN_RMS,
   minFlux: GUITAR_ONSET_MIN_FLUX,
   minBandRatio: GUITAR_ONSET_MIN_BAND_RATIO,
   binDelta: GUITAR_ONSET_BIN_DELTA,
-  cooldownFrames: GUITAR_ONSET_COOLDOWN_FRAMES,
+  cooldownFrames: 5,
   firstFrameRms: GUITAR_ONSET_FIRST_FRAME_RMS,
   rmsSpikeFactor: GUITAR_ONSET_RMS_SPIKE_FACTOR,
   rmsMinDelta: GUITAR_ONSET_RMS_MIN_DELTA,
@@ -33,15 +41,15 @@ export const DEFAULT_GUITAR_ONSET_OPTIONS = Object.freeze({
   endBin: null,
   sustainFloorDecay: 0.08,
   sustainFloorAttack: 0.02,
-  relativeReattackFactor: Number.POSITIVE_INFINITY,
-  relativeReattackMinDelta: 0.012,
-  relativeFluxFactor: Number.POSITIVE_INFINITY,
+  relativeReattackFactor: GUITAR_ONSET_RELATIVE_REATTACK_FACTOR,
+  relativeReattackMinDelta: GUITAR_ONSET_RELATIVE_REATTACK_MIN_DELTA,
+  relativeFluxFactor: GUITAR_ONSET_RELATIVE_FLUX_FACTOR,
   fluxHistoryDecay: 0.08,
-  spectralNoveltyRatio: Number.POSITIVE_INFINITY,
-  spectralNoveltyMinBins: 1,
-  cooldownOverrideFactor: Number.POSITIVE_INFINITY,
-  cooldownOverrideMinFlux: GUITAR_ONSET_MIN_FLUX,
-  cooldownOverrideMinBandRatio: GUITAR_ONSET_MIN_BAND_RATIO,
+  spectralNoveltyRatio: GUITAR_ONSET_SPECTRAL_NOVELTY_RATIO,
+  spectralNoveltyMinBins: GUITAR_ONSET_SPECTRAL_NOVELTY_MIN_BINS,
+  cooldownOverrideFactor: GUITAR_ONSET_COOLDOWN_OVERRIDE_FACTOR,
+  cooldownOverrideMinFlux: GUITAR_ONSET_COOLDOWN_OVERRIDE_MIN_FLUX,
+  cooldownOverrideMinBandRatio: GUITAR_ONSET_COOLDOWN_OVERRIDE_MIN_BAND_RATIO,
 });
 
 export function createGuitarOnsetState() {
@@ -196,6 +204,7 @@ export function updateGuitarOnsetDetector(state, { frequencyData = null, samples
   const relativeRmsAttack = Number.isFinite(relativeReattackFactor)
     && sustainFloorRms > 0
     && rms >= minRms
+    && activeBandRatio >= minActiveBandRatio
     && rms >= sustainFloorRms * relativeReattackFactor
     && rms - sustainFloorRms >= relativeReattackMinDelta;
   const relativeSpectralAttack = Number.isFinite(relativeFluxFactor)

@@ -1,0 +1,110 @@
+{
+  "fixturesDir": "tests/fixtures/sequences",
+  "outputDir": "sweep-runs/onset",
+  "beamSize": 5,
+  "rounds": 12,
+  "candidatesPerRound": 80,
+  "timeBudgetMinutes": 240,
+  "seed": 1337,
+  "score": {
+    "underPenalty": 4,
+    "overPenalty": 2,
+    "extremeUnderPenalty": 25,
+    "extremeUnderMultiplier": 0.75,
+    "extremeOverPenalty": 25,
+    "extremeOverMultiplier": 1.25,
+    "guardrailOverMultiplier": 1.25
+  },
+  "parameters": {
+    "relativeReattackFactor": [
+      1.4,
+      4
+    ],
+    "relativeReattackMinDelta": [
+      0.004,
+      0.025
+    ],
+    "relativeFluxFactor": [
+      1.4,
+      5
+    ],
+    "spectralNoveltyRatio": [
+      1.5,
+      6
+    ],
+    "spectralNoveltyMinBins": [
+      6,
+      64
+    ],
+    "cooldownFrames": [
+      2,
+      5
+    ],
+    "cooldownOverrideFactor": [
+      1.8,
+      5
+    ],
+    "cooldownOverrideMinFlux": [
+      0.004,
+      0.03
+    ],
+    "cooldownOverrideMinBandRatio": [
+      0.02,
+      0.09
+    ],
+    "analyzeIntervalMs": [
+      25,
+      50
+    ]
+  },
+  "fixtureOverrides": {
+    "open-strings/fast.wav": {
+      "role": "target",
+      "minOnsets": 13,
+      "maxOnsets": 18,
+      "weight": 3
+    },
+    "open-strings/aeaedgdgbebeabab.wav": {
+      "role": "target",
+      "minOnsets": 13,
+      "maxOnsets": 18,
+      "weight": 2
+    },
+    "open-strings/aeaedgdgbebeabab_slow.wav": {
+      "role": "target",
+      "minOnsets": 13,
+      "maxOnsets": 18,
+      "weight": 2
+    },
+    "open-strings/slow.wav": {
+      "role": "target",
+      "minOnsets": 13,
+      "maxOnsets": 18,
+      "weight": 1
+    },
+    "open-strings/medium.wav": {
+      "role": "guardrail",
+      "minOnsets": 13,
+      "maxOnsets": 18,
+      "weight": 4
+    },
+    "open-strings/eeeeaaaaddddgggg.wav": {
+      "role": "guardrail",
+      "minOnsets": 13,
+      "maxOnsets": 18,
+      "weight": 4
+    },
+    "sheet-music-reading/4-4_40bpm_EBGDA_1jtn8.wav": {
+      "role": "guardrail",
+      "minOnsets": 13,
+      "maxOnsets": 18,
+      "weight": 3
+    },
+    "sheet-music-reading/4-4_40bpm_EGADB_9low6.wav": {
+      "role": "guardrail",
+      "minOnsets": 13,
+      "maxOnsets": 18,
+      "weight": 3
+    }
+  }
+}

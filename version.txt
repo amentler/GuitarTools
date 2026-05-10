@@ -1,1 +1,1 @@
-Version 0.124 | 2026-05-10 21:38 | e641c8f | chore: document adaptive onset parameter plan
+Version 0.125 | 2026-05-10 23:16 | ce71439 | fix: guard appendResult with mkdirSync to prevent ENOENT on first run

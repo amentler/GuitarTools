@@ -41,7 +41,7 @@ describe('sheetOnsetSweepCore', () => {
     });
   });
 
-  it('scores guardrail overcounts harsher than target undercounts', () => {
+  it('scores extreme overcounts harsher than target undercounts', () => {
     const guardrail = {
       file: 'medium.wav',
       role: 'guardrail',
@@ -64,6 +64,29 @@ describe('sheetOnsetSweepCore', () => {
 
     expect(guardrailOver.score).toBeLessThan(targetUnder.score);
     expect(guardrailOver.extremeOver).toBeGreaterThan(0);
+  });
+
+  it('penalizes slight undercounts more than slight overcounts and tracks extreme undercounts', () => {
+    const fixture = {
+      file: 'sixteen-notes.wav',
+      role: 'target',
+      expectedCount: 16,
+      minOnsets: 13,
+      maxOnsets: 18,
+      weight: 1,
+    };
+
+    const slightUnder = scoreFixture(fixture, 12);
+    const slightOver = scoreFixture(fixture, 19);
+    const extremeUnder = scoreFixture(fixture, 6);
+    const extremeOver = scoreFixture(fixture, 30);
+
+    expect(slightOver.score).toBeGreaterThan(slightUnder.score);
+    expect(slightUnder.extremeUnder).toBe(0);
+    expect(extremeUnder.extremeUnder).toBeGreaterThan(0);
+    expect(extremeUnder.score).toBeLessThan(slightUnder.score);
+    expect(extremeOver.extremeOver).toBeGreaterThan(0);
+    expect(extremeOver.score).toBeLessThan(slightOver.score);
   });
 
   it('generates deterministic initial candidates for a seed', () => {

@@ -7,51 +7,60 @@
   "timeBudgetMinutes": 240,
   "seed": 1337,
   "score": {
-    "underPenalty": 3,
-    "overPenalty": 6,
+    "underPenalty": 4,
+    "overPenalty": 2,
+    "extremeUnderPenalty": 25,
+    "extremeUnderMultiplier": 0.75,
     "extremeOverPenalty": 25,
+    "extremeOverMultiplier": 1.25,
     "guardrailOverMultiplier": 1.25
   },
   "fixtureOverrides": {
     "open-strings/fast.wav": {
       "role": "target",
-      "minOnsets": 8,
+      "minOnsets": 13,
       "maxOnsets": 18,
       "weight": 3
     },
     "open-strings/aeaedgdgbebeabab.wav": {
       "role": "target",
-      "minOnsets": 10,
+      "minOnsets": 13,
       "maxOnsets": 18,
       "weight": 2
     },
     "open-strings/aeaedgdgbebeabab_slow.wav": {
       "role": "target",
-      "minOnsets": 12,
+      "minOnsets": 13,
       "maxOnsets": 18,
       "weight": 2
     },
+    "open-strings/slow.wav": {
+      "role": "target",
+      "minOnsets": 13,
+      "maxOnsets": 18,
+      "weight": 1
+    },
     "open-strings/medium.wav": {
       "role": "guardrail",
-      "minOnsets": 15,
-      "maxOnsets": 17,
+      "minOnsets": 13,
+      "maxOnsets": 18,
       "weight": 4
     },
     "open-strings/eeeeaaaaddddgggg.wav": {
       "role": "guardrail",
-      "minOnsets": 15,
-      "maxOnsets": 17,
+      "minOnsets": 13,
+      "maxOnsets": 18,
       "weight": 4
     },
     "sheet-music-reading/4-4_40bpm_EBGDA_1jtn8.wav": {
       "role": "guardrail",
-      "minOnsets": 14,
+      "minOnsets": 13,
       "maxOnsets": 18,
       "weight": 3
     },
     "sheet-music-reading/4-4_40bpm_EGADB_9low6.wav": {
       "role": "guardrail",
-      "minOnsets": 14,
+      "minOnsets": 13,
       "maxOnsets": 18,
       "weight": 3
     }

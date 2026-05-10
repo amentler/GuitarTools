@@ -16,7 +16,7 @@ import {
 import { computeDbSpectrum } from './chordHpcpExtraction.js';
 
 const SEQUENCES_DIR = join(process.cwd(), 'tests/fixtures/sequences');
-export const SHEET_FINGERPRINT_ANALYZE_INTERVAL_MS = 50;
+export const SHEET_FINGERPRINT_ANALYZE_INTERVAL_MS = 41;
 export const SHEET_FINGERPRINT_ONSET_FRAME_SIZE = 4096;
 export const SHEET_FINGERPRINT_POSITIVE_FIXTURE_FILES = [
   'open-strings/eeeeaaaaddddgggg.wav',

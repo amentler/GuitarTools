@@ -42,11 +42,9 @@ Qualitätsmanagement (Ist):
 ## 4) Commit-Checkliste (verbindlich)
 
 Vor jedem Commit:
-- `version.txt` **nicht** manuell bearbeiten
-- `version.txt` und `sw.js` werden durch `.husky/prepare-commit-msg` via
-  `scripts/auto-update-version.sh` automatisch aktualisiert und gestaged
-- Commit-Titel sauber formulieren, da er in `version.txt` landet
-- Danach `git status` prüfen, weil der Hook nach dem Commit bereits die naechste
-  Version/CACHE-Metadatenaenderung vorbereiten kann
-- Dann erst `npm run lint`/`npm test` und Commit bzw. Folge-Commit sauber
-  abschliessen
+- `version.txt` **nicht** manuell bearbeiten, ausser der Commit soll die
+  Metadaten gezielt selbst setzen
+- `version.txt` und `sw.js` werden durch `.husky/pre-commit` via
+  `scripts/auto-update-version.sh` automatisch aktualisiert und staged,
+  wenn sie nicht bereits staged sind
+- Dann erst `npm run lint`/`npm test` und Commit sauber abschliessen

@@ -17,9 +17,12 @@ export const DEFAULT_SWEEP_SPEC = Object.freeze({
   timeBudgetMinutes: null,
   seed: 1337,
   score: {
-    underPenalty: 3,
-    overPenalty: 5,
+    underPenalty: 4,
+    overPenalty: 2,
+    extremeUnderPenalty: 20,
+    extremeUnderMultiplier: 0.75,
     extremeOverPenalty: 20,
+    extremeOverMultiplier: 1.4,
     guardrailOverMultiplier: 1.4,
   },
   parameters: {
@@ -271,6 +274,10 @@ export function createRefinedCandidates(spec, beam, count, roundIndex, random) {
 }
 
 export function scoreFixture(fixture, onsetCount, scoreSpec = DEFAULT_SWEEP_SPEC.score) {
+  const scoring = {
+    ...DEFAULT_SWEEP_SPEC.score,
+    ...scoreSpec,
+  };
   const minOnsets = fixture.minOnsets ?? fixture.expectedCount;
   const maxOnsets = fixture.maxOnsets ?? fixture.expectedCount;
   const weight = fixture.weight ?? 1;
@@ -278,20 +285,27 @@ export function scoreFixture(fixture, onsetCount, scoreSpec = DEFAULT_SWEEP_SPEC
   const over = Math.max(0, onsetCount - maxOnsets);
   const within = under === 0 && over === 0;
   const expected = Math.max(1, fixture.expectedCount);
-  const extremeLimit = Math.ceil(expected * scoreSpec.guardrailOverMultiplier);
-  const extremeOver = fixture.role === 'guardrail' && onsetCount > extremeLimit
+  const extremeUnderLimit = Math.floor(expected * scoring.extremeUnderMultiplier);
+  const extremeUnder = onsetCount < extremeUnderLimit
+    ? extremeUnderLimit - onsetCount
+    : 0;
+  const extremeOverMultiplier = scoring.extremeOverMultiplier ?? scoring.guardrailOverMultiplier;
+  const extremeLimit = Math.ceil(expected * extremeOverMultiplier);
+  const extremeOver = onsetCount > extremeLimit
     ? onsetCount - extremeLimit
     : 0;
 
   return {
     score: weight * (
       (within ? expected : 0)
-      - under * scoreSpec.underPenalty
-      - over * scoreSpec.overPenalty
-      - extremeOver * scoreSpec.extremeOverPenalty
+      - under * scoring.underPenalty
+      - over * scoring.overPenalty
+      - extremeUnder * scoring.extremeUnderPenalty
+      - extremeOver * scoring.extremeOverPenalty
     ),
     under,
     over,
+    extremeUnder,
     extremeOver,
     within,
   };
@@ -301,6 +315,7 @@ export function scoreCandidate(candidate, fixtureResults, scoreSpec = DEFAULT_SW
   let score = 0;
   let under = 0;
   let over = 0;
+  let extremeUnder = 0;
   let extremeOver = 0;
   let exact = 0;
   let totalOnsets = 0;
@@ -309,6 +324,7 @@ export function scoreCandidate(candidate, fixtureResults, scoreSpec = DEFAULT_SW
     score += fixtureScore.score;
     under += fixtureScore.under;
     over += fixtureScore.over;
+    extremeUnder += fixtureScore.extremeUnder;
     extremeOver += fixtureScore.extremeOver;
     exact += fixtureScore.within ? 1 : 0;
     totalOnsets += row.onsetCount;
@@ -325,6 +341,7 @@ export function scoreCandidate(candidate, fixtureResults, scoreSpec = DEFAULT_SW
       exact,
       under,
       over,
+      extremeUnder,
       extremeOver,
       totalOnsets,
     },
@@ -335,9 +352,10 @@ export function scoreCandidate(candidate, fixtureResults, scoreSpec = DEFAULT_SW
 export function sortResults(results) {
   return [...results].sort((a, b) => (
     b.score - a.score
-    || a.metrics.extremeOver - b.metrics.extremeOver
-    || a.metrics.over - b.metrics.over
-    || a.metrics.under - b.metrics.under
+    || (a.metrics.extremeUnder ?? 0) - (b.metrics.extremeUnder ?? 0)
+    || (a.metrics.extremeOver ?? 0) - (b.metrics.extremeOver ?? 0)
+    || (a.metrics.over ?? 0) - (b.metrics.over ?? 0)
+    || (a.metrics.under ?? 0) - (b.metrics.under ?? 0)
     || a.id.localeCompare(b.id)
   ));
 }
@@ -380,12 +398,13 @@ export function formatReport(results, spec, fixtures) {
     `- fixtures: ${fixtures.length}`,
     '',
     '## Best Candidates',
-    '| rank | id | round | score | exact | under | over | extreme over | total onsets |',
-    '|---:|---|---:|---:|---:|---:|---:|---:|---:|',
+    '| rank | id | round | score | exact | under | over | extreme under | extreme over | total onsets |',
+    '|---:|---|---:|---:|---:|---:|---:|---:|---:|---:|',
     ...best.map((row, index) => (
       `| ${index + 1} | ${row.id} | ${row.round} | ${row.score.toFixed(2)} | `
       + `${row.metrics.exact} | ${row.metrics.under} | ${row.metrics.over} | `
-      + `${row.metrics.extremeOver} | ${row.metrics.totalOnsets} |`
+      + `${row.metrics.extremeUnder ?? 0} | ${row.metrics.extremeOver ?? 0} | `
+      + `${row.metrics.totalOnsets} |`
     )),
     '',
     '## Best Fixture Counts',

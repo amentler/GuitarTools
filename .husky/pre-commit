@@ -1,1 +1,2 @@
+scripts/auto-update-version.sh
 npx lint-staged

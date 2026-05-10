@@ -2,7 +2,8 @@
 
 # auto-update-version.sh
 # Hook-owned version/cache metadata updater.
-# Called from .husky/prepare-commit-msg; agents must not edit version.txt manually.
+# Called from .husky/pre-commit. It only updates metadata files that are not
+# already staged for the current commit.
 
 normalize_version_counter() {
     local version=$1
@@ -84,51 +85,98 @@ bump_version() {
 }
 
 sync_sw_cache_version() {
-    if [ -f "sw.js" ] && [ -f "version.txt" ]; then
-        CURRENT_VERSION_STRING=$(head -n 1 version.txt)
-        VERSION_SLUG=$(echo "$CURRENT_VERSION_STRING" | grep -oE 'Version [^|]+' | sed 's/Version //' | xargs | tr ' ' '-' | tr ':' '-')
-        
-        if [ -n "$VERSION_SLUG" ]; then
-            sed -i "s/const CACHE_VERSION = '.*';/const CACHE_VERSION = '$VERSION_SLUG';/" sw.js
-            git add sw.js
-            echo "Synced sw.js CACHE_VERSION to $VERSION_SLUG"
-        fi
+    if is_staged "sw.js"; then
+        echo "sw.js already staged; leaving CACHE_VERSION unchanged"
+        return 0
+    fi
+
+    if [ ! -f "sw.js" ] || [ ! -f "version.txt" ]; then
+        return 0
+    fi
+
+    if ! git diff --quiet -- "sw.js"; then
+        echo "sw.js has unstaged changes; leaving CACHE_VERSION unchanged"
+        return 0
+    fi
+
+    CURRENT_VERSION_STRING=$(staged_or_worktree_first_line "version.txt")
+    VERSION_SLUG=$(echo "$CURRENT_VERSION_STRING" | grep -oE 'Version [^|]+' | sed 's/Version //' | xargs | tr ' ' '-' | tr ':' '-')
+
+    if [ -n "$VERSION_SLUG" ]; then
+        sed -i "s/const CACHE_VERSION = '.*';/const CACHE_VERSION = '$VERSION_SLUG';/" sw.js
+        git add sw.js
+        echo "Synced sw.js CACHE_VERSION to $VERSION_SLUG"
     fi
 }
 
+is_staged() {
+    local file_path=$1
+    ! git diff --cached --quiet -- "$file_path"
+}
+
+staged_or_worktree_first_line() {
+    local file_path=$1
+
+    if is_staged "$file_path"; then
+        git show ":$file_path" 2>/dev/null | head -n 1
+        return 0
+    fi
+
+    head -n 1 "$file_path"
+}
+
+build_precommit_title() {
+    local file_count
+    local first_file
+
+    file_count=$(git diff --cached --name-only --diff-filter=ACMRTUXB \
+        | grep -v -E '^(version\.txt|sw\.js)$' \
+        | wc -l \
+        | tr -d ' ')
+    first_file=$(git diff --cached --name-only --diff-filter=ACMRTUXB \
+        | grep -v -E '^(version\.txt|sw\.js)$' \
+        | head -n 1)
+
+    if [ -z "$first_file" ]; then
+        echo "Metadata update"
+        return 0
+    fi
+
+    if [ "$file_count" -gt 1 ]; then
+        echo "$first_file (+$((file_count - 1)) more)"
+        return 0
+    fi
+
+    echo "$first_file"
+}
+
 main() {
-    local COMMIT_MSG_FILE=$1
+    # 1. Auto-generate version.txt only when the commit does not already
+    #    include a staged version.txt change.
+    if is_staged "version.txt"; then
+        echo "version.txt already staged; leaving version metadata unchanged"
+    else
+        if [ -f "version.txt" ] && ! git diff --quiet -- "version.txt"; then
+            echo "version.txt has unstaged changes; leaving version metadata unchanged"
+        else
+            CURRENT_VERSION=$(extract_current_version "version.txt")
 
-    # 1. Always auto-generate version.txt – never trust manually staged content.
-    #    Agents must NOT manually edit version.txt; the hook owns this file.
-    CURRENT_VERSION=$(extract_current_version "version.txt")
+            # 2. Increment the counter while keeping the public format in 0.x.
+            NEW_VERSION=$(bump_version "$CURRENT_VERSION")
 
-    # 2. Increment the counter while keeping the public format in 0.x.
-    NEW_VERSION=$(bump_version "$CURRENT_VERSION")
+            TIMESTAMP=$(date "+%Y-%m-%d %H:%M")
+            HASH=$(git rev-parse --short HEAD 2>/dev/null || echo "initial")
+            TITLE=$(build_precommit_title)
 
-    TIMESTAMP=$(date "+%Y-%m-%d %H:%M")
-    HASH=$(git rev-parse --short HEAD 2>/dev/null || echo "initial")
-
-    # 3. Extract title from commit message file (written by git before pre-commit).
-    #    Fall back to reading .git/COMMIT_EDITMSG directly if no path was given.
-    TITLE=""
-    if [ -z "$COMMIT_MSG_FILE" ]; then
-        COMMIT_MSG_FILE="$(git rev-parse --git-dir 2>/dev/null)/COMMIT_EDITMSG"
+            # 3. Write and stage version.txt.
+            echo "Version $NEW_VERSION | $TIMESTAMP | $HASH | $TITLE" > version.txt
+            git add version.txt
+            echo "Auto-updated version.txt to $NEW_VERSION"
+        fi
     fi
-    if [ -f "$COMMIT_MSG_FILE" ]; then
-        TITLE=$(grep -v '^#' "$COMMIT_MSG_FILE" | head -n 1 | xargs)
-    fi
-    if [ -z "$TITLE" ]; then
-        TITLE="Update"
-    fi
 
-    # 4. Write and stage version.txt.
-    echo "Version $NEW_VERSION | $TIMESTAMP | $HASH | $TITLE" > version.txt
-    git add version.txt
-    echo "Auto-updated version.txt to $NEW_VERSION"
-
-    # 5. Sync sw.js CACHE_VERSION with version.txt.
-    #    This may leave the next version/cache bump staged immediately after a commit.
+    # 4. Sync sw.js CACHE_VERSION with version.txt when sw.js is not already
+    #    part of the current commit.
     sync_sw_cache_version
 }
 

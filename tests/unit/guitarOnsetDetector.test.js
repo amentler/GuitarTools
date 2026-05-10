@@ -28,8 +28,10 @@ function mixedSpectrum(baseDb, boostedDb, boostedEvery = 4, length = 1024) {
 describe('guitarOnsetDetector', () => {
   it('exposes the current detector defaults as a central options object', () => {
     expect(DEFAULT_GUITAR_ONSET_OPTIONS.minRms).toBe(0.005);
-    expect(DEFAULT_GUITAR_ONSET_OPTIONS.cooldownFrames).toBe(4);
-    expect(DEFAULT_GUITAR_ONSET_OPTIONS.relativeReattackFactor).toBe(Number.POSITIVE_INFINITY);
+    expect(DEFAULT_GUITAR_ONSET_OPTIONS.cooldownFrames).toBe(5);
+    expect(DEFAULT_GUITAR_ONSET_OPTIONS.relativeReattackFactor).toBe(3.490424);
+    expect(DEFAULT_GUITAR_ONSET_OPTIONS.relativeFluxFactor).toBe(1.4);
+    expect(DEFAULT_GUITAR_ONSET_OPTIONS.spectralNoveltyMinBins).toBe(56);
   });
 
   it('detects a broadband spectral attack independently of pitch', () => {

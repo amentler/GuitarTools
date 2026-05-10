@@ -69,6 +69,7 @@ function writeResultArtifacts(runDir, spec, fixtures, results) {
     'exact',
     'under',
     'over',
+    'extremeUnder',
     'extremeOver',
     'totalOnsets',
     'parameters',
@@ -81,7 +82,8 @@ function writeResultArtifacts(runDir, spec, fixtures, results) {
     row.metrics.exact,
     row.metrics.under,
     row.metrics.over,
-    row.metrics.extremeOver,
+    row.metrics.extremeUnder ?? 0,
+    row.metrics.extremeOver ?? 0,
     row.metrics.totalOnsets,
     JSON.stringify(row.parameters),
   ]));
