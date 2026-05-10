@@ -75,6 +75,11 @@ Empfohlene Felder:
   `1`, fuer Achtelnoten `2`.
 - `description`: Kurzer menschlicher Kontext zur Aufnahme.
 
+Tempo-Hinweis: `tempoBpm`, `bpm` und `notesPerBeat` sind nur Metadaten zur
+Aufnahme. Echte Takes koennen langsamer, schneller oder ungleichmaessig
+gespielt sein. Sheet-Fingerprint-Tests duerfen daraus keine exakten
+Notenzeitpunkte ableiten.
+
 Optionale Felder:
 
 - `source`: Freitext zur Herkunft, z. B. Gitarre, Mikrofon, Take-Name.
