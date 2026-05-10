@@ -17,10 +17,39 @@ export const GUITAR_ONSET_SPECTRAL_ACTIVITY_DB = -90;
 export const GUITAR_ONSET_MIN_ACTIVE_BAND_RATIO = 0.003;
 export const GUITAR_ONSET_DB_FLOOR = -120;
 
+export const DEFAULT_GUITAR_ONSET_OPTIONS = Object.freeze({
+  minRms: GUITAR_ONSET_MIN_RMS,
+  minFlux: GUITAR_ONSET_MIN_FLUX,
+  minBandRatio: GUITAR_ONSET_MIN_BAND_RATIO,
+  binDelta: GUITAR_ONSET_BIN_DELTA,
+  cooldownFrames: GUITAR_ONSET_COOLDOWN_FRAMES,
+  firstFrameRms: GUITAR_ONSET_FIRST_FRAME_RMS,
+  rmsSpikeFactor: GUITAR_ONSET_RMS_SPIKE_FACTOR,
+  rmsMinDelta: GUITAR_ONSET_RMS_MIN_DELTA,
+  spectralActivityDb: GUITAR_ONSET_SPECTRAL_ACTIVITY_DB,
+  minActiveBandRatio: GUITAR_ONSET_MIN_ACTIVE_BAND_RATIO,
+  dbFloor: GUITAR_ONSET_DB_FLOOR,
+  startBin: 2,
+  endBin: null,
+  sustainFloorDecay: 0.08,
+  sustainFloorAttack: 0.02,
+  relativeReattackFactor: Number.POSITIVE_INFINITY,
+  relativeReattackMinDelta: 0.012,
+  relativeFluxFactor: Number.POSITIVE_INFINITY,
+  fluxHistoryDecay: 0.08,
+  spectralNoveltyRatio: Number.POSITIVE_INFINITY,
+  spectralNoveltyMinBins: 1,
+  cooldownOverrideFactor: Number.POSITIVE_INFINITY,
+  cooldownOverrideMinFlux: GUITAR_ONSET_MIN_FLUX,
+  cooldownOverrideMinBandRatio: GUITAR_ONSET_MIN_BAND_RATIO,
+});
+
 export function createGuitarOnsetState() {
   return {
     previousMagnitudes: null,
     previousRms: 0,
+    sustainFloorRms: 0,
+    fluxHistory: 0,
     cooldownFramesRemaining: 0,
     frameCount: 0,
     lastFlux: 0,
@@ -28,6 +57,10 @@ export function createGuitarOnsetState() {
     lastRms: 0,
     lastActiveBandRatio: 0,
   };
+}
+
+function normalizeGuitarOnsetOptions(options = {}) {
+  return { ...DEFAULT_GUITAR_ONSET_OPTIONS, ...options };
 }
 
 function dbToLinear(db, dbFloor) {
@@ -71,6 +104,30 @@ export function computeBroadbandFlux(previousMagnitudes, currentMagnitudes, opti
   };
 }
 
+function computeSpectralNoveltyBins(previousMagnitudes, currentMagnitudes, options = {}) {
+  if (!previousMagnitudes || previousMagnitudes.length !== currentMagnitudes.length) {
+    return 0;
+  }
+
+  const binDelta = options.binDelta;
+  const ratio = options.spectralNoveltyRatio;
+  if (!Number.isFinite(ratio)) return 0;
+
+  const startBin = Math.max(0, options.startBin);
+  const endBin = Math.min(currentMagnitudes.length, options.endBin ?? currentMagnitudes.length);
+  let noveltyBins = 0;
+
+  for (let i = startBin; i < endBin; i++) {
+    const previous = previousMagnitudes[i];
+    const current = currentMagnitudes[i];
+    if (current - previous >= binDelta && current >= Math.max(previous * ratio, binDelta)) {
+      noveltyBins++;
+    }
+  }
+
+  return noveltyBins;
+}
+
 function computeActiveBandRatio(frequencyData, options = {}) {
   if (!frequencyData) return 0;
 
@@ -89,15 +146,28 @@ function computeActiveBandRatio(frequencyData, options = {}) {
 }
 
 export function updateGuitarOnsetDetector(state, { frequencyData = null, samples = null, rms: providedRms = null } = {}, options = {}) {
-  const minRms = options.minRms ?? GUITAR_ONSET_MIN_RMS;
-  const minFlux = options.minFlux ?? GUITAR_ONSET_MIN_FLUX;
-  const minBandRatio = options.minBandRatio ?? GUITAR_ONSET_MIN_BAND_RATIO;
-  const cooldownFrames = options.cooldownFrames ?? GUITAR_ONSET_COOLDOWN_FRAMES;
-  const firstFrameRms = options.firstFrameRms ?? GUITAR_ONSET_FIRST_FRAME_RMS;
-  const rmsSpikeFactor = options.rmsSpikeFactor ?? GUITAR_ONSET_RMS_SPIKE_FACTOR;
-  const rmsMinDelta = options.rmsMinDelta ?? GUITAR_ONSET_RMS_MIN_DELTA;
-  const minActiveBandRatio = options.minActiveBandRatio ?? GUITAR_ONSET_MIN_ACTIVE_BAND_RATIO;
-  const dbFloor = options.dbFloor ?? GUITAR_ONSET_DB_FLOOR;
+  const normalizedOptions = normalizeGuitarOnsetOptions(options);
+  const {
+    minRms,
+    minFlux,
+    minBandRatio,
+    cooldownFrames,
+    firstFrameRms,
+    rmsSpikeFactor,
+    rmsMinDelta,
+    minActiveBandRatio,
+    dbFloor,
+    sustainFloorDecay,
+    sustainFloorAttack,
+    relativeReattackFactor,
+    relativeReattackMinDelta,
+    relativeFluxFactor,
+    fluxHistoryDecay,
+    spectralNoveltyMinBins,
+    cooldownOverrideFactor,
+    cooldownOverrideMinFlux,
+    cooldownOverrideMinBandRatio,
+  } = normalizedOptions;
 
   const rms = Number.isFinite(providedRms)
     ? providedRms
@@ -107,8 +177,13 @@ export function updateGuitarOnsetDetector(state, { frequencyData = null, samples
   const fluxResult = currentMagnitudes
     ? computeBroadbandFlux(state.previousMagnitudes, currentMagnitudes, options)
     : { flux: 0, growingBins: 0, consideredBins: 0, bandRatio: 0 };
+  const spectralNoveltyBins = currentMagnitudes
+    ? computeSpectralNoveltyBins(state.previousMagnitudes, currentMagnitudes, normalizedOptions)
+    : 0;
 
   const cooldownFramesRemaining = Math.max(0, state.cooldownFramesRemaining - 1);
+  const sustainFloorRms = state.sustainFloorRms ?? state.previousRms ?? 0;
+  const fluxHistory = state.fluxHistory ?? state.lastFlux ?? 0;
   const firstAudibleFrame = !state.previousMagnitudes
     && currentMagnitudes
     && rms >= firstFrameRms;
@@ -118,15 +193,44 @@ export function updateGuitarOnsetDetector(state, { frequencyData = null, samples
   const rmsAttack = rms >= minRms
     && activeBandRatio >= minActiveBandRatio
     && rms >= Math.max(state.previousRms * rmsSpikeFactor, state.previousRms + rmsMinDelta);
+  const relativeRmsAttack = Number.isFinite(relativeReattackFactor)
+    && sustainFloorRms > 0
+    && rms >= minRms
+    && rms >= sustainFloorRms * relativeReattackFactor
+    && rms - sustainFloorRms >= relativeReattackMinDelta;
+  const relativeSpectralAttack = Number.isFinite(relativeFluxFactor)
+    && fluxHistory > 0
+    && rms >= minRms
+    && fluxResult.flux >= fluxHistory * relativeFluxFactor
+    && spectralNoveltyBins >= spectralNoveltyMinBins;
+  const cooldownOverrideAttack = cooldownFramesRemaining > 0
+    && Number.isFinite(cooldownOverrideFactor)
+    && sustainFloorRms > 0
+    && rms >= sustainFloorRms * cooldownOverrideFactor
+    && fluxResult.flux >= cooldownOverrideMinFlux
+    && fluxResult.bandRatio >= cooldownOverrideMinBandRatio;
 
-  const event = cooldownFramesRemaining === 0 && (firstAudibleFrame || broadbandAttack || rmsAttack)
+  const attack = firstAudibleFrame || broadbandAttack || rmsAttack || relativeRmsAttack || relativeSpectralAttack;
+  const event = (cooldownFramesRemaining === 0 || cooldownOverrideAttack) && attack
     ? 'onset'
     : null;
+  const nextSustainFloorRms = event === 'onset'
+    ? rms
+    : sustainFloorRms <= 0
+    ? rms
+    : sustainFloorRms + (rms - sustainFloorRms) * (rms < sustainFloorRms ? sustainFloorDecay : sustainFloorAttack);
+  const nextFluxHistory = event === 'onset'
+    ? fluxResult.flux
+    : fluxHistory <= 0
+    ? fluxResult.flux
+    : fluxHistory + (fluxResult.flux - fluxHistory) * fluxHistoryDecay;
 
   return {
     nextState: {
       previousMagnitudes: currentMagnitudes ?? state.previousMagnitudes,
       previousRms: rms,
+      sustainFloorRms: nextSustainFloorRms,
+      fluxHistory: nextFluxHistory,
       cooldownFramesRemaining: event === 'onset' ? cooldownFrames : cooldownFramesRemaining,
       frameCount: state.frameCount + 1,
       lastFlux: fluxResult.flux,
@@ -148,5 +252,10 @@ export function updateGuitarOnsetDetector(state, { frequencyData = null, samples
     growingBins: fluxResult.growingBins,
     bandRatio: fluxResult.bandRatio,
     activeBandRatio,
+    spectralNoveltyBins,
+    relativeRmsAttack,
+    relativeSpectralAttack,
+    cooldownOverrideAttack,
+    options: normalizedOptions,
   };
 }

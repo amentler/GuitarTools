@@ -1,7 +1,25 @@
 # Plan: Adaptive Guitar-Onset-Parameter
 
 **Erstellt:** 2026-05-10  
-**Status:** Umsetzungsplan fuer parametrisierbare Onset-Experimente
+**Status:** Parametrisierbare Onset-Experimente implementiert; Tuning/Sweep offen
+
+## Umsetzungsstand 2026-05-10
+
+- Phase 1 erledigt: `DEFAULT_GUITAR_ONSET_OPTIONS` ist die zentrale
+  Detector-Konfiguration und `updateGuitarOnsetDetector()` nimmt normalisierte
+  Optionen an.
+- Phase 2 erledigt: der Onset-State fuehrt lokalen Sustain-Floor und
+  Flux-Historie.
+- Phasen 3 bis 5 technisch nutzbar: relative RMS-Reattack, relative spektrale
+  Neuheit und Cooldown-Override sind per Optionen aktivierbar. Die Defaults
+  halten diese Pfade deaktiviert, damit bestehende Guardrails reproduzierbar
+  bleiben.
+- Phase 6 erledigt: `sheetfingerprint` und `sfp` akzeptieren
+  `--onset-config path/to/config.json`; Analyse-Parameter und
+  Detector-Optionen werden in den Report uebernommen.
+- Phase 7 erledigt als erste autonome Version: `npm run onsetsweep -- --spec ...`
+  fuehrt einen resumierbaren Beam-Search-Sweep aus, speichert JSONL/CSV/Markdown
+  und schreibt die besten Configs als `best-*.config.json`.
 
 ## Ziel
 
@@ -147,6 +165,9 @@ verschlechtern.
   - `aeaed... >= 10`
   - `aeaed..._slow >= 12`
   - Guardrails `15..17` bzw. `14..18`
+
+Status: erledigt als Beam-Search statt vollem Kreuzprodukt. Die Start-Spec liegt
+in `plans/sheet_music_onset_repair/onset-sweep-spec.json`.
 
 ## Fachliche Testfaelle
 

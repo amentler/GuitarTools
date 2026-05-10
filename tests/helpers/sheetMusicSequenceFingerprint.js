@@ -87,7 +87,7 @@ function normalizeFrameForSheetMusicReading(frameResult) {
     : frameResult;
 }
 
-function countGuitarOnsets(samples, sampleRate, options = {}) {
+export function countGuitarOnsets(samples, sampleRate, options = {}) {
   const frameSize = options.onsetFrameSize ?? SHEET_FINGERPRINT_ONSET_FRAME_SIZE;
   const hopSize = options.onsetHopSize ?? Math.max(1, Math.round(
     sampleRate * ((options.analyzeIntervalMs ?? SHEET_FINGERPRINT_ANALYZE_INTERVAL_MS) / 1000),
@@ -362,6 +362,12 @@ export function evaluateSheetMusicSequenceFingerprint(fixtures = discoverSheetMu
     strategyReports,
     onsetStrategies,
     onsetStrategyReports,
+    onsetConfig: {
+      analyzeIntervalMs: options.analyzeIntervalMs ?? SHEET_FINGERPRINT_ANALYZE_INTERVAL_MS,
+      onsetFrameSize: options.onsetFrameSize ?? SHEET_FINGERPRINT_ONSET_FRAME_SIZE,
+      onsetHopSize: options.onsetHopSize ?? null,
+      onsetDetectorOptions: options.onsetDetectorOptions ?? {},
+    },
   };
 }
 
@@ -411,6 +417,8 @@ function formatAlignmentIssueCase(item) {
 
 export function formatSheetMusicSequenceFingerprintReport(report) {
   const { counts, metrics, cases, strategyReports, onsetStrategyReports } = report;
+  const onsetConfig = report.onsetConfig ?? {};
+  const detectorKeys = Object.keys(onsetConfig.onsetDetectorOptions ?? {});
   const strategyTable = strategyReports.map(row => (
     `| ${row.strategy.key} | ${row.counts.evaluated} | ${row.counts.passed} | ${row.counts.failed} | `
       + `${row.counts.acceptedNotes}/${row.counts.expectedNotes} | ${row.counts.detectedOnsets}/${row.counts.expectedNotes} | `
@@ -453,7 +461,10 @@ export function formatSheetMusicSequenceFingerprintReport(report) {
     `- onset recall: ${formatPercent(metrics.onsetRecall)}`,
     `- onset f1: ${formatPercent(metrics.onsetF1)}`,
     `- onset count ratio: ${formatPercent(metrics.onsetCountRatio)}`,
-    `- frame cadence: ${SHEET_FINGERPRINT_ANALYZE_INTERVAL_MS}ms`,
+    `- frame cadence: ${onsetConfig.analyzeIntervalMs ?? SHEET_FINGERPRINT_ANALYZE_INTERVAL_MS}ms`,
+    `- onset frame size: ${onsetConfig.onsetFrameSize ?? SHEET_FINGERPRINT_ONSET_FRAME_SIZE}`,
+    `- onset hop size: ${onsetConfig.onsetHopSize ?? 'derived'}`,
+    `- detector option overrides: ${detectorKeys.length > 0 ? detectorKeys.join(', ') : 'none'}`,
     '',
     '## Guitar Onset Count',
     '| fixture | expected notes | detected onsets | delta | status | onset times |',

@@ -10,6 +10,12 @@ import { getSheetMusicRecognitionStrategies } from '../js/games/sheetMusicReadin
 import { getGuitarOnsetStrategies } from '../js/shared/audio/guitarOnsetStrategies.js';
 import { loadEssentiaForNode } from '../tests/helpers/essentiaNodeWasmLoader.js';
 import { createEssentiaSheetMusicStrategy } from '../js/games/sheetMusicReading/essentiaSheetMusicStrategy.js';
+import { loadSheetMusicOnsetConfigFromArgs } from './sheetMusicOnsetConfig.mjs';
+
+const { configPath, options: onsetConfigOptions } = loadSheetMusicOnsetConfigFromArgs();
+if (configPath) {
+  console.error(`[SFP] onset config: ${configPath}`);
+}
 
 let strategies = getSheetMusicRecognitionStrategies();
 try {
@@ -22,10 +28,9 @@ try {
 const onsetStrategies = getGuitarOnsetStrategies();
 
 console.log(formatSheetMusicSequenceFingerprintReport(
-  evaluateSheetMusicSequenceFingerprint(undefined, { strategies, onsetStrategies }),
+  evaluateSheetMusicSequenceFingerprint(undefined, { ...onsetConfigOptions, strategies, onsetStrategies }),
 ));
 console.log('');
 console.log('---');
 console.log('');
 console.log(formatOpenStringNoteFingerprintReport(evaluateOpenStringNoteFingerprint()));
-

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   createGuitarOnsetState,
+  DEFAULT_GUITAR_ONSET_OPTIONS,
   updateGuitarOnsetDetector,
 } from '../../js/shared/audio/guitarOnsetDetector.js';
 
@@ -25,6 +26,12 @@ function mixedSpectrum(baseDb, boostedDb, boostedEvery = 4, length = 1024) {
 }
 
 describe('guitarOnsetDetector', () => {
+  it('exposes the current detector defaults as a central options object', () => {
+    expect(DEFAULT_GUITAR_ONSET_OPTIONS.minRms).toBe(0.005);
+    expect(DEFAULT_GUITAR_ONSET_OPTIONS.cooldownFrames).toBe(4);
+    expect(DEFAULT_GUITAR_ONSET_OPTIONS.relativeReattackFactor).toBe(Number.POSITIVE_INFINITY);
+  });
+
   it('detects a broadband spectral attack independently of pitch', () => {
     let state = createGuitarOnsetState();
     ({ nextState: state } = updateGuitarOnsetDetector(state, {
@@ -128,5 +135,60 @@ describe('guitarOnsetDetector', () => {
     });
 
     expect(reattack.event).toBe('onset');
+  });
+
+  it('can enable relative RMS re-attack detection with detector options', () => {
+    let state = createGuitarOnsetState();
+    const opts = {
+      relativeReattackFactor: 1.6,
+      relativeReattackMinDelta: 0.01,
+    };
+    ({ nextState: state } = updateGuitarOnsetDetector(state, {
+      frequencyData: mixedSpectrum(-100, -24),
+      samples: samples(0.03),
+    }, opts));
+
+    for (let i = 0; i < 4; i++) {
+      ({ nextState: state } = updateGuitarOnsetDetector(state, {
+        frequencyData: mixedSpectrum(-100, -24),
+        samples: samples(0.025),
+      }, opts));
+    }
+
+    const result = updateGuitarOnsetDetector(state, {
+      frequencyData: mixedSpectrum(-100, -24),
+      samples: samples(0.052),
+    }, opts);
+
+    expect(result.relativeRmsAttack).toBe(true);
+    expect(result.event).toBe('onset');
+  });
+
+  it('can override cooldown for a strong configured re-attack', () => {
+    let state = createGuitarOnsetState();
+    const opts = {
+      cooldownFrames: 8,
+      cooldownOverrideFactor: 1.7,
+      cooldownOverrideMinFlux: 0.004,
+      cooldownOverrideMinBandRatio: 0.02,
+      relativeReattackFactor: 1.7,
+      relativeReattackMinDelta: 0.012,
+    };
+    ({ nextState: state } = updateGuitarOnsetDetector(state, {
+      frequencyData: spectrum(-100),
+      samples: samples(0.001),
+    }, opts));
+    ({ nextState: state } = updateGuitarOnsetDetector(state, {
+      frequencyData: mixedSpectrum(-100, -28),
+      samples: samples(0.03),
+    }, opts));
+
+    const result = updateGuitarOnsetDetector(state, {
+      frequencyData: mixedSpectrum(-100, -12),
+      samples: samples(0.06),
+    }, opts);
+
+    expect(result.cooldownOverrideAttack).toBe(true);
+    expect(result.event).toBe('onset');
   });
 });
