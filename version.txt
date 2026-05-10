@@ -1,1 +1,1 @@
-Version 0.126 | 2026-05-11 00:10 | ecbe9e9 | feat: Audio-Analyse Werkzeug
+Version 0.127 | 2026-05-11 00:11 | 67a86c9 | docs: Audio-Analyse Werkzeug dokumentieren
