@@ -9,7 +9,7 @@
  *   const pc = new PlaybackController();
  *   pc.onBeat(({ barIndex, beatIndex }) => highlightNote(barIndex, beatIndex));
  *   pc.init();          // call after a user gesture (AudioContext requirement)
- *   pc.start(80, 4, 16); // 80 BPM, 4 beats/bar, 16 total beats (4 bars)
+ *   pc.start(80, 4, 16, 4); // 80 BPM, 4 beats/bar, 16 total beats, 1 bar count-in
  *   pc.stop();
  */
 
@@ -29,6 +29,7 @@ export class PlaybackController {
     // The external callback (_onBeatCallback) is set via onBeat().
     this._metronome.onBeat = (_beatNumber) => {
       this._globalBeat++;
+      if (this._globalBeat < 0) return;
       if (this._onBeatCallback) {
         const { barIndex, beatIndex } = this.getCurrentBeat();
         this._onBeatCallback({ barIndex, beatIndex, globalBeat: this._globalBeat });
@@ -59,16 +60,18 @@ export class PlaybackController {
    *
    * @param {number} bpm           - Beats per minute (40–240)
    * @param {number} beatsPerBar   - Beats per bar (time signature numerator)
-   * @param {number} [totalBeats]  - Total beats in piece (for wrap-around). 0 = no wrap.
+   * @param {number} [totalBeats]   - Total beats in piece (for wrap-around). 0 = no wrap.
+   * @param {number} [countInBeats] - Number of metronome-only beats before playback starts.
    */
-  start(bpm, beatsPerBar, totalBeats = 0) {
+  start(bpm, beatsPerBar, totalBeats = 0, countInBeats = 0) {
     // Lazy AudioContext creation – safe to call multiple times (MetronomeLogic.init is idempotent).
     this._metronome.init();
     this._beatsPerBar = beatsPerBar || 4;
     this._totalBeats = totalBeats;
-    this._globalBeat = -1;
+    const safeCountInBeats = Math.max(0, Math.floor(countInBeats));
+    this._globalBeat = -(safeCountInBeats + 1);
     this._metronome.setBpm(bpm);
-    this._metronome.setBeatsPerMeasure(beatsPerBar);
+    this._metronome.setBeatsPerMeasure(this._beatsPerBar);
     this._metronome.start();
   }
 

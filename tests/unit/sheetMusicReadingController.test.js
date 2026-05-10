@@ -279,12 +279,22 @@ describe('SheetMusicReading controller behavior', () => {
     feature.mount();
 
     document.getElementById('btn-sheet-play').click();
-    expect(playbackStart).toHaveBeenCalledWith(80, 4, 4);
+    expect(playbackStart).toHaveBeenCalledWith(80, 4, 4, 4);
     expect(document.getElementById('btn-sheet-play').textContent).toBe('⏹ Stop');
 
     document.getElementById('btn-sheet-play').click();
     expect(playbackStop).toHaveBeenCalled();
     expect(document.getElementById('btn-sheet-play').textContent).toBe('▶ Play');
+  });
+
+  it('endless play starts with one full-bar count-in', () => {
+    const feature = createSheetMusicReadingFeature();
+    feature.mount();
+
+    document.getElementById('btn-endless-mode').click();
+    document.getElementById('btn-sheet-play').click();
+
+    expect(playbackStart).toHaveBeenCalledWith(80, 4, 0, 4);
   });
 
   it('unmount stops active playback', () => {
