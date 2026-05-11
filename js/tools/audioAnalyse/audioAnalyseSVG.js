@@ -571,9 +571,14 @@ export function initCrosshair(wrapper) {
 
   const tooltip = document.createElement('div');
   tooltip.className = 'analysis-tooltip';
-  tooltip.style.cssText = 'display:none;position:fixed;z-index:100;pointer-events:none;';
+  tooltip.style.cssText = 'display:none;position:fixed;z-index:100;pointer-events:auto;cursor:pointer;';
+  tooltip.title = 'Klicken zum Schließen';
   document.body.appendChild(tooltip);
   _tooltipEl = tooltip;
+
+  tooltip.addEventListener('click', () => {
+    tooltip.style.display = 'none';
+  });
 
   wrapper.addEventListener('pointermove', (e) => {
     if (_crosshairLines.length === 0 || _analysisDuration === 0) return;
@@ -605,11 +610,19 @@ export function initCrosshair(wrapper) {
     if (frame) {
       const noteStr = frame.note ? `${frame.note}${frame.octave}` : '–';
       const hzStr   = frame.hz   ? `${frame.hz.toFixed(1)} Hz` : '–';
+      const centsStr = frame.cents !== null && frame.cents !== undefined
+        ? `${frame.cents >= 0 ? '+' : ''}${frame.cents.toFixed(0)} ct`
+        : '–';
       tooltip.innerHTML = [
         `<span class="tt-time">${frame.t.toFixed(2)}s</span>`,
         `<span>RMS: ${frame.rms.toFixed(4)}</span>`,
+        `<span>Flux: ${(frame.broadbandFlux ?? 0).toFixed(4)}</span>`,
+        `<span>BandR: ${(frame.bandRatio ?? 0).toFixed(3)}</span>`,
+        `<span>ActiveB: ${(frame.activeBandRatio ?? 0).toFixed(3)}</span>`,
+        `<span>Conf: ${(frame.confidence ?? 0).toFixed(3)}</span>`,
         `<span>Freq: ${hzStr}</span>`,
         `<span>Note: ${noteStr}</span>`,
+        frame.cents !== null && frame.cents !== undefined ? `<span>Cents: ${centsStr}</span>` : '',
         frame.isOnset ? '<span class="tt-onset">⚡ Onset</span>' : '',
         !frame.isValid ? '<span class="tt-invalid">leise</span>' : '',
       ].filter(Boolean).join(' · ');
@@ -623,6 +636,6 @@ export function initCrosshair(wrapper) {
     for (const line of _crosshairLines) {
       line.setAttribute('opacity', '0');
     }
-    if (_tooltipEl) _tooltipEl.style.display = 'none';
+    // Tooltip bleibt offen – wird per Klick geschlossen
   });
 }

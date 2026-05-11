@@ -5,9 +5,10 @@
  * Kein DOM, kein State – nur pure Funktionen.
  *
  * Ablauf:
- *   1. WAV-Datei via AudioContext.decodeAudioData dekodieren → Float32Array
- *   2. Samples in gleichgroße Frames aufteilen (hopSize = fftSize, kein Overlap)
- *   3. Pro Frame: Onset-Detektor + Pitch-Erkennung + Input-Level
+ *   1. WAV-Datei via AudioContext.decodeAudioData dekodieren → AudioBuffer + Float32Array
+ *   2. OfflineAudioContext + AnalyserNode: frequencyData pro Frame via
+ *      getFloatFrequencyData() – identisch zur live Analyse in „Noten lesen"
+ *   3. Pro Frame: Onset-Detektor (frequencyData + samples) + Pitch-Erkennung + Input-Level
  *   4. AnalysisResult zurückgeben
  */
 
@@ -20,11 +21,10 @@ import { analyzeInputLevel } from '../../shared/audio/inputLevel.js';
 import { getRecommendedFftSize } from '../../shared/audio/fastNoteMatcher.js';
 
 /**
- * Dekodiert ein WAV-ArrayBuffer zu einem Float32Array (Kanal 0, mono).
- * Nutzt die native Browser-API AudioContext.decodeAudioData – kein eigener Decoder.
+ * Dekodiert ein WAV-ArrayBuffer zu einem Float32Array (Kanal 0, mono) + AudioBuffer.
  *
  * @param {ArrayBuffer} arrayBuffer
- * @returns {Promise<{ samples: Float32Array, sampleRate: number }>}
+ * @returns {Promise<{ samples: Float32Array, sampleRate: number, audioBuffer: AudioBuffer }>}
  */
 export async function decodeWav(arrayBuffer) {
   const audioCtx = new AudioContext();
@@ -32,10 +32,65 @@ export async function decodeWav(arrayBuffer) {
     const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
     const samples = new Float32Array(audioBuffer.getChannelData(0));
     const { sampleRate } = audioBuffer;
-    return { samples, sampleRate };
+    return { samples, sampleRate, audioBuffer };
   } finally {
     audioCtx.close().catch(() => {});
   }
+}
+
+/**
+ * Sammelt frequencyData + timeDomainData für jeden Frame offline via
+ * OfflineAudioContext + AnalyserNode.getFloatFrequencyData() –
+ * identisch zur live Analyse in sheetMusicReading.js.
+ *
+ * @param {Float32Array} samples
+ * @param {number} sampleRate
+ * @param {number} fftSize
+ * @param {number} hopSize
+ * @returns {Promise<Array<{ samples: Float32Array, frequencyData: Float32Array }>>}
+ */
+async function collectFrameData(samples, sampleRate, fftSize, hopSize) {
+  const frameCount = Math.floor((samples.length - fftSize) / hopSize) + 1;
+  const totalLength = Math.max(samples.length, frameCount * hopSize + fftSize);
+
+  const offCtx = new OfflineAudioContext(1, totalLength, sampleRate);
+  const audioBuffer = offCtx.createBuffer(1, samples.length, sampleRate);
+  audioBuffer.copyToChannel(samples, 0);
+
+  const analyser = offCtx.createAnalyser();
+  analyser.fftSize = fftSize;
+  analyser.smoothingTimeConstant = 0; // frame-by-frame, ohne Glättung
+
+  const source = offCtx.createBufferSource();
+  source.buffer = audioBuffer;
+  source.connect(analyser);
+  analyser.connect(offCtx.destination);
+
+  const frameTimeDomain = new Array(frameCount);
+  const frameFreq = new Array(frameCount);
+
+  // Suspend am Ende jedes Frame-Fensters und Daten vom AnalyserNode lesen.
+  // Das ist die gleiche API wie in analyzeFrame() in sheetMusicReading.js.
+  for (let i = 0; i < frameCount; i++) {
+    const suspendTime = (i * hopSize + fftSize) / sampleRate;
+    offCtx.suspend(suspendTime).then(() => {
+      const td = new Float32Array(fftSize);
+      const fd = new Float32Array(analyser.frequencyBinCount);
+      analyser.getFloatTimeDomainData(td);
+      analyser.getFloatFrequencyData(fd);
+      frameTimeDomain[i] = td;
+      frameFreq[i] = fd;
+      offCtx.resume();
+    });
+  }
+
+  source.start(0);
+  await offCtx.startRendering();
+
+  return frameTimeDomain.map((td, i) => ({
+    samples: td,
+    frequencyData: frameFreq[i],
+  }));
 }
 
 /**
@@ -50,7 +105,7 @@ export async function decodeWav(arrayBuffer) {
  * @param {Float32Array} samples
  * @param {number} sampleRate
  * @param {{ onsetStrategyKey?: string }} [options]
- * @returns {AnalysisResult}
+ * @returns {Promise<AnalysisResult>}
  *
  * @typedef {{
  *   frames: FrameData[],
@@ -77,7 +132,7 @@ export async function decodeWav(arrayBuffer) {
  *   cents: number|null,
  * }} FrameData
  */
-export function analyzeAudio(samples, sampleRate, options = {}) {
+export async function analyzeAudio(samples, sampleRate, options = {}) {
   const fftSize = getRecommendedFftSize(null, sampleRate);
   const hopSize = fftSize;
   const duration = samples.length / sampleRate;
@@ -85,21 +140,21 @@ export function analyzeAudio(samples, sampleRate, options = {}) {
   const onsetStrategy = resolveGuitarOnsetStrategy(options.onsetStrategyKey);
   let onsetState = onsetStrategy.createState();
 
+  // Frequency data via OfflineAudioContext + AnalyserNode (gleicher Pfad wie Übung)
+  const frameInputs = await collectFrameData(samples, sampleRate, fftSize, hopSize);
+
   const frames = [];
   const onsets = [];
 
-  const frameCount = Math.floor((samples.length - fftSize) / hopSize) + 1;
-
-  for (let i = 0; i < frameCount; i++) {
-    const start = i * hopSize;
-    const frame = samples.slice(start, start + fftSize);
-    const tCenter = (start + fftSize / 2) / sampleRate;
+  for (let i = 0; i < frameInputs.length; i++) {
+    const { samples: frame, frequencyData } = frameInputs[i];
+    const tCenter = (i * hopSize + fftSize / 2) / sampleRate;
 
     // Signalqualität
     const level = analyzeInputLevel(frame);
 
-    // Onset-Erkennung
-    const onsetResult = onsetStrategy.update(onsetState, { samples: frame });
+    // Onset-Erkennung – gleicher Aufruf wie in sheetMusicReading.analyzeFrame()
+    const onsetResult = onsetStrategy.update(onsetState, { frequencyData, samples: frame });
     onsetState = onsetResult.nextState;
 
     const isOnset = onsetResult.event === 'onset';
@@ -144,3 +199,4 @@ export function analyzeAudio(samples, sampleRate, options = {}) {
 
   return { frames, onsets, sampleRate, fftSize, hopSize, duration };
 }
+

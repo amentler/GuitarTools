@@ -94,7 +94,7 @@ export function createAudioAnalyseFeature() {
     const onsetStrategyKey = getSetting(SETTING_KEYS.SHEET_MUSIC_ONSET_STRATEGY);
     let result;
     try {
-      result = analyzeAudio(decoded.samples, decoded.sampleRate, { onsetStrategyKey });
+      result = await analyzeAudio(decoded.samples, decoded.sampleRate, { onsetStrategyKey });
     } catch (err) {
       showStatus(ui, `Analyse-Fehler: ${err.message}`, true);
       return;
