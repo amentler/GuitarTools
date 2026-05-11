@@ -21,6 +21,12 @@ export const GUITAR_ONSET_RELATIVE_REATTACK_MIN_DELTA = 0.010945;
 export const GUITAR_ONSET_RELATIVE_FLUX_FACTOR = 1.4;
 export const GUITAR_ONSET_SPECTRAL_NOVELTY_RATIO = 3.331523;
 export const GUITAR_ONSET_SPECTRAL_NOVELTY_MIN_BINS = 56;
+export const GUITAR_ONSET_CONFIRMED_RMS_FACTOR = 1.55;
+export const GUITAR_ONSET_CONFIRMED_RMS_MIN_DELTA = 0.004;
+export const GUITAR_ONSET_CONFIRMED_FLUX_FACTOR = 1.2;
+export const GUITAR_ONSET_CONFIRMED_MIN_FLUX = 0.008;
+export const GUITAR_ONSET_CONFIRMED_MIN_BAND_RATIO = 0.018;
+export const GUITAR_ONSET_CONFIRMED_SPECTRAL_NOVELTY_MIN_BINS = 6;
 export const GUITAR_ONSET_COOLDOWN_OVERRIDE_FACTOR = 2.584139;
 export const GUITAR_ONSET_COOLDOWN_OVERRIDE_MIN_FLUX = 0.03;
 export const GUITAR_ONSET_COOLDOWN_OVERRIDE_MIN_BAND_RATIO = 0.06936;
@@ -30,7 +36,7 @@ export const DEFAULT_GUITAR_ONSET_OPTIONS = Object.freeze({
   minFlux: GUITAR_ONSET_MIN_FLUX,
   minBandRatio: GUITAR_ONSET_MIN_BAND_RATIO,
   binDelta: GUITAR_ONSET_BIN_DELTA,
-  cooldownFrames: 5,
+  cooldownFrames: 3,
   firstFrameRms: GUITAR_ONSET_FIRST_FRAME_RMS,
   rmsSpikeFactor: GUITAR_ONSET_RMS_SPIKE_FACTOR,
   rmsMinDelta: GUITAR_ONSET_RMS_MIN_DELTA,
@@ -47,6 +53,12 @@ export const DEFAULT_GUITAR_ONSET_OPTIONS = Object.freeze({
   fluxHistoryDecay: 0.08,
   spectralNoveltyRatio: GUITAR_ONSET_SPECTRAL_NOVELTY_RATIO,
   spectralNoveltyMinBins: GUITAR_ONSET_SPECTRAL_NOVELTY_MIN_BINS,
+  confirmedRmsFactor: GUITAR_ONSET_CONFIRMED_RMS_FACTOR,
+  confirmedRmsMinDelta: GUITAR_ONSET_CONFIRMED_RMS_MIN_DELTA,
+  confirmedFluxFactor: GUITAR_ONSET_CONFIRMED_FLUX_FACTOR,
+  confirmedMinFlux: GUITAR_ONSET_CONFIRMED_MIN_FLUX,
+  confirmedMinBandRatio: GUITAR_ONSET_CONFIRMED_MIN_BAND_RATIO,
+  confirmedSpectralNoveltyMinBins: GUITAR_ONSET_CONFIRMED_SPECTRAL_NOVELTY_MIN_BINS,
   cooldownOverrideFactor: GUITAR_ONSET_COOLDOWN_OVERRIDE_FACTOR,
   cooldownOverrideMinFlux: GUITAR_ONSET_COOLDOWN_OVERRIDE_MIN_FLUX,
   cooldownOverrideMinBandRatio: GUITAR_ONSET_COOLDOWN_OVERRIDE_MIN_BAND_RATIO,
@@ -172,6 +184,12 @@ export function updateGuitarOnsetDetector(state, { frequencyData = null, samples
     relativeFluxFactor,
     fluxHistoryDecay,
     spectralNoveltyMinBins,
+    confirmedRmsFactor,
+    confirmedRmsMinDelta,
+    confirmedFluxFactor,
+    confirmedMinFlux,
+    confirmedMinBandRatio,
+    confirmedSpectralNoveltyMinBins,
     cooldownOverrideFactor,
     cooldownOverrideMinFlux,
     cooldownOverrideMinBandRatio,
@@ -212,6 +230,17 @@ export function updateGuitarOnsetDetector(state, { frequencyData = null, samples
     && rms >= minRms
     && fluxResult.flux >= fluxHistory * relativeFluxFactor
     && spectralNoveltyBins >= spectralNoveltyMinBins;
+  const confirmedWeakRmsFluxAttack = Number.isFinite(confirmedRmsFactor)
+    && Number.isFinite(confirmedFluxFactor)
+    && sustainFloorRms > 0
+    && fluxHistory > 0
+    && rms >= minRms
+    && activeBandRatio >= minActiveBandRatio
+    && rms >= sustainFloorRms * confirmedRmsFactor
+    && rms - sustainFloorRms >= confirmedRmsMinDelta
+    && fluxResult.flux >= Math.max(confirmedMinFlux, fluxHistory * confirmedFluxFactor)
+    && fluxResult.bandRatio >= confirmedMinBandRatio
+    && spectralNoveltyBins >= confirmedSpectralNoveltyMinBins;
   const cooldownOverrideAttack = cooldownFramesRemaining > 0
     && Number.isFinite(cooldownOverrideFactor)
     && sustainFloorRms > 0
@@ -219,7 +248,12 @@ export function updateGuitarOnsetDetector(state, { frequencyData = null, samples
     && fluxResult.flux >= cooldownOverrideMinFlux
     && fluxResult.bandRatio >= cooldownOverrideMinBandRatio;
 
-  const attack = firstAudibleFrame || broadbandAttack || rmsAttack || relativeRmsAttack || relativeSpectralAttack;
+  const attack = firstAudibleFrame
+    || broadbandAttack
+    || rmsAttack
+    || relativeRmsAttack
+    || relativeSpectralAttack
+    || confirmedWeakRmsFluxAttack;
   const event = (cooldownFramesRemaining === 0 || cooldownOverrideAttack) && attack
     ? 'onset'
     : null;
@@ -264,6 +298,7 @@ export function updateGuitarOnsetDetector(state, { frequencyData = null, samples
     spectralNoveltyBins,
     relativeRmsAttack,
     relativeSpectralAttack,
+    confirmedWeakRmsFluxAttack,
     cooldownOverrideAttack,
     options: normalizedOptions,
   };

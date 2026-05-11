@@ -31,7 +31,13 @@ export const DEFAULT_SWEEP_SPEC = Object.freeze({
     relativeFluxFactor: [1.4, 5.0],
     spectralNoveltyRatio: [1.5, 6.0],
     spectralNoveltyMinBins: [6, 64],
-    cooldownFrames: [2, 5],
+    cooldownFrames: [2, 4],
+    confirmedRmsFactor: [1.15, 2.2],
+    confirmedRmsMinDelta: [0.002, 0.012],
+    confirmedFluxFactor: [1.0, 2.4],
+    confirmedMinFlux: [0.003, 0.02],
+    confirmedMinBandRatio: [0.006, 0.05],
+    confirmedSpectralNoveltyMinBins: [2, 32],
     cooldownOverrideFactor: [1.8, 5.0],
     cooldownOverrideMinFlux: [0.004, 0.03],
     cooldownOverrideMinBandRatio: [0.02, 0.09],
@@ -51,6 +57,7 @@ const INTEGER_PARAMETER_KEYS = new Set([
   'onsetHopSize',
   'cooldownFrames',
   'spectralNoveltyMinBins',
+  'confirmedSpectralNoveltyMinBins',
 ]);
 
 export function parseArgs(argv = process.argv.slice(2)) {

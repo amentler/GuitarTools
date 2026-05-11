@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
+  DEFAULT_GUITAR_ONSET_STRATEGY_KEY,
   GUITAR_ONSET_STRATEGY_KEYS,
   GUITAR_ONSET_STRATEGIES,
+  SWEEP_STANDARD_GUITAR_ONSET_OPTIONS,
   resolveGuitarOnsetStrategy,
   getGuitarOnsetStrategies,
 } from '../../js/shared/audio/guitarOnsetStrategies.js';
@@ -23,16 +25,21 @@ describe('guitarOnsetStrategies', () => {
 
   it('guitar-onset key is defined', () => {
     expect(GUITAR_ONSET_STRATEGY_KEYS.GUITAR_ONSET).toBe('guitar-onset');
+    expect(GUITAR_ONSET_STRATEGY_KEYS.SWEEP_STANDARD).toBe('guitar-onset-sweep-standard');
+    expect(DEFAULT_GUITAR_ONSET_STRATEGY_KEY).toBe(GUITAR_ONSET_STRATEGY_KEYS.SWEEP_STANDARD);
   });
 
   it('resolveGuitarOnsetStrategy returns default for unknown key', () => {
     const s = resolveGuitarOnsetStrategy('unknown-key');
-    expect(s.key).toBe(GUITAR_ONSET_STRATEGY_KEYS.GUITAR_ONSET);
+    expect(s.key).toBe(GUITAR_ONSET_STRATEGY_KEYS.SWEEP_STANDARD);
   });
 
   it('resolveGuitarOnsetStrategy returns correct strategy by key', () => {
     const s = resolveGuitarOnsetStrategy(GUITAR_ONSET_STRATEGY_KEYS.GUITAR_ONSET);
     expect(s.key).toBe(GUITAR_ONSET_STRATEGY_KEYS.GUITAR_ONSET);
+
+    const standard = resolveGuitarOnsetStrategy(GUITAR_ONSET_STRATEGY_KEYS.SWEEP_STANDARD);
+    expect(standard.key).toBe(GUITAR_ONSET_STRATEGY_KEYS.SWEEP_STANDARD);
   });
 
   it('getGuitarOnsetStrategies returns same array as GUITAR_ONSET_STRATEGIES', () => {
@@ -47,7 +54,7 @@ describe('guitarOnsetStrategies', () => {
   });
 
   it('guitar-onset strategy update returns nextState and event', () => {
-    const strategy = resolveGuitarOnsetStrategy(GUITAR_ONSET_STRATEGY_KEYS.GUITAR_ONSET);
+    const strategy = resolveGuitarOnsetStrategy(GUITAR_ONSET_STRATEGY_KEYS.SWEEP_STANDARD);
     const state = strategy.createState();
     const samples = new Float32Array(2048).fill(0.001);
     const frequencyData = new Float32Array(1024).fill(-100);
@@ -57,7 +64,7 @@ describe('guitarOnsetStrategies', () => {
   });
 
   it('guitar-onset detects onset on strong RMS spike', () => {
-    const strategy = resolveGuitarOnsetStrategy(GUITAR_ONSET_STRATEGY_KEYS.GUITAR_ONSET);
+    const strategy = resolveGuitarOnsetStrategy(GUITAR_ONSET_STRATEGY_KEYS.SWEEP_STANDARD);
 
     const makeSpectrum = (db, length = 1024) => new Float32Array(length).fill(db);
     const makeSamples = (rms, length = 2048) => new Float32Array(length).fill(rms);
@@ -79,5 +86,17 @@ describe('guitarOnsetStrategies', () => {
       samples: makeSamples(0.04),
     });
     expect(result.event).toBe('onset');
+  });
+
+  it('sweep standard strategy applies the baked-in sweep options', () => {
+    const strategy = resolveGuitarOnsetStrategy(GUITAR_ONSET_STRATEGY_KEYS.SWEEP_STANDARD);
+    const state = strategy.createState();
+    const samples = new Float32Array(2048).fill(0.001);
+    const frequencyData = new Float32Array(1024).fill(-100);
+    const result = strategy.update(state, { samples, frequencyData });
+
+    expect(result.options.cooldownFrames).toBe(SWEEP_STANDARD_GUITAR_ONSET_OPTIONS.cooldownFrames);
+    expect(result.options.confirmedRmsFactor).toBe(SWEEP_STANDARD_GUITAR_ONSET_OPTIONS.confirmedRmsFactor);
+    expect(result.options.spectralNoveltyMinBins).toBe(SWEEP_STANDARD_GUITAR_ONSET_OPTIONS.spectralNoveltyMinBins);
   });
 });

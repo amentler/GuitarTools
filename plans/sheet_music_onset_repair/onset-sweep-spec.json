@@ -7,13 +7,13 @@
   "timeBudgetMinutes": 240,
   "seed": 1337,
   "score": {
-    "underPenalty": 4,
-    "overPenalty": 2,
+    "underPenalty": 6,
+    "overPenalty": 1,
     "extremeUnderPenalty": 25,
     "extremeUnderMultiplier": 0.75,
     "extremeOverPenalty": 25,
-    "extremeOverMultiplier": 1.25,
-    "guardrailOverMultiplier": 1.25
+    "extremeOverMultiplier": 1.5,
+    "guardrailOverMultiplier": 1.5
   },
   "fixtureOverrides": {
     "open-strings/fast.wav": {
@@ -67,12 +67,18 @@
   },
   "parameters": {
     "analyzeIntervalMs": [25, 50],
-    "cooldownFrames": [2, 5],
+    "cooldownFrames": [2, 4],
     "relativeReattackFactor": [1.4, 4.0],
     "relativeReattackMinDelta": [0.004, 0.025],
     "relativeFluxFactor": [1.4, 5.0],
     "spectralNoveltyRatio": [1.5, 6.0],
     "spectralNoveltyMinBins": [6, 64],
+    "confirmedRmsFactor": [1.15, 2.2],
+    "confirmedRmsMinDelta": [0.002, 0.012],
+    "confirmedFluxFactor": [1.0, 2.4],
+    "confirmedMinFlux": [0.003, 0.02],
+    "confirmedMinBandRatio": [0.006, 0.05],
+    "confirmedSpectralNoveltyMinBins": [2, 32],
     "cooldownOverrideFactor": [1.8, 5.0],
     "cooldownOverrideMinFlux": [0.004, 0.03],
     "cooldownOverrideMinBandRatio": [0.02, 0.09]

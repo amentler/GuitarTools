@@ -28,10 +28,12 @@ function mixedSpectrum(baseDb, boostedDb, boostedEvery = 4, length = 1024) {
 describe('guitarOnsetDetector', () => {
   it('exposes the current detector defaults as a central options object', () => {
     expect(DEFAULT_GUITAR_ONSET_OPTIONS.minRms).toBe(0.005);
-    expect(DEFAULT_GUITAR_ONSET_OPTIONS.cooldownFrames).toBe(5);
+    expect(DEFAULT_GUITAR_ONSET_OPTIONS.cooldownFrames).toBe(3);
     expect(DEFAULT_GUITAR_ONSET_OPTIONS.relativeReattackFactor).toBe(3.490424);
     expect(DEFAULT_GUITAR_ONSET_OPTIONS.relativeFluxFactor).toBe(1.4);
     expect(DEFAULT_GUITAR_ONSET_OPTIONS.spectralNoveltyMinBins).toBe(56);
+    expect(DEFAULT_GUITAR_ONSET_OPTIONS.confirmedRmsFactor).toBe(1.55);
+    expect(DEFAULT_GUITAR_ONSET_OPTIONS.confirmedFluxFactor).toBe(1.2);
   });
 
   it('detects a broadband spectral attack independently of pitch', () => {
@@ -163,6 +165,51 @@ describe('guitarOnsetDetector', () => {
     }, opts);
 
     expect(result.relativeRmsAttack).toBe(true);
+    expect(result.event).toBe('onset');
+  });
+
+  it('confirms a weak RMS re-attack when spectral flux rises at the same time', () => {
+    let state = createGuitarOnsetState();
+    const opts = {
+      minFlux: 0.5,
+      minBandRatio: 0.5,
+      rmsSpikeFactor: 10,
+      spectralNoveltyRatio: 1.5,
+      relativeReattackFactor: 10,
+      relativeFluxFactor: 10,
+      confirmedRmsFactor: 1.2,
+      confirmedRmsMinDelta: 0.004,
+      confirmedFluxFactor: 1.05,
+      confirmedMinFlux: 0.003,
+      confirmedMinBandRatio: 0.02,
+      confirmedSpectralNoveltyMinBins: 2,
+    };
+
+    ({ nextState: state } = updateGuitarOnsetDetector(state, {
+      frequencyData: spectrum(-100),
+      samples: samples(0.001),
+    }, opts));
+    ({ nextState: state } = updateGuitarOnsetDetector(state, {
+      frequencyData: mixedSpectrum(-100, -28, 8),
+      samples: samples(0.03),
+    }, opts));
+
+    for (let i = 0; i < 3; i++) {
+      ({ nextState: state } = updateGuitarOnsetDetector(state, {
+        frequencyData: mixedSpectrum(-100, -28, 8),
+        samples: samples(0.024),
+      }, opts));
+    }
+
+    const result = updateGuitarOnsetDetector(state, {
+      frequencyData: mixedSpectrum(-100, -22, 8),
+      samples: samples(0.036),
+    }, opts);
+
+    expect(result.confirmedWeakRmsFluxAttack).toBe(true);
+    expect(result.broadbandFlux).toBeLessThan(opts.minFlux);
+    expect(result.relativeRmsAttack).toBe(false);
+    expect(result.relativeSpectralAttack).toBe(false);
     expect(result.event).toBe('onset');
   });
 

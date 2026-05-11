@@ -1,4 +1,5 @@
 import { createStorageService } from './storage/storageService.js';
+import { DEFAULT_GUITAR_ONSET_STRATEGY_KEY } from './audio/guitarOnsetStrategies.js';
 
 export const SETTING_KEYS = {
   SRS_ENABLED: 'gt_srs_enabled',
@@ -11,7 +12,7 @@ const DEFAULTS = {
   [SETTING_KEYS.SRS_ENABLED]: true,
   [SETTING_KEYS.CHORD_DETECTION_USE_ESSENTIA]: true,
   [SETTING_KEYS.SHEET_MUSIC_RECOGNITION_STRATEGY]: 'fast-note-matcher',
-  [SETTING_KEYS.SHEET_MUSIC_ONSET_STRATEGY]: 'guitar-onset',
+  [SETTING_KEYS.SHEET_MUSIC_ONSET_STRATEGY]: DEFAULT_GUITAR_ONSET_STRATEGY_KEY,
 };
 
 const storageService = createStorageService({ storage: globalThis.localStorage });

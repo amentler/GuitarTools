@@ -9,9 +9,9 @@ import {
   updateSheetMusicMatchState,
 } from '../../js/games/sheetMusicReading/sheetMusicRecognition.js';
 import {
+  DEFAULT_GUITAR_ONSET_STRATEGY_KEY,
   getGuitarOnsetStrategies,
   resolveGuitarOnsetStrategy,
-  GUITAR_ONSET_STRATEGY_KEYS,
 } from '../../js/shared/audio/guitarOnsetStrategies.js';
 import { computeDbSpectrum } from './chordHpcpExtraction.js';
 
@@ -93,7 +93,7 @@ export function countGuitarOnsets(samples, sampleRate, options = {}) {
     sampleRate * ((options.analyzeIntervalMs ?? SHEET_FINGERPRINT_ANALYZE_INTERVAL_MS) / 1000),
   ));
   const onsetStrategy = options.onsetStrategy
-    ?? resolveGuitarOnsetStrategy(GUITAR_ONSET_STRATEGY_KEYS.GUITAR_ONSET);
+    ?? resolveGuitarOnsetStrategy(DEFAULT_GUITAR_ONSET_STRATEGY_KEY);
   const timestampsMs = [];
   let onsetState = onsetStrategy.createState();
 
