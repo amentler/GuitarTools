@@ -133,13 +133,15 @@
 
     /* Crosshair Tooltip */
     .analysis-tooltip {
-      background: rgba(30, 20, 10, 0.88);
+      background: rgba(30, 20, 10, 0.92);
       color: #fff;
       border-radius: 6px;
-      padding: 5px 10px;
+      padding: 7px 12px;
       font-size: 0.75rem;
-      white-space: nowrap;
-      pointer-events: none;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      max-width: 220px;
     }
 
     .tt-time {
@@ -185,6 +187,10 @@
     <div class="analyse-load-section">
       <div class="analyse-load-row">
         <button id="btn-load-last" class="btn-play-stop">📂 Letzte Aufnahme laden</button>
+      </div>
+      <div class="analyse-load-row">
+        <button id="btn-play-pause" class="btn-play-stop u-hidden">▶ Abspielen</button>
+        <button id="btn-stop-audio" class="btn-play-stop u-hidden">⏹ Stop</button>
       </div>
 
       <!-- Datei-Upload / Drag & Drop -->

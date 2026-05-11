@@ -42,6 +42,8 @@ const GUITAR_STRINGS = [
 
 // Registry aller Crosshair-Linien (alle Charts, aktualisiert beim Hover)
 let _crosshairLines = [];
+// Registry aller Playhead-Linien (alle Charts, aktualisiert während Wiedergabe)
+let _playheadLines = [];
 let _tooltipEl = null;
 let _analysisFrames = [];
 let _analysisDuration = 1;
@@ -75,6 +77,19 @@ function makeCrosshairLine(svg, height) {
   });
   svg.appendChild(line);
   _crosshairLines.push(line);
+  return line;
+}
+
+function makePlayheadLine(svg, height) {
+  const line = svgEl('line', {
+    x1: PAD_L, y1: PAD_T, x2: PAD_L, y2: height - PAD_B,
+    stroke: '#f39c12',
+    'stroke-width': '1.5',
+    opacity: '0',
+    'pointer-events': 'none',
+  });
+  svg.appendChild(line);
+  _playheadLines.push(line);
   return line;
 }
 
@@ -245,6 +260,7 @@ export function renderWaveform(container, samples, sampleRate, onsets) {
 
   appendOnsetMarkers(svg, onsets, duration, chartH);
   makeCrosshairLine(svg, chartH);
+  makePlayheadLine(svg, chartH);
 
   container.appendChild(createSection('Wellenform', svg, chartH));
 }
@@ -333,6 +349,7 @@ export function renderTimeSeries(container, frames, valueKey, options) {
 
   appendOnsetMarkers(svg, onsets, duration, chartH);
   makeCrosshairLine(svg, chartH);
+  makePlayheadLine(svg, chartH);
 
   container.appendChild(createSection(title, svg, chartH));
 }
@@ -402,6 +419,7 @@ export function renderFrequencyChart(container, frames, onsets, duration) {
 
   appendOnsetMarkers(svg, onsets, duration, chartH);
   makeCrosshairLine(svg, chartH);
+  makePlayheadLine(svg, chartH);
 
   container.appendChild(createSection('Frequenz (Hz, log)', svg, chartH));
 }
@@ -473,6 +491,7 @@ export function renderNoteChart(container, frames, onsets, duration) {
 
   appendOnsetMarkers(svg, onsets, duration, chartH);
   makeCrosshairLine(svg, chartH);
+  makePlayheadLine(svg, chartH);
 
   container.appendChild(createSection('Erkannte Note', svg, chartH));
 }
@@ -488,8 +507,9 @@ export function renderNoteChart(container, frames, onsets, duration) {
 export function renderAllCharts(container, samples, result) {
   const { frames, onsets, duration, sampleRate } = result;
 
-  // Reset Crosshair-Registry für diesen Renderdurchlauf
+  // Reset Crosshair- und Playhead-Registry für diesen Renderdurchlauf
   _crosshairLines = [];
+  _playheadLines = [];
   _analysisFrames = frames;
   _analysisDuration = duration;
 
@@ -555,7 +575,107 @@ export function renderAllCharts(container, samples, result) {
   });
 }
 
+// ── Playhead ─────────────────────────────────────────────────────────────────
+
+/**
+ * Setzt den Playhead auf die gegebene Zeitfraktion (0..1) und zeigt ihn an.
+ * @param {number} fraction  0 = Anfang, 1 = Ende
+ */
+export function updatePlayhead(fraction) {
+  const svgX = PAD_L + Math.max(0, Math.min(1, fraction)) * PLOT_W;
+  for (const line of _playheadLines) {
+    line.setAttribute('x1', svgX);
+    line.setAttribute('x2', svgX);
+    line.setAttribute('opacity', '1');
+  }
+}
+
+/**
+ * Versteckt den Playhead (z.B. nach Stop).
+ */
+export function resetPlayhead() {
+  for (const line of _playheadLines) {
+    line.setAttribute('x1', PAD_L);
+    line.setAttribute('x2', PAD_L);
+    line.setAttribute('opacity', '0');
+  }
+}
+
+/**
+ * Gibt den Frame-Daten-Eintrag für eine gegebene Zeitfraktion zurück.
+ * @param {number} fraction  0..1
+ * @returns {object|null}
+ */
+export function getFrameAtFraction(fraction) {
+  if (!_analysisFrames.length || _analysisDuration === 0) return null;
+  const t = fraction * _analysisDuration;
+  return _analysisFrames.reduce((best, f) =>
+    Math.abs(f.t - t) < Math.abs(best.t - t) ? f : best,
+    _analysisFrames[0],
+  );
+}
+
+/**
+ * Zeigt das Tooltip für einen Frame an der gegebenen Viewport-Position.
+ * @param {object} frame
+ * @param {number} clientX
+ * @param {number} clientY
+ */
+export function showTooltipForFrame(frame, clientX, clientY) {
+  if (!_tooltipEl) return;
+  _buildTooltipContent(_tooltipEl, frame);
+  _positionTooltip(_tooltipEl, clientX, clientY);
+  _tooltipEl.style.display = 'flex';
+}
+
 // ── Crosshair + Tooltip ──────────────────────────────────────────────────────
+
+/** Baut den Tooltip-Inhalt für einen Frame auf. */
+function _buildTooltipContent(tooltip, frame) {
+  const noteStr  = frame.note ? `${frame.note}${frame.octave}` : '–';
+  const hzStr    = frame.hz   ? `${frame.hz.toFixed(1)} Hz` : '–';
+  const centsStr = frame.cents !== null && frame.cents !== undefined
+    ? `${frame.cents >= 0 ? '+' : ''}${frame.cents.toFixed(0)} ct`
+    : '–';
+  const rows = [
+    `<span class="tt-time">${frame.t.toFixed(2)} s</span>`,
+    `<span>RMS: ${frame.rms.toFixed(4)}</span>`,
+    `<span>Flux: ${(frame.broadbandFlux ?? 0).toFixed(4)}</span>`,
+    `<span>BandR: ${(frame.bandRatio ?? 0).toFixed(3)}</span>`,
+    `<span>ActiveB: ${(frame.activeBandRatio ?? 0).toFixed(3)}</span>`,
+    `<span>Conf: ${(frame.confidence ?? 0).toFixed(3)}</span>`,
+    `<span>Freq: ${hzStr}</span>`,
+    `<span>Note: ${noteStr}</span>`,
+    frame.cents !== null && frame.cents !== undefined ? `<span>Cents: ${centsStr}</span>` : '',
+    frame.isOnset ? '<span class="tt-onset">⚡ Onset</span>' : '',
+    !frame.isValid ? '<span class="tt-invalid">leise</span>' : '',
+  ].filter(Boolean);
+  tooltip.innerHTML = rows.join('');
+}
+
+/** Positioniert den Tooltip innerhalb des Viewports (kein Überlauf). */
+function _positionTooltip(tooltip, clientX, clientY) {
+  // Erst provisorisch rechts/unten setzen, dann nach Bedarf spiegeln
+  const offsetX = 14;
+  const offsetY = -28;
+  let left = clientX + offsetX;
+  let top  = clientY + offsetY;
+
+  tooltip.style.left = `${left}px`;
+  tooltip.style.top  = `${top}px`;
+
+  // Nach dem Rendern Größe prüfen und ggf. korrigieren
+  requestAnimationFrame(() => {
+    const tw = tooltip.offsetWidth;
+    const th = tooltip.offsetHeight;
+    if (left + tw > window.innerWidth - 8)  left = clientX - offsetX - tw;
+    if (top  + th > window.innerHeight - 8) top  = clientY - th + offsetY;
+    if (left < 8) left = 8;
+    if (top  < 8) top  = 8;
+    tooltip.style.left = `${left}px`;
+    tooltip.style.top  = `${top}px`;
+  });
+}
 
 /**
  * Initialisiert den synchronen Crosshair-Indikator für alle Charts.
@@ -584,51 +704,29 @@ export function initCrosshair(wrapper) {
     if (_crosshairLines.length === 0 || _analysisDuration === 0) return;
 
     const rect = wrapper.getBoundingClientRect();
-    // Lineare Zeit-Fraktion aus der Mausposition relativ zum Wrapper
     const fraction = Math.max(0, Math.min(1,
       (e.clientX - rect.left - (rect.width * PAD_L / CHART_W))
       / (rect.width * PLOT_W / CHART_W),
     ));
-    const t = fraction * _analysisDuration;
 
-    // Crosshair-X in SVG-Koordinaten (alle Charts teilen dasselbe Koordinatensystem)
     const svgX = PAD_L + fraction * PLOT_W;
-
     for (const line of _crosshairLines) {
       line.setAttribute('x1', svgX);
       line.setAttribute('x2', svgX);
       line.setAttribute('opacity', '0.85');
     }
 
-    // Nächsten Frame finden
+    const t = fraction * _analysisDuration;
     const frame = _analysisFrames.length
       ? _analysisFrames.reduce((best, f) =>
           Math.abs(f.t - t) < Math.abs(best.t - t) ? f : best,
-        _analysisFrames[0])
+          _analysisFrames[0])
       : null;
 
     if (frame) {
-      const noteStr = frame.note ? `${frame.note}${frame.octave}` : '–';
-      const hzStr   = frame.hz   ? `${frame.hz.toFixed(1)} Hz` : '–';
-      const centsStr = frame.cents !== null && frame.cents !== undefined
-        ? `${frame.cents >= 0 ? '+' : ''}${frame.cents.toFixed(0)} ct`
-        : '–';
-      tooltip.innerHTML = [
-        `<span class="tt-time">${frame.t.toFixed(2)}s</span>`,
-        `<span>RMS: ${frame.rms.toFixed(4)}</span>`,
-        `<span>Flux: ${(frame.broadbandFlux ?? 0).toFixed(4)}</span>`,
-        `<span>BandR: ${(frame.bandRatio ?? 0).toFixed(3)}</span>`,
-        `<span>ActiveB: ${(frame.activeBandRatio ?? 0).toFixed(3)}</span>`,
-        `<span>Conf: ${(frame.confidence ?? 0).toFixed(3)}</span>`,
-        `<span>Freq: ${hzStr}</span>`,
-        `<span>Note: ${noteStr}</span>`,
-        frame.cents !== null && frame.cents !== undefined ? `<span>Cents: ${centsStr}</span>` : '',
-        frame.isOnset ? '<span class="tt-onset">⚡ Onset</span>' : '',
-        !frame.isValid ? '<span class="tt-invalid">leise</span>' : '',
-      ].filter(Boolean).join(' · ');
-      tooltip.style.display = 'block';
-      tooltip.style.left = `${e.clientX + 14}px`;
-      tooltip.style.top  = `${e.clientY - 28}px`;
+      _buildTooltipContent(tooltip, frame);
+      _positionTooltip(tooltip, e.clientX, e.clientY);
+      tooltip.style.display = 'flex';
     }
   });
 

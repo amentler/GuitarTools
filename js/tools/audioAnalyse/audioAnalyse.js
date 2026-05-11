@@ -12,6 +12,10 @@ import { decodeWav, analyzeAudio } from './audioAnalyseEngine.js';
 import {
   renderAllCharts,
   initCrosshair,
+  updatePlayhead,
+  resetPlayhead,
+  getFrameAtFraction,
+  showTooltipForFrame,
 } from './audioAnalyseSVG.js';
 import {
   getSetting,
@@ -37,18 +41,32 @@ const PITCH_STRATEGY_LABELS = {
 export function createAudioAnalyseFeature() {
   let _root = null;
 
+  // ── Playback-State ─────────────────────────────────────────────────────────
+  let _audioCtx       = null;
+  let _audioBuffer    = null;   // decoded AudioBuffer für Web Audio
+  let _sourceNode     = null;   // laufende AudioBufferSourceNode
+  let _playStartTime  = 0;      // audioCtx.currentTime beim Start
+  let _playOffset     = 0;      // Abspielposition beim letzten Pause (Sekunden)
+  let _isPlaying      = false;
+  let _rafId          = null;
+  let _analysisDur    = 1;
+  let _cachedSamples  = null;   // Float32Array für späteren Re-Decode-Bedarf
+  let _cachedSR       = 44100;
+
   function resolveUI(root) {
     const q = (id) => root.getElementById?.(id) ?? root.querySelector?.(`#${id}`) ?? document.getElementById(id);
     return {
-      loadLastBtn:   q('btn-load-last'),
-      fileInput:     q('input-wav-file'),
-      fileLabel:     q('label-wav-file'),
-      dropzone:      q('analyse-dropzone'),
-      chartsWrapper: q('analyse-charts-wrapper'),
-      statsHeader:   q('analyse-stats-header'),
-      statusMsg:     q('analyse-status-msg'),
-      strategyPitch: q('analyse-strategy-pitch'),
-      strategyOnset: q('analyse-strategy-onset'),
+      loadLastBtn:    q('btn-load-last'),
+      fileInput:      q('input-wav-file'),
+      fileLabel:      q('label-wav-file'),
+      dropzone:       q('analyse-dropzone'),
+      chartsWrapper:  q('analyse-charts-wrapper'),
+      statsHeader:    q('analyse-stats-header'),
+      statusMsg:      q('analyse-status-msg'),
+      strategyPitch:  q('analyse-strategy-pitch'),
+      strategyOnset:  q('analyse-strategy-onset'),
+      playPauseBtn:   q('btn-play-pause'),
+      stopBtn:        q('btn-stop-audio'),
     };
   }
 
@@ -92,6 +110,9 @@ export function createAudioAnalyseFeature() {
   }
 
   async function runAnalysis(ui, arrayBuffer, filename = '', manifest = null) {
+    // Laufende Wiedergabe stoppen, bevor neue Analyse beginnt
+    stopPlayback(ui);
+
     showStatus(ui, 'Dekodiere Audio…');
     let decoded;
     try {
@@ -117,6 +138,12 @@ export function createAudioAnalyseFeature() {
       return;
     }
 
+    // Samples + Metadaten für Wiedergabe cachen
+    _cachedSamples = decoded.samples;
+    _cachedSR      = decoded.sampleRate;
+    _analysisDur   = result.duration;
+    _audioBuffer   = null; // wird lazy beim ersten Play erstellt
+
     hideStatus(ui);
     showStats(ui, result, filename);
 
@@ -124,6 +151,113 @@ export function createAudioAnalyseFeature() {
     renderAllCharts(ui.chartsWrapper, decoded.samples, result);
     initCrosshair(ui.chartsWrapper);
     ui.chartsWrapper.classList.remove('u-hidden');
+
+    // Play/Stop-Buttons einblenden
+    if (ui.playPauseBtn) ui.playPauseBtn.classList.remove('u-hidden');
+    if (ui.stopBtn)      ui.stopBtn.classList.remove('u-hidden');
+    setPlayPauseLabel(ui, false);
+  }
+
+  // ── Playback-Hilfsfunktionen ───────────────────────────────────────────────
+
+  function setPlayPauseLabel(ui, playing) {
+    if (ui.playPauseBtn) ui.playPauseBtn.textContent = playing ? '⏸ Pause' : '▶ Abspielen';
+  }
+
+  function getOrCreateAudioCtx() {
+    if (!_audioCtx || _audioCtx.state === 'closed') {
+      _audioCtx = new AudioContext();
+    }
+    return _audioCtx;
+  }
+
+  function buildAudioBuffer(ctx) {
+    if (_audioBuffer) return _audioBuffer;
+    const buf = ctx.createBuffer(1, _cachedSamples.length, _cachedSR);
+    buf.copyToChannel(_cachedSamples, 0);
+    _audioBuffer = buf;
+    return buf;
+  }
+
+  function startPlayback(ui, offset = 0) {
+    const ctx = getOrCreateAudioCtx();
+    if (ctx.state === 'suspended') ctx.resume();
+
+    const buf = buildAudioBuffer(ctx);
+    _sourceNode = ctx.createBufferSource();
+    _sourceNode.buffer = buf;
+    _sourceNode.loop = true;
+    _sourceNode.connect(ctx.destination);
+    _sourceNode.start(0, offset % _analysisDur);
+
+    _playStartTime = ctx.currentTime - (offset % _analysisDur);
+    _playOffset    = offset % _analysisDur;
+    _isPlaying     = true;
+    setPlayPauseLabel(ui, true);
+    startRaf(ui);
+  }
+
+  function pausePlayback(ui) {
+    if (!_isPlaying) return;
+    const ctx = _audioCtx;
+    const elapsed = ctx.currentTime - _playStartTime;
+    _playOffset = elapsed % _analysisDur;
+
+    _sourceNode?.stop();
+    _sourceNode = null;
+    _isPlaying  = false;
+    setPlayPauseLabel(ui, false);
+    stopRaf();
+
+    // Tooltip an Pause-Position öffnen
+    const fraction = _playOffset / _analysisDur;
+    const frame = getFrameAtFraction(fraction);
+    if (frame) {
+      // Tooltip mittig oben im Viewport anzeigen
+      showTooltipForFrame(frame, window.innerWidth / 2, window.innerHeight / 2);
+    }
+  }
+
+  function stopPlayback(ui) {
+    _sourceNode?.stop();
+    _sourceNode = null;
+    _isPlaying  = false;
+    _playOffset = 0;
+    stopRaf();
+    resetPlayhead();
+    if (ui) setPlayPauseLabel(ui, false);
+  }
+
+  function startRaf(_ui) {
+    if (_rafId !== null) return;
+    function tick() {
+      if (!_isPlaying || !_audioCtx) return;
+      const elapsed  = _audioCtx.currentTime - _playStartTime;
+      const fraction = (elapsed % _analysisDur) / _analysisDur;
+      updatePlayhead(fraction);
+      _rafId = requestAnimationFrame(tick);
+    }
+    _rafId = requestAnimationFrame(tick);
+  }
+
+  function stopRaf() {
+    if (_rafId !== null) {
+      cancelAnimationFrame(_rafId);
+      _rafId = null;
+    }
+  }
+
+  function handlePlayPause(ui) {
+    if (!_cachedSamples) return;
+    if (_isPlaying) {
+      pausePlayback(ui);
+    } else {
+      startPlayback(ui, _playOffset);
+    }
+  }
+
+  function handleStop(ui) {
+    stopPlayback(ui);
   }
 
   async function handleLoadLast(ui) {
@@ -187,10 +321,20 @@ export function createAudioAnalyseFeature() {
       e.target.value = '';
     });
 
+    ui.playPauseBtn?.addEventListener('click', () => handlePlayPause(ui));
+    ui.stopBtn?.addEventListener('click', () => handleStop(ui));
+
     wireDropzone(ui);
   }
 
   function unmount() {
+    stopPlayback(null);
+    if (_audioCtx && _audioCtx.state !== 'closed') {
+      _audioCtx.close();
+      _audioCtx = null;
+    }
+    _audioBuffer  = null;
+    _cachedSamples = null;
     _root = null;
   }
 
