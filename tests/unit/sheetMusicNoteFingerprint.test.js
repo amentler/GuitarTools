@@ -10,7 +10,10 @@ describe('sheet music note fingerprint', () => {
     const report = evaluateOpenStringNoteFingerprint();
 
     expect(report.fixtures.length).toBe(NOTE_AUDIO_FIXTURES.length);
-    expect(report.strategyReports.map(row => row.strategy.key)).toEqual(['fast-note-matcher']);
+    expect(report.strategyReports.map(row => row.strategy.key)).toEqual(
+      report.strategies.map(strategy => strategy.key),
+    );
+    expect(report.strategyReports[0]?.strategy.key).toBe('fast-note-matcher');
     expect(report.counts.total).toBe(NOTE_AUDIO_FIXTURES.length * report.targetPitches.length);
     expect(report.counts.expectedPositive).toBe(NOTE_AUDIO_FIXTURES.length);
     expect(report.counts.fp, formatOpenStringNoteFingerprintReport(report)).toBe(5);

@@ -13,12 +13,18 @@
  */
 
 import { resolveGuitarOnsetStrategy } from '../../shared/audio/guitarOnsetStrategies.js';
-import {
-  detectPitch,
-  frequencyToNote,
-} from '../../shared/audio/guitarPitchDetection.js';
 import { analyzeInputLevel } from '../../shared/audio/inputLevel.js';
-import { getRecommendedFftSize } from '../../shared/audio/fastNoteMatcher.js';
+import { createMatchState } from '../../shared/audio/fastNoteMatcher.js';
+import { computeDbSpectrum } from '../../shared/audio/dbSpectrum.js';
+import { NOTES } from '../../shared/music/sheetMusicLogic.js';
+import {
+  classifySheetMusicFrame,
+  resolveSheetMusicRecognitionStrategy,
+  SHEET_MUSIC_CENTS_TOLERANCE,
+  updateSheetMusicMatchState,
+} from '../../shared/audio/sheetMusicRecognition.js';
+
+const DEFAULT_ANALYSIS_TARGET = `${NOTES[0].name}${NOTES[0].octave}`;
 
 /**
  * Dekodiert ein WAV-ArrayBuffer zu einem Float32Array (Kanal 0, mono) + AudioBuffer.
@@ -51,6 +57,17 @@ export async function decodeWav(arrayBuffer) {
  */
 async function collectFrameData(samples, sampleRate, fftSize, hopSize) {
   const frameCount = Math.floor((samples.length - fftSize) / hopSize) + 1;
+
+  if (typeof OfflineAudioContext.prototype.suspend !== 'function') {
+    return Array.from({ length: frameCount }, (_, i) => {
+      const frame = samples.slice(i * hopSize, i * hopSize + fftSize);
+      return {
+        samples: frame,
+        frequencyData: computeDbSpectrum(frame, fftSize),
+      };
+    });
+  }
+
   const totalLength = Math.max(samples.length, frameCount * hopSize + fftSize);
 
   const offCtx = new OfflineAudioContext(1, totalLength, sampleRate);
@@ -100,11 +117,11 @@ async function collectFrameData(samples, sampleRate, fftSize, hopSize) {
  *   - rms, clippingRatio, isValid         (Signalqualität)
  *   - broadbandFlux, bandRatio,
  *     activeBandRatio, confidence, isOnset (Onset-Detektor)
- *   - hz, note, octave, cents             (Pitch-Erkennung)
+ *   - hz, note, octave, cents             (Noten-lesen-Erkennung)
  *
  * @param {Float32Array} samples
  * @param {number} sampleRate
- * @param {{ onsetStrategyKey?: string }} [options]
+ * @param {{ onsetStrategyKey?: string, pitchStrategyKey?: string, targetSequence?: string[] }} [options]
  * @returns {Promise<AnalysisResult>}
  *
  * @typedef {{
@@ -133,7 +150,13 @@ async function collectFrameData(samples, sampleRate, fftSize, hopSize) {
  * }} FrameData
  */
 export async function analyzeAudio(samples, sampleRate, options = {}) {
-  const fftSize = getRecommendedFftSize(null, sampleRate);
+  const pitchStrategy = resolveSheetMusicRecognitionStrategy(options.pitchStrategyKey);
+  const targetSequence = Array.isArray(options.targetSequence) ? options.targetSequence : [];
+  let targetIndex = 0;
+  let currentTarget = targetSequence[targetIndex] ?? null;
+  let matchState = createMatchState();
+  let awaitingOnset = true;
+  const fftSize = pitchStrategy.getRecommendedFftSize(currentTarget, sampleRate);
   const hopSize = fftSize;
   const duration = samples.length / sampleRate;
 
@@ -162,21 +185,47 @@ export async function analyzeAudio(samples, sampleRate, options = {}) {
       onsets.push(tCenter);
     }
 
-    // Pitch-Erkennung (nur wenn Signal valide genug)
+    // Noten-lesen-Erkennung (nur wenn Signal valide genug)
     let hz = null;
     let note = null;
     let octave = null;
     let cents = null;
 
     if (level.isValid) {
-      hz = detectPitch(frame, sampleRate, { applyFilters: true });
-      if (hz !== null && Number.isFinite(hz)) {
-        const pitchInfo = frequencyToNote(hz);
-        note = pitchInfo.note;
-        octave = pitchInfo.octave;
-        cents = pitchInfo.cents ?? null;
-      } else {
-        hz = null;
+      const frameResult = classifySheetMusicFrame(
+        frame,
+        sampleRate,
+        currentTarget ?? DEFAULT_ANALYSIS_TARGET,
+        {
+          tolerateCents: SHEET_MUSIC_CENTS_TOLERANCE,
+          strategyKey: options.pitchStrategyKey,
+        },
+      );
+
+      if (frameResult.detectedPitch && Number.isFinite(frameResult.hz)) {
+        const parsed = parsePitch(frameResult.detectedPitch);
+        hz = frameResult.hz;
+        note = parsed?.name ?? null;
+        octave = parsed?.octave ?? null;
+        cents = Number.isFinite(frameResult.cents) ? frameResult.cents : null;
+      }
+
+      if (currentTarget) {
+        let effective = frameResult.status === 'wrong'
+          ? { ...frameResult, status: 'unsure' }
+          : frameResult;
+        if (awaitingOnset) {
+          effective = { ...effective, status: 'unsure' };
+        }
+
+        const { nextState, event } = updateSheetMusicMatchState(matchState, effective);
+        matchState = nextState;
+        if (event === 'accept') {
+          targetIndex++;
+          currentTarget = targetSequence[targetIndex] ?? null;
+          matchState = createMatchState();
+          awaitingOnset = true;
+        }
       }
     }
 
@@ -200,3 +249,8 @@ export async function analyzeAudio(samples, sampleRate, options = {}) {
   return { frames, onsets, sampleRate, fftSize, hopSize, duration };
 }
 
+function parsePitch(pitch) {
+  const match = /^([A-G]#?)(-?\d+)$/.exec(pitch ?? '');
+  if (!match) return null;
+  return { name: match[1], octave: Number.parseInt(match[2], 10) };
+}

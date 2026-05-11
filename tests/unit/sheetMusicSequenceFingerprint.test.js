@@ -14,7 +14,10 @@ let allStrategies = getSheetMusicRecognitionStrategies();
 beforeAll(async () => {
   try {
     const essentia = await loadEssentiaForNode();
-    allStrategies = [...allStrategies, createEssentiaSheetMusicStrategy(essentia)];
+    const essentiaStrategy = createEssentiaSheetMusicStrategy(essentia);
+    allStrategies = allStrategies.map(strategy => (
+      strategy.key === essentiaStrategy.key ? essentiaStrategy : strategy
+    ));
   } catch {
     // Essentia WASM not available in this environment – only fast-note-matcher runs
   }

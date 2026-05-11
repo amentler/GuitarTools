@@ -1,6 +1,6 @@
 # Sheet Onset Sweep
 
-- evaluated candidates: 720
+- evaluated candidates: 960
 - beam size: 5
 - fixtures: 8
 

@@ -1,1 +1,1 @@
-Version 0.130 | 2026-05-11 14:30 | 5f20769 | fix(audio-analyse): fix spectral charts, tooltip, onset detection; add e2e tests
+Version 0.131 | 2026-05-11 18:37 | 4fc2dd6 | graphify-out/GRAPH_REPORT.md (+51 more)

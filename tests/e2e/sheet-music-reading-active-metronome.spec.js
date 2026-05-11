@@ -3,7 +3,7 @@ import { test, expect } from '@playwright/test';
 test('Noten lesen im Aktivmodus mit Metronom zieht die aktuelle Note zeitgesteuert weiter', async ({ page }) => {
   await page.addInitScript(() => {
     localStorage.setItem('sheetMusic_active', 'true');
-    localStorage.setItem('sheetMusic_bpm', '240');
+    localStorage.setItem('sheetMusic_bpm', '120');
     window.__GT_SHEET_MUSIC_READING_BARS__ = [[
       { name: 'E', octave: 2, vfKey: 'e/3', string: 6, fret: 0 },
       { name: 'A', octave: 2, vfKey: 'a/3', string: 5, fret: 0 },
@@ -90,14 +90,14 @@ test('Noten lesen im Aktivmodus mit Metronom zieht die aktuelle Note zeitgesteue
 
   await expect(page.locator('#sheet-music-current-note')).toHaveText('E2');
 
-  await page.locator('#sheet-music-bpm-slider').fill('240');
+  await page.locator('#sheet-music-bpm-slider').fill('120');
   await page.locator('#btn-sheet-play').click();
 
-  await expect(page.locator('#sheet-music-current-note')).toHaveText('A2', { timeout: 2_500 });
-  await expect(page.locator('#sheet-music-current-note')).toHaveText('D3', { timeout: 2_500 });
-  await expect(page.locator('#sheet-music-current-note')).toHaveText('G3', { timeout: 2_500 });
-  await expect(page.locator('#sheet-music-current-note')).toHaveText('✓', { timeout: 3_500 });
-  await expect(page.locator('#sheet-music-feedback')).toContainText('Durchlauf beendet.', { timeout: 3_500 });
+  await expect(page.locator('#sheet-music-current-note')).toHaveText('A2', { timeout: 5_000 });
+  await expect(page.locator('#sheet-music-current-note')).toHaveText('D3', { timeout: 5_000 });
+  await expect(page.locator('#sheet-music-current-note')).toHaveText('G3', { timeout: 5_000 });
+  await expect(page.locator('#sheet-music-current-note')).toHaveText('✓', { timeout: 5_000 });
+  await expect(page.locator('#sheet-music-feedback')).toContainText('Durchlauf beendet.', { timeout: 5_000 });
 
   const missedNotes = page.locator('#score-container svg [fill="#e74c3c"], #score-container svg [stroke="#e74c3c"]');
   await expect(missedNotes).toHaveCount(4);

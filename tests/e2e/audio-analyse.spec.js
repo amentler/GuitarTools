@@ -41,6 +41,25 @@ test.describe('Audio-Analyse Werkzeug', () => {
     expect(onsetCount).toBeGreaterThan(0);
   });
 
+  test('WAV-Upload zeigt keinen OfflineAudioContext-suspend-Fehler', async ({ page }) => {
+    await page.addInitScript(() => {
+      if (window.OfflineAudioContext?.prototype) {
+        delete window.OfflineAudioContext.prototype.suspend;
+      }
+      if (window.webkitOfflineAudioContext?.prototype) {
+        delete window.webkitOfflineAudioContext.prototype.suspend;
+      }
+    });
+    await page.goto('/pages/audio-analyse/index.html');
+
+    await page.locator('#input-wav-file').setInputFiles(FIXTURE_WAV);
+
+    const status = page.locator('#analyse-status-msg');
+    await expect(status).not.toContainText('offCtx.suspend is not a function');
+    await expect(status).not.toContainText('offctx.suspend is not a function');
+    await expect(status).not.toContainText('Analyse-Fehler');
+  });
+
   test('Charts-Wrapper wird sichtbar und enthält SVG-Charts', async ({ page }) => {
     await page.locator('#input-wav-file').setInputFiles(FIXTURE_WAV);
     const wrapper = page.locator('#analyse-charts-wrapper');

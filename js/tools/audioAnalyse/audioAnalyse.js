@@ -20,6 +20,11 @@ import {
 import {
   resolveGuitarOnsetStrategy,
 } from '../../shared/audio/guitarOnsetStrategies.js';
+import {
+  setEssentiaSheetMusicStrategyInstance,
+} from '../../shared/audio/sheetMusicRecognition.js';
+import { getEssentia } from '../../shared/audio/essentiaLoader.js';
+import { createEssentiaSheetMusicStrategy } from '../../shared/audio/essentiaSheetMusicStrategy.js';
 
 const PITCH_STRATEGY_LABELS = {
   'fast-note-matcher': 'Fast Note Matcher',
@@ -80,7 +85,13 @@ export function createAudioAnalyseFeature() {
     if (ui.strategyOnset) ui.strategyOnset.textContent = onsetStrategy?.label ?? onsetKey;
   }
 
-  async function runAnalysis(ui, arrayBuffer, filename = '') {
+  async function ensureSelectedPitchStrategyReady(pitchStrategyKey) {
+    if (pitchStrategyKey !== 'essentia-pitch-yin') return;
+    const essentia = await getEssentia();
+    setEssentiaSheetMusicStrategyInstance(createEssentiaSheetMusicStrategy(essentia));
+  }
+
+  async function runAnalysis(ui, arrayBuffer, filename = '', manifest = null) {
     showStatus(ui, 'Dekodiere Audio…');
     let decoded;
     try {
@@ -91,10 +102,16 @@ export function createAudioAnalyseFeature() {
     }
 
     showStatus(ui, 'Analysiere Frames…');
+    const pitchStrategyKey = getSetting(SETTING_KEYS.SHEET_MUSIC_RECOGNITION_STRATEGY);
     const onsetStrategyKey = getSetting(SETTING_KEYS.SHEET_MUSIC_ONSET_STRATEGY);
     let result;
     try {
-      result = await analyzeAudio(decoded.samples, decoded.sampleRate, { onsetStrategyKey });
+      await ensureSelectedPitchStrategyReady(pitchStrategyKey);
+      result = await analyzeAudio(decoded.samples, decoded.sampleRate, {
+        onsetStrategyKey,
+        pitchStrategyKey,
+        targetSequence: manifest?.notes,
+      });
     } catch (err) {
       showStatus(ui, `Analyse-Fehler: ${err.message}`, true);
       return;
@@ -124,7 +141,7 @@ export function createAudioAnalyseFeature() {
     }
     const { wav, savedAt } = entry;
     const filename = savedAt ? `Aufnahme vom ${new Date(savedAt).toLocaleString('de-DE')}` : 'Letzte Aufnahme';
-    await runAnalysis(ui, wav.buffer, filename);
+    await runAnalysis(ui, wav.buffer, filename, entry.manifest);
   }
 
   async function handleFileInput(ui, file) {

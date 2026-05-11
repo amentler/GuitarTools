@@ -20,7 +20,10 @@ if (configPath) {
 let strategies = getSheetMusicRecognitionStrategies();
 try {
   const essentia = await loadEssentiaForNode();
-  strategies = [...strategies, createEssentiaSheetMusicStrategy(essentia)];
+  const essentiaStrategy = createEssentiaSheetMusicStrategy(essentia);
+  strategies = strategies.map(strategy => (
+    strategy.key === essentiaStrategy.key ? essentiaStrategy : strategy
+  ));
 } catch (err) {
   console.warn('[SFP] Essentia WASM not available, running without essentia-pitch-yin strategy:', err.message);
 }
