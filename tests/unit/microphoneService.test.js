@@ -19,7 +19,10 @@ describe('microphoneService', () => {
     const getUserMedia = vi.fn().mockResolvedValue(stream);
 
     await expect(requestMicrophoneStream({ getUserMedia })).resolves.toBe(stream);
-    expect(getUserMedia).toHaveBeenCalledWith({ audio: true, video: false });
+    expect(getUserMedia).toHaveBeenCalledWith({
+      audio: { noiseSuppression: false, echoCancellation: false, autoGainControl: false },
+      video: false,
+    });
   });
 
   it('forwards custom constraints unchanged', async () => {

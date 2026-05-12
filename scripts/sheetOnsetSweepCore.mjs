@@ -12,9 +12,12 @@ export const DEFAULT_SWEEP_SPEC = Object.freeze({
   fixturesDir: 'tests/fixtures/sequences',
   outputDir: 'sweep-runs',
   beamSize: 5,
-  rounds: 8,
+  rounds: null,
   candidatesPerRound: 40,
   timeBudgetMinutes: null,
+  stagnationRounds: 5,
+  minScoreImprovement: 1.0,
+  globalResetInterval: 50,
   seed: 1337,
   score: {
     underPenalty: 4,

@@ -144,7 +144,10 @@ describe('createGuitarTunerFeature controller behavior', () => {
     await tool.mount(document.getElementById('view-tuner'));
 
     expect(initTunerSVG).toHaveBeenCalledWith(document.getElementById('tuner-display'));
-    expect(navigator.mediaDevices.getUserMedia).toHaveBeenCalledWith({ audio: true, video: false });
+    expect(navigator.mediaDevices.getUserMedia).toHaveBeenCalledWith({
+      audio: { noiseSuppression: false, echoCancellation: false, autoGainControl: false },
+      video: false,
+    });
     expect(document.getElementById('tuner-permission').classList.contains('u-hidden')).toBe(true);
     expect(updateTunerDisplay).toHaveBeenCalledWith({
       cents: 0,

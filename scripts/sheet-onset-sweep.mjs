@@ -162,8 +162,29 @@ async function main() {
   console.log(`[sheet-onset-sweep] run dir: ${runDir}`);
   console.log(`[sheet-onset-sweep] fixtures: ${fixtures.length}`);
   console.log(`[sheet-onset-sweep] resumed candidates: ${results.length}`);
+  if (spec.stagnationRounds) {
+    console.log(`[sheet-onset-sweep] stagnation restart after ${spec.stagnationRounds} non-improving rounds`);
+  }
+  if (spec.globalResetInterval) {
+    console.log(`[sheet-onset-sweep] global reset every ${spec.globalResetInterval} rounds`);
+  }
 
-  for (let round = startRound; round <= spec.rounds; round++) {
+  let bestScoreEver = results.length > 0 ? (sortResults(results)[0]?.score ?? -Infinity) : -Infinity;
+  let stagnationCount = 0;
+  let effectiveRound = startRound;
+
+  process.on('SIGINT', () => {
+    console.log('\n[sheet-onset-sweep] interrupted — writing final artifacts...');
+    writeResultArtifacts(runDir, spec, fixtures, results);
+    const interrupted = sortResults(results)[0];
+    if (interrupted) {
+      console.log(`[sheet-onset-sweep] best: ${interrupted.id} score=${interrupted.score.toFixed(2)}`);
+      console.log(`[sheet-onset-sweep] best config: ${join(runDir, 'best-001.config.json')}`);
+    }
+    process.exit(0);
+  });
+
+  for (let round = startRound; ; round++) {
     const stopReason = dueToStop(startedAt, spec, results.length, args.maxCandidates);
     if (stopReason) {
       console.log(`[sheet-onset-sweep] stopping before round ${round}: ${stopReason}`);
@@ -171,10 +192,32 @@ async function main() {
     }
 
     const beam = sortResults(results).slice(0, spec.beamSize);
-    const rawCandidates = round === 1 && beam.length === 0
-      ? createInitialCandidates(spec, spec.candidatesPerRound, random)
-      : createRefinedCandidates(spec, beam, spec.candidatesPerRound, round, random);
+
+    const isFirstRound = round === startRound && beam.length === 0;
+    const isGlobalReset = spec.globalResetInterval && round % spec.globalResetInterval === 0;
+    const isStagnationRestart = !isFirstRound && !isGlobalReset
+      && spec.stagnationRounds && stagnationCount >= spec.stagnationRounds;
+
+    let roundMode;
+    let rawCandidates;
+    if (isFirstRound || isGlobalReset) {
+      rawCandidates = createInitialCandidates(spec, spec.candidatesPerRound, random);
+      effectiveRound = 0;
+      stagnationCount = 0;
+      roundMode = isGlobalReset ? 'global-reset' : 'initial';
+    } else if (isStagnationRestart) {
+      effectiveRound = 0;
+      stagnationCount = 0;
+      rawCandidates = createRefinedCandidates(spec, beam, spec.candidatesPerRound, 1, random);
+      roundMode = 'stagnation-restart';
+    } else {
+      rawCandidates = createRefinedCandidates(spec, beam, spec.candidatesPerRound, effectiveRound, random);
+      roundMode = 'normal';
+    }
+    effectiveRound++;
+
     const roundResults = [];
+    let stoppedEarly = false;
 
     for (const [index, parameters] of rawCandidates.entries()) {
       const key = candidateKey(parameters);
@@ -194,22 +237,36 @@ async function main() {
       const stopReasonAfterCandidate = dueToStop(startedAt, spec, results.length, args.maxCandidates);
       if (stopReasonAfterCandidate) {
         console.log(`[sheet-onset-sweep] stopping during round ${round}: ${stopReasonAfterCandidate}`);
+        stoppedEarly = true;
         break;
       }
     }
 
     writeJson(join(runDir, 'rounds', `round-${String(round).padStart(3, '0')}.json`), {
       round,
+      mode: roundMode,
       evaluated: roundResults.length,
       best: sortResults(results).slice(0, spec.beamSize),
     });
     writeResultArtifacts(runDir, spec, fixtures, results);
 
-    const best = sortResults(results)[0];
+    const currentBest = sortResults(results)[0];
+    const currentBestScore = currentBest?.score ?? -Infinity;
+    const minImprovement = spec.minScoreImprovement ?? 1.0;
+    if (currentBestScore > bestScoreEver + minImprovement) {
+      bestScoreEver = currentBestScore;
+      stagnationCount = 0;
+    } else if (!isGlobalReset && !isStagnationRestart) {
+      stagnationCount++;
+    }
+
     console.log(
-      `[sheet-onset-sweep] round ${round}: evaluated ${roundResults.length}, `
-      + `best score ${best?.score.toFixed(2) ?? 'n/a'} (${best?.id ?? '-'})`,
+      `[sheet-onset-sweep] round ${round} [${roundMode}]: evaluated ${roundResults.length}, `
+      + `best score ${currentBestScore.toFixed(2)} (${currentBest?.id ?? '-'})`
+      + (stagnationCount > 0 ? `, stagnation ${stagnationCount}/${spec.stagnationRounds ?? '—'}` : ''),
     );
+
+    if (stoppedEarly) break;
   }
 
   writeResultArtifacts(runDir, spec, fixtures, results);

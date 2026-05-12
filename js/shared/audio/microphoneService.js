@@ -1,4 +1,11 @@
-const DEFAULT_CONSTRAINTS = { audio: true, video: false };
+const DEFAULT_CONSTRAINTS = {
+  audio: {
+    noiseSuppression: false,
+    echoCancellation: false,
+    autoGainControl: false,
+  },
+  video: false,
+};
 
 export function resolveGetUserMedia({
   mediaDevices = globalThis.navigator?.mediaDevices,
