@@ -15,6 +15,18 @@ export const CHORD_HPCP_ATTACK_SETTLE_MS = 150;
 export const CHORD_HPCP_FRAME_INTERVAL_MS = 80;
 const SILENCE_DB = -200;
 const HPCP_REFERENCE_HZ = 261.626;
+
+const hannWindowCache = new Map();
+function getHannWindow(size) {
+  let win = hannWindowCache.get(size);
+  if (!win) {
+    win = new Float64Array(size);
+    const denom = size - 1;
+    for (let i = 0; i < size; i++) win[i] = 0.5 * (1 - Math.cos((2 * Math.PI * i) / denom));
+    hannWindowCache.set(size, win);
+  }
+  return win;
+}
 const RMS_SPIKE_FACTOR = 3;
 const GUITAR_MIN_RMS = 0.008;
 const ONSET_PEAK_RATIO = 0.08;
@@ -71,10 +83,8 @@ export function computeDbSpectrum(samples, fftSize = CHORD_HPCP_FFT_SIZE) {
   const im = new Float64Array(fftSize);
   const n = Math.min(samples.length, fftSize);
 
-  for (let i = 0; i < n; i++) {
-    const window = 0.5 * (1 - Math.cos((2 * Math.PI * i) / (fftSize - 1)));
-    re[i] = samples[i] * window;
-  }
+  const win = getHannWindow(fftSize);
+  for (let i = 0; i < n; i++) re[i] = samples[i] * win[i];
 
   fftInPlace(re, im);
 

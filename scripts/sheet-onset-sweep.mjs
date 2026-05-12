@@ -65,11 +65,16 @@ function dispatchBatch(worker, batch, sharedFixtures, scoreSpec) {
 
 async function evaluateBatchParallel(batch, sharedFixtures, scoreSpec, workers) {
   if (batch.length === 0) return [];
-  const activeCount = Math.min(workers.length, batch.length);
-  const chunkSize = Math.ceil(batch.length / activeCount);
+  // Sort by analyzeIntervalMs so same-hop candidates end up in the same worker chunk,
+  // maximising the per-worker FFT precomputation cache hit rate.
+  const sorted = [...batch].sort(
+    (a, b) => (a.parameters.analyzeIntervalMs ?? 0) - (b.parameters.analyzeIntervalMs ?? 0),
+  );
+  const activeCount = Math.min(workers.length, sorted.length);
+  const chunkSize = Math.ceil(sorted.length / activeCount);
   const chunks = [];
-  for (let i = 0; i < batch.length; i += chunkSize) {
-    chunks.push(batch.slice(i, Math.min(i + chunkSize, batch.length)));
+  for (let i = 0; i < sorted.length; i += chunkSize) {
+    chunks.push(sorted.slice(i, Math.min(i + chunkSize, sorted.length)));
   }
   const batchResults = await Promise.all(
     chunks.map((chunk, i) => dispatchBatch(workers[i], chunk, sharedFixtures, scoreSpec)),
@@ -77,8 +82,8 @@ async function evaluateBatchParallel(batch, sharedFixtures, scoreSpec, workers) 
   return batchResults.flat();
 }
 
-function writeResultArtifacts(runDir, spec, fixtures, results) {
-  const sorted = sortResults(results);
+function writeResultArtifacts(runDir, spec, fixtures, results, sortedResults = null) {
+  const sorted = sortedResults ?? sortResults(results);
   const best = sorted.slice(0, spec.beamSize);
   writeJson(join(runDir, 'best.json'), best);
   writeFileSync(join(runDir, 'report.md'), formatReport(results, spec, fixtures));
@@ -275,15 +280,17 @@ async function main() {
       }
     }
 
+    const sortedResults = sortResults(results);
+
     writeJson(join(runDir, 'rounds', `round-${String(round).padStart(3, '0')}.json`), {
       round,
       mode: roundMode,
       evaluated: roundResults.length,
-      best: sortResults(results).slice(0, spec.beamSize),
+      best: sortedResults.slice(0, spec.beamSize),
     });
-    writeResultArtifacts(runDir, spec, fixtures, results);
+    writeResultArtifacts(runDir, spec, fixtures, results, sortedResults);
 
-    const currentBest = sortResults(results)[0];
+    const currentBest = sortedResults[0];
     const currentBestScore = currentBest?.score ?? -Infinity;
     const minImprovement = spec.minScoreImprovement ?? 1.0;
     if (currentBestScore > bestScoreEver + minImprovement) {
