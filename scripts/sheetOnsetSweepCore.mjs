@@ -15,9 +15,9 @@ export const DEFAULT_SWEEP_SPEC = Object.freeze({
   rounds: null,
   candidatesPerRound: 40,
   timeBudgetMinutes: null,
-  stagnationRounds: 5,
+  stagnationRounds: 3,
   minScoreImprovement: 1.0,
-  globalResetInterval: 50,
+  globalResetInterval: 30,
   seed: 1337,
   score: {
     underPenalty: 4,
