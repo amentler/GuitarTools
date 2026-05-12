@@ -22,7 +22,9 @@
 
 import {
   createGuitarOnsetState,
+  normalizeGuitarOnsetOptions,
   updateGuitarOnsetDetector,
+  updateGuitarOnsetDetectorNormalized,
 } from './guitarOnsetDetector.js';
 
 export const GUITAR_ONSET_STRATEGY_KEYS = {
@@ -50,11 +52,15 @@ export const SWEEP_STANDARD_GUITAR_ONSET_OPTIONS = Object.freeze({
   cooldownOverrideMinBandRatio: 0.050004,
 });
 
-function updateGuitarOnsetDetectorWithOptions(baseOptions) {
-  return (state, input, options = {}) => updateGuitarOnsetDetector(state, input, {
-    ...baseOptions,
-    ...options,
-  });
+const SWEEP_STANDARD_NORMALIZED_OPTIONS = normalizeGuitarOnsetOptions(SWEEP_STANDARD_GUITAR_ONSET_OPTIONS);
+
+function makeStrategyUpdate(baseNormalized, baseRaw) {
+  return (state, input, options = {}) => {
+    const normalizedOptions = options && Object.keys(options).length > 0
+      ? normalizeGuitarOnsetOptions({ ...baseRaw, ...options })
+      : baseNormalized;
+    return updateGuitarOnsetDetectorNormalized(state, input, normalizedOptions);
+  };
 }
 
 export const GUITAR_ONSET_STRATEGIES = [
@@ -63,7 +69,7 @@ export const GUITAR_ONSET_STRATEGIES = [
     label: 'Guitar Onset Detector (Sweep Standard)',
     description: 'Sweep-optimierte Standard-Erkennung mit RMS/Flux-Reattack-Bestaetigung.',
     createState: createGuitarOnsetState,
-    update: updateGuitarOnsetDetectorWithOptions(SWEEP_STANDARD_GUITAR_ONSET_OPTIONS),
+    update: makeStrategyUpdate(SWEEP_STANDARD_NORMALIZED_OPTIONS, SWEEP_STANDARD_GUITAR_ONSET_OPTIONS),
   },
   {
     key: GUITAR_ONSET_STRATEGY_KEYS.GUITAR_ONSET,

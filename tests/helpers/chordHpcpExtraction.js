@@ -27,6 +27,16 @@ function getHannWindow(size) {
   }
   return win;
 }
+
+const fftScratchCache = new Map();
+function getFftScratch(size) {
+  let scratch = fftScratchCache.get(size);
+  if (!scratch) {
+    scratch = { re: new Float64Array(size), im: new Float64Array(size) };
+    fftScratchCache.set(size, scratch);
+  }
+  return scratch;
+}
 const RMS_SPIKE_FACTOR = 3;
 const GUITAR_MIN_RMS = 0.008;
 const ONSET_PEAK_RATIO = 0.08;
@@ -95,6 +105,29 @@ export function computeDbSpectrum(samples, fftSize = CHORD_HPCP_FFT_SIZE) {
   for (let i = 0; i < bins; i++) {
     const mag = Math.sqrt(re[i] * re[i] + im[i] * im[i]) / norm;
     spectrum[i] = mag > 1e-9 ? 20 * Math.log10(mag) : SILENCE_DB;
+  }
+
+  return spectrum;
+}
+
+export function computeLinearSpectrum(samples, fftSize = CHORD_HPCP_FFT_SIZE) {
+  const { re, im } = getFftScratch(fftSize);
+  const n = Math.min(samples.length, fftSize);
+
+  re.fill(0);
+  im.fill(0);
+
+  const win = getHannWindow(fftSize);
+  for (let i = 0; i < n; i++) re[i] = samples[i] * win[i];
+
+  fftInPlace(re, im);
+
+  const bins = fftSize >> 1;
+  const norm = fftSize >> 1;
+  const spectrum = new Float32Array(bins);
+
+  for (let i = 0; i < bins; i++) {
+    spectrum[i] = Math.sqrt(re[i] * re[i] + im[i] * im[i]) / norm;
   }
 
   return spectrum;

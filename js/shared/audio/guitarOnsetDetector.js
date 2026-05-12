@@ -79,8 +79,10 @@ export function createGuitarOnsetState() {
   };
 }
 
-function normalizeGuitarOnsetOptions(options = {}) {
-  return { ...DEFAULT_GUITAR_ONSET_OPTIONS, ...options };
+export function normalizeGuitarOnsetOptions(options = {}) {
+  const merged = { ...DEFAULT_GUITAR_ONSET_OPTIONS, ...options };
+  merged._activeBandThreshold = Math.pow(10, merged.spectralActivityDb / 20);
+  return merged;
 }
 
 function dbToLinear(db, dbFloor) {
@@ -165,8 +167,20 @@ function computeActiveBandRatio(frequencyData, options = {}) {
   return consideredBins > 0 ? activeBins / consideredBins : 0;
 }
 
-export function updateGuitarOnsetDetector(state, { frequencyData = null, samples = null, rms: providedRms = null } = {}, options = {}) {
-  const normalizedOptions = normalizeGuitarOnsetOptions(options);
+function computeActiveBandRatioLinear(magnitudes, options) {
+  const threshold = options._activeBandThreshold;
+  const startBin = options.startBin;
+  const endBin = Math.min(magnitudes.length, options.endBin ?? magnitudes.length);
+  const consideredBins = endBin - startBin;
+  if (consideredBins <= 0) return 0;
+  let activeBins = 0;
+  for (let i = startBin; i < endBin; i++) {
+    if (magnitudes[i] >= threshold) activeBins++;
+  }
+  return activeBins / consideredBins;
+}
+
+export function updateGuitarOnsetDetectorNormalized(state, { frequencyData = null, magnitudes = null, samples = null, rms: providedRms = null } = {}, normalizedOptions) {
   const {
     minRms,
     minFlux,
@@ -198,10 +212,12 @@ export function updateGuitarOnsetDetector(state, { frequencyData = null, samples
   const rms = Number.isFinite(providedRms)
     ? providedRms
     : (samples ? computeFrameRms(samples) : state.previousRms);
-  const currentMagnitudes = frequencyData ? toLinearMagnitudes(frequencyData, dbFloor) : null;
-  const activeBandRatio = computeActiveBandRatio(frequencyData, options);
+  const currentMagnitudes = magnitudes ?? (frequencyData ? toLinearMagnitudes(frequencyData, dbFloor) : null);
+  const activeBandRatio = currentMagnitudes
+    ? computeActiveBandRatioLinear(currentMagnitudes, normalizedOptions)
+    : computeActiveBandRatio(frequencyData, normalizedOptions);
   const fluxResult = currentMagnitudes
-    ? computeBroadbandFlux(state.previousMagnitudes, currentMagnitudes, options)
+    ? computeBroadbandFlux(state.previousMagnitudes, currentMagnitudes, normalizedOptions)
     : { flux: 0, growingBins: 0, consideredBins: 0, bandRatio: 0 };
   const spectralNoveltyBins = currentMagnitudes
     ? computeSpectralNoveltyBins(state.previousMagnitudes, currentMagnitudes, normalizedOptions)
@@ -302,4 +318,12 @@ export function updateGuitarOnsetDetector(state, { frequencyData = null, samples
     cooldownOverrideAttack,
     options: normalizedOptions,
   };
+}
+
+export function updateGuitarOnsetDetector(state, { frequencyData = null, samples = null, rms: providedRms = null } = {}, options = {}) {
+  return updateGuitarOnsetDetectorNormalized(
+    state,
+    { frequencyData, samples, rms: providedRms },
+    normalizeGuitarOnsetOptions(options),
+  );
 }

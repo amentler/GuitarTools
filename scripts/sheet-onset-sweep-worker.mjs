@@ -1,17 +1,15 @@
 import { parentPort } from 'worker_threads';
-import { computeDbSpectrum } from '../tests/helpers/chordHpcpExtraction.js';
+import { computeLinearSpectrum } from '../tests/helpers/chordHpcpExtraction.js';
 import { computeFrameRms } from '../js/shared/audio/rms.js';
 import {
-  DEFAULT_GUITAR_ONSET_STRATEGY_KEY,
-  resolveGuitarOnsetStrategy,
-} from '../js/shared/audio/guitarOnsetStrategies.js';
+  createGuitarOnsetState,
+  normalizeGuitarOnsetOptions,
+  updateGuitarOnsetDetectorNormalized,
+} from '../js/shared/audio/guitarOnsetDetector.js';
 import { candidateToOptions, scoreCandidate } from './sheetOnsetSweepCore.mjs';
 
 const DEFAULT_ONSET_FRAME_SIZE = 4096;
 const DEFAULT_ANALYZE_INTERVAL_MS = 41;
-
-// Resolve once at module load — all candidates in this worker use the same strategy.
-const onsetStrategy = resolveGuitarOnsetStrategy(DEFAULT_GUITAR_ONSET_STRATEGY_KEY);
 
 function resolveHopSize(options, sampleRate) {
   return options.onsetHopSize
@@ -23,20 +21,20 @@ function precomputeFrames(samples, frameSize, hopSize) {
   const rmsValues = [];
   for (let offset = 0; offset + frameSize <= samples.length; offset += hopSize) {
     const frame = samples.subarray(offset, offset + frameSize);
-    spectra.push(computeDbSpectrum(frame, frameSize));
+    spectra.push(computeLinearSpectrum(frame, frameSize));
     rmsValues.push(computeFrameRms(frame));
   }
   return { spectra, rmsValues };
 }
 
-function countOnsetsFromFrames(spectra, rmsValues, sampleRate, hopSize, options) {
+function countOnsetsFromFrames(spectra, rmsValues, sampleRate, hopSize, normalizedOptions) {
   const timestampsMs = [];
-  let state = onsetStrategy.createState();
+  let state = createGuitarOnsetState();
   for (let i = 0; i < spectra.length; i++) {
-    const result = onsetStrategy.update(
+    const result = updateGuitarOnsetDetectorNormalized(
       state,
-      { frequencyData: spectra[i], rms: rmsValues[i] },
-      options.onsetDetectorOptions,
+      { magnitudes: spectra[i], rms: rmsValues[i] },
+      normalizedOptions,
     );
     state = result.nextState;
     if (result.event === 'onset') {
@@ -79,10 +77,11 @@ parentPort.on('message', ({ batch, fixtures, scoreSpec }) => {
     const hopSize = resolveHopSize(options, sampleRate);
     const key = `${frameSize}:${hopSize}`;
     const fixtureFrames = framesCache.get(key);
+    const normalizedOptions = normalizeGuitarOnsetOptions(options.onsetDetectorOptions);
 
     const fixtureResults = loadedFixtures.map(({ fixture }, i) => {
       const { spectra, rmsValues } = fixtureFrames[i];
-      const onsetResult = countOnsetsFromFrames(spectra, rmsValues, sampleRate, hopSize, options);
+      const onsetResult = countOnsetsFromFrames(spectra, rmsValues, sampleRate, hopSize, normalizedOptions);
       return { fixture, onsetCount: onsetResult.count, timestampsMs: onsetResult.timestampsMs };
     });
 
