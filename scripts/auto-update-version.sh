@@ -58,13 +58,14 @@ extract_current_version() {
     local version_file=$1
     local current_version=""
 
-    current_version=$(extract_numeric_version_from_file "$version_file")
+    # Read from HEAD so stale staged or working-tree content never freezes the counter.
+    current_version=$(git show "HEAD:${version_file}" 2>/dev/null | grep -m1 -oE '^Version [0-9]+(\.[0-9]+)? \|' | awk '{ print $2 }')
     if [[ -n "$current_version" ]]; then
         echo "$current_version"
         return 0
     fi
 
-    # Check git history for the most recent valid numeric version
+    # Fallback: scan recent git history (e.g. initial commit where HEAD lacks the file).
     while IFS= read -r commit_hash; do
         current_version=$(git show "${commit_hash}:${version_file}" 2>/dev/null | grep -m1 -oE '^Version [0-9]+(\.[0-9]+)? \|' | awk '{ print $2 }')
         if [[ -n "$current_version" ]]; then
@@ -151,28 +152,26 @@ build_precommit_title() {
 }
 
 main() {
-    # 1. Auto-generate version.txt only when the commit does not already
-    #    include a staged version.txt change.
-    if is_staged "version.txt"; then
-        echo "version.txt already staged; leaving version metadata unchanged"
+    # 1. Always regenerate version.txt from HEAD so accidental staging (e.g.
+    #    after git stash/rebase) can never freeze the counter.
+    #    Only exception: version.txt has explicit unstaged edits (shouldn't
+    #    happen per CLAUDE.md, but kept as a safety-net).
+    if [ -f "version.txt" ] && ! git diff --quiet -- "version.txt"; then
+        echo "version.txt has unstaged changes; leaving version metadata unchanged"
     else
-        if [ -f "version.txt" ] && ! git diff --quiet -- "version.txt"; then
-            echo "version.txt has unstaged changes; leaving version metadata unchanged"
-        else
-            CURRENT_VERSION=$(extract_current_version "version.txt")
+        CURRENT_VERSION=$(extract_current_version "version.txt")
 
-            # 2. Increment the counter while keeping the public format in 0.x.
-            NEW_VERSION=$(bump_version "$CURRENT_VERSION")
+        # 2. Increment the counter while keeping the public format in 0.x.
+        NEW_VERSION=$(bump_version "$CURRENT_VERSION")
 
-            TIMESTAMP=$(date "+%Y-%m-%d %H:%M")
-            HASH=$(git rev-parse --short HEAD 2>/dev/null || echo "initial")
-            TITLE=$(build_precommit_title)
+        TIMESTAMP=$(date "+%Y-%m-%d %H:%M")
+        HASH=$(git rev-parse --short HEAD 2>/dev/null || echo "initial")
+        TITLE=$(build_precommit_title)
 
-            # 3. Write and stage version.txt.
-            echo "Version $NEW_VERSION | $TIMESTAMP | $HASH | $TITLE" > version.txt
-            git add version.txt
-            echo "Auto-updated version.txt to $NEW_VERSION"
-        fi
+        # 3. Write and stage version.txt.
+        echo "Version $NEW_VERSION | $TIMESTAMP | $HASH | $TITLE" > version.txt
+        git add version.txt
+        echo "Auto-updated version.txt to $NEW_VERSION"
     fi
 
     # 4. Sync sw.js CACHE_VERSION with version.txt when sw.js is not already

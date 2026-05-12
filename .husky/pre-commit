@@ -3,8 +3,8 @@
 # automatically on every commit.
 # IMPORTANT FOR ALL AGENTS (Claude, Gemini, Codex):
 #   • NEVER edit version.txt or sw.js CACHE_VERSION manually.
-#   • If these files are NOT yet staged, the hook updates and stages them.
-#   • If they ARE already staged, the hook leaves them untouched.
+#   • The hook ALWAYS regenerates version.txt from HEAD on every commit.
+#   • Do NOT pre-stage version.txt — the hook owns it entirely.
 scripts/auto-update-version.sh
 
 # ── Lint ────────────────────────────────────────────────────────────────────
