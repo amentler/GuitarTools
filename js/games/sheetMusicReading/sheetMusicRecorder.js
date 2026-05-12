@@ -15,19 +15,21 @@ import { requestMicrophoneStream } from '../../shared/audio/microphoneService.js
 /**
  * Returns the best audio MIME type supported by this browser's MediaRecorder.
  * Priority: opus-in-webm (Chrome/Edge) → opus-in-ogg (Firefox) → mp4 (Safari).
+ * Firefox on Windows is forced to webm first because its ogg/opus pipeline
+ * produces intermittent audio dropouts on Windows audio drivers.
  * @returns {string}
  */
 function getSupportedMimeType() {
-  for (const type of [
-    'audio/webm;codecs=opus',
-    'audio/ogg;codecs=opus',
-    'audio/webm',
-    'audio/ogg',
-    'audio/mp4',
-  ]) {
-    if (MediaRecorder.isTypeSupported(type)) return type;
-  }
-  return '';
+  const isFirefoxWindows =
+    typeof navigator !== 'undefined' &&
+    /Firefox/.test(navigator.userAgent) &&
+    /Windows/.test(navigator.userAgent);
+
+  const candidates = isFirefoxWindows
+    ? ['audio/webm;codecs=opus', 'audio/webm', 'audio/ogg;codecs=opus', 'audio/ogg']
+    : ['audio/webm;codecs=opus', 'audio/ogg;codecs=opus', 'audio/webm', 'audio/ogg', 'audio/mp4'];
+
+  return candidates.find(t => MediaRecorder.isTypeSupported(t)) ?? '';
 }
 
 /**
@@ -143,7 +145,13 @@ export function createRecorder() {
 
       mimeType = getSupportedMimeType();
       recordedChunks = [];
-      mediaRecorder = new MediaRecorder(stream, mimeType ? { mimeType } : {});
+      try {
+        mediaRecorder = new MediaRecorder(stream, mimeType ? { mimeType } : {});
+      } catch {
+        // Forced MIME type not accepted by this browser – fall back to default.
+        mimeType = '';
+        mediaRecorder = new MediaRecorder(stream);
+      }
       mediaRecorder.ondataavailable = (e) => {
         if (e.data.size > 0) recordedChunks.push(e.data);
       };
