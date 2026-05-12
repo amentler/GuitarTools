@@ -548,7 +548,7 @@ export function createSheetMusicReadingFeature() {
   async function startRecording() {
     if (recorder.isRecording) return;
     try {
-      await recorder.start();
+      await recorder.start(audioSession.stream ?? null);
     } catch {
       if (ui.permission) {
         ui.permission.classList.remove('u-hidden');
