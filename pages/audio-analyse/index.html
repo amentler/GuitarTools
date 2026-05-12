@@ -104,7 +104,7 @@
       display: flex;
       flex-direction: column;
       gap: 0.25rem;
-      padding: 0 0.5rem 5rem; /* extra bottom padding for fixed bar */
+      padding: 0 0.5rem 7rem; /* extra bottom padding for fixed 2-row bar */
     }
 
     .analysis-chart-block {
@@ -160,18 +160,37 @@
       right: 0;
       z-index: 60;
       display: flex;
+      flex-direction: column;
       align-items: center;
-      gap: 0.6rem;
-      padding: 0.5rem 1rem;
+      gap: 0;
+      padding: 0.4rem 0.5rem 0.5rem;
       background: var(--color-surface, #1e1209);
       border-top: 1px solid var(--color-border, #4a3a2a);
       box-shadow: 0 -3px 10px rgba(0, 0, 0, 0.4);
-      flex-wrap: nowrap;
+      box-sizing: border-box;
+    }
+
+    .analyse-slider-row {
+      width: 100%;
+      max-width: 900px;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      box-sizing: border-box;
+    }
+
+    .analyse-transport-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.6rem;
+      margin-top: 0.3rem;
     }
 
     .analyse-slider {
       flex: 1;
-      min-width: 80px;
+      min-width: 0;
+      width: 0; /* flex shrink to fit */
       accent-color: var(--color-accent, #7c4dff);
       cursor: pointer;
     }
@@ -253,11 +272,15 @@
 
   <!-- Fixierte Bottom-Bar: Slider + Transport-Buttons -->
   <div id="analyse-bottom-bar" class="analyse-bottom-bar u-hidden">
-    <button id="btn-play-pause" class="btn-play-stop">▶ Abspielen</button>
-    <button id="btn-stop-audio" class="btn-play-stop">⏹ Stop</button>
-    <span id="analyse-slider-time" class="analyse-slider-time">0.00 s</span>
-    <input type="range" id="analyse-slider" class="analyse-slider" min="0" max="1000" value="0" step="1" />
-    <span id="analyse-slider-dur" class="analyse-slider-dur">0.00 s</span>
+    <div class="analyse-slider-row">
+      <span id="analyse-slider-time" class="analyse-slider-time">0.00 s</span>
+      <input type="range" id="analyse-slider" class="analyse-slider" min="0" max="1000" value="0" step="1" />
+      <span id="analyse-slider-dur" class="analyse-slider-dur">0.00 s</span>
+    </div>
+    <div class="analyse-transport-row">
+      <button id="btn-play-pause" class="btn-play-stop">▶ Abspielen</button>
+      <button id="btn-stop-audio" class="btn-play-stop">⏹ Stop</button>
+    </div>
   </div>
 
   <script type="module" src="./bootstrap.js"></script>
