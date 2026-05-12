@@ -33,21 +33,21 @@ export const GUITAR_ONSET_STRATEGY_KEYS = {
 export const DEFAULT_GUITAR_ONSET_STRATEGY_KEY = GUITAR_ONSET_STRATEGY_KEYS.SWEEP_STANDARD;
 
 export const SWEEP_STANDARD_GUITAR_ONSET_OPTIONS = Object.freeze({
-  relativeReattackFactor: 3.233025,
-  relativeReattackMinDelta: 0.019703,
+  relativeReattackFactor: 4,
+  relativeReattackMinDelta: 0.008546,
   relativeFluxFactor: 1.4,
-  spectralNoveltyRatio: 2.971316,
-  spectralNoveltyMinBins: 27,
+  spectralNoveltyRatio: 1.5,
+  spectralNoveltyMinBins: 36,
   cooldownFrames: 4,
-  confirmedRmsFactor: 1.235449,
-  confirmedRmsMinDelta: 0.003734,
-  confirmedFluxFactor: 1.719335,
-  confirmedMinFlux: 0.015141,
-  confirmedMinBandRatio: 0.036178,
-  confirmedSpectralNoveltyMinBins: 25,
-  cooldownOverrideFactor: 4.86345,
-  cooldownOverrideMinFlux: 0.0082,
-  cooldownOverrideMinBandRatio: 0.080929,
+  confirmedRmsFactor: 1.554447,
+  confirmedRmsMinDelta: 0.005963,
+  confirmedFluxFactor: 2.070733,
+  confirmedMinFlux: 0.005171,
+  confirmedMinBandRatio: 0.018637,
+  confirmedSpectralNoveltyMinBins: 14,
+  cooldownOverrideFactor: 5,
+  cooldownOverrideMinFlux: 0.015508,
+  cooldownOverrideMinBandRatio: 0.050004,
 });
 
 function updateGuitarOnsetDetectorWithOptions(baseOptions) {
