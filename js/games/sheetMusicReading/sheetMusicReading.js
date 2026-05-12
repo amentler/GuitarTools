@@ -559,8 +559,8 @@ export function createSheetMusicReadingFeature() {
     syncRecordingUI();
   }
 
-  function stopRecording() {
-    const wav = recorder.stop();
+  async function stopRecording() {
+    const wav = await recorder.stop();
     if (!wav) {
       syncRecordingUI();
       return;
@@ -869,7 +869,7 @@ export function createSheetMusicReadingFeature() {
 
       // Recording controls
       ui.recordBtn?.addEventListener('click', () => void startRecording());
-      ui.recordStopBtn?.addEventListener('click', stopRecording);
+      ui.recordStopBtn?.addEventListener('click', () => void stopRecording());
       ui.recordCancelBtn?.addEventListener('click', cancelRecording);
       ui.downloadBtn?.addEventListener('click', downloadRecordings);
       ui.analyseBtn?.addEventListener('click', () => {

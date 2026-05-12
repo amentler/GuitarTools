@@ -1,36 +1,51 @@
 /**
  * sheetMusicRecorder.js
  *
- * Minimal WAV recorder based on ScriptProcessorNode (no external deps).
- * The recorder holds its own AudioContext but can reuse an existing
- * MediaStream (e.g. from the active mode) to avoid opening a second
- * concurrent stream on the same device.
+ * MediaRecorder-based WAV recorder (no external deps).
+ * Uses the browser's native encoder (webm/ogg/mp4), then converts to
+ * 16-bit PCM WAV via decodeAudioData so the output format is always
+ * consistent regardless of browser.
+ *
+ * The recorder can reuse an existing MediaStream (e.g. from the active
+ * mode) to avoid opening a second concurrent stream on the same device.
  */
 
 import { requestMicrophoneStream } from '../../shared/audio/microphoneService.js';
 
-const SAMPLE_RATE = 44100;
-const BUFFER_SIZE = 4096;
+/**
+ * Returns the best audio MIME type supported by this browser's MediaRecorder.
+ * Priority: opus-in-webm (Chrome/Edge) → opus-in-ogg (Firefox) → mp4 (Safari).
+ * @returns {string}
+ */
+function getSupportedMimeType() {
+  for (const type of [
+    'audio/webm;codecs=opus',
+    'audio/ogg;codecs=opus',
+    'audio/webm',
+    'audio/ogg',
+    'audio/mp4',
+  ]) {
+    if (MediaRecorder.isTypeSupported(type)) return type;
+  }
+  return '';
+}
 
 /**
- * Encodes an array of per-chunk channel data into a 16-bit PCM WAV Uint8Array.
- * @param {Float32Array[][]} chunks  Array of frames; each frame is an array of
- *                                   Float32Arrays, one per channel (interleaved order).
+ * Encodes per-channel Float32 sample arrays into a 16-bit PCM WAV Uint8Array.
+ * @param {Float32Array[]} channelData  One contiguous Float32Array per channel.
  * @param {number} sampleRate
  * @param {number} numChannels
  * @returns {Uint8Array}
  */
-function encodeWav(chunks, sampleRate, numChannels) {
-  const samplesPerChannel = chunks.reduce((s, c) => s + c[0].length, 0);
+function encodeWav(channelData, sampleRate, numChannels) {
+  const samplesPerChannel = channelData[0].length;
   const byteCount = samplesPerChannel * numChannels * 2; // 16-bit PCM
 
   const buffer = new ArrayBuffer(44 + byteCount);
   const view = new DataView(buffer);
 
   const writeStr = (offset, str) => {
-    for (let i = 0; i < str.length; i++) {
-      view.setUint8(offset + i, str.charCodeAt(i));
-    }
+    for (let i = 0; i < str.length; i++) view.setUint8(offset + i, str.charCodeAt(i));
   };
 
   // RIFF header
@@ -51,14 +66,11 @@ function encodeWav(chunks, sampleRate, numChannels) {
   view.setUint32(40, byteCount, true);
 
   let offset = 44;
-  for (const channelFrames of chunks) {
-    const frameLen = channelFrames[0].length;
-    for (let i = 0; i < frameLen; i++) {
-      for (let c = 0; c < numChannels; c++) {
-        const s = Math.max(-1, Math.min(1, channelFrames[c][i]));
-        view.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7fff, true);
-        offset += 2;
-      }
+  for (let i = 0; i < samplesPerChannel; i++) {
+    for (let c = 0; c < numChannels; c++) {
+      const s = Math.max(-1, Math.min(1, channelData[c][i]));
+      view.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7fff, true);
+      offset += 2;
     }
   }
 
@@ -66,46 +78,35 @@ function encodeWav(chunks, sampleRate, numChannels) {
 }
 
 /**
- * Factory for a minimal microphone WAV recorder.
+ * Factory for a MediaRecorder-based WAV recorder.
  *
  * @returns {{
  *   start(existingStream?: MediaStream|null): Promise<void>,
- *   stop(): Uint8Array|null,
+ *   stop(): Promise<Uint8Array|null>,
  *   cancel(): void,
  *   get isRecording(): boolean
  * }}
  */
 export function createRecorder() {
-  let audioCtx = null;
+  let mediaRecorder = null;
   let stream = null;
   let streamOwned = false;
-  let processor = null;
-  let source = null;
-  let chunks = [];
-  let numChannels = 1;
+  let recordedChunks = [];
+  let mimeType = '';
   let recording = false;
 
   function cleanup() {
-    if (processor) {
-      processor.disconnect();
-      processor.onaudioprocess = null;
-      processor = null;
+    if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+      mediaRecorder.stop();
     }
-    if (source) {
-      source.disconnect();
-      source = null;
-    }
+    mediaRecorder = null;
     if (streamOwned && stream) {
       stream.getTracks().forEach(t => t.stop());
     }
     stream = null;
     streamOwned = false;
-    if (audioCtx) {
-      audioCtx.close().catch(() => {});
-      audioCtx = null;
-    }
-    chunks = [];
-    numChannels = 1;
+    recordedChunks = [];
+    mimeType = '';
     recording = false;
   }
 
@@ -140,47 +141,73 @@ export function createRecorder() {
         streamOwned = true;
       }
 
-      // Detect actual channel count delivered by the device/browser.
-      const trackSettings = stream.getAudioTracks()[0]?.getSettings?.() ?? {};
-      numChannels = Math.min(2, Math.max(1, trackSettings.channelCount ?? 1));
-
-      audioCtx = new AudioContext({ sampleRate: SAMPLE_RATE });
-      source = audioCtx.createMediaStreamSource(stream);
-
-      // ScriptProcessorNode is deprecated but universally supported without build tools.
-      processor = audioCtx.createScriptProcessor(BUFFER_SIZE, numChannels, numChannels);
-      chunks = [];
-
-      processor.onaudioprocess = (e) => {
-        if (!recording) return;
-        const channelFrames = [];
-        for (let c = 0; c < numChannels; c++) {
-          channelFrames.push(new Float32Array(e.inputBuffer.getChannelData(c)));
-        }
-        chunks.push(channelFrames);
+      mimeType = getSupportedMimeType();
+      recordedChunks = [];
+      mediaRecorder = new MediaRecorder(stream, mimeType ? { mimeType } : {});
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0) recordedChunks.push(e.data);
       };
-
-      source.connect(processor);
-      processor.connect(audioCtx.destination);
+      mediaRecorder.start(100); // 100ms timeslice for regular data events
       recording = true;
     },
 
-    stop() {
+    /**
+     * Stops recording and resolves with a 16-bit PCM WAV Uint8Array.
+     * The conversion (compressed → WAV) happens via decodeAudioData.
+     * @returns {Promise<Uint8Array|null>}
+     */
+    async stop() {
       if (!recording) return null;
       recording = false;
 
-      const capturedChunks = chunks;
-      const capturedRate = audioCtx?.sampleRate ?? SAMPLE_RATE;
-      const capturedChannels = numChannels;
+      // Create the AudioContext here, while still in the user-gesture chain,
+      // because iOS Safari refuses AudioContext creation in async callbacks.
+      const decodeCtx = new AudioContext();
 
-      cleanup();
+      return new Promise((resolve) => {
+        const capturedRecorder = mediaRecorder;
+        const capturedChunks = recordedChunks;
+        const capturedMime = mimeType;
 
-      if (capturedChunks.length === 0) return null;
-      return encodeWav(capturedChunks, capturedRate, capturedChannels);
+        capturedRecorder.onstop = async () => {
+          cleanup();
+
+          if (capturedChunks.length === 0) {
+            decodeCtx.close().catch(() => {});
+            resolve(null);
+            return;
+          }
+
+          try {
+            const blob = new Blob(capturedChunks, { type: capturedMime || 'audio/webm' });
+            const arrayBuffer = await blob.arrayBuffer();
+            const audioBuffer = await decodeCtx.decodeAudioData(arrayBuffer);
+            await decodeCtx.close();
+
+            const numChannels = Math.min(2, audioBuffer.numberOfChannels);
+            const channelData = [];
+            for (let c = 0; c < numChannels; c++) {
+              channelData.push(audioBuffer.getChannelData(c));
+            }
+            resolve(encodeWav(channelData, audioBuffer.sampleRate, numChannels));
+          } catch {
+            decodeCtx.close().catch(() => {});
+            resolve(null);
+          }
+        };
+
+        if (capturedRecorder.state !== 'inactive') {
+          capturedRecorder.stop();
+        } else {
+          decodeCtx.close().catch(() => {});
+          resolve(null);
+        }
+      });
     },
 
     cancel() {
-      if (!recording && !audioCtx) return;
+      if (!recording && !mediaRecorder) return;
+      recording = false;
       cleanup();
     },
   };
