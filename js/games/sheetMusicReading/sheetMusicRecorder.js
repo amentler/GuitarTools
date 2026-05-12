@@ -6,6 +6,8 @@
  * from the Aktiv-Modus audio session.
  */
 
+import { requestMicrophoneStream } from '../../shared/audio/microphoneService.js';
+
 const SAMPLE_RATE = 44100;
 const BUFFER_SIZE = 4096;
 
@@ -100,7 +102,7 @@ export function createRecorder() {
     async start() {
       if (recording) return;
 
-      stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+      stream = await requestMicrophoneStream();
       audioCtx = new AudioContext({ sampleRate: SAMPLE_RATE });
       source = audioCtx.createMediaStreamSource(stream);
 
