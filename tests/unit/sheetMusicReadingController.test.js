@@ -100,6 +100,10 @@ vi.mock('../../js/games/sheetMusicReading/sheetMusicZip.js', () => ({
   downloadBlob,
 }));
 
+vi.mock('../../js/shared/audioAnalyseStorage.js', () => ({
+  saveLastRecording: vi.fn().mockResolvedValue(undefined),
+}));
+
 vi.mock('../../js/games/sheetMusicReading/sheetMusicLogic.js', async () => {
   const actual = await vi.importActual('../../js/games/sheetMusicReading/sheetMusicLogic.js');
   return {
@@ -403,6 +407,7 @@ describe('SheetMusicReading controller behavior', () => {
     document.getElementById('btn-record').click();
     await Promise.resolve();
     document.getElementById('btn-record-stop').click();
+    await Promise.resolve(); // stopRecording is async; let it push to savedRecordings
     document.getElementById('btn-download-recordings').click();
 
     const files = buildZip.mock.calls.at(-1)[0];
