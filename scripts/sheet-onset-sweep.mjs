@@ -4,12 +4,13 @@ import {
   mkdirSync,
   writeFileSync,
 } from 'fs';
+import { cpus } from 'os';
 import { join } from 'path';
+import { fileURLToPath } from 'url';
+import { Worker } from 'worker_threads';
 import { readWavFile } from '../tests/helpers/wavDecoder.js';
-import { countGuitarOnsets } from '../tests/helpers/sheetMusicSequenceFingerprint.js';
 import {
   candidateKey,
-  candidateToOptions,
   createInitialCandidates,
   createRefinedCandidates,
   createSeededRandom,
@@ -21,10 +22,12 @@ import {
   loadSweepSpec,
   parseArgs,
   readJsonl,
-  scoreCandidate,
   sortResults,
   writeJson,
 } from './sheetOnsetSweepCore.mjs';
+
+const WORKER_COUNT = Math.max(1, Math.floor(cpus().length / 2));
+const WORKER_SCRIPT = fileURLToPath(new URL('./sheet-onset-sweep-worker.mjs', import.meta.url));
 
 function makeCandidateId(round, index, parameters) {
   const hash = candidateKey(parameters)
@@ -42,17 +45,36 @@ function loadAudioFixtures(fixtures) {
   }));
 }
 
-function evaluateCandidate(candidate, loadedFixtures, scoreSpec) {
-  const options = candidateToOptions(candidate.parameters);
-  const fixtureResults = loadedFixtures.map(({ fixture, audio }) => {
-    const onsetResult = countGuitarOnsets(audio.samples, audio.sampleRate, options);
-    return {
-      fixture,
-      onsetCount: onsetResult.count,
-      timestampsMs: onsetResult.timestampsMs,
-    };
+function prepareSharedFixtures(loadedFixtures) {
+  return loadedFixtures.map(({ fixture, audio }) => {
+    const sharedBuffer = new SharedArrayBuffer(audio.samples.byteLength);
+    new Float32Array(sharedBuffer).set(audio.samples);
+    return { fixture, samplesBuffer: sharedBuffer, sampleRate: audio.sampleRate };
   });
-  return scoreCandidate(candidate, fixtureResults, scoreSpec);
+}
+
+function dispatchBatch(worker, batch, sharedFixtures, scoreSpec) {
+  return new Promise((resolve, reject) => {
+    const onMessage = (results) => { worker.off('error', onError); resolve(results); };
+    const onError = (err) => { worker.off('message', onMessage); reject(err); };
+    worker.once('message', onMessage);
+    worker.once('error', onError);
+    worker.postMessage({ batch, fixtures: sharedFixtures, scoreSpec });
+  });
+}
+
+async function evaluateBatchParallel(batch, sharedFixtures, scoreSpec, workers) {
+  if (batch.length === 0) return [];
+  const activeCount = Math.min(workers.length, batch.length);
+  const chunkSize = Math.ceil(batch.length / activeCount);
+  const chunks = [];
+  for (let i = 0; i < batch.length; i += chunkSize) {
+    chunks.push(batch.slice(i, Math.min(i + chunkSize, batch.length)));
+  }
+  const batchResults = await Promise.all(
+    chunks.map((chunk, i) => dispatchBatch(workers[i], chunk, sharedFixtures, scoreSpec)),
+  );
+  return batchResults.flat();
 }
 
 function writeResultArtifacts(runDir, spec, fixtures, results) {
@@ -140,6 +162,8 @@ async function main() {
   const runDir = ensureRunDir(spec, args.resumeDir);
   mkdirSync(join(runDir, 'rounds'), { recursive: true });
   const loadedFixtures = loadAudioFixtures(fixtures);
+  const sharedFixtures = prepareSharedFixtures(loadedFixtures);
+  const workers = Array.from({ length: WORKER_COUNT }, () => new Worker(WORKER_SCRIPT));
   const previousResults = readJsonl(join(runDir, 'results.jsonl'));
   const seen = new Set(previousResults.map(row => candidateKey(row.parameters)));
   const results = [...previousResults];
@@ -160,6 +184,7 @@ async function main() {
   })));
 
   console.log(`[sheet-onset-sweep] run dir: ${runDir}`);
+  console.log(`[sheet-onset-sweep] workers: ${WORKER_COUNT}`);
   console.log(`[sheet-onset-sweep] fixtures: ${fixtures.length}`);
   console.log(`[sheet-onset-sweep] resumed candidates: ${results.length}`);
   if (spec.stagnationRounds) {
@@ -219,26 +244,34 @@ async function main() {
     const roundResults = [];
     let stoppedEarly = false;
 
+    const batch = [];
     for (const [index, parameters] of rawCandidates.entries()) {
       const key = candidateKey(parameters);
       if (seen.has(key)) continue;
       seen.add(key);
+      batch.push({ id: makeCandidateId(round, index + 1, parameters), round, parameters });
+    }
 
-      const candidate = {
-        id: makeCandidateId(round, index + 1, parameters),
-        round,
-        parameters,
-      };
-      const result = evaluateCandidate(candidate, loadedFixtures, spec.score);
+    if (Number.isFinite(args.maxCandidates) && results.length + batch.length > args.maxCandidates) {
+      const stopAt = args.maxCandidates - results.length;
+      batch.splice(stopAt);
+      stoppedEarly = true;
+      console.log(`[sheet-onset-sweep] stopping during round ${round}: max-candidates`);
+    }
+
+    // eslint-disable-next-line no-await-in-loop
+    const batchResults = await evaluateBatchParallel(batch, sharedFixtures, spec.score, workers);
+    for (const result of batchResults) {
       results.push(result);
       roundResults.push(result);
       appendResult(runDir, result);
+    }
 
-      const stopReasonAfterCandidate = dueToStop(startedAt, spec, results.length, args.maxCandidates);
-      if (stopReasonAfterCandidate) {
-        console.log(`[sheet-onset-sweep] stopping during round ${round}: ${stopReasonAfterCandidate}`);
+    if (!stoppedEarly) {
+      const stopAfterBatch = dueToStop(startedAt, spec, results.length, args.maxCandidates);
+      if (stopAfterBatch) {
         stoppedEarly = true;
-        break;
+        console.log(`[sheet-onset-sweep] stopping after round ${round}: ${stopAfterBatch}`);
       }
     }
 
@@ -269,6 +302,7 @@ async function main() {
     if (stoppedEarly) break;
   }
 
+  await Promise.all(workers.map(w => w.terminate()));
   writeResultArtifacts(runDir, spec, fixtures, results);
   const best = sortResults(results)[0];
   console.log(`[sheet-onset-sweep] done: ${results.length} candidates`);
