@@ -44,7 +44,8 @@ const GUITAR_STRINGS = [
 let _crosshairLines = [];
 // Registry aller Playhead-Linien (alle Charts, aktualisiert während Wiedergabe)
 let _playheadLines = [];
-let _tooltipEl = null;
+// Registry der Inline-Cursor-Labels (eines pro Chart)
+let _cursorLabels = [];
 let _analysisFrames = [];
 let _analysisDuration = 1;
 
@@ -170,8 +171,14 @@ function appendAxes(svg, chartH) {
   }));
 }
 
-/** Erstellt einen Chart-Abschnitt mit Titel und SVG-Element. */
-function createSection(title, svg, chartH) {
+/**
+ * Erstellt einen Chart-Abschnitt mit Titel, SVG und optionalem Cursor-Label.
+ * @param {string} title
+ * @param {SVGElement} svg
+ * @param {number} chartH
+ * @param {{ getValue: (frame: object) => string }|null} cursorConfig
+ */
+function createSection(title, svg, chartH, cursorConfig = null) {
   const wrap = document.createElement('div');
   wrap.className = 'analysis-chart-block';
 
@@ -187,6 +194,13 @@ function createSection(title, svg, chartH) {
   svgWrap.appendChild(svg);
   wrap.appendChild(svgWrap);
 
+  if (cursorConfig) {
+    const valueEl = document.createElement('div');
+    valueEl.className = 'analysis-cursor-value';
+    wrap.appendChild(valueEl);
+    _cursorLabels.push({ el: valueEl, getValue: cursorConfig.getValue });
+  }
+
   return wrap;
 }
 
@@ -200,7 +214,7 @@ function createSection(title, svg, chartH) {
  * @param {number[]} onsets  Onset-Zeitpunkte in Sekunden
  */
 export function renderWaveform(container, samples, sampleRate, onsets) {
-  const chartH = 90;
+  const chartH = 130;
   const plotH = chartH - PAD_T - PAD_B;
   const duration = samples.length / sampleRate;
   const bins = Math.min(PLOT_W, 1400); // max Datenpunkte
@@ -262,7 +276,9 @@ export function renderWaveform(container, samples, sampleRate, onsets) {
   makeCrosshairLine(svg, chartH);
   makePlayheadLine(svg, chartH);
 
-  container.appendChild(createSection('Wellenform', svg, chartH));
+  container.appendChild(createSection('Wellenform', svg, chartH, {
+    getValue: (frame) => `${frame.t.toFixed(3)} s`,
+  }));
 }
 
 /**
@@ -282,7 +298,7 @@ export function renderWaveform(container, samples, sampleRate, onsets) {
  * }} options
  */
 export function renderTimeSeries(container, frames, valueKey, options) {
-  const chartH = 72;
+  const chartH = 100;
   const plotH = chartH - PAD_T - PAD_B;
   const {
     title, duration, onsets,
@@ -351,7 +367,14 @@ export function renderTimeSeries(container, frames, valueKey, options) {
   makeCrosshairLine(svg, chartH);
   makePlayheadLine(svg, chartH);
 
-  container.appendChild(createSection(title, svg, chartH));
+  container.appendChild(createSection(title, svg, chartH, {
+    getValue: (frame) => {
+      const v = frame[valueKey];
+      return (v !== null && v !== undefined && Number.isFinite(v))
+        ? (format ? format(v) : v.toFixed(4))
+        : '—';
+    },
+  }));
 }
 
 /**
@@ -362,7 +385,7 @@ export function renderTimeSeries(container, frames, valueKey, options) {
  * @param {number} duration
  */
 export function renderFrequencyChart(container, frames, onsets, duration) {
-  const chartH = 110;
+  const chartH = 250;
   const plotH = chartH - PAD_T - PAD_B;
   const minHz = 70;
   const maxHz = 1100;
@@ -421,7 +444,9 @@ export function renderFrequencyChart(container, frames, onsets, duration) {
   makeCrosshairLine(svg, chartH);
   makePlayheadLine(svg, chartH);
 
-  container.appendChild(createSection('Frequenz (Hz, log)', svg, chartH));
+  container.appendChild(createSection('Frequenz (Hz, log)', svg, chartH, {
+    getValue: (frame) => frame.hz ? `${frame.hz.toFixed(1)} Hz` : '—',
+  }));
 }
 
 /**
@@ -449,7 +474,7 @@ export function renderNoteChart(container, frames, onsets, duration) {
     .sort((a, b) => a[1] - b[1]) // Aufsteigend nach Frequenz (tief → hoch)
     .map(([label]) => label);
 
-  const rowH = 18;
+  const rowH = 22;
   const chartH = sortedNotes.length * rowH + PAD_T + PAD_B;
   const plotH = chartH - PAD_T - PAD_B;
 
@@ -493,7 +518,9 @@ export function renderNoteChart(container, frames, onsets, duration) {
   makeCrosshairLine(svg, chartH);
   makePlayheadLine(svg, chartH);
 
-  container.appendChild(createSection('Erkannte Note', svg, chartH));
+  container.appendChild(createSection('Erkannte Note', svg, chartH, {
+    getValue: (frame) => frame.note ? `${frame.note}${frame.octave}` : '—',
+  }));
 }
 
 // ── Alle Charts rendern ──────────────────────────────────────────────────────
@@ -510,6 +537,7 @@ export function renderAllCharts(container, samples, result) {
   // Reset Crosshair- und Playhead-Registry für diesen Renderdurchlauf
   _crosshairLines = [];
   _playheadLines = [];
+  _cursorLabels = [];
   _analysisFrames = frames;
   _analysisDuration = duration;
 
@@ -615,66 +643,48 @@ export function getFrameAtFraction(fraction) {
   );
 }
 
+// ── Crosshair + Inline-Labels ────────────────────────────────────────────────
+
 /**
- * Zeigt das Tooltip für einen Frame an der gegebenen Viewport-Position.
- * @param {object} frame
- * @param {number} clientX
- * @param {number} clientY
+ * Berechnet zu einer Fraktion den nächsten Frame und aktualisiert:
+ * – Crosshair-Linien auf allen Charts
+ * – Inline-Cursor-Label jedes Charts
+ * @param {number} fraction  0..1
  */
-export function showTooltipForFrame(frame, clientX, clientY) {
-  if (!_tooltipEl) return;
-  _buildTooltipContent(_tooltipEl, frame);
-  _positionTooltip(_tooltipEl, clientX, clientY);
-  _tooltipEl.style.display = 'flex';
+function _updateCrosshairAtFraction(fraction) {
+  const svgX    = PAD_L + Math.max(0, Math.min(1, fraction)) * PLOT_W;
+  const leftPct = (svgX / CHART_W) * 100;
+
+  for (const line of _crosshairLines) {
+    line.setAttribute('x1', svgX);
+    line.setAttribute('x2', svgX);
+    line.setAttribute('opacity', '0.85');
+  }
+
+  const t = fraction * _analysisDuration;
+  const frame = _analysisFrames.length
+    ? _analysisFrames.reduce((best, f) =>
+        Math.abs(f.t - t) < Math.abs(best.t - t) ? f : best,
+        _analysisFrames[0])
+    : null;
+
+  for (const label of _cursorLabels) {
+    label.el.style.left = `${leftPct}%`;
+    if (frame) {
+      label.el.textContent = label.getValue(frame);
+      label.el.style.opacity = '1';
+    } else {
+      label.el.style.opacity = '0';
+    }
+  }
 }
 
-// ── Crosshair + Tooltip ──────────────────────────────────────────────────────
-
-/** Baut den Tooltip-Inhalt für einen Frame auf. */
-function _buildTooltipContent(tooltip, frame) {
-  const noteStr  = frame.note ? `${frame.note}${frame.octave}` : '–';
-  const hzStr    = frame.hz   ? `${frame.hz.toFixed(1)} Hz` : '–';
-  const centsStr = frame.cents !== null && frame.cents !== undefined
-    ? `${frame.cents >= 0 ? '+' : ''}${frame.cents.toFixed(0)} ct`
-    : '–';
-  const rows = [
-    `<span class="tt-time">${frame.t.toFixed(2)} s</span>`,
-    `<span>RMS: ${frame.rms.toFixed(4)}</span>`,
-    `<span>Flux: ${(frame.broadbandFlux ?? 0).toFixed(4)}</span>`,
-    `<span>BandR: ${(frame.bandRatio ?? 0).toFixed(3)}</span>`,
-    `<span>ActiveB: ${(frame.activeBandRatio ?? 0).toFixed(3)}</span>`,
-    `<span>Conf: ${(frame.confidence ?? 0).toFixed(3)}</span>`,
-    `<span>Freq: ${hzStr}</span>`,
-    `<span>Note: ${noteStr}</span>`,
-    frame.cents !== null && frame.cents !== undefined ? `<span>Cents: ${centsStr}</span>` : '',
-    frame.isOnset ? '<span class="tt-onset">⚡ Onset</span>' : '',
-    !frame.isValid ? '<span class="tt-invalid">leise</span>' : '',
-  ].filter(Boolean);
-  tooltip.innerHTML = rows.join('');
-}
-
-/** Positioniert den Tooltip innerhalb des Viewports (kein Überlauf). */
-function _positionTooltip(tooltip, clientX, clientY) {
-  // Erst provisorisch rechts/unten setzen, dann nach Bedarf spiegeln
-  const offsetX = 14;
-  const offsetY = -28;
-  let left = clientX + offsetX;
-  let top  = clientY + offsetY;
-
-  tooltip.style.left = `${left}px`;
-  tooltip.style.top  = `${top}px`;
-
-  // Nach dem Rendern Größe prüfen und ggf. korrigieren
-  requestAnimationFrame(() => {
-    const tw = tooltip.offsetWidth;
-    const th = tooltip.offsetHeight;
-    if (left + tw > window.innerWidth - 8)  left = clientX - offsetX - tw;
-    if (top  + th > window.innerHeight - 8) top  = clientY - th + offsetY;
-    if (left < 8) left = 8;
-    if (top  < 8) top  = 8;
-    tooltip.style.left = `${left}px`;
-    tooltip.style.top  = `${top}px`;
-  });
+/**
+ * Setzt den Crosshair von außen (z.B. Slider-Seek oder Pause-Position).
+ * @param {number} fraction  0..1
+ */
+export function setCrosshairFromFraction(fraction) {
+  _updateCrosshairAtFraction(fraction);
 }
 
 /**
@@ -684,22 +694,6 @@ function _positionTooltip(tooltip, clientX, clientY) {
  * @param {HTMLElement} wrapper  Wrapper-Div der Chart-Sektion
  */
 export function initCrosshair(wrapper) {
-  if (_tooltipEl) {
-    _tooltipEl.remove();
-    _tooltipEl = null;
-  }
-
-  const tooltip = document.createElement('div');
-  tooltip.className = 'analysis-tooltip';
-  tooltip.style.cssText = 'display:none;position:fixed;z-index:100;pointer-events:auto;cursor:pointer;';
-  tooltip.title = 'Klicken zum Schließen';
-  document.body.appendChild(tooltip);
-  _tooltipEl = tooltip;
-
-  tooltip.addEventListener('click', () => {
-    tooltip.style.display = 'none';
-  });
-
   wrapper.addEventListener('pointermove', (e) => {
     if (_crosshairLines.length === 0 || _analysisDuration === 0) return;
 
@@ -709,31 +703,15 @@ export function initCrosshair(wrapper) {
       / (rect.width * PLOT_W / CHART_W),
     ));
 
-    const svgX = PAD_L + fraction * PLOT_W;
-    for (const line of _crosshairLines) {
-      line.setAttribute('x1', svgX);
-      line.setAttribute('x2', svgX);
-      line.setAttribute('opacity', '0.85');
-    }
-
-    const t = fraction * _analysisDuration;
-    const frame = _analysisFrames.length
-      ? _analysisFrames.reduce((best, f) =>
-          Math.abs(f.t - t) < Math.abs(best.t - t) ? f : best,
-          _analysisFrames[0])
-      : null;
-
-    if (frame) {
-      _buildTooltipContent(tooltip, frame);
-      _positionTooltip(tooltip, e.clientX, e.clientY);
-      tooltip.style.display = 'flex';
-    }
+    _updateCrosshairAtFraction(fraction);
   });
 
   wrapper.addEventListener('pointerleave', () => {
     for (const line of _crosshairLines) {
       line.setAttribute('opacity', '0');
     }
-    // Tooltip bleibt offen – wird per Klick geschlossen
+    for (const label of _cursorLabels) {
+      label.el.style.opacity = '0';
+    }
   });
 }

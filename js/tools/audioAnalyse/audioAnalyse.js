@@ -14,8 +14,7 @@ import {
   initCrosshair,
   updatePlayhead,
   resetPlayhead,
-  getFrameAtFraction,
-  showTooltipForFrame,
+  setCrosshairFromFraction,
 } from './audioAnalyseSVG.js';
 import {
   getSetting,
@@ -52,6 +51,7 @@ export function createAudioAnalyseFeature() {
   let _analysisDur    = 1;
   let _cachedSamples  = null;   // Float32Array für späteren Re-Decode-Bedarf
   let _cachedSR       = 44100;
+  let _sliderDragging = false;
 
   function resolveUI(root) {
     const q = (id) => root.getElementById?.(id) ?? root.querySelector?.(`#${id}`) ?? document.getElementById(id);
@@ -67,6 +67,10 @@ export function createAudioAnalyseFeature() {
       strategyOnset:  q('analyse-strategy-onset'),
       playPauseBtn:   q('btn-play-pause'),
       stopBtn:        q('btn-stop-audio'),
+      bottomBar:      q('analyse-bottom-bar'),
+      sliderEl:       q('analyse-slider'),
+      sliderTimeEl:   q('analyse-slider-time'),
+      sliderDurEl:    q('analyse-slider-dur'),
     };
   }
 
@@ -152,6 +156,12 @@ export function createAudioAnalyseFeature() {
     initCrosshair(ui.chartsWrapper);
     ui.chartsWrapper.classList.remove('u-hidden');
 
+    // Bottom-Bar einblenden und Slider kalibrieren
+    if (ui.bottomBar) ui.bottomBar.classList.remove('u-hidden');
+    if (ui.sliderEl) { ui.sliderEl.value = '0'; }
+    if (ui.sliderTimeEl) ui.sliderTimeEl.textContent = '0.00 s';
+    if (ui.sliderDurEl) ui.sliderDurEl.textContent = `${result.duration.toFixed(2)} s`;
+
     // Play/Stop-Buttons einblenden
     if (ui.playPauseBtn) ui.playPauseBtn.classList.remove('u-hidden');
     if (ui.stopBtn)      ui.stopBtn.classList.remove('u-hidden');
@@ -209,13 +219,11 @@ export function createAudioAnalyseFeature() {
     setPlayPauseLabel(ui, false);
     stopRaf();
 
-    // Tooltip an Pause-Position öffnen
+    // Crosshair + Slider an Pause-Position setzen
     const fraction = _playOffset / _analysisDur;
-    const frame = getFrameAtFraction(fraction);
-    if (frame) {
-      // Tooltip mittig oben im Viewport anzeigen
-      showTooltipForFrame(frame, window.innerWidth / 2, window.innerHeight / 2);
-    }
+    setCrosshairFromFraction(fraction);
+    if (ui.sliderEl) ui.sliderEl.value = String(Math.round(fraction * 1000));
+    if (ui.sliderTimeEl) ui.sliderTimeEl.textContent = `${_playOffset.toFixed(2)} s`;
   }
 
   function stopPlayback(ui) {
@@ -225,16 +233,26 @@ export function createAudioAnalyseFeature() {
     _playOffset = 0;
     stopRaf();
     resetPlayhead();
-    if (ui) setPlayPauseLabel(ui, false);
+    if (ui) {
+      setPlayPauseLabel(ui, false);
+      if (ui.sliderEl) ui.sliderEl.value = '0';
+      if (ui.sliderTimeEl) ui.sliderTimeEl.textContent = '0.00 s';
+    }
   }
 
-  function startRaf(_ui) {
+  function startRaf(ui) {
     if (_rafId !== null) return;
     function tick() {
       if (!_isPlaying || !_audioCtx) return;
       const elapsed  = _audioCtx.currentTime - _playStartTime;
       const fraction = (elapsed % _analysisDur) / _analysisDur;
       updatePlayhead(fraction);
+      if (!_sliderDragging && ui.sliderEl) {
+        ui.sliderEl.value = String(Math.round(fraction * 1000));
+      }
+      if (ui.sliderTimeEl) {
+        ui.sliderTimeEl.textContent = `${(fraction * _analysisDur).toFixed(2)} s`;
+      }
       _rafId = requestAnimationFrame(tick);
     }
     _rafId = requestAnimationFrame(tick);
@@ -323,6 +341,33 @@ export function createAudioAnalyseFeature() {
 
     ui.playPauseBtn?.addEventListener('click', () => handlePlayPause(ui));
     ui.stopBtn?.addEventListener('click', () => handleStop(ui));
+
+    // Slider: Drag-Flag setzen, damit RAF den Slider nicht überschreibt
+    ui.sliderEl?.addEventListener('pointerdown', () => { _sliderDragging = true; });
+    ui.sliderEl?.addEventListener('pointerup',   () => { _sliderDragging = false; });
+    ui.sliderEl?.addEventListener('pointercancel', () => { _sliderDragging = false; });
+
+    // Slider: Seek während Drag und per Tastatur
+    ui.sliderEl?.addEventListener('input', () => {
+      if (!_cachedSamples) return;
+      const frac      = parseInt(ui.sliderEl.value, 10) / 1000;
+      const newOffset = frac * _analysisDur;
+      const wasPlaying = _isPlaying;
+
+      if (_isPlaying) {
+        _sourceNode?.stop();
+        _sourceNode = null;
+        _isPlaying  = false;
+        stopRaf();
+      }
+
+      _playOffset = newOffset;
+      updatePlayhead(frac);
+      setCrosshairFromFraction(frac);
+      if (ui.sliderTimeEl) ui.sliderTimeEl.textContent = `${newOffset.toFixed(2)} s`;
+
+      if (wasPlaying) startPlayback(ui, newOffset);
+    });
 
     wireDropzone(ui);
   }
