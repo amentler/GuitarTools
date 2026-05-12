@@ -26,7 +26,7 @@ import {
   writeJson,
 } from './sheetOnsetSweepCore.mjs';
 
-const WORKER_COUNT = Math.max(1, Math.floor(cpus().length / 2));
+const DEFAULT_WORKER_COUNT = Math.max(1, Math.floor(cpus().length / 2));
 const WORKER_SCRIPT = fileURLToPath(new URL('./sheet-onset-sweep-worker.mjs', import.meta.url));
 
 function makeCandidateId(round, index, parameters) {
@@ -166,9 +166,10 @@ async function main() {
 
   const runDir = ensureRunDir(spec, args.resumeDir);
   mkdirSync(join(runDir, 'rounds'), { recursive: true });
+  const workerCount = args.workers ?? DEFAULT_WORKER_COUNT;
   const loadedFixtures = loadAudioFixtures(fixtures);
   const sharedFixtures = prepareSharedFixtures(loadedFixtures);
-  const workers = Array.from({ length: WORKER_COUNT }, () => new Worker(WORKER_SCRIPT));
+  const workers = Array.from({ length: workerCount }, () => new Worker(WORKER_SCRIPT));
   const previousResults = readJsonl(join(runDir, 'results.jsonl'));
   const seen = new Set(previousResults.map(row => candidateKey(row.parameters)));
   const results = [...previousResults];
@@ -189,7 +190,7 @@ async function main() {
   })));
 
   console.log(`[sheet-onset-sweep] run dir: ${runDir}`);
-  console.log(`[sheet-onset-sweep] workers: ${WORKER_COUNT}`);
+  console.log(`[sheet-onset-sweep] workers: ${workerCount}${args.workers ? '' : ' (auto)'}`);
   console.log(`[sheet-onset-sweep] fixtures: ${fixtures.length}`);
   console.log(`[sheet-onset-sweep] resumed candidates: ${results.length}`);
   if (spec.stagnationRounds) {
@@ -202,6 +203,7 @@ async function main() {
   let bestScoreEver = results.length > 0 ? (sortResults(results)[0]?.score ?? -Infinity) : -Infinity;
   let stagnationCount = 0;
   let effectiveRound = startRound;
+  let recentRoundBest = -Infinity;
 
   process.on('SIGINT', () => {
     console.log('\n[sheet-onset-sweep] interrupted — writing final artifacts...');
@@ -292,17 +294,28 @@ async function main() {
 
     const currentBest = sortedResults[0];
     const currentBestScore = currentBest?.score ?? -Infinity;
+    const roundBest = roundResults.length > 0
+      ? roundResults.reduce((a, b) => (b.score > a.score ? b : a))
+      : null;
+    const roundBestScore = roundBest?.score ?? -Infinity;
     const minImprovement = spec.minScoreImprovement ?? 1.0;
-    if (currentBestScore > bestScoreEver + minImprovement) {
-      bestScoreEver = currentBestScore;
+
+    if (currentBestScore > bestScoreEver) bestScoreEver = currentBestScore;
+    if (isGlobalReset || isStagnationRestart) recentRoundBest = -Infinity;
+
+    if (roundBestScore > recentRoundBest + minImprovement) {
+      recentRoundBest = roundBestScore;
       stagnationCount = 0;
     } else if (!isGlobalReset && !isStagnationRestart) {
       stagnationCount++;
     }
 
+    const roundScorePart = roundBest
+      ? ` | round best ${roundBest.score.toFixed(2)}`
+      : '';
     console.log(
       `[sheet-onset-sweep] round ${round} [${roundMode}]: evaluated ${roundResults.length}, `
-      + `best score ${currentBestScore.toFixed(2)} (${currentBest?.id ?? '-'})`
+      + `global best ${currentBestScore.toFixed(2)} (${currentBest?.id ?? '-'})${roundScorePart}`
       + (stagnationCount > 0 ? `, stagnation ${stagnationCount}/${spec.stagnationRounds ?? '—'}` : ''),
     );
 

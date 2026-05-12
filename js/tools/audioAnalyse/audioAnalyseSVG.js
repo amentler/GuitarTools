@@ -305,6 +305,7 @@ export function renderTimeSeries(container, frames, valueKey, options) {
     color = '#7c4dff',
     ticks = [],
     format,
+    thresholds = [],
   } = options;
 
   // Y-Range: feste Werte oder aus Daten berechnen
@@ -361,6 +362,31 @@ export function renderTimeSeries(container, frames, valueKey, options) {
       'stroke-linejoin': 'round',
       'stroke-linecap': 'round',
     }));
+  }
+
+  for (const th of thresholds) {
+    if (!Number.isFinite(th.value)) continue;
+    const ty = PAD_T + plotH * (1 - (th.value - yMin) / (yMax - yMin));
+    if (ty < PAD_T || ty > chartH - PAD_B) continue;
+    svg.appendChild(svgEl('line', {
+      x1: PAD_L, y1: ty, x2: CHART_W - PAD_R, y2: ty,
+      stroke: th.color ?? '#e74c3c',
+      'stroke-width': '1',
+      'stroke-dasharray': '4 3',
+      opacity: '0.7',
+    }));
+    if (th.label) {
+      svg.appendChild(Object.assign(
+        svgEl('text', {
+          x: CHART_W - PAD_R - 2, y: ty - 2,
+          'text-anchor': 'end',
+          'font-size': '8',
+          fill: th.color ?? '#e74c3c',
+          opacity: '0.9',
+        }),
+        { textContent: th.label },
+      ));
+    }
   }
 
   appendOnsetMarkers(svg, onsets, duration, chartH);
@@ -523,6 +549,65 @@ export function renderNoteChart(container, frames, onsets, duration) {
   }));
 }
 
+/**
+ * Rendert einen Gate-Status-Chart mit 4 booleschen Lanes.
+ * @param {HTMLElement} container
+ * @param {import('./audioAnalyseEngine.js').FrameData[]} frames
+ * @param {number[]} onsets
+ * @param {number} duration
+ */
+export function renderGateChart(container, frames, onsets, duration) {
+  const LANES = [
+    { key: 'gateRelativeRms',      label: 'Rel. RMS',    color: '#2ecc71' },
+    { key: 'gateRelativeFlux',     label: 'Rel. Flux',   color: '#3498db' },
+    { key: 'gateConfirmed',        label: 'Confirmed',   color: '#9b59b6' },
+    { key: 'gateCooldownOverride', label: 'CD Override', color: '#e67e22' },
+  ];
+  const laneH = 16;
+  const chartH = LANES.length * laneH + PAD_T + PAD_B;
+
+  const svg = makeSvg(chartH);
+  appendAxes(svg, chartH);
+  appendXAxis(svg, duration, chartH);
+
+  LANES.forEach(({ key, label, color }, i) => {
+    const y = PAD_T + i * laneH;
+    // Lane background
+    svg.appendChild(svgEl('rect', {
+      x: PAD_L, y, width: PLOT_W, height: laneH,
+      fill: '#f5f0e8', opacity: '0.3',
+    }));
+    // Lane label
+    svg.appendChild(Object.assign(
+      svgEl('text', {
+        x: PAD_L - 4, y: y + laneH * 0.7,
+        'text-anchor': 'end', 'font-size': '8', fill: COLOR_AXIS,
+      }),
+      { textContent: label },
+    ));
+    // Active frames as filled rects
+    for (const frame of frames) {
+      if (!frame[key]) continue;
+      const x = timeToX(frame.t, duration);
+      svg.appendChild(svgEl('rect', {
+        x: x - 1, y: y + 1, width: 3, height: laneH - 2,
+        fill: color, opacity: '0.85',
+      }));
+    }
+  });
+
+  appendOnsetMarkers(svg, onsets, duration, chartH);
+  makeCrosshairLine(svg, chartH);
+  makePlayheadLine(svg, chartH);
+
+  container.appendChild(createSection('Gate-Status (welche Bedingungen feuern)', svg, chartH, {
+    getValue: (frame) => {
+      const active = LANES.filter(l => frame[l.key]).map(l => l.label);
+      return active.length ? active.join(' + ') : '—';
+    },
+  }));
+}
+
 // ── Alle Charts rendern ──────────────────────────────────────────────────────
 
 /**
@@ -532,7 +617,7 @@ export function renderNoteChart(container, frames, onsets, duration) {
  * @param {import('./audioAnalyseEngine.js').AnalysisResult} result
  */
 export function renderAllCharts(container, samples, result) {
-  const { frames, onsets, duration, sampleRate } = result;
+  const { frames, onsets, duration, sampleRate, onsetOptions } = result;
 
   // Reset Crosshair- und Playhead-Registry für diesen Renderdurchlauf
   _crosshairLines = [];
@@ -565,8 +650,7 @@ export function renderAllCharts(container, samples, result) {
 
   renderTimeSeries(container, frames, 'bandRatio', {
     title: 'Band-Ratio (Anteil wachsender Bins)',
-    yMin: 0, yMax: 1,
-    ticks: [0, 0.25, 0.5, 0.75, 1],
+    yMin: 0,
     color: '#e67e22',
     format: v => v.toFixed(2),
     duration, onsets,
@@ -574,8 +658,7 @@ export function renderAllCharts(container, samples, result) {
 
   renderTimeSeries(container, frames, 'activeBandRatio', {
     title: 'Aktive Bänder (Anteil aktiver Spektral-Bins)',
-    yMin: 0, yMax: 1,
-    ticks: [0, 0.25, 0.5, 0.75, 1],
+    yMin: 0,
     color: '#f39c12',
     format: v => v.toFixed(2),
     duration, onsets,
@@ -583,12 +666,51 @@ export function renderAllCharts(container, samples, result) {
 
   renderTimeSeries(container, frames, 'confidence', {
     title: 'Onset-Konfidenz',
-    yMin: 0, yMax: 1,
-    ticks: [0, 0.25, 0.5, 0.75, 1],
+    yMin: 0,
     color: '#e74c3c',
     format: v => v.toFixed(2),
     duration, onsets,
   });
+
+  const relativeReattackFactor = onsetOptions?.relativeReattackFactor ?? 4;
+  const relativeFluxFactor = onsetOptions?.relativeFluxFactor ?? 1.4;
+  const spectralNoveltyMinBins = onsetOptions?.spectralNoveltyMinBins ?? 36;
+  const confirmedSpectralNoveltyMinBins = onsetOptions?.confirmedSpectralNoveltyMinBins ?? 14;
+
+  renderTimeSeries(container, frames, 'relativeRms', {
+    title: 'Relative RMS (RMS / Sustain-Floor)',
+    yMin: 0,
+    ticks: [0, 1],
+    color: '#27ae60',
+    format: v => v.toFixed(2),
+    thresholds: [{ value: relativeReattackFactor, color: '#e74c3c', label: `×${relativeReattackFactor}` }],
+    duration, onsets,
+  });
+
+  renderTimeSeries(container, frames, 'relativeFlux', {
+    title: 'Relative Flux (Flux / Flux-History)',
+    yMin: 0,
+    ticks: [0, 1],
+    color: '#2980b9',
+    format: v => v.toFixed(2),
+    thresholds: [{ value: relativeFluxFactor, color: '#e74c3c', label: `×${relativeFluxFactor}` }],
+    duration, onsets,
+  });
+
+  renderTimeSeries(container, frames, 'spectralNoveltyBins', {
+    title: 'Spektrale Novelty Bins',
+    yMin: 0,
+    ticks: [0],
+    color: '#8e44ad',
+    format: v => String(Math.round(v)),
+    thresholds: [
+      { value: spectralNoveltyMinBins, color: '#e74c3c', label: `min ${spectralNoveltyMinBins}` },
+      { value: confirmedSpectralNoveltyMinBins, color: '#e67e22', label: `conf. ${confirmedSpectralNoveltyMinBins}` },
+    ],
+    duration, onsets,
+  });
+
+  renderGateChart(container, frames, onsets, duration);
 
   renderFrequencyChart(container, frames, onsets, duration);
   renderNoteChart(container, frames, onsets, duration);

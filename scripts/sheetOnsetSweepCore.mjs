@@ -70,6 +70,7 @@ export function parseArgs(argv = process.argv.slice(2)) {
     dryRun: false,
     help: false,
     maxCandidates: null,
+    workers: null,
   };
 
   for (let i = 0; i < argv.length; i++) {
@@ -84,6 +85,8 @@ export function parseArgs(argv = process.argv.slice(2)) {
       args.help = true;
     } else if (arg === '--max-candidates') {
       args.maxCandidates = Number(argv[++i]);
+    } else if (arg === '--workers') {
+      args.workers = Math.max(1, Number(argv[++i]));
     } else {
       throw new Error(`Unknown argument: ${arg}`);
     }
@@ -102,6 +105,7 @@ export function formatSweepHelp() {
     '  --resume <run-dir>        Continue an existing run directory containing results.jsonl.',
     '  --dry-run                 Validate fixture discovery and parameters without evaluating candidates.',
     '  --max-candidates <n>      Stop after n total evaluated candidates; useful for smoke tests.',
+    '  --workers <n>             Number of worker threads (default: half of available CPU cores).',
     '  --help, -h                Show this help.',
     '',
     'Outputs:',

@@ -1,0 +1,33 @@
+{
+  "analyzeIntervalMs": 41,
+  "onsetDetectorOptions": {
+    "relativeReattackFactor": 3.949914,
+    "relativeReattackMinDelta": 0.013458,
+    "relativeFluxFactor": 1.4,
+    "spectralNoveltyRatio": 1.56872,
+    "spectralNoveltyMinBins": 37,
+    "cooldownFrames": 4,
+    "confirmedRmsFactor": 2.09627,
+    "confirmedRmsMinDelta": 0.009982,
+    "confirmedFluxFactor": 1.783199,
+    "confirmedMinFlux": 0.003946,
+    "confirmedMinBandRatio": 0.013797,
+    "confirmedSpectralNoveltyMinBins": 25,
+    "cooldownOverrideFactor": 2.112419,
+    "cooldownOverrideMinFlux": 0.022988,
+    "cooldownOverrideMinBandRatio": 0.085274
+  },
+  "_sweep": {
+    "id": "r065-0070-ab21199c",
+    "rank": 5,
+    "score": 197,
+    "metrics": {
+      "exact": 5,
+      "under": 1,
+      "over": 3,
+      "extremeUnder": 0,
+      "extremeOver": 0,
+      "totalOnsets": 132
+    }
+  }
+}

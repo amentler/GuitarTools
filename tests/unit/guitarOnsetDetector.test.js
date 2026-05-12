@@ -29,11 +29,11 @@ describe('guitarOnsetDetector', () => {
   it('exposes the current detector defaults as a central options object', () => {
     expect(DEFAULT_GUITAR_ONSET_OPTIONS.minRms).toBe(0.005);
     expect(DEFAULT_GUITAR_ONSET_OPTIONS.cooldownFrames).toBe(3);
-    expect(DEFAULT_GUITAR_ONSET_OPTIONS.relativeReattackFactor).toBe(3.490424);
+    expect(DEFAULT_GUITAR_ONSET_OPTIONS.relativeReattackFactor).toBe(4);
     expect(DEFAULT_GUITAR_ONSET_OPTIONS.relativeFluxFactor).toBe(1.4);
-    expect(DEFAULT_GUITAR_ONSET_OPTIONS.spectralNoveltyMinBins).toBe(56);
-    expect(DEFAULT_GUITAR_ONSET_OPTIONS.confirmedRmsFactor).toBe(1.55);
-    expect(DEFAULT_GUITAR_ONSET_OPTIONS.confirmedFluxFactor).toBe(1.2);
+    expect(DEFAULT_GUITAR_ONSET_OPTIONS.spectralNoveltyMinBins).toBe(34);
+    expect(DEFAULT_GUITAR_ONSET_OPTIONS.confirmedRmsFactor).toBe(1.420684);
+    expect(DEFAULT_GUITAR_ONSET_OPTIONS.confirmedFluxFactor).toBe(2.097673);
   });
 
   it('detects a broadband spectral attack independently of pitch', () => {

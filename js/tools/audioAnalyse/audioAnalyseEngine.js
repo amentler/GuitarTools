@@ -162,6 +162,7 @@ export async function analyzeAudio(samples, sampleRate, options = {}) {
 
   const onsetStrategy = resolveGuitarOnsetStrategy(options.onsetStrategyKey);
   let onsetState = onsetStrategy.createState();
+  let lastOnsetResult = null;
 
   // Frequency data via OfflineAudioContext + AnalyserNode (gleicher Pfad wie Übung)
   const frameInputs = await collectFrameData(samples, sampleRate, fftSize, hopSize);
@@ -179,6 +180,7 @@ export async function analyzeAudio(samples, sampleRate, options = {}) {
     // Onset-Erkennung – gleicher Aufruf wie in sheetMusicReading.analyzeFrame()
     const onsetResult = onsetStrategy.update(onsetState, { frequencyData, samples: frame });
     onsetState = onsetResult.nextState;
+    lastOnsetResult = onsetResult;
 
     const isOnset = onsetResult.event === 'onset';
     if (isOnset) {
@@ -239,6 +241,15 @@ export async function analyzeAudio(samples, sampleRate, options = {}) {
       activeBandRatio: onsetResult.activeBandRatio ?? 0,
       confidence: onsetResult.confidence ?? 0,
       isOnset,
+      spectralNoveltyBins: onsetResult.spectralNoveltyBins ?? 0,
+      relativeRms: onsetResult.relativeRms ?? 0,
+      relativeFlux: onsetResult.relativeFlux ?? 0,
+      sustainFloorRms: onsetResult.sustainFloorRms ?? 0,
+      fluxHistory: onsetResult.fluxHistory ?? 0,
+      gateRelativeRms: onsetResult.relativeRmsAttack ?? false,
+      gateRelativeFlux: onsetResult.relativeSpectralAttack ?? false,
+      gateConfirmed: onsetResult.confirmedWeakRmsFluxAttack ?? false,
+      gateCooldownOverride: onsetResult.cooldownOverrideAttack ?? false,
       hz,
       note,
       octave,
@@ -246,7 +257,7 @@ export async function analyzeAudio(samples, sampleRate, options = {}) {
     });
   }
 
-  return { frames, onsets, sampleRate, fftSize, hopSize, duration };
+  return { frames, onsets, sampleRate, fftSize, hopSize, duration, onsetOptions: lastOnsetResult?.options ?? null };
 }
 
 function parsePitch(pitch) {
