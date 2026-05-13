@@ -250,6 +250,7 @@ export async function analyzeAudio(samples, sampleRate, options = {}) {
       gateRelativeFlux: onsetResult.relativeSpectralAttack ?? false,
       gateConfirmed: onsetResult.confirmedWeakRmsFluxAttack ?? false,
       gateCooldownOverride: onsetResult.cooldownOverrideAttack ?? false,
+      gateBroadbandOr: onsetResult.broadbandOrAttack ?? false,
       hz,
       note,
       octave,

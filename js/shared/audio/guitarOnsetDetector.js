@@ -37,6 +37,7 @@ export const DEFAULT_GUITAR_ONSET_OPTIONS = Object.freeze({
   minBandRatio: GUITAR_ONSET_MIN_BAND_RATIO,
   binDelta: GUITAR_ONSET_BIN_DELTA,
   cooldownFrames: 3,
+  broadbandOrMinBins: null,
   firstFrameRms: GUITAR_ONSET_FIRST_FRAME_RMS,
   rmsSpikeFactor: GUITAR_ONSET_RMS_SPIKE_FACTOR,
   rmsMinDelta: GUITAR_ONSET_RMS_MIN_DELTA,
@@ -263,13 +264,19 @@ export function updateGuitarOnsetDetectorNormalized(state, { frequencyData = nul
     && rms >= sustainFloorRms * cooldownOverrideFactor
     && fluxResult.flux >= cooldownOverrideMinFlux
     && fluxResult.bandRatio >= cooldownOverrideMinBandRatio;
+  const broadbandOrAttack = Number.isFinite(normalizedOptions.broadbandOrMinBins)
+    && rms >= minRms
+    && (fluxResult.flux >= minFlux
+        || fluxResult.bandRatio >= minBandRatio
+        || spectralNoveltyBins >= normalizedOptions.broadbandOrMinBins);
 
   const attack = firstAudibleFrame
     || broadbandAttack
     || rmsAttack
     || relativeRmsAttack
     || relativeSpectralAttack
-    || confirmedWeakRmsFluxAttack;
+    || confirmedWeakRmsFluxAttack
+    || broadbandOrAttack;
   const event = (cooldownFramesRemaining === 0 || cooldownOverrideAttack) && attack
     ? 'onset'
     : null;
@@ -316,6 +323,7 @@ export function updateGuitarOnsetDetectorNormalized(state, { frequencyData = nul
     relativeSpectralAttack,
     confirmedWeakRmsFluxAttack,
     cooldownOverrideAttack,
+    broadbandOrAttack,
     sustainFloorRms,
     fluxHistory,
     relativeRms: sustainFloorRms > 0 ? rms / sustainFloorRms : 0,

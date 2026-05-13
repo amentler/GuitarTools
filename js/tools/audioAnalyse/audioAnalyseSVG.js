@@ -562,6 +562,7 @@ export function renderGateChart(container, frames, onsets, duration) {
     { key: 'gateRelativeFlux',     label: 'Rel. Flux',   color: '#3498db' },
     { key: 'gateConfirmed',        label: 'Confirmed',   color: '#9b59b6' },
     { key: 'gateCooldownOverride', label: 'CD Override', color: '#e67e22' },
+    { key: 'gateBroadbandOr',      label: 'Broadband OR', color: '#1abc9c' },
   ];
   const laneH = 16;
   const chartH = LANES.length * laneH + PAD_T + PAD_B;

@@ -30,6 +30,7 @@ import {
 export const GUITAR_ONSET_STRATEGY_KEYS = {
   SWEEP_STANDARD: 'guitar-onset-sweep-standard',
   GUITAR_ONSET: 'guitar-onset',
+  BROADBAND_OR: 'guitar-onset-broadband-or',
 };
 
 export const DEFAULT_GUITAR_ONSET_STRATEGY_KEY = GUITAR_ONSET_STRATEGY_KEYS.SWEEP_STANDARD;
@@ -54,6 +55,17 @@ export const SWEEP_STANDARD_GUITAR_ONSET_OPTIONS = Object.freeze({
 
 const SWEEP_STANDARD_NORMALIZED_OPTIONS = normalizeGuitarOnsetOptions(SWEEP_STANDARD_GUITAR_ONSET_OPTIONS);
 
+export const BROADBAND_OR_GUITAR_ONSET_OPTIONS = Object.freeze({
+  broadbandOrMinBins: 10,
+  cooldownFrames: 3,
+  relativeReattackFactor: null,
+  relativeFluxFactor: null,
+  confirmedRmsFactor: null,
+  cooldownOverrideFactor: null,
+});
+
+const BROADBAND_OR_NORMALIZED_OPTIONS = normalizeGuitarOnsetOptions(BROADBAND_OR_GUITAR_ONSET_OPTIONS);
+
 function makeStrategyUpdate(baseNormalized, baseRaw) {
   return (state, input, options = {}) => {
     const normalizedOptions = options && Object.keys(options).length > 0
@@ -77,6 +89,13 @@ export const GUITAR_ONSET_STRATEGIES = [
     description: 'Bisherige Breitband-Spektralfluss + RMS-Spike-Erkennung fuer Gitarren-Anschlaege.',
     createState: createGuitarOnsetState,
     update: updateGuitarOnsetDetector,
+  },
+  {
+    key: GUITAR_ONSET_STRATEGY_KEYS.BROADBAND_OR,
+    label: 'Guitar Onset Detector (Broadband OR)',
+    description: 'Feuert wenn Flux ODER BandRatio ODER SpectralNoveltyBins einen Schwellenwert überschreiten. Geeignet für schnelle Notenfolgen und Wiederholungen.',
+    createState: createGuitarOnsetState,
+    update: makeStrategyUpdate(BROADBAND_OR_NORMALIZED_OPTIONS, BROADBAND_OR_GUITAR_ONSET_OPTIONS),
   },
 ];
 

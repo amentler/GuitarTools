@@ -213,6 +213,64 @@ describe('guitarOnsetDetector', () => {
     expect(result.event).toBe('onset');
   });
 
+  it('broadband-OR attack fires when flux exceeds minFlux with other attacks disabled', () => {
+    let state = createGuitarOnsetState();
+    ({ nextState: state } = updateGuitarOnsetDetector(state, {
+      frequencyData: spectrum(-100),
+      samples: samples(0.001),
+    }));
+
+    // 50 consecutive bins at -6 dB → flux ≈ 0.025 >= 0.018, bandRatio ≈ 0.049 < 0.075
+    // broadbandAttack (AND) fails because bandRatio < minBandRatio
+    const moderateFewBins = spectrum(-100);
+    for (let i = 2; i < 52; i++) moderateFewBins[i] = -6;
+
+    const opts = {
+      broadbandOrMinBins: 5,
+      rmsSpikeFactor: Infinity,
+      rmsMinDelta: Infinity,
+      relativeReattackFactor: null,
+      relativeFluxFactor: null,
+      confirmedRmsFactor: null,
+    };
+
+    const result = updateGuitarOnsetDetector(state, {
+      frequencyData: moderateFewBins,
+      samples: samples(0.01),
+    }, opts);
+
+    expect(result.broadbandOrAttack).toBe(true);
+    expect(result.event).toBe('onset');
+  });
+
+  it('broadband-OR attack does not fire when broadbandOrMinBins is not set', () => {
+    let state = createGuitarOnsetState();
+    ({ nextState: state } = updateGuitarOnsetDetector(state, {
+      frequencyData: spectrum(-100),
+      samples: samples(0.001),
+    }));
+
+    const moderateFewBins = spectrum(-100);
+    for (let i = 2; i < 52; i++) moderateFewBins[i] = -6;
+
+    // Same signal, all history/spike attacks disabled, but no broadbandOrMinBins
+    const opts = {
+      rmsSpikeFactor: Infinity,
+      rmsMinDelta: Infinity,
+      relativeReattackFactor: null,
+      relativeFluxFactor: null,
+      confirmedRmsFactor: null,
+    };
+
+    const result = updateGuitarOnsetDetector(state, {
+      frequencyData: moderateFewBins,
+      samples: samples(0.01),
+    }, opts);
+
+    expect(result.broadbandOrAttack).toBe(false);
+    expect(result.event).toBeNull();
+  });
+
   it('can override cooldown for a strong configured re-attack', () => {
     let state = createGuitarOnsetState();
     const opts = {
