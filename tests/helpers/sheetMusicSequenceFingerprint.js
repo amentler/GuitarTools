@@ -73,7 +73,7 @@ export function discoverSheetMusicSequenceFixtures() {
   return collectWavFiles(SEQUENCES_DIR).map(wavPath => {
     const manifest = readSequenceManifest(wavPath);
     return {
-      file: relative(SEQUENCES_DIR, wavPath),
+      file: relative(SEQUENCES_DIR, wavPath).replace(/\\/g, '/'),
       wavPath,
       manifest,
       expectedNotes: manifest?.notes ?? [],
