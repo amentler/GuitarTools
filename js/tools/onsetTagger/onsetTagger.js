@@ -22,6 +22,17 @@ import {
 
 import { buildZip, downloadBlob } from './onsetTaggerZip.js';
 
+const DEFAULT_SIDECAR_FIELDS = {
+  chord:        '',
+  chordKey:     '',
+  category:     '',
+  guitarSize:   '',
+  guitarStrings: '',
+  volume:       '',
+  technique:    '',
+  strumMode:    '',
+};
+
 /**
  * @returns {{ mount(root: Element): void, unmount(): void }}
  */
@@ -312,14 +323,14 @@ export function createOnsetTaggerFeature() {
   // ── ZIP export ─────────────────────────────────────────────────────────────
 
   function handleExport(ui) {
-    if (!_wavArrayBuffer || !_sidecarData) return;
+    if (!_wavArrayBuffer) return;
 
     const formValues = readMetaForm(ui);
     const sidecar    = buildSidecarWithOnsets(formValues, _onsetsMs);
     const jsonBytes  = new TextEncoder().encode(JSON.stringify(sidecar, null, 2));
 
-    const wavName    = _wavFilename  || 'recording.wav';
-    const jsonName   = _sidecarFilename || 'recording.json';
+    const wavName    = _wavFilename || 'recording.wav';
+    const jsonName   = _sidecarFilename || wavName.replace(/\.wav$/i, '.json');
 
     const zipData = buildZip([
       { name: wavName,  data: new Uint8Array(_wavArrayBuffer) },
@@ -375,7 +386,7 @@ export function createOnsetTaggerFeature() {
         ui.step1.classList.remove('tagger-section--disabled');
         redrawWaveform(ui);
         renderOnsetList(ui);
-        checkBothLoaded(ui);
+        enableStep2(ui);
       } catch (err) {
         ui.wavLabel.textContent = `Fehler: ${err.message}`;
       }
@@ -398,7 +409,7 @@ export function createOnsetTaggerFeature() {
           renderOnsetList(ui);
         }
         renderMetaForm(ui, _sidecarData);
-        checkBothLoaded(ui);
+        enableStep2(ui);
       } catch (err) {
         ui.jsonLabel.textContent = `Fehler: ${err.message}`;
       }
@@ -406,9 +417,11 @@ export function createOnsetTaggerFeature() {
     reader.readAsText(file);
   }
 
-  function checkBothLoaded(ui) {
-    if (_samples && _sidecarData) {
-      ui.step2.classList.remove('tagger-section--disabled');
+  function enableStep2(ui) {
+    if (!_samples) return;
+    ui.step2.classList.remove('tagger-section--disabled');
+    if (!_sidecarData) {
+      renderMetaForm(ui, DEFAULT_SIDECAR_FIELDS);
     }
   }
 
