@@ -276,6 +276,14 @@ export function createOnsetTaggerFeature() {
         input.value = value;
         input.id = `meta-${key}`;
         input.name = key;
+      } else if (Array.isArray(value) && value.every(v => typeof v === 'string')) {
+        input = document.createElement('textarea');
+        input.rows = 4;
+        input.value = value.map(v => v.toLowerCase()).join(', ');
+        input.id = `meta-${key}`;
+        input.name = key;
+        input.dataset.fieldType = 'string-array';
+        input.className = 'tagger-meta-textarea tagger-meta-notes';
       } else if (typeof value === 'object' || Array.isArray(value)) {
         input = document.createElement('textarea');
         input.rows = 3;
@@ -308,10 +316,14 @@ export function createOnsetTaggerFeature() {
       } else if (el.type === 'number') {
         result[key] = parseFloat(el.value);
       } else if (el.tagName === 'TEXTAREA') {
-        try {
-          result[key] = JSON.parse(el.value);
-        } catch {
-          result[key] = el.value;
+        if (el.dataset.fieldType === 'string-array') {
+          result[key] = el.value.split(',').map(s => s.trim().toUpperCase()).filter(Boolean);
+        } else {
+          try {
+            result[key] = JSON.parse(el.value);
+          } catch {
+            result[key] = el.value;
+          }
         }
       } else {
         result[key] = el.value;
