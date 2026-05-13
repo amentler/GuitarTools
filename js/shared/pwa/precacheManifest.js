@@ -37,6 +37,8 @@ const PAGE_PRECACHED_URLS = [
   'pages/sheet-music-reading/bootstrap.js',
   'pages/ton-finder/index.html',
   'pages/ton-finder/bootstrap.js',
+  'pages/onset-tagger/index.html',
+  'pages/onset-tagger/bootstrap.js',
 ];
 
 const REQUIRED_URLS = [

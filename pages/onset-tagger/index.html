@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Onset Tagger - Gitarren-Lerntools</title>
+  <link rel="stylesheet" href="../../style.css" />
+  <style>
+    /* ── Onset Tagger styles ────────────────────────────────────────────── */
+
+    .tagger-container {
+      width: 100%;
+      max-width: 1000px;
+      padding: 0 0.5rem 5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+
+    /* File loading */
+    .tagger-load-section {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      align-items: center;
+      padding: 0.75rem 0;
+    }
+
+    .tagger-load-btn {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .tagger-file-label {
+      font-size: 0.82rem;
+      color: var(--color-text-muted);
+      max-width: 220px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    /* Step sections */
+    .tagger-section {
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius);
+      padding: 1rem;
+      margin-top: 0.75rem;
+    }
+
+    .tagger-section--disabled {
+      opacity: 0.4;
+      pointer-events: none;
+    }
+
+    .tagger-section-title {
+      font-size: 0.85rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--color-text-muted);
+      margin: 0 0 0.75rem;
+    }
+
+    /* Waveform */
+    .tagger-waveform-wrap {
+      width: 100%;
+      background: var(--color-surface);
+      border-radius: var(--radius);
+      overflow: hidden;
+      margin-bottom: 0.5rem;
+    }
+
+    /* Sliders */
+    .tagger-slider-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+      margin: 0.5rem 0;
+    }
+
+    .tagger-slider-row {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .tagger-slider-label {
+      font-size: 0.78rem;
+      color: var(--color-text-muted);
+      min-width: 3.5rem;
+      text-align: right;
+    }
+
+    .tagger-slider {
+      flex: 1;
+      accent-color: var(--color-accent);
+      cursor: pointer;
+      min-width: 0;
+    }
+
+    .tagger-slider-val {
+      font-size: 0.78rem;
+      color: var(--color-text-muted);
+      min-width: 4.5rem;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .tagger-range-display {
+      font-size: 0.78rem;
+      color: var(--color-text-muted);
+      margin-left: 3.5rem;
+    }
+
+    /* Onset cursor row */
+    .tagger-cursor-row {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin: 0.5rem 0;
+    }
+
+    /* Playback controls */
+    .tagger-playback-row {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      margin: 0.75rem 0 0.5rem;
+    }
+
+    .tagger-speed-group {
+      display: flex;
+      gap: 0.25rem;
+      margin-left: auto;
+    }
+
+    .tagger-speed-btn {
+      padding: 0.3rem 0.6rem;
+      font-size: 0.8rem;
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius);
+      color: var(--color-text-muted);
+      cursor: pointer;
+    }
+
+    .tagger-speed--active {
+      background: var(--color-accent);
+      color: #fff;
+      border-color: var(--color-accent);
+    }
+
+    /* Onset list */
+    .tagger-onset-list-wrap {
+      margin-top: 0.75rem;
+    }
+
+    .tagger-onset-list-title {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--color-text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: 0.4rem;
+    }
+
+    #tagger-onset-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+    }
+
+    .tagger-onset-item {
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius);
+      padding: 0.2rem 0.5rem;
+      font-size: 0.82rem;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .tagger-onset-remove {
+      background: none;
+      border: none;
+      color: var(--color-wrong, #e74c3c);
+      cursor: pointer;
+      font-size: 0.8rem;
+      padding: 0 0.1rem;
+      line-height: 1;
+    }
+
+    .tagger-onset-empty {
+      font-size: 0.82rem;
+      color: var(--color-text-muted);
+      list-style: none;
+    }
+
+    /* Metadata form */
+    .tagger-meta-form {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .tagger-meta-row {
+      display: grid;
+      grid-template-columns: 140px 1fr;
+      align-items: start;
+      gap: 0.5rem;
+    }
+
+    .tagger-meta-label {
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--color-text-muted);
+      padding-top: 0.3rem;
+      word-break: break-word;
+    }
+
+    .tagger-meta-input {
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius);
+      color: var(--color-text);
+      padding: 0.3rem 0.5rem;
+      font-size: 0.85rem;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    .tagger-meta-input:focus {
+      outline: none;
+      border-color: var(--color-accent);
+    }
+
+    .tagger-meta-textarea {
+      resize: vertical;
+      font-family: monospace;
+      font-size: 0.8rem;
+    }
+
+    /* Export */
+    .tagger-export-row {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 1rem;
+    }
+  </style>
+</head>
+<body>
+  <section id="view-onset-tagger" class="view active">
+    <gt-exercise-header title="Onset Tagger"></gt-exercise-header>
+
+    <div class="tagger-container">
+
+      <!-- ── Datei-Laden ──────────────────────────────────────────────────── -->
+      <div class="tagger-load-section">
+        <div class="tagger-load-btn">
+          <button id="tagger-wav-btn" class="btn-play-stop" type="button">WAV laden</button>
+          <input id="tagger-wav-input" type="file" accept=".wav,audio/wav" style="display:none" />
+          <span id="tagger-wav-label" class="tagger-file-label">keine Datei</span>
+        </div>
+        <div class="tagger-load-btn">
+          <button id="tagger-json-btn" class="btn-play-stop" type="button">JSON laden</button>
+          <input id="tagger-json-input" type="file" accept=".json,application/json" style="display:none" />
+          <span id="tagger-json-label" class="tagger-file-label">keine Datei</span>
+        </div>
+      </div>
+
+      <!-- ── Schritt 1: Onset-Tagging ──────────────────────────────────────── -->
+      <div id="tagger-step1" class="tagger-section tagger-section--disabled">
+        <p class="tagger-section-title">1 — Onset-Tagging</p>
+
+        <!-- Waveform -->
+        <div id="tagger-waveform-wrap" class="tagger-waveform-wrap" aria-label="Wellenform"></div>
+
+        <!-- Bereich-Slider: Start und Ende -->
+        <div class="tagger-slider-group">
+          <div class="tagger-slider-row">
+            <span class="tagger-slider-label">Start</span>
+            <input id="tagger-range-start" class="tagger-slider" type="range"
+              min="0" max="1" step="0.001" value="0" />
+          </div>
+          <div class="tagger-slider-row">
+            <span class="tagger-slider-label">Ende</span>
+            <input id="tagger-range-end" class="tagger-slider" type="range"
+              min="0" max="1" step="0.001" value="1" />
+          </div>
+          <span id="tagger-range-display" class="tagger-range-display">0.00 s – 0.00 s</span>
+        </div>
+
+        <!-- Onset-Cursor-Slider -->
+        <div class="tagger-cursor-row">
+          <span class="tagger-slider-label">Onset</span>
+          <input id="tagger-cursor" class="tagger-slider" type="range"
+            min="0" max="1000" step="1" value="0" />
+          <span id="tagger-cursor-display" class="tagger-slider-val">0.000 s</span>
+          <button id="tagger-add-onset" class="btn-play-stop" type="button">+ Hinzufügen</button>
+        </div>
+
+        <!-- Wiedergabe -->
+        <div class="tagger-playback-row">
+          <button id="tagger-play" class="btn-play-stop" type="button">▶ Play</button>
+          <button id="tagger-stop" class="btn-play-stop" type="button">■ Stop</button>
+          <div class="tagger-speed-group">
+            <button class="tagger-speed-btn tagger-speed--active" data-speed="1" type="button">100%</button>
+            <button class="tagger-speed-btn" data-speed="0.75" type="button">75%</button>
+            <button class="tagger-speed-btn" data-speed="0.5" type="button">50%</button>
+            <button class="tagger-speed-btn" data-speed="0.25" type="button">25%</button>
+          </div>
+        </div>
+
+        <!-- Onsets-Liste -->
+        <div class="tagger-onset-list-wrap">
+          <p class="tagger-onset-list-title">Bestätigte Onsets</p>
+          <ul id="tagger-onset-list"></ul>
+        </div>
+      </div>
+
+      <!-- ── Schritt 2: Attribute + Export ─────────────────────────────────── -->
+      <div id="tagger-step2" class="tagger-section tagger-section--disabled">
+        <p class="tagger-section-title">2 — Attribute &amp; Export</p>
+
+        <div id="tagger-meta-form" class="tagger-meta-form">
+          <p style="font-size:0.82rem;color:var(--color-text-muted)">
+            Lade zuerst eine JSON-Sidecar-Datei.
+          </p>
+        </div>
+
+        <div class="tagger-export-row">
+          <button id="tagger-export" class="btn-play-stop" type="button">📦 Als ZIP exportieren</button>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <script type="module" src="./bootstrap.js"></script>
+</body>
+</html>
