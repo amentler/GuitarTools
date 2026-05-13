@@ -48,6 +48,8 @@ Optionaler Aktiv-Modus: Mikrofon-basierte Tonprüfung.
   - `show()` / `hide()` / `destroy()`
 
 ### `sheetMusicReading.js`
+- Importiert `collectBrowserEnvironment` aus `js/shared/browserEnvironment.js`
+- `makeManifest(bars, bpm, timeSig, browserEnv)` – erzeugt Manifest inkl. `browserEnv`-Block
 - `startExercise()` / `stopExercise()`
 - Passiver Endlosmodus verwendet ein 3-Zeilen-Fenster; beim Zeilenwechsel wird
   weich zur naechsten Zeile gescrollt und danach die aelteste Zeile entfernt
@@ -87,7 +89,8 @@ Optionaler Aktiv-Modus: Mikrofon-basierte Tonprüfung.
 - `wired`-Flag verhindert doppeltes Event-Listener-Wiring
 
 ### `sheetMusicRecorder.js`
-- `createRecorder()` → `{ start(), stop(), cancel(), isRecording }`
+- `createRecorder()` → `{ start(), stop(), cancel(), isRecording, mimeType }`
+- `mimeType` (getter): tatsächlich verwendeter MIME-Type nach `start()`; `''` vor/nach Aufnahme
 - `start()`: öffnet eigenen Mic-Stream + ScriptProcessorNode (unabhängig vom Aktiv-Modus)
 - `stop()`: gibt 16-bit-mono-WAV als `Uint8Array` zurück, räumt auf; gibt `null` zurück falls keine Daten
 - `cancel()`: räumt auf, kein Rückgabewert

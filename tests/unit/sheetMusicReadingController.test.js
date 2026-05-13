@@ -89,10 +89,26 @@ vi.mock('../../js/games/sheetMusicReading/sheetMusicRecorder.js', () => ({
     get isRecording() {
       return recorderRecording;
     },
+    get mimeType() {
+      return '';
+    },
     start: recorderStart,
     stop: recorderStop,
     cancel: recorderCancel,
   })),
+}));
+
+vi.mock('../../js/shared/browserEnvironment.js', () => ({
+  collectBrowserEnvironment: vi.fn().mockResolvedValue({
+    userAgent: 'test-ua',
+    browser: 'Chrome',
+    browserVersion: '124.0',
+    os: 'Windows',
+    osVersion: '10.0',
+    model: '',
+    language: 'en-US',
+    recorderMimeType: '',
+  }),
 }));
 
 vi.mock('../../js/games/sheetMusicReading/sheetMusicZip.js', () => ({
@@ -407,7 +423,8 @@ describe('SheetMusicReading controller behavior', () => {
     document.getElementById('btn-record').click();
     await Promise.resolve();
     document.getElementById('btn-record-stop').click();
-    await Promise.resolve(); // stopRecording is async; let it push to savedRecordings
+    await Promise.resolve(); // flush Promise.all resolution (recorder.stop + collectBrowserEnvironment)
+    await Promise.resolve(); // flush stopRecording continuation (push to savedRecordings)
     document.getElementById('btn-download-recordings').click();
 
     const files = buildZip.mock.calls.at(-1)[0];

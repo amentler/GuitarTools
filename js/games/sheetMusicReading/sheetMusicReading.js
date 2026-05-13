@@ -42,6 +42,7 @@ import {
 import { createRecorder } from './sheetMusicRecorder.js';
 import { buildZip, downloadBlob } from './sheetMusicZip.js';
 import { saveLastRecording } from '../../shared/audioAnalyseStorage.js';
+import { collectBrowserEnvironment } from '../../shared/browserEnvironment.js';
 import { getEssentia } from '../chordExerciseEssentia/essentiaLoader.js';
 import { createEssentiaSheetMusicStrategy } from './essentiaSheetMusicStrategy.js';
 
@@ -524,7 +525,7 @@ export function createSheetMusicReadingFeature() {
     return `${timeSigSafe}_${bpm}bpm_${uniqueNoteNames}_${rand}`;
   }
 
-  function makeManifest(bars, bpm, timeSig) {
+  function makeManifest(bars, bpm, timeSig, browserEnv) {
     return {
       notes: bars.flat().map(n => `${n.name}${n.octave}`),
       bpm,
@@ -533,6 +534,7 @@ export function createSheetMusicReadingFeature() {
       description: 'Noten lesen',
       category: 'sheet-music-reading',
       recordedAt: new Date().toISOString(),
+      browserEnv: browserEnv ?? {},
     };
   }
 
@@ -560,13 +562,17 @@ export function createSheetMusicReadingFeature() {
   }
 
   async function stopRecording() {
-    const wav = await recorder.stop();
+    const capturedMimeType = recorder.mimeType; // capture before stop() calls cleanup()
+    const [wav, browserEnv] = await Promise.all([
+      recorder.stop(),
+      collectBrowserEnvironment(capturedMimeType),
+    ]);
     if (!wav) {
       syncRecordingUI();
       return;
     }
     const basename = makeBasename(state.bars, state.bpm, state.timeSig);
-    const manifest = makeManifest(state.bars, state.bpm, state.timeSig);
+    const manifest = makeManifest(state.bars, state.bpm, state.timeSig, browserEnv);
     savedRecordings.push({ basename, wav, manifest });
     // Automatisch in IndexedDB sichern, damit das Analyse-Werkzeug darauf zugreifen kann.
     saveLastRecording(wav, manifest).catch(() => {});

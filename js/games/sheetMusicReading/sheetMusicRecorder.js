@@ -117,6 +117,10 @@ export function createRecorder() {
       return recording;
     },
 
+    get mimeType() {
+      return mimeType;
+    },
+
     /**
      * @param {MediaStream|null} [existingStream]  Pass the active-mode stream to avoid
      *   opening a second concurrent getUserMedia on the same device.  When null/omitted
