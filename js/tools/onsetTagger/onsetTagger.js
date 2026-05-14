@@ -12,6 +12,7 @@ import {
   buildSidecarWithOnsets,
   computePlayheadPosition,
 } from './onsetTaggerLogic.js';
+import { loadRecordingFromSource } from '../../shared/recordingLoader.js';
 
 import {
   renderWaveform,
@@ -457,75 +458,77 @@ export function createOnsetTaggerFeature() {
 
   // ── File loading ───────────────────────────────────────────────────────────
 
-  function loadWav(file, ui) {
-    _wavFilename = file.name;
-    ui.wavLabel.textContent = file.name + ' ✓';
+  async function applyWavBuffer(arrayBuffer, filename, ui) {
+    _wavArrayBuffer = arrayBuffer;
+    _wavFilename    = filename;
+    if (ui.wavLabel) ui.wavLabel.textContent = filename + ' ✓';
+    try {
+      const ctx = getOrCreateAudioCtx();
+      const decoded = await ctx.decodeAudioData(_wavArrayBuffer.slice(0));
+      _samples    = decoded.getChannelData(0);
+      _sampleRate = decoded.sampleRate;
+      _duration   = decoded.duration;
+      _audioBuffer = null;
 
-    const reader = new FileReader();
-    reader.onload = async (e) => {
-      _wavArrayBuffer = e.target.result;
-      try {
-        const ctx = getOrCreateAudioCtx();
-        const decoded = await ctx.decodeAudioData(_wavArrayBuffer.slice(0));
-        _samples    = decoded.getChannelData(0);
-        _sampleRate = decoded.sampleRate;
-        _duration   = decoded.duration;
-        _audioBuffer = null; // reset cached buffer
+      _rangeStart = 0;
+      _rangeEnd   = _duration;
+      _cursorSec  = 0;
+      _onsetsMs   = [];
 
-        _rangeStart = 0;
-        _rangeEnd   = _duration;
-        _cursorSec  = 0;
-        _onsetsMs   = [];
+      ui.rangeStartEl.min   = 0;
+      ui.rangeStartEl.max   = _duration.toFixed(4);
+      ui.rangeStartEl.step  = '0.001';
+      ui.rangeStartEl.value = '0';
+      ui.rangeEndEl.min     = 0;
+      ui.rangeEndEl.max     = _duration.toFixed(4);
+      ui.rangeEndEl.step    = '0.001';
+      ui.rangeEndEl.value   = _duration.toFixed(4);
+      ui.cursorEl.min   = 0;
+      ui.cursorEl.max   = Math.round(_duration * 1000);
+      ui.cursorEl.value = 0;
 
-        // Calibrate sliders
-        ui.rangeStartEl.min   = 0;
-        ui.rangeStartEl.max   = _duration.toFixed(4);
-        ui.rangeStartEl.step  = '0.001';
-        ui.rangeStartEl.value = '0';
-        ui.rangeEndEl.min     = 0;
-        ui.rangeEndEl.max     = _duration.toFixed(4);
-        ui.rangeEndEl.step    = '0.001';
-        ui.rangeEndEl.value   = _duration.toFixed(4);
-        ui.cursorEl.min   = 0;
-        ui.cursorEl.max   = Math.round(_duration * 1000);
-        ui.cursorEl.value = 0;
-
-        if (ui.rangeDisplay) {
-          ui.rangeDisplay.textContent = `0.00 s – ${_duration.toFixed(2)} s`;
-        }
-        if (ui.cursorDisplay) {
-          ui.cursorDisplay.textContent = '0.000 s';
-        }
-
-        ui.step1.classList.remove('tagger-section--disabled');
-        redrawWaveform(ui);
-        renderOnsetList(ui);
-        enableStep2(ui);
-      } catch (err) {
-        ui.wavLabel.textContent = `Fehler: ${err.message}`;
+      if (ui.rangeDisplay) {
+        ui.rangeDisplay.textContent = `0.00 s – ${_duration.toFixed(2)} s`;
       }
-    };
+      if (ui.cursorDisplay) {
+        ui.cursorDisplay.textContent = '0.000 s';
+      }
+
+      ui.step1.classList.remove('tagger-section--disabled');
+      redrawWaveform(ui);
+      renderOnsetList(ui);
+      enableStep2(ui);
+    } catch (err) {
+      if (ui.wavLabel) ui.wavLabel.textContent = `Fehler: ${err.message}`;
+    }
+  }
+
+  function applySidecarData(sidecarObj, filename, ui) {
+    _sidecarData     = sidecarObj;
+    _sidecarFilename = filename;
+    if (ui.jsonLabel) ui.jsonLabel.textContent = filename + ' ✓';
+    if (Array.isArray(_sidecarData.onsetsMs)) {
+      _onsetsMs = _sidecarData.onsetsMs.slice();
+      if (_svgEl) updateOnsetMarkers(_svgEl, _onsetsMs, _rangeStart, _rangeEnd);
+      renderOnsetList(ui);
+    }
+    renderMetaForm(ui, _sidecarData);
+    enableStep2(ui);
+  }
+
+  function loadWav(file, ui) {
+    const reader = new FileReader();
+    reader.onload = async (e) => applyWavBuffer(e.target.result, file.name, ui);
     reader.readAsArrayBuffer(file);
   }
 
   function loadJson(file, ui) {
-    _sidecarFilename = file.name;
-    ui.jsonLabel.textContent = file.name + ' ✓';
-
     const reader = new FileReader();
     reader.onload = (e) => {
       try {
-        _sidecarData = JSON.parse(e.target.result);
-        // Restore existing onsetsMs if present
-        if (Array.isArray(_sidecarData.onsetsMs)) {
-          _onsetsMs = _sidecarData.onsetsMs.slice();
-          if (_svgEl) updateOnsetMarkers(_svgEl, _onsetsMs, _rangeStart, _rangeEnd);
-          renderOnsetList(ui);
-        }
-        renderMetaForm(ui, _sidecarData);
-        enableStep2(ui);
+        applySidecarData(JSON.parse(e.target.result), file.name, ui);
       } catch (err) {
-        ui.jsonLabel.textContent = `Fehler: ${err.message}`;
+        if (ui.jsonLabel) ui.jsonLabel.textContent = `Fehler: ${err.message}`;
       }
     };
     reader.readAsText(file);
@@ -653,6 +656,21 @@ export function createOnsetTaggerFeature() {
     // Export button
     if (ui.exportBtn) {
       ui.exportBtn.addEventListener('click', () => handleExport(ui));
+    }
+
+    // Auto-load from recordings overview via URL params
+    const params = new URLSearchParams(window.location.search);
+    const source = params.get('source');
+    const id     = params.get('id') ?? 'last';
+    if (source) {
+      loadRecordingFromSource(source, id).then(entry => {
+        if (!entry) return;
+        const filename       = source === 'chord-recorder' ? `${id}.wav` : 'notenlesen.wav';
+        const sidecarFilename = source === 'chord-recorder' ? `${id}.json` : 'manifest.json';
+        applyWavBuffer(entry.wav.buffer, filename, ui).then(() => {
+          if (entry.manifest) applySidecarData(entry.manifest, sidecarFilename, ui);
+        });
+      }).catch(() => {});
     }
   }
 

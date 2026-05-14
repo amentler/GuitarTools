@@ -39,6 +39,8 @@ const PAGE_PRECACHED_URLS = [
   'pages/ton-finder/bootstrap.js',
   'pages/onset-tagger/index.html',
   'pages/onset-tagger/bootstrap.js',
+  'pages/recordings/index.html',
+  'pages/recordings/bootstrap.js',
 ];
 
 const REQUIRED_URLS = [

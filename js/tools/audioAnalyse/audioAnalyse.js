@@ -8,6 +8,7 @@
  */
 
 import { loadLastRecording } from '../../shared/audioAnalyseStorage.js';
+import { loadRecordingFromSource } from '../../shared/recordingLoader.js';
 import { decodeWav, analyzeAudio } from './audioAnalyseEngine.js';
 import {
   renderAllCharts,
@@ -370,6 +371,30 @@ export function createAudioAnalyseFeature() {
     });
 
     wireDropzone(ui);
+
+    const params = new URLSearchParams(window.location.search);
+    const source = params.get('source');
+    const id     = params.get('id') ?? 'last';
+    if (source) void handleLoadFromSource(ui, source, id);
+  }
+
+  async function handleLoadFromSource(ui, source, id) {
+    showStatus(ui, 'Lade Aufnahme…');
+    let entry;
+    try {
+      entry = await loadRecordingFromSource(source, id);
+    } catch {
+      showStatus(ui, 'Aufnahme konnte nicht geladen werden.', true);
+      return;
+    }
+    if (!entry) {
+      showStatus(ui, 'Aufnahme nicht gefunden.', true);
+      return;
+    }
+    const name = source === 'sheet-music'
+      ? `Notenlesen · ${new Date(entry.manifest?.savedAt ?? '').toLocaleString('de-DE')}`
+      : id;
+    await runAnalysis(ui, entry.wav.buffer, name, entry.manifest);
   }
 
   function unmount() {

@@ -50,7 +50,9 @@
       "Bash(Get-ChildItem -Path C:\\\\Projekte\\\\GuitarTools -Recurse -Directory -Name)",
       "Bash(Select-Object -First 50)",
       "Bash(Get-ChildItem -Path \"C:\\\\Projekte\\\\GuitarTools\" -Recurse -Directory)",
-      "Bash(Select-Object -ExpandProperty FullName)"
+      "Bash(Select-Object -ExpandProperty FullName)",
+      "Skill(implementplan)",
+      "Skill(sync)"
     ]
   }
 }

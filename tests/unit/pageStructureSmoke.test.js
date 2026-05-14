@@ -25,6 +25,7 @@ describe('Page structure smoke', () => {
       'metronome',
       'note-playing',
       'onset-tagger',
+      'recordings',
       'sheet-music-reading',
       'ton-finder',
     ]);

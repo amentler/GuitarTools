@@ -1,2 +1,18 @@
 node_modules/
-sweep-runs/**/results.jsonl
+.DS_Store
+
+# Große Test-Logs ignorieren
+sweep-runs/**/*.jsonl
+sweep-runs/**/*.csv
+# Aber die 'best' Konfigurationen behalten
+!sweep-runs/**/best*.json
+
+# Weitere temporäre Daten
+graphify-out/cache/
+test-results/
+.last-run.json
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
