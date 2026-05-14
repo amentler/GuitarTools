@@ -65,7 +65,6 @@ export class PlaybackBar {
     const svg = document.createElementNS(ns, 'svg');
     svg.setAttribute('viewBox', `0 0 ${vw} ${vh}`);
     svg.setAttribute('width', '100%');
-    svg.setAttribute('height', 'auto');
     svg.setAttribute('aria-hidden', 'true');
     svg.classList.add('playback-bar-svg');
 
