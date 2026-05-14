@@ -14,6 +14,15 @@ test.describe('Sheet Music Reading', () => {
     await expect(score.locator('svg, canvas').first()).toBeVisible();
   });
 
+  test('Shows updated recording and action buttons', async ({ page }) => {
+    await expect(page.locator('#btn-show-tab')).toHaveText('Tabs');
+    await expect(page.locator('#btn-record-stop')).toHaveText('Speichern');
+    await expect(page.locator('#btn-sheet-active-mode')).toHaveClass(/btn-play-stop/);
+    await expect(page.locator('#btn-record')).toHaveClass(/btn-play-stop/);
+    await expect(page.locator('#btn-new-bars')).toHaveClass(/btn-play-stop/);
+    await expect(page.locator('.sheet-music-actions')).toContainText('Aufnahmen');
+  });
+
   test('Toggle buttons change state', async ({ page }) => {
     const activeBtn = page.locator('#btn-sheet-active-mode');
     const tabBtn = page.locator('#btn-show-tab');

@@ -7,7 +7,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 // Baseline-Fixture: in sheetMusicSequenceFingerprint als positive Datei gelistet
 const FIXTURE_WAV = path.resolve(
   __dirname,
-  '../fixtures/sequences/sheet-music-reading/4-4_40bpm_EBGDA_1jtn8.wav',
+  '../fixtures/sequences/sheet-music-reading/4-4_40bpm_EGADB_9low6.wav',
 );
 
 test.describe('Audio-Analyse Werkzeug', () => {
@@ -17,7 +17,7 @@ test.describe('Audio-Analyse Werkzeug', () => {
 
   test('Seite lädt und zeigt Upload-Bereich', async ({ page }) => {
     await expect(page.locator('#analyse-dropzone')).toBeVisible();
-    await expect(page.locator('#btn-load-last')).toBeVisible();
+    await expect(page.locator('#btn-load-last')).toHaveCount(0);
     await expect(page.locator('#analyse-charts-wrapper')).toBeHidden();
   });
 
@@ -31,7 +31,7 @@ test.describe('Audio-Analyse Werkzeug', () => {
 
     const statsText = await statsHeader.innerText();
     // Dateiname im Header
-    expect(statsText).toContain('4-4_40bpm_EBGDA_1jtn8.wav');
+    expect(statsText).toContain('4-4_40bpm_EGADB_9low6.wav');
     // Dauer ist positiv
     expect(statsText).toMatch(/\d+\.\d+ s/);
     // Mindestens 1 Onset erkannt

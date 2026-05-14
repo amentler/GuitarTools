@@ -535,6 +535,14 @@ input[type="range"] {
 .btn-play-stop:hover  { background: var(--color-surface-3, #e8dcc8); }
 .btn-play-stop.active { background: var(--color-accent); color: #fff; border-color: var(--color-accent); }
 
+.sheet-music-actions {
+  display: flex;
+  justify-content: center;
+  gap: 0.75rem;
+  width: 100%;
+  flex-wrap: wrap;
+}
+
 .playback-bpm,
 .playback-timesig {
   display: flex;

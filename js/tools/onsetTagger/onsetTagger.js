@@ -661,7 +661,7 @@ export function createOnsetTaggerFeature() {
     // Auto-load from recordings overview via URL params
     const params = new URLSearchParams(window.location.search);
     const source = params.get('source');
-    const id     = params.get('id') ?? 'last';
+    const id     = params.get('id') ?? '';
     if (source) {
       loadRecordingFromSource(source, id).then(entry => {
         if (!entry) return;

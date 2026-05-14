@@ -15,7 +15,7 @@ Der Nutzer wählt eine Aufnahme aus und öffnet sie direkt in der Audio-Analyse 
 
 | Quelle | DB | Store | Key |
 |---|---|---|---|
-| Noten lesen | `gt-audio-analyse-db` | `recordings` | `'last'` (einzelner Slot) |
+| Noten lesen | `gt-audio-analyse-db` | `recordings` | eindeutige Take-ID/BaseName; Legacy-`'last'` lesbar |
 | Akkord-Recorder | `chord-recorder` | `recordings` | `baseName` (mehrere Einträge) |
 
 ## Navigation
