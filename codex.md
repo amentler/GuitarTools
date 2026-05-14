@@ -21,3 +21,4 @@ Dieses Dokument beschreibt den technischen Ist-Zustand des Projekts.
 - **PWA:** Service Worker (`sw.js`) nutzt gemischte Strategie (Cache-First für Essentia, Network-First für den Rest).
 - **Qualitätssicherung:** CI-Workflow führt Linting und Tests (Vitest) aus.
 - **Test-Umfang:** Fokus auf pure Logic in `*Logic.js`. Audio-Tests nutzen WAV-Fixtures.
+- **Onset Tagger:** Unterstützt manuelle Onset-Auswahl/-Verschiebung, Klick-Markierung in der normalisierten Waveform und additive Strategie-Imports mit 50-ms-Deduplizierung.

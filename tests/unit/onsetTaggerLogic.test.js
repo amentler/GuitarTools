@@ -4,9 +4,14 @@ import {
   computeEnvelope,
   timeToPixel,
   addOnset,
+  addOnsetWithIndex,
+  computeFocusedRange,
   removeOnset,
+  mergeOnsetsWithMinDistance,
+  moveOnset,
   buildSidecarWithOnsets,
   computePlayheadPosition,
+  resolveRecordingFileBaseName,
 } from '../../js/tools/onsetTagger/onsetTaggerLogic.js';
 
 describe('clamp', () => {
@@ -112,6 +117,69 @@ describe('addOnset', () => {
   });
 });
 
+describe('addOnsetWithIndex', () => {
+  it('adds and returns the inserted sorted index', () => {
+    expect(addOnsetWithIndex([500, 2000], 1000)).toEqual({
+      onsetsMs: [500, 1000, 2000],
+      index: 1,
+    });
+  });
+
+  it('selects the existing index for exact duplicates', () => {
+    expect(addOnsetWithIndex([500, 1000], 1000)).toEqual({
+      onsetsMs: [500, 1000],
+      index: 1,
+    });
+  });
+});
+
+describe('moveOnset', () => {
+  it('moves an onset and keeps the list sorted', () => {
+    expect(moveOnset([100, 500, 900], 1, 950)).toEqual({
+      onsetsMs: [100, 900, 950],
+      index: 2,
+    });
+  });
+
+  it('returns unchanged list for an invalid index', () => {
+    expect(moveOnset([100, 500], 3, 700)).toEqual({
+      onsetsMs: [100, 500],
+      index: -1,
+    });
+  });
+});
+
+describe('mergeOnsetsWithMinDistance', () => {
+  it('adds incoming onsets that are at least the minimum distance away', () => {
+    const result = mergeOnsetsWithMinDistance([1000], [800, 1100, 1300], 50);
+    expect(result).toEqual({
+      onsetsMs: [800, 1000, 1100, 1300],
+      added: 3,
+      skipped: 0,
+    });
+  });
+
+  it('skips onsets closer than the minimum distance to existing or accepted onsets', () => {
+    const result = mergeOnsetsWithMinDistance([1000], [1030, 1050, 1080], 50);
+    expect(result).toEqual({
+      onsetsMs: [1000, 1050],
+      added: 1,
+      skipped: 2,
+    });
+  });
+});
+
+describe('computeFocusedRange', () => {
+  it('centers a one second range around the requested time', () => {
+    expect(computeFocusedRange(2, 5, 1)).toEqual({ start: 1.5, end: 2.5 });
+  });
+
+  it('keeps the range inside the recording duration', () => {
+    expect(computeFocusedRange(0.1, 5, 1)).toEqual({ start: 0, end: 1 });
+    expect(computeFocusedRange(4.9, 5, 1)).toEqual({ start: 4, end: 5 });
+  });
+});
+
 describe('removeOnset', () => {
   it('removes the element at the given index', () => {
     expect(removeOnset([100, 200, 300], 1)).toEqual([100, 300]);
@@ -162,6 +230,30 @@ describe('buildSidecarWithOnsets', () => {
     const formValues = { category: 'open-strings' };
     buildSidecarWithOnsets(formValues, [100]);
     expect(formValues).toEqual({ category: 'open-strings' });
+  });
+});
+
+describe('resolveRecordingFileBaseName', () => {
+  it('uses the stored sheet-music baseName when available', () => {
+    const result = resolveRecordingFileBaseName(
+      'sheet-music',
+      'legacy-id',
+      { baseName: 'notenlesen_4-4_80bpm_EB_a3f2x' },
+    );
+    expect(result).toBe('notenlesen_4-4_80bpm_EB_a3f2x');
+  });
+
+  it('falls back to sheet-music id for legacy entries', () => {
+    expect(resolveRecordingFileBaseName('sheet-music', 'last', {})).toBe('last');
+  });
+
+  it('keeps chord-recorder baseName unchanged', () => {
+    const result = resolveRecordingFileBaseName(
+      'chord-recorder',
+      'gdur_finger_laut_single_abc12',
+      {},
+    );
+    expect(result).toBe('gdur_finger_laut_single_abc12');
   });
 });
 

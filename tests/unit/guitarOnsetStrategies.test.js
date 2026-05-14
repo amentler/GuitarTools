@@ -8,6 +8,7 @@ import {
   resolveGuitarOnsetStrategy,
   getGuitarOnsetStrategies,
 } from '../../js/shared/audio/guitarOnsetStrategies.js';
+import { applyGuitarBandpass } from '../../js/shared/audio/guitarPitchDetection.js';
 
 describe('guitarOnsetStrategies', () => {
   it('exports at least one strategy', () => {
@@ -123,6 +124,52 @@ describe('guitarOnsetStrategies', () => {
       samples: new Float32Array(2048).fill(0.01),
     });
     expect(result.event).toBe('onset');
+  });
+
+  it('LEGACY_BANDPASS key is defined', () => {
+    expect(GUITAR_ONSET_STRATEGY_KEYS.LEGACY_BANDPASS).toBe('guitar-onset-legacy-bandpass');
+  });
+
+  it('resolveGuitarOnsetStrategy finds legacy-bandpass strategy', () => {
+    const s = resolveGuitarOnsetStrategy('guitar-onset-legacy-bandpass');
+    expect(s.key).toBe('guitar-onset-legacy-bandpass');
+  });
+
+  it('legacy-bandpass strategy has full interface', () => {
+    const s = resolveGuitarOnsetStrategy(GUITAR_ONSET_STRATEGY_KEYS.LEGACY_BANDPASS);
+    expect(typeof s.key).toBe('string');
+    expect(typeof s.label).toBe('string');
+    expect(typeof s.description).toBe('string');
+    expect(typeof s.createState).toBe('function');
+    expect(typeof s.update).toBe('function');
+  });
+
+  it('legacy-bandpass update returns nextState and event', () => {
+    const s = resolveGuitarOnsetStrategy(GUITAR_ONSET_STRATEGY_KEYS.LEGACY_BANDPASS);
+    const state = s.createState();
+    const result = s.update(state, {
+      samples: new Float32Array(2048).fill(0.001),
+      frequencyData: new Float32Array(1024).fill(-100),
+      sampleRate: 44100,
+    });
+    expect(result).toHaveProperty('nextState');
+    expect(result.event === null || result.event === 'onset').toBe(true);
+  });
+
+  it('bandpass 150-450 Hz attenuates 20 Hz signal (first-order rolloff: <15% RMS)', () => {
+    const sr = 44100;
+    const buf = Float32Array.from({ length: sr }, (_, i) => Math.sin(2 * Math.PI * 20 * i / sr) * 0.1);
+    const filtered = applyGuitarBandpass(buf, sr, 150, 450);
+    const rmsOf = arr => Math.sqrt(arr.reduce((s, x) => s + x * x, 0) / arr.length);
+    expect(rmsOf(filtered)).toBeLessThan(rmsOf(buf) * 0.15);
+  });
+
+  it('bandpass 150-450 Hz passes 300 Hz signal at >70% RMS (cascaded first-order)', () => {
+    const sr = 44100;
+    const buf = Float32Array.from({ length: sr }, (_, i) => Math.sin(2 * Math.PI * 300 * i / sr) * 0.1);
+    const filtered = applyGuitarBandpass(buf, sr, 150, 450);
+    const rmsOf = arr => Math.sqrt(arr.reduce((s, x) => s + x * x, 0) / arr.length);
+    expect(rmsOf(filtered)).toBeGreaterThan(rmsOf(buf) * 0.7);
   });
 
   it('sweep standard strategy applies the baked-in sweep options', () => {

@@ -7,14 +7,21 @@
 
 import {
   clamp,
-  addOnset,
+  addOnsetWithIndex,
+  computeFocusedRange,
   removeOnset,
+  mergeOnsetsWithMinDistance,
+  moveOnset,
   buildSidecarWithOnsets,
   computePlayheadPosition,
+  resolveRecordingFileBaseName,
 } from './onsetTaggerLogic.js';
 import { loadRecordingFromSource } from '../../shared/recordingLoader.js';
+import { detectOnsetsOffline } from '../../shared/audio/offlineOnsetDetection.js';
+import { getGuitarOnsetStrategies } from '../../shared/audio/guitarOnsetStrategies.js';
 
 import {
+  clientXToTime,
   renderWaveform,
   updatePlayhead,
   updateCursor,
@@ -79,6 +86,8 @@ const DROPDOWN_OPTIONS = {
 };
 
 const NUMERIC_DROPDOWN_KEYS = new Set(['bpm', 'tempoBpm', 'notesPerBeat']);
+const STRATEGY_IMPORT_MIN_DISTANCE_MS = 50;
+const FOCUS_WINDOW_SEC = 1;
 
 /**
  * @returns {{ mount(root: Element): void, unmount(): void }}
@@ -98,6 +107,7 @@ export function createOnsetTaggerFeature() {
   let _rangeEnd      = 0;
   let _cursorSec     = 0;
   let _onsetsMs      = [];
+  let _selectedOnsetIndex = -1;
 
   // Playback
   let _audioCtx      = null;
@@ -133,6 +143,8 @@ export function createOnsetTaggerFeature() {
       cursorEl:      q('tagger-cursor'),
       cursorDisplay: q('tagger-cursor-display'),
       addOnsetBtn:   q('tagger-add-onset'),
+      strategyList:   q('tagger-strategy-list'),
+      strategyStatus: q('tagger-strategy-status'),
       playBtn:       q('tagger-play'),
       stopBtn:       q('tagger-stop'),
       speedBtns:     _root.querySelectorAll('[data-speed]'),
@@ -174,13 +186,50 @@ export function createOnsetTaggerFeature() {
     redrawWaveform(ui);
   }
 
+  function syncCursorUI(ui) {
+    _cursorSec = clamp(_cursorSec, _rangeStart, _rangeEnd);
+    ui.cursorEl.min = 0;
+    ui.cursorEl.max = Math.round((_rangeEnd - _rangeStart) * 1000);
+    ui.cursorEl.value = Math.round((_cursorSec - _rangeStart) * 1000);
+    if (ui.cursorDisplay) {
+      ui.cursorDisplay.textContent = `${_cursorSec.toFixed(3)} s`;
+    }
+  }
+
+  function setVisibleRange(ui, start, end) {
+    _rangeStart = clamp(start, 0, _duration);
+    _rangeEnd = clamp(end, _rangeStart, _duration);
+    ui.rangeStartEl.value = _rangeStart.toFixed(4);
+    ui.rangeEndEl.value = _rangeEnd.toFixed(4);
+    syncRangeSliders(ui);
+  }
+
+  function focusOnTime(ui, sec) {
+    const comfortablyVisible = sec >= _rangeStart && sec <= _rangeEnd
+      && (_rangeEnd - _rangeStart) <= FOCUS_WINDOW_SEC * 1.5;
+    if (!comfortablyVisible) {
+      const range = computeFocusedRange(sec, _duration, FOCUS_WINDOW_SEC);
+      setVisibleRange(ui, range.start, range.end);
+    }
+    _cursorSec = clamp(sec, _rangeStart, _rangeEnd);
+    syncCursorUI(ui);
+    if (_svgEl) updateCursor(_svgEl, _cursorSec, _rangeStart, _rangeEnd);
+  }
+
+  function updateOnsetUI(ui) {
+    renderOnsetList(ui);
+    if (_svgEl) {
+      updateOnsetMarkers(_svgEl, _onsetsMs, _rangeStart, _rangeEnd, _selectedOnsetIndex);
+    }
+  }
+
   // ── Waveform ───────────────────────────────────────────────────────────────
 
   function redrawWaveform(ui) {
     if (!_samples) return;
     _svgEl = renderWaveform(
       ui.waveformWrap, _samples, _sampleRate, _rangeStart, _rangeEnd,
-      { onsetsMs: _onsetsMs, cursorSec: _cursorSec }
+      { onsetsMs: _onsetsMs, cursorSec: _cursorSec, selectedOnsetIndex: _selectedOnsetIndex }
     );
   }
 
@@ -281,18 +330,42 @@ export function createOnsetTaggerFeature() {
     }
     _onsetsMs.forEach((ms, i) => {
       const li = document.createElement('li');
-      li.className = 'tagger-onset-item';
-      const span = document.createElement('span');
-      span.textContent = `${i + 1}. ${ms} ms`;
+      li.className = i === _selectedOnsetIndex
+        ? 'tagger-onset-item tagger-onset-item--selected'
+        : 'tagger-onset-item';
+      const selectBtn = document.createElement('button');
+      selectBtn.className = 'tagger-onset-select';
+      selectBtn.type = 'button';
+      selectBtn.setAttribute('data-select-index', i);
+      selectBtn.setAttribute('aria-pressed', i === _selectedOnsetIndex ? 'true' : 'false');
+      selectBtn.textContent = `${i + 1}. ${ms} ms`;
       const btn = document.createElement('button');
       btn.className = 'tagger-onset-remove';
       btn.setAttribute('data-index', i);
       btn.setAttribute('aria-label', `Onset ${ms} ms entfernen`);
       btn.textContent = '✕';
-      li.appendChild(span);
+      li.appendChild(selectBtn);
       li.appendChild(btn);
       ui.onsetList.appendChild(li);
     });
+  }
+
+  function renderStrategyButtons(ui) {
+    if (!ui.strategyList) return;
+    ui.strategyList.innerHTML = '';
+    for (const strategy of getGuitarOnsetStrategies()) {
+      const btn = document.createElement('button');
+      btn.className = 'tagger-strategy-btn';
+      btn.type = 'button';
+      btn.dataset.strategyKey = strategy.key;
+      btn.title = strategy.description;
+      btn.textContent = strategy.label.replace(/^Guitar Onset Detector \((.*)\)$/, '$1');
+      ui.strategyList.appendChild(btn);
+    }
+  }
+
+  function setStrategyStatus(ui, text) {
+    if (ui.strategyStatus) ui.strategyStatus.textContent = text;
   }
 
   // ── Metadata editor ────────────────────────────────────────────────────────
@@ -474,6 +547,7 @@ export function createOnsetTaggerFeature() {
       _rangeEnd   = _duration;
       _cursorSec  = 0;
       _onsetsMs   = [];
+      _selectedOnsetIndex = -1;
 
       ui.rangeStartEl.min   = 0;
       ui.rangeStartEl.max   = _duration.toFixed(4);
@@ -509,7 +583,8 @@ export function createOnsetTaggerFeature() {
     if (ui.jsonLabel) ui.jsonLabel.textContent = filename + ' ✓';
     if (Array.isArray(_sidecarData.onsetsMs)) {
       _onsetsMs = _sidecarData.onsetsMs.slice();
-      if (_svgEl) updateOnsetMarkers(_svgEl, _onsetsMs, _rangeStart, _rangeEnd);
+      _selectedOnsetIndex = -1;
+      if (_svgEl) updateOnsetMarkers(_svgEl, _onsetsMs, _rangeStart, _rangeEnd, _selectedOnsetIndex);
       renderOnsetList(ui);
     }
     renderMetaForm(ui, _sidecarData);
@@ -547,6 +622,7 @@ export function createOnsetTaggerFeature() {
   function mount(root = document) {
     _root = root;
     const ui = resolveUI();
+    renderStrategyButtons(ui);
 
     // WAV file button
     if (ui.wavBtn && ui.wavInput) {
@@ -583,10 +659,17 @@ export function createOnsetTaggerFeature() {
       ui.cursorEl.addEventListener('input', () => {
         const relMs = parseFloat(ui.cursorEl.value);
         _cursorSec = clamp(_rangeStart + relMs / 1000, _rangeStart, _rangeEnd);
+        if (_selectedOnsetIndex >= 0) {
+          const ms = Math.round(_cursorSec * 1000);
+          const moved = moveOnset(_onsetsMs, _selectedOnsetIndex, ms);
+          _onsetsMs = moved.onsetsMs;
+          _selectedOnsetIndex = moved.index;
+        }
         if (ui.cursorDisplay) {
           ui.cursorDisplay.textContent = `${_cursorSec.toFixed(3)} s`;
         }
         if (_svgEl) updateCursor(_svgEl, _cursorSec, _rangeStart, _rangeEnd);
+        updateOnsetUI(ui);
       });
     }
 
@@ -594,21 +677,78 @@ export function createOnsetTaggerFeature() {
     if (ui.addOnsetBtn) {
       ui.addOnsetBtn.addEventListener('click', () => {
         const ms = Math.round(_cursorSec * 1000);
-        _onsetsMs = addOnset(_onsetsMs, ms);
-        renderOnsetList(ui);
-        if (_svgEl) updateOnsetMarkers(_svgEl, _onsetsMs, _rangeStart, _rangeEnd);
+        const result = addOnsetWithIndex(_onsetsMs, ms);
+        _onsetsMs = result.onsetsMs;
+        _selectedOnsetIndex = result.index;
+        updateOnsetUI(ui);
+      });
+    }
+
+    if (ui.waveformWrap) {
+      ui.waveformWrap.addEventListener('click', (e) => {
+        if (!_svgEl || !_samples) return;
+        const sec = clientXToTime(_svgEl, e.clientX, _rangeStart, _rangeEnd);
+        _cursorSec = clamp(sec, _rangeStart, _rangeEnd);
+        const result = addOnsetWithIndex(_onsetsMs, Math.round(_cursorSec * 1000));
+        _onsetsMs = result.onsetsMs;
+        _selectedOnsetIndex = result.index;
+        syncCursorUI(ui);
+        updateOnsetUI(ui);
+        if (_svgEl) updateCursor(_svgEl, _cursorSec, _rangeStart, _rangeEnd);
       });
     }
 
     // Onset list remove buttons (delegated)
     if (ui.onsetList) {
       ui.onsetList.addEventListener('click', (e) => {
-        const btn = e.target.closest('[data-index]');
-        if (!btn) return;
-        const idx = parseInt(btn.dataset.index, 10);
-        _onsetsMs = removeOnset(_onsetsMs, idx);
-        renderOnsetList(ui);
-        if (_svgEl) updateOnsetMarkers(_svgEl, _onsetsMs, _rangeStart, _rangeEnd);
+        const removeBtn = e.target.closest('[data-index]');
+        if (removeBtn) {
+          const idx = parseInt(removeBtn.dataset.index, 10);
+          _onsetsMs = removeOnset(_onsetsMs, idx);
+          if (_selectedOnsetIndex === idx) {
+            _selectedOnsetIndex = -1;
+          } else if (_selectedOnsetIndex > idx) {
+            _selectedOnsetIndex--;
+          }
+          updateOnsetUI(ui);
+          return;
+        }
+
+        const selectBtn = e.target.closest('[data-select-index]');
+        if (!selectBtn) return;
+        _selectedOnsetIndex = parseInt(selectBtn.dataset.selectIndex, 10);
+        const ms = _onsetsMs[_selectedOnsetIndex];
+        if (!Number.isFinite(ms)) return;
+        focusOnTime(ui, ms / 1000);
+        updateOnsetUI(ui);
+      });
+    }
+
+    if (ui.strategyList) {
+      ui.strategyList.addEventListener('click', (e) => {
+        const btn = e.target.closest('[data-strategy-key]');
+        if (!btn || !_samples) return;
+        const strategyKey = btn.dataset.strategyKey;
+        setStrategyStatus(ui, 'Erkennung läuft ...');
+        btn.disabled = true;
+        requestAnimationFrame(() => {
+          try {
+            const result = detectOnsetsOffline(_samples, _sampleRate, { strategyKey });
+            const merged = mergeOnsetsWithMinDistance(
+              _onsetsMs,
+              result.onsetsMs,
+              STRATEGY_IMPORT_MIN_DISTANCE_MS,
+            );
+            _onsetsMs = merged.onsetsMs;
+            _selectedOnsetIndex = -1;
+            updateOnsetUI(ui);
+            setStrategyStatus(ui, `${merged.added} hinzugefügt, ${merged.skipped} übersprungen.`);
+          } catch (err) {
+            setStrategyStatus(ui, `Fehler: ${err.message}`);
+          } finally {
+            btn.disabled = false;
+          }
+        });
       });
     }
 
@@ -665,8 +805,9 @@ export function createOnsetTaggerFeature() {
     if (source) {
       loadRecordingFromSource(source, id).then(entry => {
         if (!entry) return;
-        const filename       = source === 'chord-recorder' ? `${id}.wav` : 'notenlesen.wav';
-        const sidecarFilename = source === 'chord-recorder' ? `${id}.json` : 'manifest.json';
+        const baseName = resolveRecordingFileBaseName(source, id, entry);
+        const filename = `${baseName}.wav`;
+        const sidecarFilename = `${baseName}.json`;
         applyWavBuffer(entry.wav.buffer, filename, ui).then(() => {
           if (entry.manifest) applySidecarData(entry.manifest, sidecarFilename, ui);
         });

@@ -70,6 +70,7 @@
       border-radius: var(--radius);
       overflow: hidden;
       margin-bottom: 0.5rem;
+      cursor: crosshair;
     }
 
     /* Sliders */
@@ -139,10 +140,34 @@
       margin: 0.75rem 0 0.5rem;
     }
 
-    .tagger-speed-group {
+    .tagger-playback-panel {
       display: flex;
+      align-items: center;
       gap: 0.25rem;
       margin-left: auto;
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius);
+      padding: 0.2rem 0.4rem;
+    }
+
+    .tagger-playback-panel .btn-play-stop {
+      border: none;
+      background: none;
+      padding: 0.25rem 0.5rem;
+    }
+
+    .tagger-playback-panel .btn-play-stop:hover {
+      background: var(--color-border);
+      border-radius: var(--radius);
+    }
+
+    .tagger-speed-group {
+      display: flex;
+      gap: 0.2rem;
+      margin-left: 0.25rem;
+      padding-left: 0.35rem;
+      border-left: 1px solid var(--color-border);
     }
 
     .tagger-speed-btn {
@@ -187,13 +212,32 @@
     .tagger-onset-item {
       display: flex;
       align-items: center;
-      gap: 0.35rem;
+      gap: 0.2rem;
       background: var(--color-surface);
       border: 1px solid var(--color-border);
       border-radius: var(--radius);
-      padding: 0.2rem 0.5rem;
+      padding: 0.15rem 0.25rem 0.15rem 0.45rem;
       font-size: 0.82rem;
       font-variant-numeric: tabular-nums;
+    }
+
+    .tagger-onset-item--selected {
+      border-color: #2ecc71;
+      box-shadow: inset 0 0 0 1px #2ecc71;
+    }
+
+    .tagger-onset-select {
+      background: none;
+      border: none;
+      color: var(--color-text);
+      cursor: pointer;
+      font: inherit;
+      font-variant-numeric: tabular-nums;
+      padding: 0.1rem 0.15rem;
+    }
+
+    .tagger-onset-select:hover {
+      color: var(--color-accent);
     }
 
     .tagger-onset-remove {
@@ -210,6 +254,43 @@
       font-size: 0.82rem;
       color: var(--color-text-muted);
       list-style: none;
+    }
+
+    .tagger-strategy-panel {
+      margin: 0.75rem 0 0.5rem;
+    }
+
+    .tagger-strategy-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+    }
+
+    .tagger-strategy-btn {
+      padding: 0.35rem 0.65rem;
+      font-size: 0.8rem;
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius);
+      color: var(--color-text);
+      cursor: pointer;
+    }
+
+    .tagger-strategy-btn:hover {
+      border-color: var(--color-accent);
+    }
+
+    .tagger-strategy-btn:disabled {
+      opacity: 0.6;
+      cursor: wait;
+    }
+
+    .tagger-strategy-status {
+      display: block;
+      min-height: 1.1rem;
+      margin-top: 0.35rem;
+      font-size: 0.78rem;
+      color: var(--color-text-muted);
     }
 
     /* Metadata form */
@@ -341,19 +422,27 @@
               min="0" max="1000" step="1" value="0" />
             <span id="tagger-cursor-display" class="tagger-cursor-time">0.000 s</span>
           </div>
-          <button id="tagger-add-onset" class="btn-play-stop" type="button">+ Hinzufügen</button>
         </div>
 
         <!-- Wiedergabe -->
         <div class="tagger-playback-row">
-          <button id="tagger-play" class="btn-play-stop" type="button">▶ Play</button>
-          <button id="tagger-stop" class="btn-play-stop" type="button">■ Stop</button>
-          <div class="tagger-speed-group">
-            <button class="tagger-speed-btn tagger-speed--active" data-speed="1" type="button">100%</button>
-            <button class="tagger-speed-btn" data-speed="0.75" type="button">75%</button>
-            <button class="tagger-speed-btn" data-speed="0.5" type="button">50%</button>
-            <button class="tagger-speed-btn" data-speed="0.25" type="button">25%</button>
+          <button id="tagger-add-onset" class="btn-play-stop" type="button">+ Hinzufügen</button>
+          <div class="tagger-playback-panel">
+            <button id="tagger-play" class="btn-play-stop" type="button">▶ Play</button>
+            <button id="tagger-stop" class="btn-play-stop" type="button">■ Stop</button>
+            <div class="tagger-speed-group">
+              <button class="tagger-speed-btn tagger-speed--active" data-speed="1" type="button">100%</button>
+              <button class="tagger-speed-btn" data-speed="0.75" type="button">75%</button>
+              <button class="tagger-speed-btn" data-speed="0.5" type="button">50%</button>
+              <button class="tagger-speed-btn" data-speed="0.25" type="button">25%</button>
+            </div>
           </div>
+        </div>
+
+        <div class="tagger-strategy-panel">
+          <p class="tagger-onset-list-title">Strategien hinzufügen</p>
+          <div id="tagger-strategy-list" class="tagger-strategy-list"></div>
+          <span id="tagger-strategy-status" class="tagger-strategy-status"></span>
         </div>
 
         <!-- Onsets-Liste -->

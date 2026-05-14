@@ -1047,6 +1047,55 @@ input[type="range"] {
   padding-left: 1.5rem;
 }
 
+/* === Onset Strategy Picker === */
+.onset-strategy-picker {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  overflow: hidden;
+  max-width: 42rem;
+}
+
+.onset-strategy-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.6rem 0.75rem;
+  cursor: pointer;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.onset-strategy-item:last-child {
+  border-bottom: none;
+}
+
+.onset-strategy-item:has(:checked) {
+  background: color-mix(in srgb, var(--color-accent) 8%, transparent);
+}
+
+.onset-strategy-item input[type="radio"] {
+  margin-top: 0.25rem;
+  accent-color: var(--color-accent);
+  flex-shrink: 0;
+}
+
+.onset-strategy-item__body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.onset-strategy-item__name {
+  font-size: 0.9rem;
+  color: var(--color-text);
+}
+
+.onset-strategy-item__desc {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+}
+
 /* === Menu Footer === */
 .menu-footer {
   margin-top: auto;

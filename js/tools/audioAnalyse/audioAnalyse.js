@@ -294,7 +294,8 @@ export function createAudioAnalyseFeature() {
       return;
     }
     const { wav, savedAt } = entry;
-    const filename = savedAt ? `Notenlesen · ${new Date(savedAt).toLocaleString('de-DE')}` : entry.baseName;
+    const filename = entry.baseName
+      ?? (savedAt ? `Notenlesen · ${new Date(savedAt).toLocaleString('de-DE')}` : '');
     await runAnalysis(ui, wav.buffer, filename, entry.sidecar);
   }
 
@@ -395,7 +396,7 @@ export function createAudioAnalyseFeature() {
       return;
     }
     const name = source === 'sheet-music'
-      ? `Notenlesen · ${new Date(entry.savedAt ?? entry.manifest?.recordedAt ?? '').toLocaleString('de-DE')}`
+      ? entry.baseName ?? entry.id ?? id
       : id;
     await runAnalysis(ui, entry.wav.buffer, name, entry.manifest);
   }

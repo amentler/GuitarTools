@@ -471,6 +471,8 @@ describe('SheetMusicReading controller behavior', () => {
     expect(saveSheetMusicTake.mock.calls[0][1]).toMatchObject({ category: 'sheet-music-reading' });
     expect(saveSheetMusicTake.mock.calls[1][1]).toMatchObject({ category: 'sheet-music-reading' });
     expect(saveSheetMusicTake.mock.calls[0][2].baseName).not.toBe(saveSheetMusicTake.mock.calls[1][2].baseName);
+    expect(saveSheetMusicTake.mock.calls[0][2].baseName)
+      .toMatch(/^notenlesen_4-4_80bpm_E_[0-9a-z]{5}$/);
   });
 
   it('does not persist or export an invalid recording without WAV data', async () => {
@@ -517,5 +519,7 @@ describe('SheetMusicReading controller behavior', () => {
     expect(jsonFiles).toHaveLength(2);
     expect(wavFiles.map(file => file.name.replace(/\.wav$/, '')).sort())
       .toEqual(jsonFiles.map(file => file.name.replace(/\.json$/, '')).sort());
+    expect(wavFiles.every(file => /^notenlesen_4-4_80bpm_E_[0-9a-z]{5}\.wav$/.test(file.name)))
+      .toBe(true);
   });
 });
