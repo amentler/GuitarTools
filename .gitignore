@@ -1,11 +1,8 @@
 node_modules/
 .DS_Store
 
-# Große Test-Logs ignorieren
-sweep-runs/**/*.jsonl
-sweep-runs/**/*.csv
-# Aber die 'best' Konfigurationen behalten
-!sweep-runs/**/best*.json
+# Sweep-Ergebnisse ignorieren
+sweep-runs/
 
 # Weitere temporäre Daten
 graphify-out/cache/

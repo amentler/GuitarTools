@@ -41,3 +41,7 @@ The project uses a four-layer architecture:
 
 ### Menu UI
 - Footer contains "⟳ Neu laden" and app version.
+
+## Workflow Notes
+
+- **WSL note 2026-05-14:** `tests/unit/autoUpdateVersion.test.js` currently fails in the local WSL environment. If `npm run test:precommit` is blocked by that known issue, validate changed areas with targeted Vitest runs and document the blocker.

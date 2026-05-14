@@ -2,12 +2,15 @@ import { describe, expect, it } from 'vitest';
 import {
   candidateToOptions,
   createInitialCandidates,
+  createInitialCandidatesForStrategy,
   createRefinedCandidates,
+  createRefinedCandidatesForStrategy,
   createSeededRandom,
   formatSweepHelp,
   parseArgs,
   scoreCandidate,
   scoreFixture,
+  scoreTaggedOnsets,
   sortResults,
 } from '../../scripts/sheetOnsetSweepCore.mjs';
 
@@ -29,6 +32,7 @@ describe('sheetOnsetSweepCore', () => {
 
   it('maps analysis and detector parameters to fingerprint options', () => {
     expect(candidateToOptions({
+      strategyKey: 'guitar-onset-sweep-standard',
       analyzeIntervalMs: 25,
       relativeReattackFactor: 2.2,
       cooldownFrames: 3,
@@ -39,6 +43,34 @@ describe('sheetOnsetSweepCore', () => {
         cooldownFrames: 3,
       },
     });
+  });
+
+  it('generates strategy-specific initial and refined candidates', () => {
+    const spec = {
+      parameters: {
+        cooldownFrames: [2, 5],
+        relativeReattackFactor: [1.4, 4.0],
+      },
+    };
+    const initial = createInitialCandidatesForStrategy(
+      spec,
+      'guitar-onset-broadband-or',
+      2,
+      createSeededRandom(42),
+    );
+    const refined = createRefinedCandidatesForStrategy(
+      spec,
+      'guitar-onset-broadband-or',
+      [{ parameters: initial[0] }],
+      2,
+      2,
+      createSeededRandom(7),
+    );
+
+    expect(initial).toHaveLength(2);
+    expect(refined).toHaveLength(2);
+    expect(initial.every(candidate => candidate.strategyKey === 'guitar-onset-broadband-or')).toBe(true);
+    expect(refined.every(candidate => candidate.strategyKey === 'guitar-onset-broadband-or')).toBe(true);
   });
 
   it('scores extreme overcounts harsher than target undercounts', () => {
@@ -160,5 +192,72 @@ describe('sheetOnsetSweepCore', () => {
     );
 
     expect(sortResults([worse, better])[0].id).toBe('better');
+  });
+
+  it('scores tagged onsets with good, acceptable, miss and false-positive buckets', () => {
+    const score = scoreTaggedOnsets(
+      [1000, 2000, 3000],
+      [1018, 2042, 3090, 3600],
+    );
+
+    expect(score.goodMatches).toBe(1);
+    expect(score.acceptableMatches).toBe(1);
+    expect(score.misses).toBe(1);
+    expect(score.falsePositives).toBe(2);
+    expect(score.nearFalsePositives).toBe(1);
+    expect(score.farFalsePositives).toBe(1);
+    expect(score.p95AbsErrorMs).toBe(42);
+  });
+
+  it('penalizes overfiring more than a conservative miss when tagged onsets are available', () => {
+    const tagged = [1000, 2000, 3000, 4000];
+    const conservative = scoreTaggedOnsets(tagged, [1005, 1998, 3010]);
+    const aggressive = scoreTaggedOnsets(tagged, [
+      1005,
+      1015,
+      1998,
+      2010,
+      3010,
+      3020,
+      4008,
+      4090,
+      4600,
+    ]);
+
+    expect(conservative.misses).toBe(1);
+    expect(aggressive.misses).toBe(0);
+    expect(aggressive.falsePositives).toBeGreaterThan(conservative.falsePositives);
+    expect(aggressive.score).toBeLessThan(conservative.score);
+  });
+
+  it('uses tagged onset timing in candidate scoring when fixture tags exist', () => {
+    const scored = scoreCandidate(
+      {
+        id: 'timed',
+        round: 1,
+        strategyKey: 'guitar-onset-sweep-standard',
+        parameters: { strategyKey: 'guitar-onset-sweep-standard', cooldownFrames: 3 },
+      },
+      [{
+        fixture: {
+          file: 'tagged.wav',
+          role: 'target',
+          expectedCount: 3,
+          taggedOnsetsMs: [1000, 2000, 3000],
+          minOnsets: 3,
+          maxOnsets: 3,
+          weight: 1,
+        },
+        onsetCount: 4,
+        timestampsMs: [1004, 2035, 2800, 3600],
+      }],
+    );
+
+    expect(scored.strategyKey).toBe('guitar-onset-sweep-standard');
+    expect(scored.metrics.goodMatches).toBe(1);
+    expect(scored.metrics.acceptableMatches).toBe(1);
+    expect(scored.metrics.misses).toBe(1);
+    expect(scored.metrics.falsePositives).toBe(2);
+    expect(scored.fixtures[0].scoringMode).toBe('timed');
   });
 });

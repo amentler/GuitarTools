@@ -1,7 +1,8 @@
 # Plan: Adaptive Guitar-Onset-Parameter
 
 **Erstellt:** 2026-05-10  
-**Status:** Parametrisierbare Onset-Experimente implementiert; Tuning/Sweep offen
+**Status:** Parametrisierbare Onset-Experimente und strategieuebergreifender
+Sweep mit getaggtem Onset-Scoring implementiert; weiteres Strategie-Tuning offen
 
 ## Umsetzungsstand 2026-05-10
 
@@ -20,6 +21,10 @@
 - Phase 7 erledigt als erste autonome Version: `npm run onsetsweep -- --spec ...`
   fuehrt einen resumierbaren Beam-Search-Sweep aus, speichert JSONL/CSV/Markdown
   und schreibt die besten Configs als `best-*.config.json`.
+- Update 2026-05-14: Der Sweep optimiert pro Runde alle registrierten
+  Onset-Strategien separat, nutzt `manifest.onsetsMs` fuer Timing-Scoring
+  und schreibt zusaetzlich strategie-spezifische Best-Artefakte. `runsweep.ps1`
+  startet den Standard-Sweep mit 20 Workern.
 
 ## Ziel
 
@@ -166,7 +171,11 @@ verschlechtern.
   - extreme Under- und Overcounts bleiben starke Negativsignale
 
 Status: erledigt als Beam-Search statt vollem Kreuzprodukt. Die Start-Spec liegt
-in `plans/sheet_music_onset_repair/onset-sweep-spec.json`.
+in `plans/sheet_music_onset_repair/onset-sweep-spec.json`. Der Runner nimmt
+standardmaessig alle Eintraege aus `getGuitarOnsetStrategies()` mit und kann
+ueber `strategies` in der Spec auf einzelne Strategien begrenzt werden. Bei
+getaggten Fixtures bewertet er Timing-Treffer bis 30 ms als gut, bis 50 ms als
+akzeptabel und bestraft Misses, Duplicates und weit entfernte Zusatz-Onsets.
 
 ## Fachliche Testfaelle
 
@@ -187,10 +196,49 @@ in `plans/sheet_music_onset_repair/onset-sweep-spec.json`.
 - Relative Gates koennen Nebengeraeusche und Resonanzen staerker triggern.
 - `onsetFrameSize` und `analyzeIntervalMs` beeinflussen Timing und Cooldown
   gleichzeitig.
-- Ohne echte Gold-Onset-Zeitpunkte bleibt die Bewertung count-basiert, nicht
-  timing-genau.
+- Getaggte Gold-Onset-Zeitpunkte verbessern die Bewertung, muessen aber
+  konsistent gepflegt werden. Ungenau getaggte Fixtures koennen konservative
+  Strategien sonst falsch benachteiligen.
 - Zu viele gleichzeitige Aenderungen verschleiern, welcher Parameter geholfen
   hat. Deshalb Phasen einzeln umsetzen und nach jeder Phase `sfp` vergleichen.
+
+## Performance-Analyse 2026-05-14
+
+- Der aktuelle strategieuebergreifende Sweep multipliziert die Kandidaten pro
+  Runde mit allen registrierten Strategien. Ohne `strategies`-Einschraenkung
+  werden bei `candidatesPerRound: 80` vier Strategien parallel optimiert, also
+  bis zu 320 Kandidaten pro Runde.
+- `analyzeIntervalMs` ist aktuell als Bereich `[25, 50]` Teil der Suche. Jeder
+  eindeutige Hop erzeugt im Worker fuer alle Fixtures neue FFT-/dB-Spektren.
+  Eine kleine Messung mit 4 Kandidaten und 1 Worker lag bei ca. 13,7 s und
+  ca. 1 GB RSS; mit fixem `analyzeIntervalMs: [41]` lag derselbe Smoke-Umfang
+  bei ca. 5,7 s und ca. 450 MB RSS.
+- Der Worker berechnete `computeLinearSpectrum()` und `computeDbSpectrum()` fuer
+  dasselbe Frame getrennt und fuehrte damit zwei FFTs pro Frame aus. Das wurde
+  auf eine gemeinsame Spektrum-Berechnung zusammengezogen.
+- Der Worker haelt vorberechnete Frame-Spektren jetzt begrenzt ueber Batches
+  hinweg im Speicher (`ONSET_SWEEP_WORKER_FRAME_CACHE_CONFIG_LIMIT`, Default 2).
+  Das hilft bei fixen oder wenigen Hop-Konfigurationen. Bei breit
+  randomisiertem `analyzeIntervalMs` bleibt ein grosser Cache kontraproduktiv,
+  weil viele unterschiedliche Hop-Konfigurationen kaum wiederverwendet werden.
+- Die Runden-Artefakte sortieren und filtern die komplette Ergebnis-Historie
+  mehrfach pro Runde und schreiben CSV/Markdown/Best-Dateien neu. Das ist
+  gegenueber der Audioanalyse zweitrangig, waechst aber mit langen Runs.
+
+Naechste Optimierungsrichtung:
+
+- Fuer schnelle Tuning-Laeufe `strategies` explizit auf die Zielstrategie
+  begrenzen oder `candidatesPerRound` pro Strategie reduzieren.
+- `analyzeIntervalMs` nur als kleine diskrete Liste oder fixen Wert sweeppen,
+  nicht als breiten Bereich.
+- Worker-Hotpath weiter strategie-spezifisch optimieren: Standard-Strategien
+  ohne Bandpass sollten ohne dB-Spektrum und ohne Samples auskommen koennen.
+- Fuer maximale CPU-Auslastung langfristig die Arbeit nach Fixtures statt nur
+  nach Kandidaten sharden oder vorberechnete Spektren pro Analyse-Konfiguration
+  in SharedArrayBuffers ablegen, damit mehrere Worker nicht dieselben WAV-Frames
+  erneut vorberechnen.
+- Ergebnis-Artefakte nicht nach jeder Runde voll neu schreiben, sondern
+  `results.jsonl` streamen und CSV/Report nur periodisch oder am Ende erzeugen.
 
 ## Offene Entscheidungen
 

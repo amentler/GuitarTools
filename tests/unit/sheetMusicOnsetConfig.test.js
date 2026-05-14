@@ -18,6 +18,7 @@ describe('sheetMusicOnsetConfig', () => {
     writeFileSync(configPath, JSON.stringify({
       onsetFrameSize: 2048,
       analyzeIntervalMs: 25,
+      onsetStrategyKey: 'guitar-onset-broadband-or',
       minFlux: 0.011,
       onsetDetectorOptions: {
         cooldownFrames: 2,
@@ -30,6 +31,7 @@ describe('sheetMusicOnsetConfig', () => {
       expect(result.options).toEqual({
         onsetFrameSize: 2048,
         analyzeIntervalMs: 25,
+        onsetStrategyKey: 'guitar-onset-broadband-or',
         onsetDetectorOptions: {
           cooldownFrames: 2,
           minFlux: 0.011,

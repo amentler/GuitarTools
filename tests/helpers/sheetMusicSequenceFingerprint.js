@@ -93,6 +93,7 @@ export function countGuitarOnsets(samples, sampleRate, options = {}) {
     sampleRate * ((options.analyzeIntervalMs ?? SHEET_FINGERPRINT_ANALYZE_INTERVAL_MS) / 1000),
   ));
   const onsetStrategy = options.onsetStrategy
+    ?? (options.onsetStrategyKey ? resolveGuitarOnsetStrategy(options.onsetStrategyKey) : null)
     ?? resolveGuitarOnsetStrategy(DEFAULT_GUITAR_ONSET_STRATEGY_KEY);
   const timestampsMs = [];
   let onsetState = onsetStrategy.createState();

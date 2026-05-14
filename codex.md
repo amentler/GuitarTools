@@ -22,3 +22,7 @@ Dieses Dokument beschreibt den technischen Ist-Zustand des Projekts.
 - **Qualitätssicherung:** CI-Workflow führt Linting und Tests (Vitest) aus.
 - **Test-Umfang:** Fokus auf pure Logic in `*Logic.js`. Audio-Tests nutzen WAV-Fixtures.
 - **Onset Tagger:** Unterstützt manuelle Onset-Auswahl/-Verschiebung, Klick-Markierung in der normalisierten Waveform und additive Strategie-Imports mit 50-ms-Deduplizierung.
+
+## 3) Lokale Workflow-Hinweise
+
+- **WSL-Hinweis 2026-05-14:** `tests/unit/autoUpdateVersion.test.js` schlaegt in der aktuellen WSL-Umgebung fehl. Der Precommit-Lauf kann dadurch rot werden, obwohl der Onset-Sweep-Code davon unabhaengig ist. Bis zur Reparatur dieses Umgebungsthemas gezielt relevante Vitest-Dateien ausfuehren und den Ausfall im Sync vermerken.

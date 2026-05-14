@@ -6,6 +6,12 @@ Start a full autonomous sweep:
 npm run onsetsweep -- --spec plans/sheet_music_onset_repair/onset-sweep-spec.json
 ```
 
+Start the PowerShell default sweep from the repository root with 20 workers:
+
+```bash
+./runsweep.ps1
+```
+
 Show CLI help:
 
 ```bash
@@ -36,6 +42,13 @@ Important outputs:
 
 - `results.jsonl`: full candidate history and resume source.
 - `results.csv`: ranked candidate summary.
-- `report.md`: human-readable fixture counts and scores.
+- `report.md`: human-readable timing/count scores plus per-strategy ranking.
 - `best-001.config.json` to `best-005.config.json`: configs usable with
   `npm run sheetfingerprint -- --onset-config <file>`.
+- `best-<strategy>.json` and `best-<strategy>-001.config.json`: best configs
+  per onset strategy.
+
+Scoring prefers tagged onset timing when a fixture manifest contains
+`onsetsMs`: matches within 30 ms are good, 30..50 ms are acceptable, misses and
+unmatched detections are penalized, and extra detections receive an additional
+overfire penalty. Fixtures without tags keep the count-based fallback score.

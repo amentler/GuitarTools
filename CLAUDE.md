@@ -104,6 +104,7 @@ This project has a graphify knowledge graph at `graphify-out/`. See `AGENTS.md` 
 - **Run E2E tests:** `npm run test:e2e` (Playwright)
 - **Run linter:** `npm run lint` (ESLint)
 - **Test files:** `tests/unit/`, `tests/e2e/`
+- **WSL note 2026-05-14:** `tests/unit/autoUpdateVersion.test.js` currently fails in the local WSL environment. When this blocks `npm run test:precommit`, run the relevant targeted Vitest files and record the known WSL blocker in the sync result.
 
 ### Tuner Fixture Tests
 

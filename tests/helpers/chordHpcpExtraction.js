@@ -133,6 +133,32 @@ export function computeLinearSpectrum(samples, fftSize = CHORD_HPCP_FFT_SIZE) {
   return spectrum;
 }
 
+export function computeLinearAndDbSpectrum(samples, fftSize = CHORD_HPCP_FFT_SIZE) {
+  const { re, im } = getFftScratch(fftSize);
+  const n = Math.min(samples.length, fftSize);
+
+  re.fill(0);
+  im.fill(0);
+
+  const win = getHannWindow(fftSize);
+  for (let i = 0; i < n; i++) re[i] = samples[i] * win[i];
+
+  fftInPlace(re, im);
+
+  const bins = fftSize >> 1;
+  const norm = fftSize >> 1;
+  const linearSpectrum = new Float32Array(bins);
+  const dbSpectrum = new Float32Array(bins);
+
+  for (let i = 0; i < bins; i++) {
+    const mag = Math.sqrt(re[i] * re[i] + im[i] * im[i]) / norm;
+    linearSpectrum[i] = mag;
+    dbSpectrum[i] = mag > 1e-9 ? 20 * Math.log10(mag) : SILENCE_DB;
+  }
+
+  return { linearSpectrum, dbSpectrum };
+}
+
 function computeRms(samples, start = 0, size = samples.length) {
   let sum = 0;
   const end = Math.min(samples.length, start + size);

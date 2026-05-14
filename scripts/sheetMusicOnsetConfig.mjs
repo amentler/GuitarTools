@@ -1,6 +1,7 @@
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
 import { DEFAULT_GUITAR_ONSET_OPTIONS } from '../js/shared/audio/guitarOnsetDetector.js';
+import { resolveGuitarOnsetStrategy } from '../js/shared/audio/guitarOnsetStrategies.js';
 
 const ANALYSIS_OPTION_KEYS = new Set([
   'onsetFrameSize',
@@ -39,6 +40,14 @@ function normalizeConfig(rawConfig) {
   if (rawConfig.onsetDetectorOptions !== undefined) {
     assertPlainObject(rawConfig.onsetDetectorOptions, 'onsetDetectorOptions');
     Object.assign(detectorOptions, rawConfig.onsetDetectorOptions);
+  }
+
+  if (rawConfig.onsetStrategyKey !== undefined) {
+    const strategy = resolveGuitarOnsetStrategy(rawConfig.onsetStrategyKey);
+    if (strategy.key !== rawConfig.onsetStrategyKey) {
+      throw new Error(`Unknown onsetStrategyKey: ${rawConfig.onsetStrategyKey}`);
+    }
+    options.onsetStrategyKey = rawConfig.onsetStrategyKey;
   }
 
   for (const key of DETECTOR_OPTION_KEYS) {

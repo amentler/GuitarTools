@@ -1,15 +1,16 @@
 import { parentPort } from 'worker_threads';
-import { computeLinearSpectrum } from '../tests/helpers/chordHpcpExtraction.js';
-import { computeFrameRms } from '../js/shared/audio/rms.js';
-import {
-  createGuitarOnsetState,
-  normalizeGuitarOnsetOptions,
-  updateGuitarOnsetDetectorNormalized,
-} from '../js/shared/audio/guitarOnsetDetector.js';
+import { computeLinearAndDbSpectrum } from '../tests/helpers/chordHpcpExtraction.js';
+import { resolveGuitarOnsetStrategy } from '../js/shared/audio/guitarOnsetStrategies.js';
 import { candidateToOptions, scoreCandidate } from './sheetOnsetSweepCore.mjs';
 
 const DEFAULT_ONSET_FRAME_SIZE = 4096;
 const DEFAULT_ANALYZE_INTERVAL_MS = 41;
+const FRAME_CACHE_CONFIG_LIMIT = Math.max(
+  1,
+  Number(process.env.ONSET_SWEEP_WORKER_FRAME_CACHE_CONFIG_LIMIT ?? 2),
+);
+const frameCache = new Map();
+const cachedConfigUsage = new Map();
 
 function resolveHopSize(options, sampleRate) {
   return options.onsetHopSize
@@ -17,24 +18,62 @@ function resolveHopSize(options, sampleRate) {
 }
 
 function precomputeFrames(samples, frameSize, hopSize) {
-  const spectra = [];
-  const rmsValues = [];
+  const frames = [];
+  const linearSpectra = [];
+  const dbSpectra = [];
   for (let offset = 0; offset + frameSize <= samples.length; offset += hopSize) {
     const frame = samples.subarray(offset, offset + frameSize);
-    spectra.push(computeLinearSpectrum(frame, frameSize));
-    rmsValues.push(computeFrameRms(frame));
+    const { linearSpectrum, dbSpectrum } = computeLinearAndDbSpectrum(frame, frameSize);
+    frames.push(frame);
+    linearSpectra.push(linearSpectrum);
+    dbSpectra.push(dbSpectrum);
   }
-  return { spectra, rmsValues };
+  return { frames, linearSpectra, dbSpectra };
 }
 
-function countOnsetsFromFrames(spectra, rmsValues, sampleRate, hopSize, normalizedOptions) {
+function touchCachedConfig(configKey) {
+  cachedConfigUsage.delete(configKey);
+  cachedConfigUsage.set(configKey, Date.now());
+}
+
+function evictOldFrameConfigs() {
+  while (cachedConfigUsage.size > FRAME_CACHE_CONFIG_LIMIT) {
+    const oldestConfigKey = cachedConfigUsage.keys().next().value;
+    cachedConfigUsage.delete(oldestConfigKey);
+    for (const cacheKey of frameCache.keys()) {
+      if (cacheKey.startsWith(`${oldestConfigKey}\0`)) {
+        frameCache.delete(cacheKey);
+      }
+    }
+  }
+}
+
+function getCachedFrames(fixture, audio, frameSize, hopSize) {
+  const configKey = `${frameSize}:${hopSize}`;
+  const cacheKey = `${configKey}\0${fixture.file}`;
+  const cached = frameCache.get(cacheKey);
+  touchCachedConfig(configKey);
+  if (cached) return cached;
+
+  const computed = precomputeFrames(audio.samples, frameSize, hopSize);
+  frameCache.set(cacheKey, computed);
+  evictOldFrameConfigs();
+  return computed;
+}
+
+function countOnsetsFromFrames(frameSet, sampleRate, hopSize, strategy, detectorOptions) {
   const timestampsMs = [];
-  let state = createGuitarOnsetState();
-  for (let i = 0; i < spectra.length; i++) {
-    const result = updateGuitarOnsetDetectorNormalized(
+  let state = strategy.createState();
+  for (let i = 0; i < frameSet.frames.length; i++) {
+    const result = strategy.update(
       state,
-      { magnitudes: spectra[i], rms: rmsValues[i] },
-      normalizedOptions,
+      {
+        frequencyData: frameSet.dbSpectra[i],
+        magnitudes: frameSet.linearSpectra[i],
+        samples: frameSet.frames[i],
+        sampleRate,
+      },
+      detectorOptions,
     );
     state = result.nextState;
     if (result.event === 'onset') {
@@ -53,35 +92,20 @@ parentPort.on('message', ({ batch, fixtures, scoreSpec }) => {
   // All fixtures are expected to share the same sample rate (guitar recordings).
   const sampleRate = loadedFixtures[0]?.audio.sampleRate ?? 44100;
 
-  // Collect unique (frameSize, hopSize) combinations across the batch.
-  const hopConfigs = new Map();
-  for (const { parameters } of batch) {
-    const options = candidateToOptions(parameters);
-    const frameSize = options.onsetFrameSize ?? DEFAULT_ONSET_FRAME_SIZE;
-    const hopSize = resolveHopSize(options, sampleRate);
-    const key = `${frameSize}:${hopSize}`;
-    if (!hopConfigs.has(key)) hopConfigs.set(key, { frameSize, hopSize });
-  }
-
-  // Precompute FFT spectra and RMS once per unique config × fixture.
-  const framesCache = new Map();
-  for (const [key, { frameSize, hopSize }] of hopConfigs) {
-    framesCache.set(key, loadedFixtures.map(({ audio }) =>
-      precomputeFrames(audio.samples, frameSize, hopSize),
-    ));
-  }
-
   const results = batch.map(candidate => {
     const options = candidateToOptions(candidate.parameters);
     const frameSize = options.onsetFrameSize ?? DEFAULT_ONSET_FRAME_SIZE;
     const hopSize = resolveHopSize(options, sampleRate);
-    const key = `${frameSize}:${hopSize}`;
-    const fixtureFrames = framesCache.get(key);
-    const normalizedOptions = normalizeGuitarOnsetOptions(options.onsetDetectorOptions);
+    const strategy = resolveGuitarOnsetStrategy(candidate.strategyKey ?? candidate.parameters.strategyKey);
 
-    const fixtureResults = loadedFixtures.map(({ fixture }, i) => {
-      const { spectra, rmsValues } = fixtureFrames[i];
-      const onsetResult = countOnsetsFromFrames(spectra, rmsValues, sampleRate, hopSize, normalizedOptions);
+    const fixtureResults = loadedFixtures.map(({ fixture, audio }) => {
+      const onsetResult = countOnsetsFromFrames(
+        getCachedFrames(fixture, audio, frameSize, hopSize),
+        sampleRate,
+        hopSize,
+        strategy,
+        options.onsetDetectorOptions,
+      );
       return { fixture, onsetCount: onsetResult.count, timestampsMs: onsetResult.timestampsMs };
     });
 
