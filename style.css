@@ -556,6 +556,25 @@ input[type="range"] {
   cursor: pointer;
 }
 
+/* --- Beat indicator dots (sheet music reading) --- */
+.beat-indicator {
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+.beat-dot {
+  width: 0.65rem;
+  height: 0.65rem;
+  border-radius: 50%;
+  background: var(--color-border);
+  transition: background 0.06s;
+}
+
+.beat-dot--active {
+  background: #4caf50;
+}
+
 /* --- Playback bar SVG overlay --- */
 .notation-wrapper {
   position: relative; /* needed so the overlay is positioned inside it */

@@ -46,6 +46,7 @@ vi.mock('../../js/games/sheetMusicReading/playbackController.js', () => ({
   PlaybackController: class PlaybackController {
     init() { playbackInit(); }
     onBeat(cb) { playbackBeatCallback = cb; playbackOnBeat(cb); }
+    onTick() {}
     start(...args) { playbackStart(...args); }
     stop() { playbackStop(); }
     setBpm(...args) { playbackSetBpm(...args); }

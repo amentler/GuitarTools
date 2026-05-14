@@ -23,12 +23,23 @@ export class PlaybackController {
     this._beatsPerBar = 4;
     this._totalBeats = 0;
     this._globalBeat = -1;
+    this._countInBeats = 0;
     this._onBeatCallback = null;
+    this._onTickCallback = null;
 
     // Wire the internal metronome callback once in the constructor.
     // The external callback (_onBeatCallback) is set via onBeat().
     this._metronome.onBeat = (_beatNumber) => {
       this._globalBeat++;
+
+      // Fire tick callback on every beat (including count-in) so visual
+      // indicators (beat dots) can animate during the count-in phase.
+      if (this._onTickCallback) {
+        const rawBeat = this._globalBeat + this._countInBeats;
+        const tickBeatIndex = ((rawBeat % this._beatsPerBar) + this._beatsPerBar) % this._beatsPerBar;
+        this._onTickCallback({ beatIndex: tickBeatIndex });
+      }
+
       if (this._globalBeat < 0) return;
       if (this._onBeatCallback) {
         const { barIndex, beatIndex } = this.getCurrentBeat();
@@ -54,6 +65,16 @@ export class PlaybackController {
   }
 
   /**
+   * Registers a callback that fires on EVERY metronome tick, including during
+   * the count-in phase. Useful for visual indicators that should animate from
+   * the very first beat.
+   * @param {function({ beatIndex: number }): void} callback
+   */
+  onTick(callback) {
+    this._onTickCallback = callback;
+  }
+
+  /**
    * Starts playback from the beginning.
    * Lazily initialises the AudioContext on the first call (browser autoplay policy
    * requires this to happen inside a user-gesture handler).
@@ -69,6 +90,7 @@ export class PlaybackController {
     this._beatsPerBar = beatsPerBar || 4;
     this._totalBeats = totalBeats;
     const safeCountInBeats = Math.max(0, Math.floor(countInBeats));
+    this._countInBeats = safeCountInBeats;
     this._globalBeat = -(safeCountInBeats + 1);
     this._metronome.setBpm(bpm);
     this._metronome.setBeatsPerMeasure(this._beatsPerBar);

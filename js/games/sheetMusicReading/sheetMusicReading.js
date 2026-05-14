@@ -103,6 +103,7 @@ export function createSheetMusicReadingFeature() {
     matchState: createMatchState(),
     onsetState: resolveGuitarOnsetStrategy(getSetting(SETTING_KEYS.SHEET_MUSIC_ONSET_STRATEGY)).createState(),
     awaitingOnset: true,
+    selectedMicDeviceId: null,
     settings: {
       maxFret: 3,
       activeStrings: [0, 1, 2, 3, 4, 5],
@@ -281,7 +282,17 @@ export function createSheetMusicReadingFeature() {
 
     let microphoneStream;
     try {
-      microphoneStream = await requestMicrophoneStream();
+      const audioConstraints = {
+        noiseSuppression: false,
+        echoCancellation: false,
+        autoGainControl: false,
+      };
+      if (state.selectedMicDeviceId) {
+        audioConstraints.deviceId = { ideal: state.selectedMicDeviceId };
+      }
+      microphoneStream = await requestMicrophoneStream({
+        constraints: { audio: audioConstraints, video: false },
+      });
     } catch {
       ui.permission.textContent = 'Mikrofon nicht verfügbar. Bitte Zugriff erlauben.';
       return;
@@ -303,6 +314,7 @@ export function createSheetMusicReadingFeature() {
     state.isListening = true;
     applyTargetFftSize();
     analyzeIntervalId = setInterval(analyzeFrame, ANALYZE_INTERVAL_MS);
+    void enumerateAndShowMics();
   }
 
   function advanceToNextNote() {
@@ -514,6 +526,60 @@ export function createSheetMusicReadingFeature() {
   function updatePoolWarning() {
     const el = ui?.poolWarning;
     if (el) el.hidden = getNotesPool().length >= MIN_POOL_SIZE;
+  }
+
+  // ── Beat indicator ───────────────────────────────────────────────────────
+  function getBeatCount(timeSig) {
+    return parseInt(timeSig.split('/')[0], 10) || 4;
+  }
+
+  function renderBeatDots(timeSig) {
+    const container = ui?.beatIndicator;
+    if (!container) return;
+    const count = getBeatCount(timeSig);
+    container.innerHTML = '';
+    for (let i = 0; i < count; i++) {
+      const dot = document.createElement('span');
+      dot.className = 'beat-dot';
+      container.appendChild(dot);
+    }
+  }
+
+  function updateBeatDot(beatIndex) {
+    const container = ui?.beatIndicator;
+    if (!container) return;
+    const dots = container.querySelectorAll('.beat-dot');
+    dots.forEach((dot, i) => {
+      dot.classList.toggle('beat-dot--active', i === beatIndex);
+    });
+  }
+
+  function clearBeatDots() {
+    const container = ui?.beatIndicator;
+    if (!container) return;
+    container.querySelectorAll('.beat-dot').forEach(dot => dot.classList.remove('beat-dot--active'));
+  }
+
+  // ── Microphone enumeration ───────────────────────────────────────────────
+  async function enumerateAndShowMics() {
+    if (!globalThis.navigator?.mediaDevices?.enumerateDevices) return;
+    try {
+      const devices = await globalThis.navigator.mediaDevices.enumerateDevices();
+      const mics = devices.filter(d => d.kind === 'audioinput');
+      if (mics.length <= 1) return;
+      const { micPanel, micSelect } = ui ?? {};
+      if (!micPanel || !micSelect) return;
+      const prevValue = micSelect.value;
+      micSelect.innerHTML = '';
+      for (let i = 0; i < mics.length; i++) {
+        const opt = document.createElement('option');
+        opt.value = mics[i].deviceId;
+        opt.textContent = mics[i].label || `Mikrofon ${i + 1}`;
+        micSelect.appendChild(opt);
+      }
+      if (prevValue) micSelect.value = prevValue;
+      micPanel.classList.remove('u-hidden');
+    } catch { /* permission denied or API unavailable */ }
   }
 
   // ── Recording helpers ───────────────────────────────────────────────────
@@ -741,7 +807,12 @@ export function createSheetMusicReadingFeature() {
       playbackBar.moveToBeat(barIndex, beatIndex, config.beatsPerBar);
     });
 
+    playback.onTick(({ beatIndex }) => updateBeatDot(beatIndex));
+
+    // Immediately snap cursor to the first note so it's visible during count-in.
     playbackBar.show();
+    playbackBar.moveToBeat(0, 0, config.beatsPerBar);
+
     playback.start(state.bpm, config.beatsPerBar, totalBeats, config.beatsPerBar);
   }
 
@@ -768,8 +839,9 @@ export function createSheetMusicReadingFeature() {
 
     for (let i = 0; i < ENDLESS_VISIBLE_ROWS; i++) appendEndlessRow();
 
-    // Show first row's playback bar
+    // Show first row's playback bar and snap it to the first beat immediately.
     allPlaybackBars[0].show();
+    allPlaybackBars[0].moveToBeat(0, 0, config.beatsPerBar);
 
     playback.onBeat(({ barIndex, beatIndex }) => {
       const rowIndex   = Math.floor(barIndex / BARS_PER_ROW);
@@ -793,6 +865,8 @@ export function createSheetMusicReadingFeature() {
       }
     });
 
+    playback.onTick(({ beatIndex }) => updateBeatDot(beatIndex));
+
     // 0 = no wrap (play forever)
     playback.start(state.bpm, config.beatsPerBar, 0, config.beatsPerBar);
   }
@@ -801,6 +875,7 @@ export function createSheetMusicReadingFeature() {
     if (!isPlaying) return;
     isPlaying = false;
     playback.stop();
+    clearBeatDots();
 
     if (state.endless) {
       cleanupEndlessState();
@@ -896,6 +971,7 @@ export function createSheetMusicReadingFeature() {
         saveSheetMusicTimeSig(state.timeSig);
         stopPlayback();
         if (state.endless) cleanupEndlessState();
+        renderBeatDots(state.timeSig);
         regenerate();
       });
 
@@ -957,11 +1033,21 @@ export function createSheetMusicReadingFeature() {
         }
       });
 
+      // Microphone selection
+      ui.micSelect?.addEventListener('change', async () => {
+        state.selectedMicDeviceId = ui.micSelect.value || null;
+        if (state.isListening) {
+          await stopListening();
+          await startListening();
+        }
+      });
+
       wired = true;
     }
 
     syncSettingsUI();
     syncRecordingUI();
+    renderBeatDots(state.timeSig);
     updateFeedback();
     updateStrategyStatus();
     if (ui.permission) {

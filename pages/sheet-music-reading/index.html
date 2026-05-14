@@ -13,8 +13,8 @@
     <div class="exercise-subheader">
       <button id="btn-sheet-active-mode" class="btn-mode">Aktiv</button>
       <button id="btn-show-tab" class="btn-mode">Tabs anzeigen</button>
-      <button id="btn-endless-mode" class="btn-mode">∞ Endlos</button>
-      <button id="btn-record" class="btn-mode">⏺ Record</button>
+      <button id="btn-endless-mode" class="btn-mode">Endlos</button>
+      <button id="btn-record" class="btn-mode">Record</button>
     </div>
 
     <p id="sheet-music-permission" class="tuner-permission u-hidden"></p>
@@ -47,6 +47,7 @@
           <option value="3/8">3/8</option>
           <option value="6/8">6/8</option>
         </select>
+        <div id="beat-indicator" class="beat-indicator" aria-hidden="true"></div>
       </div>
     </div>
 
@@ -81,6 +82,14 @@
     </div>
     <button id="btn-download-recordings" class="btn-new-bars u-hidden">⬇ Download</button>
     <button id="btn-analyse-recording" class="btn-new-bars u-hidden">📊 Analysieren</button>
+
+    <!-- MIC SELECTION: only shown when multiple microphones are available -->
+    <div id="mic-select-panel" class="settings-panel u-hidden">
+      <div class="settings-row">
+        <label for="sheet-music-mic-select" class="settings-label">Mikrofon:</label>
+        <select id="sheet-music-mic-select"></select>
+      </div>
+    </div>
 
     <div class="strategy-status">
       <span class="strategy-status__label">Pitch:</span>

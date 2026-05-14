@@ -23,6 +23,9 @@ export function resolveSheetMusicUI(root = document) {
     recordCancelBtn: root.getElementById?.('btn-record-cancel') ?? document.getElementById('btn-record-cancel'),
     downloadBtn:     root.getElementById?.('btn-download-recordings') ?? document.getElementById('btn-download-recordings'),
     analyseBtn:      root.getElementById?.('btn-analyse-recording') ?? document.getElementById('btn-analyse-recording'),
+    micPanel:        root.getElementById?.('mic-select-panel') ?? document.getElementById('mic-select-panel'),
+    micSelect:       root.getElementById?.('sheet-music-mic-select') ?? document.getElementById('sheet-music-mic-select'),
+    beatIndicator:   root.getElementById?.('beat-indicator') ?? document.getElementById('beat-indicator'),
   };
 }
 
