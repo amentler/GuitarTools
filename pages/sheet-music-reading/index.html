@@ -11,10 +11,10 @@
     <gt-exercise-header title="Noten lesen"></gt-exercise-header>
 
     <div class="exercise-subheader">
-      <button id="btn-sheet-active-mode" class="btn-mode">Aktiv</button>
-      <button id="btn-show-tab" class="btn-mode">Tabs anzeigen</button>
+      <button id="btn-sheet-active-mode" class="btn-play-stop">Aktiv</button>
+      <button id="btn-show-tab" class="btn-play-stop">Tabs</button>
       <button id="btn-endless-mode" class="btn-mode">Endlos</button>
-      <button id="btn-record" class="btn-mode">Record</button>
+      <button id="btn-record" class="btn-play-stop">Record</button>
     </div>
 
     <p id="sheet-music-permission" class="tuner-permission u-hidden"></p>
@@ -28,7 +28,7 @@
     <!-- PLAYBACK: Play/Stop · Record · BPM · Time Signature -->
     <div class="playback-controls">
       <button id="btn-sheet-play" class="btn-play-stop">▶ Play</button>
-      <button id="btn-record-stop"   class="btn-mode u-hidden">⏹ Stop</button>
+      <button id="btn-record-stop"   class="btn-play-stop u-hidden">Speichern</button>
       <button id="btn-record-cancel" class="btn-mode u-hidden">✕ Abbruch</button>
 
       <div class="playback-bpm">
@@ -57,7 +57,7 @@
 
     <div id="score-container" class="score-container"></div>
 
-    <button id="btn-new-bars" class="btn-new-bars">Neue Takte</button>
+    <button id="btn-new-bars" class="btn-play-stop">Neue Takte</button>
 
     <!-- SETTINGS: Fret Range + String Selection -->
     <div class="settings-panel">
@@ -80,8 +80,11 @@
         </div>
       </div>
     </div>
-    <button id="btn-download-recordings" class="btn-new-bars u-hidden">⬇ Download</button>
-    <button id="btn-analyse-recording" class="btn-new-bars u-hidden">📊 Analysieren</button>
+    <div class="sheet-music-actions">
+      <button id="btn-download-recordings" class="btn-play-stop u-hidden">⬇ Download</button>
+      <button id="btn-analyse-recording" class="btn-play-stop u-hidden">📊 Analysieren</button>
+      <button id="btn-open-recordings" class="btn-play-stop">Aufnahmen</button>
+    </div>
 
     <!-- MIC SELECTION: only shown when multiple microphones are available -->
     <div id="mic-select-panel" class="settings-panel u-hidden">

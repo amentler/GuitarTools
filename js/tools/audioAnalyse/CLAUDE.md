@@ -16,11 +16,12 @@ Der Storage-Dienst liegt in `js/shared/audioAnalyseStorage.js` (wegen Cross-Laye
 
 ```
 Noten lesen (stopRecording)
-  → saveLastRecording(wav)        [js/shared/audioAnalyseStorage.js]
-      → IndexedDB gt-audio-analyse-db / recordings / 'last'
+  → saveSheetMusicTake(wav, manifest, { baseName })
+      [js/shared/audioAnalyseStorage.js]
+      → IndexedDB gt-audio-analyse-db / recordings / <take-id>
 
 Audio-Analyse Werkzeug (mount)
-  ← loadLastRecording()           [js/shared/audioAnalyseStorage.js]
+  ← loadLatestSheetMusicTake()    [js/shared/audioAnalyseStorage.js]
   → decodeWav(arrayBuffer)        [audioAnalyseEngine.js]
   → analyzeAudio(samples, sr)     [audioAnalyseEngine.js]
   → renderAllCharts(wrapper, ..)  [audioAnalyseSVG.js]
@@ -80,8 +81,8 @@ PLOT_W = 930
 
 - **Database**: `gt-audio-analyse-db`
 - **Object Store**: `recordings`
-- **Key**: `'last'` (überschreibt immer)
-- **Value**: `{ wav: Uint8Array, manifest: null, savedAt: ISO-String }`
+- **Key**: eindeutige Take-ID/BaseName; Legacy-`'last'` bleibt lesbar, wenn WAV und Manifest vorhanden sind
+- **Value**: `{ id, baseName, wav: Uint8Array, sidecar, manifest: sidecar, savedAt: ISO-String }`
 
 ## Seite
 
@@ -92,6 +93,6 @@ PLOT_W = 930
 ## Zugriff aus Noten lesen
 
 In `js/games/sheetMusicReading/sheetMusicReading.js`:
-- Import: `saveLastRecording` aus `../../shared/audioAnalyseStorage.js`
-- Automatisches Speichern nach `stopRecording()`
-- Button `#btn-analyse-recording` navigiert zu `../audio-analyse/index.html`
+- Import: `saveSheetMusicTake` aus `../../shared/audioAnalyseStorage.js`
+- Automatisches Speichern vollständiger WAV+JSON-Takes nach `stopRecording()`
+- Ohne URL-Parameter lädt die Audio-Analyse beim Mount den neuesten vollständigen Notenlesen-Take automatisch

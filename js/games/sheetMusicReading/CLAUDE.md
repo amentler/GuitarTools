@@ -83,7 +83,8 @@ Optionaler Aktiv-Modus: Mikrofon-basierte Tonprüfung.
   - `?active=1` aktiviert den Aktivmodus direkt beim Laden
   - `window.__GT_SHEET_MUSIC_READING_BARS__` injiziert deterministische Notenfolgen
 - localStorage-Persistenz: `sheetMusic_active`, `sheetMusic_bpm`, `sheetMusic_timeSig`, `sheetMusic_showTab`, `sheetMusic_endless`; globale Strategy-Auswahl fuer diese Uebung: `gt_sheet_music_recognition_strategy`
-- Buttons: `#btn-sheet-active-mode`, `#btn-sheet-play` (Play/Stop), `#btn-new-bars`, `#btn-show-tab`, `#btn-endless-mode`, `#btn-record`, `#btn-record-stop`, `#btn-record-cancel`, `#btn-download-recordings`
+- Buttons: `#btn-sheet-active-mode`, `#btn-sheet-play` (Play/Stop), `#btn-new-bars`, `#btn-show-tab`, `#btn-endless-mode`, `#btn-record`, `#btn-record-stop`, `#btn-record-cancel`, `#btn-download-recordings`, `#btn-analyse-recording`, `#btn-open-recordings`
+- Aufnahmen: jeder Klick auf `Speichern` erzeugt einen dauerhaften WAV+JSON-Take in `audioAnalyseStorage`; der Session-Download exportiert nur die seit Mount erzeugten Takes als `<basename>.wav` + `<basename>.json`.
 - Slider: `#sheet-music-bpm-slider` (40–240), `#sheet-music-fret-range-slider`
 - Select: `#sheet-music-time-sig` (2/4|3/4|4/4|3/8|6/8)
 - `wired`-Flag verhindert doppeltes Event-Listener-Wiring

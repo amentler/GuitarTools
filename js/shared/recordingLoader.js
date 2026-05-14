@@ -1,4 +1,4 @@
-import { loadLastRecording } from './audioAnalyseStorage.js';
+import { loadLatestSheetMusicTake, loadSheetMusicTake } from './audioAnalyseStorage.js';
 
 const CHORD_DB_NAME = 'chord-recorder';
 const CHORD_STORE   = 'recordings';
@@ -27,14 +27,14 @@ async function loadChordRecordingById(id) {
 /**
  * Loads WAV bytes + manifest from any recording source.
  * @param {'sheet-music'|'chord-recorder'} source
- * @param {string} id  'last' for sheet-music, baseName for chord-recorder
+ * @param {string} id  take id for sheet-music, baseName for chord-recorder
  * @returns {Promise<{wav: Uint8Array, manifest: object|null}|null>}
  */
 export async function loadRecordingFromSource(source, id) {
   if (source === 'sheet-music') {
-    const entry = await loadLastRecording();
+    const entry = id ? await loadSheetMusicTake(id) : await loadLatestSheetMusicTake();
     if (!entry) return null;
-    return { wav: entry.wav, manifest: entry.manifest };
+    return { wav: entry.wav, manifest: entry.sidecar, sidecar: entry.sidecar, savedAt: entry.savedAt, id: entry.id };
   }
   if (source === 'chord-recorder') {
     const entry = await loadChordRecordingById(id);

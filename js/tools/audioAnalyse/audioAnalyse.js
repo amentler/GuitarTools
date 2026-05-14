@@ -7,7 +7,7 @@
  * Factory-Pattern: export function createAudioAnalyseFeature()
  */
 
-import { loadLastRecording } from '../../shared/audioAnalyseStorage.js';
+import { loadLatestSheetMusicTake } from '../../shared/audioAnalyseStorage.js';
 import { loadRecordingFromSource } from '../../shared/recordingLoader.js';
 import { decodeWav, analyzeAudio } from './audioAnalyseEngine.js';
 import {
@@ -57,7 +57,6 @@ export function createAudioAnalyseFeature() {
   function resolveUI(root) {
     const q = (id) => root.getElementById?.(id) ?? root.querySelector?.(`#${id}`) ?? document.getElementById(id);
     return {
-      loadLastBtn:    q('btn-load-last'),
       fileInput:      q('input-wav-file'),
       fileLabel:      q('label-wav-file'),
       dropzone:       q('analyse-dropzone'),
@@ -279,22 +278,24 @@ export function createAudioAnalyseFeature() {
     stopPlayback(ui);
   }
 
-  async function handleLoadLast(ui) {
-    showStatus(ui, 'Lade letzte Aufnahme aus IndexedDB…');
+  async function handleLoadLatest(ui, { silent = false } = {}) {
+    if (!silent) showStatus(ui, 'Lade neueste Notenlesen-Aufnahme aus IndexedDB…');
     let entry;
     try {
-      entry = await loadLastRecording();
+      entry = await loadLatestSheetMusicTake();
     } catch {
       showStatus(ui, 'IndexedDB-Fehler: Aufnahme konnte nicht geladen werden.', true);
       return;
     }
     if (!entry) {
-      showStatus(ui, 'Keine gespeicherte Aufnahme gefunden. Erstelle zuerst eine Aufnahme in „Noten lesen".', true);
+      if (!silent) {
+        showStatus(ui, 'Keine gespeicherte Aufnahme gefunden. Erstelle zuerst eine Aufnahme in „Noten lesen".', true);
+      }
       return;
     }
     const { wav, savedAt } = entry;
-    const filename = savedAt ? `Aufnahme vom ${new Date(savedAt).toLocaleString('de-DE')}` : 'Letzte Aufnahme';
-    await runAnalysis(ui, wav.buffer, filename, entry.manifest);
+    const filename = savedAt ? `Notenlesen · ${new Date(savedAt).toLocaleString('de-DE')}` : entry.baseName;
+    await runAnalysis(ui, wav.buffer, filename, entry.sidecar);
   }
 
   async function handleFileInput(ui, file) {
@@ -330,8 +331,6 @@ export function createAudioAnalyseFeature() {
     const ui = resolveUI(root);
 
     updateStrategyLabels(ui);
-
-    ui.loadLastBtn?.addEventListener('click', () => void handleLoadLast(ui));
 
     ui.fileInput?.addEventListener('change', async (e) => {
       const file = e.target.files?.[0];
@@ -374,8 +373,12 @@ export function createAudioAnalyseFeature() {
 
     const params = new URLSearchParams(window.location.search);
     const source = params.get('source');
-    const id     = params.get('id') ?? 'last';
-    if (source) void handleLoadFromSource(ui, source, id);
+    const id     = params.get('id') ?? '';
+    if (source) {
+      void handleLoadFromSource(ui, source, id);
+    } else {
+      void handleLoadLatest(ui, { silent: true });
+    }
   }
 
   async function handleLoadFromSource(ui, source, id) {
@@ -392,7 +395,7 @@ export function createAudioAnalyseFeature() {
       return;
     }
     const name = source === 'sheet-music'
-      ? `Notenlesen · ${new Date(entry.manifest?.savedAt ?? '').toLocaleString('de-DE')}`
+      ? `Notenlesen · ${new Date(entry.savedAt ?? entry.manifest?.recordedAt ?? '').toLocaleString('de-DE')}`
       : id;
     await runAnalysis(ui, entry.wav.buffer, name, entry.manifest);
   }

@@ -2,54 +2,31 @@ import {
   buildDisplayName,
   sortByDate,
 } from './recordingsOverviewLogic.js';
+import {
+  deleteSheetMusicTake,
+  listSheetMusicTakes,
+} from '../../shared/audioAnalyseStorage.js';
 
 // ── Sheet Music DB ────────────────────────────────────────────────────────────
 
-const SM_DB_NAME    = 'gt-audio-analyse-db';
-const SM_STORE_NAME = 'recordings';
-const SM_KEY        = 'last';
-
-function openSheetMusicDb() {
-  return new Promise((resolve, reject) => {
-    const req = indexedDB.open(SM_DB_NAME, 1);
-    req.onupgradeneeded = e => e.target.result.createObjectStore(SM_STORE_NAME);
-    req.onsuccess = e => resolve(e.target.result);
-    req.onerror   = () => reject(req.error);
-  });
-}
-
-export async function getSheetMusicRecordingMeta() {
+export async function getSheetMusicRecordingsMeta() {
   try {
-    const db = await openSheetMusicDb();
-    const entry = await new Promise((resolve, reject) => {
-      const tx  = db.transaction(SM_STORE_NAME, 'readonly');
-      const req = tx.objectStore(SM_STORE_NAME).get(SM_KEY);
-      req.onsuccess = () => { db.close(); resolve(req.result ?? null); };
-      req.onerror   = () => { db.close(); reject(req.error); };
-    });
-    if (!entry) return null;
-    return {
-      id: 'last',
+    const entries = await listSheetMusicTakes();
+    return entries.map(entry => ({
+      id: entry.id,
       source: 'sheet-music',
-      name: buildDisplayName('sheet-music', 'last', entry),
+      name: buildDisplayName('sheet-music', entry.id, entry),
       sizeBytes: entry.wav?.byteLength ?? 0,
       date: new Date(entry.savedAt ?? 0),
-      metadata: entry.manifest,
-    };
+      metadata: entry.sidecar,
+    }));
   } catch {
-    return null;
+    return [];
   }
 }
 
 export async function deleteSheetMusicRecording(id) {
-  if (id !== SM_KEY) return false;
-  const db = await openSheetMusicDb();
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(SM_STORE_NAME, 'readwrite');
-    tx.objectStore(SM_STORE_NAME).delete(SM_KEY);
-    tx.oncomplete = () => { db.close(); resolve(true); };
-    tx.onerror = () => { db.close(); reject(tx.error); };
-  });
+  return deleteSheetMusicTake(id);
 }
 
 // ── Chord Recorder DB ─────────────────────────────────────────────────────────
@@ -104,11 +81,11 @@ export async function deleteChordRecording(id) {
 // ── Combined ──────────────────────────────────────────────────────────────────
 
 export async function getAllRecordingsMeta() {
-  const [smEntry, crEntries] = await Promise.all([
-    getSheetMusicRecordingMeta(),
+  const [smEntries, crEntries] = await Promise.all([
+    getSheetMusicRecordingsMeta(),
     getChordRecordingsMeta(),
   ]);
-  const all = [...(smEntry ? [smEntry] : []), ...crEntries];
+  const all = [...smEntries, ...crEntries];
   return sortByDate(all);
 }
 

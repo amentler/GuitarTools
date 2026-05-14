@@ -31,6 +31,7 @@ const closeAudioSession = vi.fn();
 const recorderStart = vi.fn();
 const recorderStop = vi.fn();
 const recorderCancel = vi.fn();
+const saveSheetMusicTake = vi.fn().mockResolvedValue(undefined);
 const buildZip = vi.fn(() => new Uint8Array([1, 2, 3]));
 const downloadBlob = vi.fn();
 let mockedRowIndex = 0;
@@ -118,7 +119,7 @@ vi.mock('../../js/games/sheetMusicReading/sheetMusicZip.js', () => ({
 }));
 
 vi.mock('../../js/shared/audioAnalyseStorage.js', () => ({
-  saveLastRecording: vi.fn().mockResolvedValue(undefined),
+  saveSheetMusicTake,
 }));
 
 vi.mock('../../js/games/sheetMusicReading/sheetMusicLogic.js', async () => {
@@ -149,6 +150,8 @@ function buildDom() {
       <button id="btn-record-stop" class="u-hidden">Stop Recording</button>
       <button id="btn-record-cancel" class="u-hidden">Cancel Recording</button>
       <button id="btn-download-recordings" class="u-hidden">Download</button>
+      <button id="btn-analyse-recording" class="u-hidden">Analysieren</button>
+      <button id="btn-open-recordings">Aufnahmen</button>
       <input id="sheet-music-bpm-slider" value="80" />
       <span id="sheet-music-bpm-label">80</span>
       <select id="sheet-music-time-sig">
@@ -268,6 +271,8 @@ describe('SheetMusicReading controller behavior', () => {
       recorderRecording = false;
     });
     buildZip.mockClear();
+    saveSheetMusicTake.mockClear();
+    saveSheetMusicTake.mockResolvedValue(undefined);
     downloadBlob.mockClear();
     vi.stubGlobal('confirm', vi.fn(() => false));
     ({ createSheetMusicReadingFeature } = await import('../../js/games/sheetMusicReading/sheetMusicReading.js'));
@@ -440,5 +445,77 @@ describe('SheetMusicReading controller behavior', () => {
       expect.stringMatching(/^noten-lesen-aufnahmen-\d+\.zip$/),
       'application/zip',
     );
+  });
+
+  it('persists every saved recording as a distinct WAV and sidecar take', async () => {
+    const feature = createSheetMusicReadingFeature();
+    feature.mount();
+
+    recorderWav = new Uint8Array([1, 2, 3]);
+    document.getElementById('btn-record').click();
+    await Promise.resolve();
+    document.getElementById('btn-record-stop').click();
+    await Promise.resolve();
+    await Promise.resolve();
+
+    recorderWav = new Uint8Array([4, 5, 6]);
+    document.getElementById('btn-record').click();
+    await Promise.resolve();
+    document.getElementById('btn-record-stop').click();
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(saveSheetMusicTake).toHaveBeenCalledTimes(2);
+    expect(saveSheetMusicTake.mock.calls[0][0]).toEqual(new Uint8Array([1, 2, 3]));
+    expect(saveSheetMusicTake.mock.calls[1][0]).toEqual(new Uint8Array([4, 5, 6]));
+    expect(saveSheetMusicTake.mock.calls[0][1]).toMatchObject({ category: 'sheet-music-reading' });
+    expect(saveSheetMusicTake.mock.calls[1][1]).toMatchObject({ category: 'sheet-music-reading' });
+    expect(saveSheetMusicTake.mock.calls[0][2].baseName).not.toBe(saveSheetMusicTake.mock.calls[1][2].baseName);
+  });
+
+  it('does not persist or export an invalid recording without WAV data', async () => {
+    recorderWav = null;
+
+    const feature = createSheetMusicReadingFeature();
+    feature.mount();
+
+    document.getElementById('btn-record').click();
+    await Promise.resolve();
+    document.getElementById('btn-record-stop').click();
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(saveSheetMusicTake).not.toHaveBeenCalled();
+    document.getElementById('btn-download-recordings').click();
+    expect(buildZip).not.toHaveBeenCalled();
+  });
+
+  it('exports one WAV and one JSON file for each take created during the session', async () => {
+    const feature = createSheetMusicReadingFeature();
+    feature.mount();
+
+    recorderWav = new Uint8Array([1]);
+    document.getElementById('btn-record').click();
+    await Promise.resolve();
+    document.getElementById('btn-record-stop').click();
+    await Promise.resolve();
+    await Promise.resolve();
+
+    recorderWav = new Uint8Array([2]);
+    document.getElementById('btn-record').click();
+    await Promise.resolve();
+    document.getElementById('btn-record-stop').click();
+    await Promise.resolve();
+    await Promise.resolve();
+
+    document.getElementById('btn-download-recordings').click();
+
+    const files = buildZip.mock.calls.at(-1)[0];
+    const wavFiles = files.filter(file => file.name.endsWith('.wav'));
+    const jsonFiles = files.filter(file => file.name.endsWith('.json'));
+    expect(wavFiles).toHaveLength(2);
+    expect(jsonFiles).toHaveLength(2);
+    expect(wavFiles.map(file => file.name.replace(/\.wav$/, '')).sort())
+      .toEqual(jsonFiles.map(file => file.name.replace(/\.json$/, '')).sort());
   });
 });
