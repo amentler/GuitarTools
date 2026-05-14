@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval' 'unsafe-eval'; style-src 'self' 'unsafe-inline';" />
   <title>Akkordfolgen-Trainer - Gitarren-Lerntools</title>
   <link rel="stylesheet" href="../../style.css" />
 </head>
@@ -93,7 +94,7 @@
             <span class="aft-stat-label">Runden</span>
           </div>
         </div>
-        <div class="chord-controls" style="gap:0.5rem">
+        <div class="chord-controls">
           <button id="aft-again-btn" class="btn-start">Nochmal</button>
           <button id="aft-new-btn"   class="btn-mode">Neue Einstellungen</button>
         </div>

@@ -26,6 +26,7 @@ const PAGE_PRECACHED_URLS = [
   'pages/chord-recorder/bootstrap.js',
   'pages/audio-analyse/index.html',
   'pages/audio-analyse/bootstrap.js',
+  'pages/audio-analyse/style.css',
   'pages/fretboard-tone-recognition/index.html',
   'pages/fretboard-tone-recognition/bootstrap.js',
   'pages/guitar-tuner/index.html',
@@ -40,10 +41,13 @@ const PAGE_PRECACHED_URLS = [
   'pages/ton-finder/bootstrap.js',
   'pages/onset-tagger/index.html',
   'pages/onset-tagger/bootstrap.js',
+  'pages/onset-tagger/style.css',
   'pages/recordings/index.html',
   'pages/recordings/bootstrap.js',
+  'pages/recordings/style.css',
   'pages/settings/index.html',
   'pages/settings/bootstrap.js',
+  'pages/settings/style.css',
 ];
 
 const REQUIRED_URLS = [

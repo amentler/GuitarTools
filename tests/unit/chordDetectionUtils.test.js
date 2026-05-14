@@ -3,7 +3,7 @@ import {
   detectPeaksFromSpectrum,
   getChordNotes,
   identifyNotesFromPeaks,
-} from '../../js/utils/chordDetectionUtils.js';
+} from '../../js/domain/chords/chordDetectionLogic.js';
 
 describe('getChordNotes', () => {
   it('returns octave-aware sounding notes and excludes muted strings', () => {

@@ -135,14 +135,14 @@ function _renderNotation(bars, timeSignature = '4/4') {
   ctx.setStrokeStyle(fg);
 
   // Make SVG responsive.
-  // Set both attribute AND inline style — Firefox ignores CSS height:auto on SVG
-  // when a pixel height attribute is present, so we must override both.
+  // removeAttribute('height') strips VexFlow's pixel height so CSS height:auto
+  // takes effect in all browsers (Firefox ignores style.height when the attribute is present).
   const vfSvg = notationDiv.querySelector('svg');
   const applyResponsive = () => {
     if (!vfSvg) return;
     vfSvg.setAttribute('viewBox', `0 0 ${actualVW} ${VH}`);
     vfSvg.setAttribute('width', '100%');
-    vfSvg.setAttribute('height', 'auto');
+    vfSvg.removeAttribute('height');
     vfSvg.style.width   = '100%';
     vfSvg.style.height  = 'auto';
     vfSvg.style.display = 'block';

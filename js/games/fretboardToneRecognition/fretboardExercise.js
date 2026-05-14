@@ -1,7 +1,8 @@
 // Fretboard exercise – state management & DOM interaction
 // Encapsulates all state in a factory function for testability and isolation.
 
-import { CHROMATIC_NOTES, getNoteAtPosition, getRandomPosition, initGameState, evaluateAnswer } from './fretboardLogic.js';
+import { CHROMATIC_NOTES, getNoteAtPosition, getRandomPosition } from '../../domain/fretboard/fretboardLogic.js';
+import { initGameState, evaluateAnswer } from './fretboardLogic.js';
 import { wireStringToggles, syncStringToggles, wireFretSlider, syncFretSlider } from '../../utils/settings.js';
 import { getSetting, SETTING_KEYS } from '../../shared/globalSettings.js';
 import { createSrsStore, pickNextItem, recordResult } from '../../shared/learning/srsLogic.js';

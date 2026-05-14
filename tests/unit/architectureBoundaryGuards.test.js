@@ -3,6 +3,8 @@ import { readFileSync, readdirSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+const FILE_SIZE_LIMIT = 800;
+
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 
 function collectJsFiles(rootDir) {
@@ -63,6 +65,21 @@ function findForbiddenImports(rootDir, forbiddenPrefixes) {
   return violations;
 }
 
+function collectOversizedFiles(rootDir, limit, excludedDirs = []) {
+  const files = collectJsFiles(rootDir);
+  const violations = [];
+
+  for (const file of files) {
+    const rel = toRepoRelative(file);
+    if (excludedDirs.some((dir) => rel.startsWith(dir))) continue;
+
+    const lines = readFileSync(file, 'utf8').split('\n').length;
+    if (lines > limit) violations.push({ file: rel, lines });
+  }
+
+  return violations;
+}
+
 describe('architecture boundary guards', () => {
   it('keeps components free from feature/tool imports', () => {
     const violations = findForbiddenImports(path.join(repoRoot, 'js', 'components'), [
@@ -79,5 +96,13 @@ describe('architecture boundary guards', () => {
     ]);
 
     expect(violations).toEqual([]);
+  });
+
+  it(`keeps all JS files under ${FILE_SIZE_LIMIT} lines`, () => {
+    const violations = collectOversizedFiles(path.join(repoRoot, 'js'), FILE_SIZE_LIMIT, [
+      'js/lib/',
+    ]);
+
+    expect(violations, `Files exceeding ${FILE_SIZE_LIMIT} lines:\n${violations.map((v) => `  ${v.file} (${v.lines} lines)`).join('\n')}`).toEqual([]);
   });
 });

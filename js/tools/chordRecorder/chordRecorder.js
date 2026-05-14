@@ -740,8 +740,15 @@ export function createChordRecorderTool({
       await audio.open();
     } catch (err) {
       isSessionActive = false;
-      root.innerHTML = `<p class="cr-error">Mikrofon-Fehler: ${err.message}</p>
-        <button type="button" class="btn-back" onclick="history.back()">← Zurück</button>`;
+      const p = document.createElement('p');
+      p.className = 'cr-error';
+      p.textContent = `Mikrofon-Fehler: ${err.message}`;
+      const backButton = document.createElement('button');
+      backButton.type = 'button';
+      backButton.className = 'btn-back';
+      backButton.textContent = '← Zurück';
+      backButton.addEventListener('click', () => history.back());
+      root.replaceChildren(p, backButton);
       return;
     }
 
