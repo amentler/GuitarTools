@@ -42,6 +42,8 @@ const PAGE_PRECACHED_URLS = [
   'pages/onset-tagger/bootstrap.js',
   'pages/recordings/index.html',
   'pages/recordings/bootstrap.js',
+  'pages/settings/index.html',
+  'pages/settings/bootstrap.js',
 ];
 
 const REQUIRED_URLS = [

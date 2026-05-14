@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Einstellungen - Gitarren-Lerntools</title>
+  <link rel="stylesheet" href="../../style.css" />
+  <style>
+    .settings-page {
+      width: 100%;
+      max-width: 600px;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+      padding: 0.5rem 1rem 4rem;
+    }
+
+    .settings-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .settings-group__title {
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: var(--color-text-muted);
+      margin: 0 0 0.25rem;
+      padding-bottom: 0.4rem;
+      border-bottom: 1px solid var(--color-border);
+    }
+
+    .settings-app-row {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding-top: 0.5rem;
+      border-top: 1px solid var(--color-border);
+    }
+  </style>
+</head>
+<body>
+  <section id="view-settings" class="view active">
+    <gt-exercise-header title="Einstellungen"></gt-exercise-header>
+
+    <div class="settings-page">
+
+      <div class="settings-group">
+        <h3 class="settings-group__title">Allgemein</h3>
+
+        <label class="settings-item">
+          <span class="settings-item__label">
+            <input type="checkbox" id="setting-srs-enabled" class="settings-item__checkbox" checked>
+            Adaptives Lernen
+          </span>
+          <span class="settings-item__desc">Schwierige Aufgaben werden häufiger abgefragt</span>
+        </label>
+
+        <label class="settings-item">
+          <span class="settings-item__label">
+            <input type="checkbox" id="setting-chord-detection-use-essentia" class="settings-item__checkbox" checked>
+            Akkord-Erkennung mit Essentia / WASM
+          </span>
+          <span class="settings-item__desc">Gilt für Akkord spielen und Akkorde spielen; aus = Pure JS</span>
+        </label>
+      </div>
+
+      <div class="settings-group">
+        <h3 class="settings-group__title">Noten lesen</h3>
+
+        <label class="settings-item">
+          <span class="settings-item__label">Erkennungsstrategie</span>
+          <select id="setting-sheet-music-recognition-strategy" class="settings-item__select"></select>
+          <span class="settings-item__desc">Gilt nur für die gespielten Noten in der Übung Noten lesen</span>
+        </label>
+
+        <div class="settings-item">
+          <span class="settings-item__label">Onset-Strategie</span>
+          <div class="onset-strategy-picker" id="setting-sheet-music-onset-strategy-list"></div>
+          <span class="settings-item__desc">Anschlag-Erkennung für die Übung Noten lesen</span>
+        </div>
+      </div>
+
+      <div class="settings-group">
+        <h3 class="settings-group__title">Entwickler</h3>
+
+        <label class="settings-item">
+          <span class="settings-item__label">
+            <input type="checkbox" id="setting-debug-mode" class="settings-item__checkbox">
+            Debug-Modus
+          </span>
+        </label>
+
+        <div class="settings-item">
+          <button type="button" id="setting-debug-copy" class="btn-update">Debug-Daten kopieren</button>
+          <span id="setting-debug-copy-status" class="settings-item__desc" aria-live="polite"></span>
+        </div>
+      </div>
+
+      <div class="settings-app-row">
+        <button id="btn-update" class="btn-update">⟳ Neu laden</button>
+        <p id="app-version" class="app-version"></p>
+      </div>
+
+    </div>
+  </section>
+
+  <script type="module" src="./bootstrap.js"></script>
+</body>
+</html>

@@ -70,48 +70,10 @@
         <gt-menu-card icon="🏷️" title="Onset Tagger" href="pages/onset-tagger/index.html"></gt-menu-card>
 
         <gt-menu-card icon="🎙️" title="Aufnahmen" href="pages/recordings/index.html"></gt-menu-card>
+
+        <gt-menu-card icon="⚙️" title="Einstellungen" href="pages/settings/index.html"></gt-menu-card>
       </div>
     </div>
-
-    <details class="global-settings" id="global-settings">
-      <summary class="global-settings__summary">⚙ Einstellungen</summary>
-      <div class="global-settings__body">
-        <label class="settings-item">
-          <span class="settings-item__label">
-            <input type="checkbox" id="setting-debug-mode" class="settings-item__checkbox">
-            Debug-Modus
-          </span>
-        </label>
-        <div class="settings-item">
-          <button type="button" id="setting-debug-copy" class="btn-update">Debug-Daten kopieren</button>
-          <span id="setting-debug-copy-status" class="settings-item__desc" aria-live="polite"></span>
-        </div>
-        <label class="settings-item">
-          <span class="settings-item__label">
-            <input type="checkbox" id="setting-srs-enabled" class="settings-item__checkbox" checked>
-            Adaptives Lernen
-          </span>
-          <span class="settings-item__desc">Schwierige Aufgaben werden häufiger abgefragt</span>
-        </label>
-        <label class="settings-item">
-          <span class="settings-item__label">
-            <input type="checkbox" id="setting-chord-detection-use-essentia" class="settings-item__checkbox" checked>
-            Akkord-Erkennung mit Essentia / WASM
-          </span>
-          <span class="settings-item__desc">Gilt für Akkord spielen und Akkorde spielen; aus = Pure JS</span>
-        </label>
-        <label class="settings-item">
-          <span class="settings-item__label">Noten lesen: Erkennungsstrategie</span>
-          <select id="setting-sheet-music-recognition-strategy" class="settings-item__select"></select>
-          <span class="settings-item__desc">Gilt nur für die gespielten Noten in der Übung Noten lesen</span>
-        </label>
-        <div class="settings-item">
-          <span class="settings-item__label">Noten lesen: Onset-Strategie</span>
-          <div class="onset-strategy-picker" id="setting-sheet-music-onset-strategy-list"></div>
-          <span class="settings-item__desc">Anschlag-Erkennung für die Übung Noten lesen</span>
-        </div>
-      </div>
-    </details>
 
     <footer class="menu-footer">
       <button id="btn-update" class="btn-update">⟳ Neu laden</button>
