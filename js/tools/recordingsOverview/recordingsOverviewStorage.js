@@ -6,6 +6,7 @@ import {
   deleteSheetMusicTake,
   listSheetMusicTakes,
 } from '../../shared/audioAnalyseStorage.js';
+import { buildZip, downloadBlob } from '../../shared/zip.js';
 
 // ── Sheet Music DB ────────────────────────────────────────────────────────────
 
@@ -93,4 +94,87 @@ export async function deleteRecordingBySource(source, id) {
   if (source === 'sheet-music') return deleteSheetMusicRecording(id);
   if (source === 'chord-recorder') return deleteChordRecording(id);
   return false;
+}
+
+// ── Bulk delete ───────────────────────────────────────────────────────────────
+
+export async function deleteAllSheetMusicRecordings() {
+  const takes = await listSheetMusicTakes();
+  await Promise.all(takes.map(t => deleteSheetMusicTake(t.id)));
+}
+
+export async function deleteAllChordRecordings() {
+  const db = await openChordRecorderDb();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(CR_STORE_NAME, 'readwrite');
+    tx.objectStore(CR_STORE_NAME).clear();
+    tx.oncomplete = () => { db.close(); resolve(true); };
+    tx.onerror = () => { db.close(); reject(tx.error); };
+  });
+}
+
+export async function deleteAllRecordings() {
+  await Promise.all([deleteAllSheetMusicRecordings(), deleteAllChordRecordings()]);
+}
+
+export async function deleteRecordingsByIds(pairs) {
+  await Promise.all(pairs.map(({ source, id }) => deleteRecordingBySource(source, id)));
+}
+
+// ── Full data retrieval for ZIP export ────────────────────────────────────────
+
+/**
+ * @param {{ source: string, id: string, name: string }[]} recordings
+ * @returns {Promise<{ name: string, wav: Uint8Array, sidecarJson?: string }[]>}
+ */
+export async function getRecordingsForZip(recordings) {
+  const enc = new TextEncoder();
+  const results = [];
+
+  const smIds = new Set(recordings.filter(r => r.source === 'sheet-music').map(r => r.id));
+  const crIds = new Set(recordings.filter(r => r.source === 'chord-recorder').map(r => r.id));
+
+  if (smIds.size > 0) {
+    const takes = await listSheetMusicTakes();
+    for (const take of takes) {
+      if (!smIds.has(take.id)) continue;
+      const baseName = take.baseName ?? take.id;
+      results.push({ name: `${baseName}.wav`, wav: take.wav });
+      if (take.sidecar) {
+        results.push({ name: `${baseName}.json`, wav: enc.encode(JSON.stringify(take.sidecar, null, 2)) });
+      }
+    }
+  }
+
+  if (crIds.size > 0) {
+    const db = await openChordRecorderDb();
+    const entries = await new Promise((resolve, reject) => {
+      const tx = db.transaction(CR_STORE_NAME, 'readonly');
+      const req = tx.objectStore(CR_STORE_NAME).getAll();
+      req.onsuccess = () => { db.close(); resolve(req.result); };
+      req.onerror = () => { db.close(); reject(req.error); };
+    });
+    for (const entry of entries) {
+      if (!crIds.has(entry.baseName)) continue;
+      const wavData = new Uint8Array(await entry.wavBlob.arrayBuffer());
+      results.push({ name: `${entry.baseName}.wav`, wav: wavData });
+      if (entry.sidecar) {
+        results.push({ name: `${entry.baseName}.json`, wav: enc.encode(JSON.stringify(entry.sidecar, null, 2)) });
+      }
+    }
+  }
+
+  return results;
+}
+
+/**
+ * Builds and triggers a ZIP download for the given recordings.
+ * @param {{ source: string, id: string, name: string }[]} recordings
+ * @param {string} zipName
+ */
+export async function downloadRecordingsAsZip(recordings, zipName) {
+  if (recordings.length === 0) return;
+  const files = await getRecordingsForZip(recordings);
+  if (files.length === 0) return;
+  downloadBlob(buildZip(files.map(f => ({ name: f.name, data: f.wav }))), zipName, 'application/zip');
 }

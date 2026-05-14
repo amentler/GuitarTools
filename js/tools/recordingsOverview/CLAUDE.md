@@ -1,15 +1,16 @@
 # recordingsOverview — Aufnahmen-Übersicht
 
-Zeigt alle gespeicherten Aufnahmen aus beiden IndexedDB-Quellen in einer Liste an.
-Der Nutzer wählt eine Aufnahme aus und öffnet sie direkt in der Audio-Analyse oder im Onset Tagger.
+Zeigt alle gespeicherten Aufnahmen aus beiden IndexedDB-Quellen in einer Mehrfachauswahl-Liste an.
+Der Nutzer kann einzelne oder mehrere Aufnahmen per Checkbox auswählen, als ZIP herunterladen oder löschen.
+Bulk-Aktionen erlauben Download und Löschen nach Quelle (Noten lesen / Akkord-Recorder).
 
 ## Dateien
 
 | Datei | Zweck |
 |---|---|
-| `recordingsOverview.js` | UI-Feature (`createRecordingsOverviewFeature`): Liste rendern, Auswahl, Navigation |
-| `recordingsOverviewStorage.js` | IndexedDB-Lesezugriffe auf `gt-audio-analyse-db` und `chord-recorder` |
-| `recordingsOverviewLogic.js` | Pure Hilfsfunktionen: Dateigröße, Datum, Anzeigename, URL-Builder, Sortierung |
+| `recordingsOverview.js` | UI-Feature (`createRecordingsOverviewFeature`): Multi-Select, ZIP-Download, Bulk-Löschen, Navigation |
+| `recordingsOverviewStorage.js` | IndexedDB-Zugriffe: Metadaten, Bulk-Löschen, WAV-Daten für ZIP-Export |
+| `recordingsOverviewLogic.js` | Pure Hilfsfunktionen: Dateigröße, Datum, Anzeigename, URL-Builder, Sortierung, `buildZipEntryName` |
 
 ## Quellen
 
@@ -20,11 +21,23 @@ Der Nutzer wählt eine Aufnahme aus und öffnet sie direkt in der Audio-Analyse 
 
 ## Navigation
 
-- Button „Audio-Analyse öffnen" → `../audio-analyse/index.html?source=<source>&id=<id>`
-- Button „Onset Tagger öffnen" → `../onset-tagger/index.html?source=<source>&id=<id>`
+- Button „Analyse öffnen" → `../audio-analyse/index.html?source=<source>&id=<id>` (nur bei genau 1 Auswahl)
+- Button „Onset Tagger öffnen" → `../onset-tagger/index.html?source=<source>&id=<id>` (nur bei genau 1 Auswahl)
 
-Sowohl `audioAnalyse.js` als auch `onsetTagger.js` lesen diese URL-Parameter beim Mount
-und laden die Aufnahme automatisch über `js/shared/recordingLoader.js`.
+## Aktionen
+
+### Auswahl-Aktionen (sichtbar wenn ≥1 Checkbox aktiv)
+- 📊 Analyse öffnen / 🏷️ Onset Tagger öffnen (nur bei genau 1 Auswahl aktiviert)
+- 📥 Als ZIP herunterladen
+- 🗑 Auswahl löschen
+
+### Bulk-Aktionen (sichtbar wenn Aufnahmen vorhanden)
+- 📥 Alle als ZIP / Noten-lesen als ZIP / Akkord als ZIP
+- 🗑 Alle löschen / Alle Noten-lesen löschen / Alle Akkord löschen
+
+## ZIP-Infrastruktur
+
+Verwendet `js/shared/zip.js` (`buildZip`, `downloadBlob`) — das zentrale ZIP-Modul für alle Tools.
 
 ## Seite
 
@@ -34,4 +47,5 @@ und laden die Aufnahme automatisch über `js/shared/recordingLoader.js`.
 
 ## Tests
 
-- Unit: `tests/unit/recordingsOverviewLogic.test.js` — 21 Tests
+- Unit: `tests/unit/recordingsOverviewLogic.test.js` — 28 Tests (inkl. `buildZipEntryName`)
+- E2E: `tests/e2e/recordings-overview.spec.js` — 5 Playwright-Tests (Seite, Seeding, Checkbox, ZIP-Download)

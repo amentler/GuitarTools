@@ -21,7 +21,7 @@ import {
   updateOnsetMarkers,
 } from './onsetTaggerWaveform.js';
 
-import { buildZip, downloadBlob } from './onsetTaggerZip.js';
+import { buildZip, downloadBlob } from '../../shared/zip.js';
 
 const DEFAULT_SIDECAR_FIELDS = {
   // Routing

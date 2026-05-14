@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { crc32, buildZip } from '../../js/tools/chordRecorder/chordRecorderFiles.js';
+import { crc32, buildZip } from '../../js/shared/zip.js';
 
 const enc = new TextEncoder();
 

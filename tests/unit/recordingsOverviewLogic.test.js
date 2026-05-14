@@ -6,6 +6,7 @@ import {
   buildAudioAnalyseUrl,
   buildOnsetTaggerUrl,
   sortByDate,
+  buildZipEntryName,
 } from '../../js/tools/recordingsOverview/recordingsOverviewLogic.js';
 
 describe('formatFileSize', () => {
@@ -117,5 +118,42 @@ describe('sortByDate', () => {
     ];
     sortByDate(recordings);
     expect(recordings[0].id).toBe('a');
+  });
+});
+
+describe('buildZipEntryName', () => {
+  it('returns date-based name for sheet-music with savedAt', () => {
+    const result = buildZipEntryName('sheet-music', 'take-42', { savedAt: '2026-01-15T10:00:00.000Z' });
+    expect(result).toBe('notenlesen_2026-01-15');
+  });
+
+  it('falls back to id for sheet-music without savedAt', () => {
+    const result = buildZipEntryName('sheet-music', 'take-42', null);
+    expect(result).toBe('notenlesen_take-42');
+  });
+
+  it('returns chord+technique name for chord-recorder with metadata', () => {
+    const result = buildZipEntryName('chord-recorder', 'am_fingerpick_abc12', { chord: 'Am', technique: 'fingerpick' });
+    expect(result).toBe('Am_fingerpick');
+  });
+
+  it('returns only chord for chord-recorder when technique is missing', () => {
+    const result = buildZipEntryName('chord-recorder', 'am_abc12', { chord: 'Am' });
+    expect(result).toBe('Am');
+  });
+
+  it('returns id for chord-recorder without metadata', () => {
+    const result = buildZipEntryName('chord-recorder', 'some-id', null);
+    expect(result).toBe('some-id');
+  });
+
+  it('strips special characters from chord-recorder name', () => {
+    const result = buildZipEntryName('chord-recorder', 'id', { chord: 'A#m', technique: 'down/up' });
+    expect(result).toMatch(/^[a-zA-Z0-9_-]+$/);
+  });
+
+  it('returns id for unknown source', () => {
+    const result = buildZipEntryName('unknown-source', 'my-id', {});
+    expect(result).toBe('my-id');
   });
 });

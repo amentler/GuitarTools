@@ -113,7 +113,7 @@ vi.mock('../../js/shared/browserEnvironment.js', () => ({
   }),
 }));
 
-vi.mock('../../js/games/sheetMusicReading/sheetMusicZip.js', () => ({
+vi.mock('../../js/shared/zip.js', () => ({
   buildZip,
   downloadBlob,
 }));

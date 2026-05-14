@@ -36,3 +36,24 @@ export function buildOnsetTaggerUrl(source, id) {
 export function sortByDate(recordings) {
   return [...recordings].sort((a, b) => b.date - a.date);
 }
+
+/**
+ * Builds a safe filesystem name (without extension) for a ZIP entry.
+ * @param {string} source  'sheet-music' | 'chord-recorder'
+ * @param {string} id
+ * @param {object|null} metadata
+ * @returns {string}
+ */
+export function buildZipEntryName(source, id, metadata) {
+  if (source === 'sheet-music') {
+    const date = metadata?.savedAt
+      ? new Date(metadata.savedAt).toISOString().slice(0, 10)
+      : null;
+    return date ? `notenlesen_${date}` : `notenlesen_${id}`;
+  }
+  if (source === 'chord-recorder') {
+    const parts = [metadata?.chord, metadata?.technique].filter(Boolean);
+    return parts.length ? parts.join('_').replace(/[^a-zA-Z0-9_-]/g, '') : id;
+  }
+  return id;
+}

@@ -46,6 +46,9 @@ describe('Page structure smoke', () => {
 
     expect(html).toContain('id="btn-open-analyse"');
     expect(html).toContain('id="btn-open-tagger"');
-    expect(html).toContain('id="btn-delete-recording"');
+    expect(html).toContain('id="btn-delete-selected"');
+    expect(html).toContain('id="btn-download-selected"');
+    expect(html).toContain('id="btn-dl-all"');
+    expect(html).toContain('id="btn-del-all"');
   });
 });

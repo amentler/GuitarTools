@@ -1,7 +1,6 @@
 /**
- * sheetMusicZip.js
+ * zip.js — Shared Store-mode ZIP encoder (no compression, no external deps).
  *
- * Minimal Store-mode ZIP encoder (no compression, no external deps).
  * Implements Local File Headers, Central Directory Records, and
  * End of Central Directory (EOCD). Includes correct CRC-32 calculation.
  */
@@ -26,7 +25,7 @@ const CRC_TABLE = (() => {
  * @param {Uint8Array} data
  * @returns {number} unsigned 32-bit CRC
  */
-function crc32(data) {
+export function crc32(data) {
   let crc = 0xFFFFFFFF;
   for (let i = 0; i < data.length; i++) {
     crc = CRC_TABLE[(crc ^ data[i]) & 0xFF] ^ (crc >>> 8);
@@ -62,7 +61,6 @@ export function buildZip(files) {
     const crc = crc32(data);
     const size = data.length;
 
-    // Local file header (30 bytes) + name + data
     const headerSize = 30 + nameBytes.length;
     const localBuf = new ArrayBuffer(headerSize);
     const lv = new DataView(localBuf);

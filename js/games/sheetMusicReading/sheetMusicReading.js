@@ -40,7 +40,7 @@ import {
   closeAudioSession,
 } from '../../shared/audio/audioSessionService.js';
 import { createRecorder } from './sheetMusicRecorder.js';
-import { buildZip, downloadBlob } from './sheetMusicZip.js';
+import { buildZip, downloadBlob } from '../../shared/zip.js';
 import { saveSheetMusicTake } from '../../shared/audioAnalyseStorage.js';
 import { collectBrowserEnvironment } from '../../shared/browserEnvironment.js';
 import { getEssentia } from '../chordExerciseEssentia/essentiaLoader.js';

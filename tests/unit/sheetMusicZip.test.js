@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildZip } from '../../js/games/sheetMusicReading/sheetMusicZip.js';
+import { buildZip } from '../../js/shared/zip.js';
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 

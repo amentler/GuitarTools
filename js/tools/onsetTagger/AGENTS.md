@@ -6,14 +6,14 @@ Scope: `js/tools/onsetTagger/` and the matching page in `pages/onset-tagger/`.
 
 - This browser tool manually annotates onset timestamps in guitar recordings and exports WAV plus JSON sidecars.
 - Read `CLAUDE.md` in this folder before changing behavior; it documents the workflow, sidecar format, and import route.
-- The ZIP helper is shared from `js/games/sheetMusicReading/sheetMusicZip.js`.
+- The ZIP helper is now in `js/shared/zip.js` (shared across all tools).
 
 ## Boundaries
 
 - Keep controller state, file loading, playback, slider wiring, URL parameter handling, and export orchestration in `onsetTagger.js`.
 - Keep pure timestamp, range, envelope, playhead, and sidecar helpers in `onsetTaggerLogic.js`.
 - Keep SVG waveform rendering and marker/playhead updates in `onsetTaggerWaveform.js`.
-- Keep ZIP assembly/download integration in `onsetTaggerZip.js`.
+- Keep ZIP assembly/download integration in `onsetTagger.js` (ZIP utilities are in `js/shared/zip.js`).
 - Preserve the exported `onsetsMs` sidecar field; fixture import scripts depend on it.
 
 ## Tests

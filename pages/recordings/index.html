@@ -25,14 +25,9 @@
     }
 
     .recordings-item {
-      display: flex;
-      flex-direction: column;
-      gap: 0.2rem;
-      padding: 0.75rem 1rem;
       border-radius: var(--radius);
       border: 1px solid var(--color-border);
       background: var(--color-surface);
-      cursor: pointer;
       transition: border-color 0.15s, background 0.15s;
     }
 
@@ -43,6 +38,31 @@
     .recordings-item--selected {
       border-color: var(--color-accent);
       background: color-mix(in srgb, var(--color-accent) 10%, var(--color-surface));
+    }
+
+    .recordings-item__label {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.75rem;
+      padding: 0.75rem 1rem;
+      cursor: pointer;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    .recordings-item__check {
+      margin-top: 0.2rem;
+      flex-shrink: 0;
+      accent-color: var(--color-accent);
+      width: 1.1rem;
+      height: 1.1rem;
+    }
+
+    .recordings-item__info {
+      display: flex;
+      flex-direction: column;
+      gap: 0.2rem;
+      min-width: 0;
     }
 
     .recordings-item__badge {
@@ -78,6 +98,16 @@
       padding: 0.5rem 0;
     }
 
+    .recordings-actions__section-label {
+      width: 100%;
+      font-size: 0.78rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--color-text-muted);
+      margin-bottom: 0.1rem;
+    }
+
     .recordings-actions__delete {
       border-color: #c0392b;
       color: #c0392b;
@@ -85,6 +115,20 @@
 
     .recordings-actions__delete:hover:not(:disabled) {
       background: #fdf0ee;
+    }
+
+    .recordings-bulk-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      border-top: 1px solid var(--color-border);
+      padding-top: 0.75rem;
+    }
+
+    .recordings-bulk-row {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
     }
   </style>
 </head>
@@ -95,10 +139,30 @@
     <div class="recordings-container">
       <ul id="recordings-list" class="recordings-list"></ul>
       <p id="recordings-empty" class="recordings-empty u-hidden">Keine Aufnahmen vorhanden.</p>
-      <div id="recordings-actions" class="recordings-actions u-hidden">
-        <button id="btn-open-analyse" class="btn-play-stop">📊 Audio-Analyse öffnen</button>
-        <button id="btn-open-tagger" class="btn-play-stop">🏷️ Onset Tagger öffnen</button>
-        <button id="btn-delete-recording" class="btn-play-stop recordings-actions__delete">🗑 Aufnahme löschen</button>
+
+      <!-- Auswahl-Aktionen (sichtbar wenn ≥1 ausgewählt) -->
+      <div id="recordings-selection-actions" class="recordings-actions u-hidden">
+        <span class="recordings-actions__section-label">Auswahl</span>
+        <button id="btn-open-analyse"    class="btn-play-stop" disabled>📊 Analyse öffnen</button>
+        <button id="btn-open-tagger"     class="btn-play-stop" disabled>🏷️ Onset Tagger öffnen</button>
+        <button id="btn-download-selected" class="btn-play-stop">📥 Als ZIP herunterladen</button>
+        <button id="btn-delete-selected" class="btn-play-stop recordings-actions__delete">🗑 Auswahl löschen</button>
+      </div>
+
+      <!-- Bulk-Aktionen (sichtbar wenn Aufnahmen vorhanden) -->
+      <div id="recordings-bulk-actions" class="recordings-bulk-actions u-hidden">
+        <span class="recordings-actions__section-label">Downloads</span>
+        <div class="recordings-bulk-row">
+          <button id="btn-dl-all"   class="btn-play-stop">📥 Alle als ZIP</button>
+          <button id="btn-dl-sheet" class="btn-play-stop">📥 Noten-lesen als ZIP</button>
+          <button id="btn-dl-chord" class="btn-play-stop">📥 Akkord als ZIP</button>
+        </div>
+        <span class="recordings-actions__section-label">Löschen</span>
+        <div class="recordings-bulk-row">
+          <button id="btn-del-all"   class="btn-play-stop recordings-actions__delete">🗑 Alle löschen</button>
+          <button id="btn-del-sheet" class="btn-play-stop recordings-actions__delete">🗑 Alle Noten-lesen</button>
+          <button id="btn-del-chord" class="btn-play-stop recordings-actions__delete">🗑 Alle Akkord</button>
+        </div>
       </div>
     </div>
   </section>

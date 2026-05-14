@@ -1,6 +1,10 @@
 import {
-  deleteRecordingBySource,
   getAllRecordingsMeta,
+  deleteAllSheetMusicRecordings,
+  deleteAllChordRecordings,
+  deleteAllRecordings,
+  deleteRecordingsByIds,
+  downloadRecordingsAsZip,
 } from './recordingsOverviewStorage.js';
 import {
   formatFileSize,
@@ -11,77 +15,166 @@ import {
 
 export function createRecordingsOverviewFeature() {
   let _root       = null;
-  let _selected   = null;
-  let _recordings = [];
+  /** @type {Set<string>} keys are `${source}:${id}` */
+  let _selectedKeys = new Set();
+  let _recordings   = [];
+
+  function recKey(rec) { return `${rec.source}:${rec.id}`; }
 
   function resolveUI() {
     const q = id => _root.getElementById?.(id) ?? _root.querySelector?.(`#${id}`) ?? document.getElementById(id);
     return {
-      list:       q('recordings-list'),
-      actions:    q('recordings-actions'),
-      analyseBtn: q('btn-open-analyse'),
-      taggerBtn:  q('btn-open-tagger'),
-      deleteBtn:  q('btn-delete-recording'),
-      emptyMsg:   q('recordings-empty'),
+      list:              q('recordings-list'),
+      emptyMsg:          q('recordings-empty'),
+      selectionActions:  q('recordings-selection-actions'),
+      analyseBtn:        q('btn-open-analyse'),
+      taggerBtn:         q('btn-open-tagger'),
+      downloadSelBtn:    q('btn-download-selected'),
+      deleteSelBtn:      q('btn-delete-selected'),
+      bulkActions:       q('recordings-bulk-actions'),
+      dlAllBtn:          q('btn-dl-all'),
+      dlSheetBtn:        q('btn-dl-sheet'),
+      dlChordBtn:        q('btn-dl-chord'),
+      delAllBtn:         q('btn-del-all'),
+      delSheetBtn:       q('btn-del-sheet'),
+      delChordBtn:       q('btn-del-chord'),
     };
   }
 
+  function updateActionVisibility(ui) {
+    const count = _selectedKeys.size;
+    const hasSel = count > 0;
+    const hasRecs = _recordings.length > 0;
+
+    ui.selectionActions?.classList.toggle('u-hidden', !hasSel);
+    ui.bulkActions?.classList.toggle('u-hidden', !hasRecs);
+
+    // Analyse/Tagger only usable when exactly one recording is selected
+    const exactlyOne = count === 1;
+    if (ui.analyseBtn) ui.analyseBtn.disabled = !exactlyOne;
+    if (ui.taggerBtn)  ui.taggerBtn.disabled  = !exactlyOne;
+  }
+
   function renderList(ui) {
-    const { list, emptyMsg, actions } = ui;
+    const { list, emptyMsg } = ui;
     list.innerHTML = '';
     if (_recordings.length === 0) {
       emptyMsg?.classList.remove('u-hidden');
-      actions?.classList.add('u-hidden');
+      updateActionVisibility(ui);
       return;
     }
     emptyMsg?.classList.add('u-hidden');
 
     for (const rec of _recordings) {
+      const key = recKey(rec);
       const li = document.createElement('li');
       li.className = 'recordings-item';
+      if (_selectedKeys.has(key)) li.classList.add('recordings-item--selected');
       li.dataset.id     = rec.id;
       li.dataset.source = rec.source;
 
       const badge = rec.source === 'sheet-music' ? 'Noten lesen' : 'Akkord-Recorder';
       li.innerHTML = `
-        <span class="recordings-item__badge">${badge}</span>
-        <span class="recordings-item__name">${rec.name}</span>
-        <span class="recordings-item__meta">${formatFileSize(rec.sizeBytes)} · ${formatDate(rec.date?.toISOString())}</span>
+        <label class="recordings-item__label">
+          <input type="checkbox" class="recordings-item__check" ${_selectedKeys.has(key) ? 'checked' : ''}>
+          <span class="recordings-item__info">
+            <span class="recordings-item__badge">${badge}</span>
+            <span class="recordings-item__name">${rec.name}</span>
+            <span class="recordings-item__meta">${formatFileSize(rec.sizeBytes)} · ${formatDate(rec.date?.toISOString())}</span>
+          </span>
+        </label>
       `;
 
-      li.addEventListener('click', () => selectRecording(li, rec, ui));
+      const checkbox = li.querySelector('.recordings-item__check');
+      checkbox.addEventListener('change', () => {
+        if (checkbox.checked) {
+          _selectedKeys.add(key);
+          li.classList.add('recordings-item--selected');
+        } else {
+          _selectedKeys.delete(key);
+          li.classList.remove('recordings-item--selected');
+        }
+        updateActionVisibility(ui);
+      });
+
       list.appendChild(li);
     }
-  }
-
-  function selectRecording(li, rec, ui) {
-    _selected = rec;
-    _root.querySelectorAll('.recordings-item--selected')
-      .forEach(el => el.classList.remove('recordings-item--selected'));
-    li.classList.add('recordings-item--selected');
-    ui.actions.classList.remove('u-hidden');
+    updateActionVisibility(ui);
   }
 
   async function refreshList(ui) {
     _recordings = await getAllRecordingsMeta();
+    // Remove stale keys
+    const validKeys = new Set(_recordings.map(recKey));
+    for (const k of _selectedKeys) {
+      if (!validKeys.has(k)) _selectedKeys.delete(k);
+    }
     renderList(ui);
   }
 
-  async function deleteSelectedRecording(ui) {
-    if (!_selected) return;
-    if (!confirm('Diese Aufnahme unwiderruflich löschen?')) return;
+  function getSelectedRecordings() {
+    return _recordings.filter(r => _selectedKeys.has(recKey(r)));
+  }
 
-    const deleteBtn = ui.deleteBtn;
-    if (deleteBtn) deleteBtn.disabled = true;
+  function getSingleSelected() {
+    if (_selectedKeys.size !== 1) return null;
+    const [key] = _selectedKeys;
+    return _recordings.find(r => recKey(r) === key) ?? null;
+  }
+
+  async function handleDeleteSelected(ui) {
+    const sel = getSelectedRecordings();
+    if (sel.length === 0) return;
+    if (!confirm(`${sel.length} Aufnahme(n) unwiderruflich löschen?`)) return;
+    if (ui.deleteSelBtn) ui.deleteSelBtn.disabled = true;
     try {
-      await deleteRecordingBySource(_selected.source, _selected.id);
-      _selected = null;
-      ui.actions?.classList.add('u-hidden');
+      await deleteRecordingsByIds(sel.map(r => ({ source: r.source, id: r.id })));
+      _selectedKeys.clear();
       await refreshList(ui);
     } catch {
-      alert('Aufnahme konnte nicht gelöscht werden.');
+      alert('Fehler beim Löschen.');
     } finally {
-      if (deleteBtn) deleteBtn.disabled = false;
+      if (ui.deleteSelBtn) ui.deleteSelBtn.disabled = false;
+    }
+  }
+
+  async function handleBulkDelete(ui, btn, deleteFn, label) {
+    if (!confirm(`Alle ${label}-Aufnahmen unwiderruflich löschen?`)) return;
+    if (btn) btn.disabled = true;
+    try {
+      await deleteFn();
+      _selectedKeys.clear();
+      await refreshList(ui);
+    } catch {
+      alert('Fehler beim Löschen.');
+    } finally {
+      if (btn) btn.disabled = false;
+    }
+  }
+
+  async function handleDownloadSelected(ui) {
+    const sel = getSelectedRecordings();
+    if (sel.length === 0) return;
+    if (ui.downloadSelBtn) ui.downloadSelBtn.disabled = true;
+    try {
+      await downloadRecordingsAsZip(sel, `aufnahmen-auswahl-${Date.now()}.zip`);
+    } catch {
+      alert('ZIP-Download fehlgeschlagen.');
+    } finally {
+      if (ui.downloadSelBtn) ui.downloadSelBtn.disabled = false;
+    }
+  }
+
+  async function handleDownloadAll(ui, btn, filter, zipName) {
+    const recs = filter ? _recordings.filter(r => r.source === filter) : _recordings;
+    if (recs.length === 0) return;
+    if (btn) btn.disabled = true;
+    try {
+      await downloadRecordingsAsZip(recs, zipName);
+    } catch {
+      alert('ZIP-Download fehlgeschlagen.');
+    } finally {
+      if (btn) btn.disabled = false;
     }
   }
 
@@ -89,21 +182,31 @@ export function createRecordingsOverviewFeature() {
     _root = root;
     const ui = resolveUI();
 
-    ui.actions?.classList.add('u-hidden');
+    ui.selectionActions?.classList.add('u-hidden');
+    ui.bulkActions?.classList.add('u-hidden');
 
     ui.analyseBtn?.addEventListener('click', () => {
-      if (!_selected) return;
-      window.location.href = buildAudioAnalyseUrl(_selected.source, _selected.id);
+      const rec = getSingleSelected();
+      if (!rec) return;
+      window.location.href = buildAudioAnalyseUrl(rec.source, rec.id);
     });
 
     ui.taggerBtn?.addEventListener('click', () => {
-      if (!_selected) return;
-      window.location.href = buildOnsetTaggerUrl(_selected.source, _selected.id);
+      const rec = getSingleSelected();
+      if (!rec) return;
+      window.location.href = buildOnsetTaggerUrl(rec.source, rec.id);
     });
 
-    ui.deleteBtn?.addEventListener('click', () => {
-      void deleteSelectedRecording(ui);
-    });
+    ui.downloadSelBtn?.addEventListener('click', () => void handleDownloadSelected(ui));
+    ui.deleteSelBtn?.addEventListener('click',   () => void handleDeleteSelected(ui));
+
+    ui.dlAllBtn?.addEventListener('click',   () => void handleDownloadAll(ui, ui.dlAllBtn,   null,            `alle-aufnahmen-${Date.now()}.zip`));
+    ui.dlSheetBtn?.addEventListener('click', () => void handleDownloadAll(ui, ui.dlSheetBtn, 'sheet-music',   `notenlesen-aufnahmen-${Date.now()}.zip`));
+    ui.dlChordBtn?.addEventListener('click', () => void handleDownloadAll(ui, ui.dlChordBtn, 'chord-recorder',`akkord-aufnahmen-${Date.now()}.zip`));
+
+    ui.delAllBtn?.addEventListener('click',   () => void handleBulkDelete(ui, ui.delAllBtn,   deleteAllRecordings,           'alle'));
+    ui.delSheetBtn?.addEventListener('click', () => void handleBulkDelete(ui, ui.delSheetBtn, deleteAllSheetMusicRecordings, 'Noten-lesen'));
+    ui.delChordBtn?.addEventListener('click', () => void handleBulkDelete(ui, ui.delChordBtn, deleteAllChordRecordings,      'Akkord-Recorder'));
 
     refreshList(ui).catch(() => {
       if (ui.emptyMsg) {
@@ -114,8 +217,8 @@ export function createRecordingsOverviewFeature() {
   }
 
   function unmount() {
-    _root     = null;
-    _selected = null;
+    _root        = null;
+    _selectedKeys = new Set();
   }
 
   return { mount, unmount };
