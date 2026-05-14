@@ -1,50 +1,23 @@
 # Codex – Ist-Zustand GuitarTools
 
-Stand: 2026-04-21
+Dieses Dokument beschreibt den technischen Ist-Zustand des Projekts.
+
+> **Operational Mandates:** All AI agents MUST follow the rules in [AGENTS.md](AGENTS.md).
 
 ## 1) Projektüberblick
 
-- Stack: Vanilla HTML/CSS/JS (ES Modules), SVG-Rendering, Web Audio API, PWA (Service Worker + Manifest)
-- Kein Build-Step, direkte Ausführung als statische GitHub-Pages-App
-- Hauptbereiche:
-  - `index.html`, `style.css`, `js/app.js` (Navigation/View-Wechsel)
-  - Übungen unter `js/games/*`
-  - Tools unter `js/tools/*`
-  - Laufzeit-Registry unter `js/exerciseRegistry.js`
-  - Roadmap in `plans/*.md`
+- **Stack:** Vanilla HTML/CSS/JS (ES Modules), SVG-Rendering, Web Audio API, PWA (Service Worker + Manifest).
+- **Deployment:** Keine Build-Pipeline, statische GitHub Pages.
+- **Hauptbereiche:**
+  - `index.html`, `style.css`, `js/app.js` (Navigation/View-Wechsel).
+  - Übungen unter `js/games/*`.
+  - Tools unter `js/tools/*`.
+  - Laufzeit-Registry unter `js/exerciseRegistry.js`.
+  - Roadmap in `plans/*.md`.
 
 ## 2) Code- und Architekturstatus
 
-Status:
-- Klare modulare Trennung pro Feature (Controller/Logik/SVG in separaten Dateien)
-- Wiederverwendung von Logikmodulen (z. B. Fretboard-Logik)
-- Navigation über `js/app.js` + `exerciseRegistry.js` (keine harte if/else-Verkettung pro Übung)
-- PWA-Basis vorhanden (`sw.js`, `manifest.json`)
-- Service Worker mit gemischter Strategie:
-  - `js/lib/essentia/*`: Cache-First
-  - übrige GET-Requests: Network-First mit Cache-Fallback bei Offline
-
-Qualitätsmanagement (Ist):
-- CI-Workflow (`.github/workflows/ci.yml`) führt bei `push` und `pull_request` aus:
-  - `npm ci`
-  - `npm run lint`
-  - `npm test`
-- Lokal verifiziert am 2026-04-21:
-  - `npm run lint` erfolgreich
-  - `npm test` erfolgreich: 31 Testdateien, 677 Tests grün, 1 Test übersprungen
-- Hinweis vom 2026-04-23: Die vollständige Vitest-Suite (`npm test`) kann lokal mehrere Minuten laufen, vor allem wegen Audio-/Fixture-Tests. Bei längerer Pause ohne Ausgabe nicht vorschnell als Hänger abbrechen; für schnelle Iteration gezielte `npx vitest run <testdatei>`-Aufrufe verwenden.
-
-## 3) Dokumentations- und Agentenstatus
-
-- Root-Policies in `CLAUDE.md` und `GEMINI.md` vorhanden (Vanilla + SVG, Doku-Updates gefordert)
-- Feature-spezifische `CLAUDE.md`-Dateien in Untermodulen vorhanden
-
-## 4) Commit-Checkliste (verbindlich)
-
-Vor jedem Commit:
-- `version.txt` **nicht** manuell bearbeiten, ausser der Commit soll die
-  Metadaten gezielt selbst setzen
-- `version.txt` und `sw.js` werden durch `.husky/pre-commit` via
-  `scripts/auto-update-version.sh` automatisch aktualisiert und staged,
-  wenn sie nicht bereits staged sind
-- Dann erst `npm run lint`/`npm test` und Commit sauber abschliessen
+- **Modularität:** Klare Trennung von Controller, Logik und View (SVG/Web Components).
+- **PWA:** Service Worker (`sw.js`) nutzt gemischte Strategie (Cache-First für Essentia, Network-First für den Rest).
+- **Qualitätssicherung:** CI-Workflow führt Linting und Tests (Vitest) aus.
+- **Test-Umfang:** Fokus auf pure Logic in `*Logic.js`. Audio-Tests nutzen WAV-Fixtures.
