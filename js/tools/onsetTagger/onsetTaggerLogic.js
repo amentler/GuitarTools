@@ -93,6 +93,92 @@ export function addOnset(onsets, newOnsetMs) {
 }
 
 /**
+ * Adds an onset timestamp and returns the sorted list plus the new index.
+ * Exact duplicates select the existing onset.
+ *
+ * @param {number[]} onsets
+ * @param {number} newOnsetMs
+ * @returns {{ onsetsMs: number[], index: number }}
+ */
+export function addOnsetWithIndex(onsets, newOnsetMs) {
+  const existingIndex = onsets.indexOf(newOnsetMs);
+  if (existingIndex !== -1) return { onsetsMs: onsets.slice(), index: existingIndex };
+  const onsetsMs = addOnset(onsets, newOnsetMs);
+  return { onsetsMs, index: onsetsMs.indexOf(newOnsetMs) };
+}
+
+/**
+ * Moves an onset to a new timestamp, keeping the list sorted.
+ *
+ * @param {number[]} onsets
+ * @param {number} index
+ * @param {number} nextOnsetMs
+ * @returns {{ onsetsMs: number[], index: number }}
+ */
+export function moveOnset(onsets, index, nextOnsetMs) {
+  if (index < 0 || index >= onsets.length) return { onsetsMs: onsets.slice(), index: -1 };
+  const next = onsets.slice();
+  next.splice(index, 1);
+  next.push(nextOnsetMs);
+  next.sort((a, b) => a - b);
+  return { onsetsMs: next, index: next.indexOf(nextOnsetMs) };
+}
+
+/**
+ * Merges candidate onsets into an existing list when they are far enough away
+ * from all accepted onsets.
+ *
+ * @param {number[]} existingMs
+ * @param {number[]} incomingMs
+ * @param {number} minDistanceMs
+ * @returns {{ onsetsMs: number[], added: number, skipped: number }}
+ */
+export function mergeOnsetsWithMinDistance(existingMs, incomingMs, minDistanceMs) {
+  const accepted = existingMs.slice().sort((a, b) => a - b);
+  let added = 0;
+  let skipped = 0;
+  const sortedIncoming = incomingMs
+    .filter(ms => Number.isFinite(ms))
+    .map(ms => Math.round(ms))
+    .sort((a, b) => a - b);
+
+  for (const ms of sortedIncoming) {
+    const tooClose = accepted.some(existing => Math.abs(existing - ms) < minDistanceMs);
+    if (tooClose) {
+      skipped++;
+      continue;
+    }
+    accepted.push(ms);
+    accepted.sort((a, b) => a - b);
+    added++;
+  }
+
+  return { onsetsMs: accepted, added, skipped };
+}
+
+/**
+ * Computes a visible range around a selected timestamp.
+ *
+ * @param {number} centerSec
+ * @param {number} durationSec
+ * @param {number} preferredWindowSec
+ * @returns {{ start: number, end: number }}
+ */
+export function computeFocusedRange(centerSec, durationSec, preferredWindowSec = 1) {
+  const duration = Math.max(0, durationSec);
+  if (duration <= 0) return { start: 0, end: 0 };
+  const windowSec = clamp(preferredWindowSec, Math.min(0.01, duration), duration);
+  const half = windowSec / 2;
+  let start = clamp(centerSec - half, 0, Math.max(0, duration - windowSec));
+  let end = start + windowSec;
+  if (end > duration) {
+    end = duration;
+    start = Math.max(0, end - windowSec);
+  }
+  return { start, end };
+}
+
+/**
  * Removes the onset at the given index.
  * Returns the unchanged list for out-of-bounds or negative indices.
  *

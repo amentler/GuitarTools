@@ -8,8 +8,8 @@
     "hash": "c9ea0a1eef92066d758f442bfbd3037a"
   },
   "/home/azureuserhauptmann/privat/GuitarToolsALT/sw.js": {
-    "mtime": 1778770576.067414,
-    "hash": "9b53e41da2780ed052a2f85ff47e5703"
+    "mtime": 1778777088.1484404,
+    "hash": "95ed2213c638feb00a07bf5c574a4b5b"
   },
   "/home/azureuserhauptmann/privat/GuitarToolsALT/vitest.config.js": {
     "mtime": 1777738797.000946,
@@ -260,8 +260,8 @@
     "hash": "cc379a43d877229f4dd405f8edce5072"
   },
   "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/unit/guitarOnsetStrategies.test.js": {
-    "mtime": 1778759795.5810096,
-    "hash": "3a4d50a52ce091adb9e87e217dcf352f"
+    "mtime": 1778775432.20359,
+    "hash": "8f37106ecf518247f2eb9d391888e1a6"
   },
   "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/unit/sheetMusicReadingController.test.js": {
     "mtime": 1778771756.4026728,
@@ -372,8 +372,8 @@
     "hash": "4a419d1d7b18889b28fef676ad3b59b5"
   },
   "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/unit/onsetTaggerLogic.test.js": {
-    "mtime": 1778771756.400673,
-    "hash": "d819c71d757369f51e69cab652ad45d5"
+    "mtime": 1778778235.0056376,
+    "hash": "4609e961f22477b432674e67cbef5c6d"
   },
   "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/unit/tonFinderLogic.test.js": {
     "mtime": 1777738796.7009776,
@@ -616,8 +616,8 @@
     "hash": "b1eebfb9535af7dfe802bcbcc5e634b7"
   },
   "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/e2e/onset-tagger.spec.js": {
-    "mtime": 1778759795.56101,
-    "hash": "ab7c5708e14d0cb3491b3ef1615875de"
+    "mtime": 1778778780.454345,
+    "hash": "9208999b391404be84b719835db1a956"
   },
   "/home/azureuserhauptmann/privat/GuitarToolsALT/tests/e2e/page-smoke.spec.js": {
     "mtime": 1777936067.4296231,
@@ -700,8 +700,8 @@
     "hash": "0f9589a5038fde3adb67413eab5a0457"
   },
   "/home/azureuserhauptmann/privat/GuitarToolsALT/js/app.js": {
-    "mtime": 1778441921.326628,
-    "hash": "c0097393fbdfda3bcb802adf69116e12"
+    "mtime": 1778775500.5833075,
+    "hash": "24deddb863b3cc1748bf1db5f55bfa37"
   },
   "/home/azureuserhauptmann/privat/GuitarToolsALT/js/shared/globalSettings.js": {
     "mtime": 1778535568.1812763,
@@ -728,8 +728,8 @@
     "hash": "5c05888948ff8b0d7c2353492523fca3"
   },
   "/home/azureuserhauptmann/privat/GuitarToolsALT/js/shared/pwa/precacheManifest.js": {
-    "mtime": 1778759795.272011,
-    "hash": "f2c237c8596376b6f8e74e50e390a19f"
+    "mtime": 1778778263.8201582,
+    "hash": "f0a0695a0a95582eb31776a9101b7005"
   },
   "/home/azureuserhauptmann/privat/GuitarToolsALT/js/shared/pwa/sw-client.js": {
     "mtime": 1777738797.1957963,
@@ -763,13 +763,17 @@
     "mtime": 1777738797.1954193,
     "hash": "2b502aeac921b7e1acdf1f526e486876"
   },
+  "/home/azureuserhauptmann/privat/GuitarToolsALT/js/shared/audio/offlineOnsetDetection.js": {
+    "mtime": 1778778109.9223688,
+    "hash": "f01cc402b425a48bc14326ebf60599a4"
+  },
   "/home/azureuserhauptmann/privat/GuitarToolsALT/js/shared/audio/audioSessionService.js": {
     "mtime": 1777738797.1954815,
     "hash": "1b9c7a47423a18652a9c19c6ce1ce06a"
   },
   "/home/azureuserhauptmann/privat/GuitarToolsALT/js/shared/audio/guitarOnsetStrategies.js": {
-    "mtime": 1778759795.272011,
-    "hash": "e2a9be753bf548c0ee4fb238f88bb283"
+    "mtime": 1778775366.5608582,
+    "hash": "57dd70086d1bd38028ad71815d66c4d3"
   },
   "/home/azureuserhauptmann/privat/GuitarToolsALT/js/shared/audio/rms.js": {
     "mtime": 1778413741.4404223,
@@ -1016,16 +1020,16 @@
     "hash": "00283874429007643a0c2f98289e070a"
   },
   "/home/azureuserhauptmann/privat/GuitarToolsALT/js/tools/onsetTagger/onsetTagger.js": {
-    "mtime": 1778771742.1358054,
-    "hash": "5dd8fa04856da48956277afe4f3901cc"
+    "mtime": 1778778200.51781,
+    "hash": "cb30e22697a9eae6ac56c560d8c1eaf9"
   },
   "/home/azureuserhauptmann/privat/GuitarToolsALT/js/tools/onsetTagger/onsetTaggerWaveform.js": {
-    "mtime": 1778759795.273951,
-    "hash": "12d8a79fc9e061b99bd2bb60f5657913"
+    "mtime": 1778778808.8532338,
+    "hash": "fa3bcfdc1db150115b850c35f6ceb983"
   },
   "/home/azureuserhauptmann/privat/GuitarToolsALT/js/tools/onsetTagger/onsetTaggerLogic.js": {
-    "mtime": 1778771742.1358054,
-    "hash": "2928ed44e7cdd948f19480fb1d7c79ad"
+    "mtime": 1778778058.688561,
+    "hash": "691d1f6284b2c7b5f608b0f581493b99"
   },
   "/home/azureuserhauptmann/privat/GuitarToolsALT/js/tools/guitarTuner/guitarTuner.js": {
     "mtime": 1777738797.1984835,
@@ -1136,24 +1140,24 @@
     "hash": "03c76b512e91f2c4826ea3aba1ff69f1"
   },
   "/home/azureuserhauptmann/privat/GuitarToolsALT/index.html": {
-    "mtime": 1778759795.269011,
-    "hash": "9a6de8eb7930a73a4b63a17edfb0f951"
+    "mtime": 1778775493.655336,
+    "hash": "5b158da0b32072fb12a1e29b0c6a9b13"
   },
   "/home/azureuserhauptmann/privat/GuitarToolsALT/AGENTS.md": {
     "mtime": 1778770576.064414,
     "hash": "9242708d895f2d957947f8e6e60bd3a0"
   },
   "/home/azureuserhauptmann/privat/GuitarToolsALT/codex.md": {
-    "mtime": 1778770576.064414,
-    "hash": "ea5e6a62370d32c9fd6715503d23029a"
+    "mtime": 1778778843.8104985,
+    "hash": "355a64a7cb5ff8f205e624de6093bd00"
   },
   "/home/azureuserhauptmann/privat/GuitarToolsALT/copilot.md": {
     "mtime": 1778770576.064414,
     "hash": "8945fe8db7c24ff0a744329296109565"
   },
   "/home/azureuserhauptmann/privat/GuitarToolsALT/version.txt": {
-    "mtime": 1778770576.068414,
-    "hash": "5ed84b74e4a49451c673a94f0db8c782"
+    "mtime": 1778777088.1207116,
+    "hash": "0000eb92b021d42305c2161713b1a28c"
   },
   "/home/azureuserhauptmann/privat/GuitarToolsALT/README.md": {
     "mtime": 1778452384.0499036,
@@ -1300,8 +1304,8 @@
     "hash": "60c4d71fed28d856cebae2607645267f"
   },
   "/home/azureuserhauptmann/privat/GuitarToolsALT/pages/onset-tagger/index.html": {
-    "mtime": 1778759795.2752395,
-    "hash": "de0e2ec68831d01620056e25dcf454e1"
+    "mtime": 1778778218.5527203,
+    "hash": "2b792238f664d6c3c26363565f2b539b"
   },
   "/home/azureuserhauptmann/privat/GuitarToolsALT/pages/metronome/index.html": {
     "mtime": 1777738797.2035089,
@@ -1360,8 +1364,8 @@
     "hash": "a4b670d14472c78c003abdffa1869a73"
   },
   "/home/azureuserhauptmann/privat/GuitarToolsALT/js/tools/onsetTagger/CLAUDE.md": {
-    "mtime": 1778771806.901265,
-    "hash": "4143bc7566bb8f76a8833ab9ee887aa6"
+    "mtime": 1778778833.5341356,
+    "hash": "674ddd926a9903ec5c67bb7e89d4d8cb"
   },
   "/home/azureuserhauptmann/privat/GuitarToolsALT/js/tools/onsetTagger/AGENTS.md": {
     "mtime": 1778770576.1059582,
