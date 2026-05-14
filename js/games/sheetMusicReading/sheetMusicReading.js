@@ -117,7 +117,7 @@ export function createSheetMusicReadingFeature() {
 
   // ── Recording state ─────────────────────────────────────────────────────
   const recorder = createRecorder();
-  let savedRecordings = []; // Array<{ basename, wav, manifest }>
+  let savedRecordings = []; // Array<{ baseName, wav, manifest }>
 
   // ── Endless mode state ──────────────────────────────────────────────────
   let endlessGen       = null;
@@ -588,7 +588,7 @@ export function createSheetMusicReadingFeature() {
     const uniqueNoteNames = [...new Set(bars.flat().map(n => n.name))].slice(0, 8).join('');
     const chars = '0123456789abcdefghijklmnopqrstuvwxyz';
     const rand = Array.from({ length: 5 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
-    return `${timeSigSafe}_${bpm}bpm_${uniqueNoteNames}_${rand}`;
+    return `notenlesen_${timeSigSafe}_${bpm}bpm_${uniqueNoteNames}_${rand}`;
   }
 
   function makeManifest(bars, bpm, timeSig, browserEnv) {
@@ -638,11 +638,11 @@ export function createSheetMusicReadingFeature() {
       syncRecordingUI();
       return;
     }
-    const basename = makeBasename(state.bars, state.bpm, state.timeSig);
+    const baseName = makeBasename(state.bars, state.bpm, state.timeSig);
     const manifest = makeManifest(state.bars, state.bpm, state.timeSig, browserEnv);
-    savedRecordings.push({ basename, wav, manifest });
+    savedRecordings.push({ baseName, wav, manifest });
     // Automatisch als vollständigen WAV+JSON-Take sichern, damit Analyse und Übersicht ihn laden können.
-    saveSheetMusicTake(wav, manifest, { baseName: basename }).catch(() => {});
+    saveSheetMusicTake(wav, manifest, { baseName }).catch(() => {});
     syncRecordingUI();
   }
 
@@ -653,9 +653,9 @@ export function createSheetMusicReadingFeature() {
 
   function downloadRecordings() {
     if (!savedRecordings.length) return;
-    const files = savedRecordings.flatMap(({ basename, wav, manifest }) => [
-      { name: `${basename}.wav`,  data: wav },
-      { name: `${basename}.json`, data: new TextEncoder().encode(JSON.stringify(manifest, null, 2)) },
+    const files = savedRecordings.flatMap(({ baseName, wav, manifest }) => [
+      { name: `${baseName}.wav`,  data: wav },
+      { name: `${baseName}.json`, data: new TextEncoder().encode(JSON.stringify(manifest, null, 2)) },
     ]);
     const zip = buildZip(files);
     downloadBlob(zip, `noten-lesen-aufnahmen-${Date.now()}.zip`, 'application/zip');

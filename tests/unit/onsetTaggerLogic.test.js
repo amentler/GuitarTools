@@ -7,6 +7,7 @@ import {
   removeOnset,
   buildSidecarWithOnsets,
   computePlayheadPosition,
+  resolveRecordingFileBaseName,
 } from '../../js/tools/onsetTagger/onsetTaggerLogic.js';
 
 describe('clamp', () => {
@@ -162,6 +163,30 @@ describe('buildSidecarWithOnsets', () => {
     const formValues = { category: 'open-strings' };
     buildSidecarWithOnsets(formValues, [100]);
     expect(formValues).toEqual({ category: 'open-strings' });
+  });
+});
+
+describe('resolveRecordingFileBaseName', () => {
+  it('uses the stored sheet-music baseName when available', () => {
+    const result = resolveRecordingFileBaseName(
+      'sheet-music',
+      'legacy-id',
+      { baseName: 'notenlesen_4-4_80bpm_EB_a3f2x' },
+    );
+    expect(result).toBe('notenlesen_4-4_80bpm_EB_a3f2x');
+  });
+
+  it('falls back to sheet-music id for legacy entries', () => {
+    expect(resolveRecordingFileBaseName('sheet-music', 'last', {})).toBe('last');
+  });
+
+  it('keeps chord-recorder baseName unchanged', () => {
+    const result = resolveRecordingFileBaseName(
+      'chord-recorder',
+      'gdur_finger_laut_single_abc12',
+      {},
+    );
+    expect(result).toBe('gdur_finger_laut_single_abc12');
   });
 });
 

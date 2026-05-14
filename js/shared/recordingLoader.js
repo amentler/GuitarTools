@@ -34,13 +34,20 @@ export async function loadRecordingFromSource(source, id) {
   if (source === 'sheet-music') {
     const entry = id ? await loadSheetMusicTake(id) : await loadLatestSheetMusicTake();
     if (!entry) return null;
-    return { wav: entry.wav, manifest: entry.sidecar, sidecar: entry.sidecar, savedAt: entry.savedAt, id: entry.id };
+    return {
+      wav: entry.wav,
+      manifest: entry.sidecar,
+      sidecar: entry.sidecar,
+      savedAt: entry.savedAt,
+      id: entry.id,
+      baseName: entry.baseName ?? entry.id,
+    };
   }
   if (source === 'chord-recorder') {
     const entry = await loadChordRecordingById(id);
     if (!entry) return null;
     const wav = new Uint8Array(await entry.wavBlob.arrayBuffer());
-    return { wav, manifest: entry.sidecar };
+    return { wav, manifest: entry.sidecar, sidecar: entry.sidecar, id: entry.baseName, baseName: entry.baseName };
   }
   return null;
 }

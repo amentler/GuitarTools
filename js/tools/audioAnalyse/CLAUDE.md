@@ -83,6 +83,9 @@ PLOT_W = 930
 - **Object Store**: `recordings`
 - **Key**: eindeutige Take-ID/BaseName; Legacy-`'last'` bleibt lesbar, wenn WAV und Manifest vorhanden sind
 - **Value**: `{ id, baseName, wav: Uint8Array, sidecar, manifest: sidecar, savedAt: ISO-String }`
+- Notenlesen-BaseNames werden upstream erzeugt und stabil weitergereicht:
+  `notenlesen_<takt>_<bpm>bpm_<noten>_<random5>`. Audio-Analyse zeigt und
+  verwendet diesen Wert, berechnet ihn aber nicht neu.
 
 ## Seite
 

@@ -119,6 +119,16 @@ export function buildSidecarWithOnsets(formValues, onsetsMs) {
   return { ...formValues, onsetsMs };
 }
 
+export function resolveRecordingFileBaseName(source, id, entry = {}) {
+  if (source === 'sheet-music') {
+    return entry.baseName ?? entry.id ?? id ?? 'notenlesen';
+  }
+  if (source === 'chord-recorder') {
+    return entry.baseName ?? id ?? 'recording';
+  }
+  return entry.baseName ?? entry.id ?? id ?? 'recording';
+}
+
 /**
  * Computes the current playhead position in seconds, accounting for elapsed
  * real time, playback rate, and loop boundaries.

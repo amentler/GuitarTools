@@ -84,7 +84,12 @@ Optionaler Aktiv-Modus: Mikrofon-basierte Tonprüfung.
   - `window.__GT_SHEET_MUSIC_READING_BARS__` injiziert deterministische Notenfolgen
 - localStorage-Persistenz: `sheetMusic_active`, `sheetMusic_bpm`, `sheetMusic_timeSig`, `sheetMusic_showTab`, `sheetMusic_endless`; globale Strategy-Auswahl fuer diese Uebung: `gt_sheet_music_recognition_strategy`
 - Buttons: `#btn-sheet-active-mode`, `#btn-sheet-play` (Play/Stop), `#btn-new-bars`, `#btn-show-tab`, `#btn-endless-mode`, `#btn-record`, `#btn-record-stop`, `#btn-record-cancel`, `#btn-download-recordings`, `#btn-analyse-recording`, `#btn-open-recordings`
-- Aufnahmen: jeder Klick auf `Speichern` erzeugt einen dauerhaften WAV+JSON-Take in `audioAnalyseStorage`; der Session-Download exportiert nur die seit Mount erzeugten Takes als `<basename>.wav` + `<basename>.json`.
+- Aufnahmen: jeder Klick auf `Speichern` erzeugt einen dauerhaften WAV+JSON-Take in `audioAnalyseStorage`; der Session-Download exportiert nur die seit Mount erzeugten Takes als `<baseName>.wav` + `<baseName>.json`.
+- Aufnahme-BaseNames sind stabil und werden einmal beim Stoppen erzeugt:
+  `notenlesen_<takt>_<bpm>bpm_<noten>_<random5>`, z. B.
+  `notenlesen_4-4_80bpm_EBGDA_a3f2x`. WAV und Sidecar verwenden denselben
+  BaseName; Downstream-Tools wie Audio-Analyse und Onset-Tagger duerfen ihn
+  nicht neu berechnen.
 - Slider: `#sheet-music-bpm-slider` (40–240), `#sheet-music-fret-range-slider`
 - Select: `#sheet-music-time-sig` (2/4|3/4|4/4|3/8|6/8)
 - `wired`-Flag verhindert doppeltes Event-Listener-Wiring

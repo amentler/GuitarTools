@@ -11,6 +11,7 @@ import {
   removeOnset,
   buildSidecarWithOnsets,
   computePlayheadPosition,
+  resolveRecordingFileBaseName,
 } from './onsetTaggerLogic.js';
 import { loadRecordingFromSource } from '../../shared/recordingLoader.js';
 
@@ -665,8 +666,9 @@ export function createOnsetTaggerFeature() {
     if (source) {
       loadRecordingFromSource(source, id).then(entry => {
         if (!entry) return;
-        const filename       = source === 'chord-recorder' ? `${id}.wav` : 'notenlesen.wav';
-        const sidecarFilename = source === 'chord-recorder' ? `${id}.json` : 'manifest.json';
+        const baseName = resolveRecordingFileBaseName(source, id, entry);
+        const filename = `${baseName}.wav`;
+        const sidecarFilename = `${baseName}.json`;
         applyWavBuffer(entry.wav.buffer, filename, ui).then(() => {
           if (entry.manifest) applySidecarData(entry.manifest, sidecarFilename, ui);
         });

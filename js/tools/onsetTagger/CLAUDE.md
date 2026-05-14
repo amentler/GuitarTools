@@ -26,6 +26,13 @@ Browser-Werkzeug zur manuellen Annotation von Onset-Zeitstempeln in Gitarren-Auf
 7. Metadaten editieren (Schritt 2)
 8. „Als ZIP exportieren" → WAV + JSON (mit `onsetsMs`-Feld) als ZIP-Download
 
+Beim Auto-Load aus der Aufnahmen-Uebersicht (`source`/`id` in der URL) nutzt
+der Tagger den gespeicherten `baseName` des Takes fuer WAV und JSON. Das gilt
+insbesondere fuer Notenlesen-Aufnahmen nach dem Schema
+`notenlesen_<takt>_<bpm>bpm_<noten>_<random5>`; der Dateiname darf im Tagger
+nicht auf statische Namen wie `notenlesen.wav` oder `manifest.json`
+zurueckfallen, solange ein BaseName vorhanden ist.
+
 ## Sidecar-Format
 
 Das exportierte JSON enthält alle Original-Felder plus:

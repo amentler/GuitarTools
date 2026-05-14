@@ -26,11 +26,13 @@ import {
   updateGuitarOnsetDetector,
   updateGuitarOnsetDetectorNormalized,
 } from './guitarOnsetDetector.js';
+import { applyGuitarBandpass } from './guitarPitchDetection.js';
 
 export const GUITAR_ONSET_STRATEGY_KEYS = {
   SWEEP_STANDARD: 'guitar-onset-sweep-standard',
   GUITAR_ONSET: 'guitar-onset',
   BROADBAND_OR: 'guitar-onset-broadband-or',
+  LEGACY_BANDPASS: 'guitar-onset-legacy-bandpass',
 };
 
 export const DEFAULT_GUITAR_ONSET_STRATEGY_KEY = GUITAR_ONSET_STRATEGY_KEYS.SWEEP_STANDARD;
@@ -96,6 +98,16 @@ export const GUITAR_ONSET_STRATEGIES = [
     description: 'Feuert wenn Flux ODER BandRatio ODER SpectralNoveltyBins einen Schwellenwert überschreiten. Geeignet für schnelle Notenfolgen und Wiederholungen.',
     createState: createGuitarOnsetState,
     update: makeStrategyUpdate(BROADBAND_OR_NORMALIZED_OPTIONS, BROADBAND_OR_GUITAR_ONSET_OPTIONS),
+  },
+  {
+    key: GUITAR_ONSET_STRATEGY_KEYS.LEGACY_BANDPASS,
+    label: 'Guitar Onset Detector (Legacy + Bandpass)',
+    description: 'Legacy-Erkennung mit Bandpass-Filter (150–450 Hz) vor der RMS-Berechnung. Fokussiert auf den Attack-Bereich, reduziert Tieffrequenz-Rumpeln der Sympathiesaiten.',
+    createState: createGuitarOnsetState,
+    update: (state, { frequencyData, samples, rms, sampleRate = 44100 }, options = {}) => {
+      const filteredSamples = samples ? applyGuitarBandpass(samples, sampleRate, 150, 450) : null;
+      return updateGuitarOnsetDetector(state, { frequencyData, samples: filteredSamples, rms }, options);
+    },
   },
 ];
 
