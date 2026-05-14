@@ -17,6 +17,7 @@ export const DEFAULT_SWEEP_SPEC = Object.freeze({
   candidatesPerRound: 40,
   timeBudgetMinutes: null,
   stagnationRounds: 3,
+  stagnationProbeCount: 10,
   minScoreImprovement: 1.0,
   globalResetInterval: 30,
   seed: 1337,
@@ -340,6 +341,25 @@ export function createRefinedCandidatesForStrategy(spec, strategyKey, beam, coun
     strategyKey,
     ...parameters,
   }));
+}
+
+export function createStagnationProbeCandidates(spec, strategyKey, beam, count, random) {
+  if (beam.length === 0) return createInitialCandidatesForStrategy(spec, strategyKey, count, random);
+
+  const best = beam[0].parameters;
+  const paramKeys = Object.keys(spec.parameters);
+  return Array.from({ length: count }, () => {
+    const probeKey = paramKeys[Math.floor(random() * paramKeys.length)];
+    return {
+      strategyKey,
+      ...Object.fromEntries(
+        Object.entries(spec.parameters).map(([key, definition]) => [
+          key,
+          key === probeKey ? sampleParameterValue(key, definition, random) : best[key],
+        ]),
+      ),
+    };
+  });
 }
 
 export function scoreFixture(fixture, onsetCount, scoreSpec = DEFAULT_SWEEP_SPEC.score) {

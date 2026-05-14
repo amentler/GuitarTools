@@ -2,9 +2,12 @@
   "fixturesDir": "tests/fixtures/sequences",
   "outputDir": "sweep-runs/onset",
   "beamSize": 5,
-  "rounds": 12,
+  "rounds": 300,
   "candidatesPerRound": 80,
   "timeBudgetMinutes": 240,
+  "stagnationRounds": 3,
+  "stagnationProbeCount": 10,
+  "globalResetInterval": 30,
   "seed": 1337,
   "score": {
     "underPenalty": 6,

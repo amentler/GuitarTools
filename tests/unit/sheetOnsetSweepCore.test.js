@@ -6,6 +6,7 @@ import {
   createRefinedCandidates,
   createRefinedCandidatesForStrategy,
   createSeededRandom,
+  createStagnationProbeCandidates,
   formatSweepHelp,
   parseArgs,
   scoreCandidate,
@@ -259,5 +260,40 @@ describe('sheetOnsetSweepCore', () => {
     expect(scored.metrics.misses).toBe(1);
     expect(scored.metrics.falsePositives).toBe(2);
     expect(scored.fixtures[0].scoringMode).toBe('timed');
+  });
+
+  it('creates stagnation probes that vary exactly one parameter from the best candidate', () => {
+    const spec = {
+      parameters: {
+        cooldownFrames: [2, 5],
+        relativeReattackFactor: [1.4, 4.0],
+        spectralNoveltyRatio: [1.5, 6.0],
+      },
+    };
+    const best = { cooldownFrames: 3, relativeReattackFactor: 2.5, spectralNoveltyRatio: 3.0 };
+    const beam = [{ parameters: best }];
+    const probes = createStagnationProbeCandidates(spec, 'guitar-onset-sweep-standard', beam, 20, createSeededRandom(99));
+
+    expect(probes).toHaveLength(20);
+    expect(probes.every(p => p.strategyKey === 'guitar-onset-sweep-standard')).toBe(true);
+
+    for (const probe of probes) {
+      const changedKeys = Object.keys(spec.parameters).filter(key => probe[key] !== best[key]);
+      expect(changedKeys.length).toBeLessThanOrEqual(1);
+    }
+    const anyChanged = probes.some(p => Object.keys(spec.parameters).some(key => p[key] !== best[key]));
+    expect(anyChanged).toBe(true);
+  });
+
+  it('falls back to initial candidates when beam is empty for stagnation probes', () => {
+    const spec = {
+      parameters: {
+        cooldownFrames: [2, 5],
+        relativeReattackFactor: [1.4, 4.0],
+      },
+    };
+    const probes = createStagnationProbeCandidates(spec, 'guitar-onset-sweep-standard', [], 3, createSeededRandom(7));
+    expect(probes).toHaveLength(3);
+    expect(probes.every(p => p.strategyKey === 'guitar-onset-sweep-standard')).toBe(true);
   });
 });

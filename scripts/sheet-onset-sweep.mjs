@@ -15,6 +15,7 @@ import {
   createInitialCandidatesForStrategy,
   createRefinedCandidatesForStrategy,
   createSeededRandom,
+  createStagnationProbeCandidates,
   discoverSweepFixtures,
   ensureRunDir,
   formatCsvRow,
@@ -380,7 +381,7 @@ async function main() {
       const beam = sortResults(strategyResults).slice(0, spec.beamSize);
       const isFirstRound = round === startRound && beam.length === 0;
       const isGlobalReset = spec.globalResetInterval && round % spec.globalResetInterval === 0;
-      const isStagnationRestart = !isFirstRound && !isGlobalReset
+      const isStagnationProbe = !isFirstRound && !isGlobalReset
         && spec.stagnationRounds && state.stagnationCount >= spec.stagnationRounds;
 
       let roundMode;
@@ -390,11 +391,6 @@ async function main() {
         state.effectiveRound = 0;
         state.stagnationCount = 0;
         roundMode = isGlobalReset ? 'global-reset' : 'initial';
-      } else if (isStagnationRestart) {
-        state.effectiveRound = 0;
-        state.stagnationCount = 0;
-        rawCandidates = createRefinedCandidatesForStrategy(spec, strategy.key, beam, spec.candidatesPerRound, 1, random);
-        roundMode = 'stagnation-restart';
       } else {
         rawCandidates = createRefinedCandidatesForStrategy(
           spec,
@@ -404,7 +400,11 @@ async function main() {
           state.effectiveRound,
           random,
         );
-        roundMode = 'normal';
+        roundMode = isStagnationProbe ? 'stagnation-probe' : 'normal';
+        if (isStagnationProbe) {
+          const probeCount = spec.stagnationProbeCount ?? 10;
+          rawCandidates.push(...createStagnationProbeCandidates(spec, strategy.key, beam, probeCount, random));
+        }
       }
       state.effectiveRound++;
       roundModes[strategy.key] = roundMode;
@@ -476,12 +476,12 @@ async function main() {
       const strategyRoundBestScore = strategyRoundBest?.score ?? -Infinity;
       const mode = roundModes[strategy.key];
 
-      if (mode === 'global-reset' || mode === 'stagnation-restart') state.recentRoundBest = -Infinity;
+      if (mode === 'global-reset' || mode === 'initial') state.recentRoundBest = -Infinity;
 
       if (strategyRoundBestScore > state.recentRoundBest + minImprovement) {
         state.recentRoundBest = strategyRoundBestScore;
         state.stagnationCount = 0;
-      } else if (mode !== 'global-reset' && mode !== 'stagnation-restart') {
+      } else if (mode !== 'global-reset' && mode !== 'initial') {
         state.stagnationCount++;
       }
     }
