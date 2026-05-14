@@ -1,1 +1,1 @@
-Version 0.138 | 2026-05-14 14:28 | ce8c42b | graphify-out/GRAPH_REPORT.md (+7 more)
+Version 0.139 | 2026-05-14 14:36 | fcf5666 | CLAUDE.md (+6 more)
