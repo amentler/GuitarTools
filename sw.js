@@ -108,7 +108,7 @@ self.addEventListener('fetch', event => {
   }
 
   if (request.mode === 'navigate' || request.destination === 'document') {
-    event.respondWith(networkFirst(request, PAGE_CACHE_NAME));
+    event.respondWith(networkFirst(new Request(request, { cache: 'no-cache' }), PAGE_CACHE_NAME));
     return;
   }
 

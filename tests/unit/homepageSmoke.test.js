@@ -28,7 +28,6 @@ describe('Homepage smoke', () => {
 
     expect(document.getElementById('view-menu')?.classList.contains('active')).toBe(true);
     expect(document.getElementById('app-version')?.textContent).toBe('Version test');
-    expect(document.getElementById('setting-chord-detection-use-essentia')).not.toBeNull();
 
     const hrefByTitle = Object.fromEntries(
       Array.from(document.querySelectorAll('gt-menu-card')).map((card) => [
@@ -48,6 +47,7 @@ describe('Homepage smoke', () => {
       'Tuner': 'pages/guitar-tuner/index.html',
       'Metronom': 'pages/metronome/index.html',
       'Akkord Übersicht': 'pages/akkord-uebersicht/index.html',
+      'Einstellungen': 'pages/settings/index.html',
     });
   });
 });

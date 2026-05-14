@@ -26,9 +26,13 @@ describe('Page structure smoke', () => {
       'note-playing',
       'onset-tagger',
       'recordings',
+      'settings',
       'sheet-music-reading',
       'ton-finder',
     ]);
+
+    // Pages that mount a component via .mount(root) — settings uses direct DOM init instead
+    const mountPatternPages = pageDirs.filter(d => d !== 'settings');
 
     for (const pageDir of pageDirs) {
       const html = readFileSync(path.join(pagesRoot, pageDir, 'index.html'), 'utf8');
@@ -37,7 +41,10 @@ describe('Page structure smoke', () => {
       expect(html).toContain('<script type="module" src="./bootstrap.js"></script>');
       expect(html).not.toContain('<script type="module">');
       expect(bootstrap).toContain("import '../../js/components/index.js';");
-      expect(bootstrap).toContain('.mount(root)');
+
+      if (mountPatternPages.includes(pageDir)) {
+        expect(bootstrap).toContain('.mount(root)');
+      }
     }
   });
 
