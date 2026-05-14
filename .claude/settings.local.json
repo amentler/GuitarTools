@@ -43,7 +43,14 @@
       "Bash(xargs -I {} sh -c 'echo \"=== {} ===\" && head -30 {}')",
       "Bash(python3 *)",
       "Bash(cat)",
-      "Bash(bash /tmp/analyze_sidecars.sh)"
+      "Bash(bash /tmp/analyze_sidecars.sh)",
+      "Bash(dir C:\\\\Projekte\\\\GuitarTools\\\\tests\\\\fixtures\\\\sequences\\\\open-strings\\\\ *)",
+      "Skill(plantask)",
+      "Bash(dir -Recurse -Include \"*.html\" -Depth 3 C:\\\\Projekte\\\\GuitarTools)",
+      "Bash(Get-ChildItem -Path C:\\\\Projekte\\\\GuitarTools -Recurse -Directory -Name)",
+      "Bash(Select-Object -First 50)",
+      "Bash(Get-ChildItem -Path \"C:\\\\Projekte\\\\GuitarTools\" -Recurse -Directory)",
+      "Bash(Select-Object -ExpandProperty FullName)"
     ]
   }
 }
