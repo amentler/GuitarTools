@@ -36,7 +36,7 @@ Ziel: Alle einfachen, risikoarmen Korrekturen aus dem Review erledigen.
 
 ## Phase 2 – Dokumentation & Sicherheit
 
-**Status: OFFEN**
+**Status: ERLEDIGT**
 
 Ziel: CSP-Header und aktuelle Architekturdoku.
 
@@ -135,7 +135,7 @@ Aufteilung:
 | Phase | Status | Commit |
 |---|---|---|
 | 1 – Quick Wins | ERLEDIGT | (nächster Commit) |
-| 2 – Doku & Sicherheit | OFFEN | — |
+| 2 – Doku & Sicherheit | ERLEDIGT | (nächster Commit) |
 | 3 – Controller-Tests | OFFEN | — |
 | 4 – chordRecorder aufteilen | OFFEN | — |
 | 5 – essentiaChordLogic aufteilen | OFFEN | — |
