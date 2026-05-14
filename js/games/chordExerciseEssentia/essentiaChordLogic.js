@@ -9,288 +9,41 @@
 
 import { CHORD_RECOGNITION_CHORDS } from '../../data/akkordData.js';
 import { getChordNotes } from '../../domain/chords/chordDetectionLogic.js';
-
-// Pitch-class bin: C=0, C#=1, D=2, D#=3, E=4, F=5, F#=6, G=7, G#=8, A=9, A#=10, B=11
-const NOTE_TO_BIN = { C: 0, 'C#': 1, D: 2, 'D#': 3, E: 4, F: 5, 'F#': 6, G: 7, 'G#': 8, A: 9, 'A#': 10, B: 11 };
-const GERMAN_TO_BIN = {
-  C: 0,
-  Cis: 1, Des: 1,
-  D: 2,
-  Dis: 3, Es: 3,
-  E: 4, Fes: 4,
-  Eis: 5,
-  F: 5,
-  Fis: 6, Ges: 6,
-  G: 7,
-  Gis: 8, As: 8,
-  A: 9,
-  Ais: 10, B: 10,
-  H: 11,
-};
-const TYPE_INTERVALS = {
-  Dur: [0, 4, 7],
-  Moll: [0, 3, 7],
-  dim: [0, 3, 6],
-  '7': [0, 4, 7, 10],
-  '7sus4': [0, 5, 7, 10],
-  maj7: [0, 4, 7, 11],
-  m7: [0, 3, 7, 10],
-  sus2: [0, 2, 7],
-  sus4: [0, 5, 7],
-  add9: [0, 4, 7, 2],
-};
-
-const DEFAULT_PROFILE = {
-  weights: {
-    supportMean: 0.48,
-    root: 0.22,
-    fifth: 0.12,
-    expectedThird: 0.12,
-    expectedSeventh: 0,
-    leakageMean: 0.18,
-    competingThird: 0.04,
-  },
-  threshold: 0.5,
-  bestMatchTolerance: 0.12,
-  minRootEnergy: 0.2,
-  minFifthEnergy: 0.12,
-  minExpectedThirdEnergy: 0.05,
-  minSupportMean: 0.32,
-  minSeventhEnergy: 0,
-  minBassFundamentalToNeighborRatio: 0.05,
-};
-
-const CHORD_TYPE_PROFILES = {
-  add9: {
-    ...DEFAULT_PROFILE,
-    threshold: 0.6,
-    minSupportMean: 0.36,
-  },
-  maj7: {
-    ...DEFAULT_PROFILE,
-    threshold: 0.54,
-    minSupportMean: 0.34,
-    minSeventhEnergy: 0.18,
-  },
-  m7: {
-    ...DEFAULT_PROFILE,
-    threshold: 0.54,
-    sameRootTolerance: 0.06,
-    minSupportMean: 0.34,
-    minSeventhEnergy: 0.2,
-  },
-  sus2: {
-    ...DEFAULT_PROFILE,
-    threshold: 0.58,
-    minSupportMean: 0.34,
-  },
-  sus4: {
-    ...DEFAULT_PROFILE,
-    threshold: 0.58,
-    minSupportMean: 0.34,
-  },
-  '7': {
-    weights: {
-      supportMean: 0.42,
-      root: 0.18,
-      fifth: 0.08,
-      expectedThird: 0.1,
-      expectedSeventh: 0.22,
-      leakageMean: 0.12,
-      competingThird: 0.03,
-    },
-    threshold: 0.26,
-    bestMatchTolerance: 0.2,
-    minRootEnergy: 0.1,
-    minFifthEnergy: 0.04,
-    minExpectedThirdEnergy: 0.05,
-    minSupportMean: 0.26,
-    minSeventhEnergy: 0.05,
-    minDominantVariantConfidence: 0.45,
-  },
-  '7sus4': {
-    weights: {
-      supportMean: 0.42,
-      root: 0.18,
-      fifth: 0.08,
-      expectedThird: 0,
-      expectedSeventh: 0.22,
-      leakageMean: 0.12,
-      competingThird: 0.03,
-    },
-    threshold: 0.3,
-    bestMatchTolerance: 0.12,
-    minRootEnergy: 0.1,
-    minFifthEnergy: 0.04,
-    minExpectedThirdEnergy: 0,
-    minSupportMean: 0.28,
-    minSeventhEnergy: 0.08,
-  },
-};
-const BASS_VARIANT_COUNTERPART = {
-  'C-Dur': 'C-Dur (1-Finger)',
-  'C-Dur (1-Finger)': 'C-Dur',
-  'G-Dur': 'G-Dur (1-Finger)',
-  'G-Dur (1-Finger)': 'G-Dur',
-};
-const BASS_VARIANT_FUND_FACTOR = 1.1;
-
-// Sus-identity pairs share the same pitch classes but have different bass roots.
-// H1-fundamentals at low guitar frequencies are unreliable (body resonance distorts
-// the spectrum), so a higher tolerance factor is required vs Phase-3 octave pairs.
-const SUS_IDENTITY_COUNTERPART = {
-  'Csus4': 'Fsus2',
-  'Fsus2': 'Csus4',
-  'Csus2': 'Gsus4',
-  'Gsus4': 'Csus2',
-  'Asus2': 'Esus4',
-  'Esus4': 'Asus2',
-  'Asus4': 'Dsus2',
-  'Dsus2': 'Asus4',
-};
-const SUS_IDENTITY_FUND_FACTOR = 5;
-
-const MIN_TRIAD_THIRD_SEPARATION = 0.05;
-const MIN_SUSPENSION_ENERGY = 0.18;
-const MAX_SUSPENSION_COMPETING_THIRD_ENERGY = 0.3;
-const MIN_ADD9_ENERGY = 0.18;
-const MIN_ADD9_THIRD_ENERGY = 0.3;
-const MIN_ADD9_TO_SECOND_RATIO = 0.5;
-const MIN_MAJOR_TRIAD_DOMINANT_SEVENTH_LEAKAGE = 0.08;
-const MIN_MAJOR_SEVENTH_RATIO = 0.6;
-const MIN_MINOR_SEVENTH_RATIO = 0.25;
-const MIN_DOMINANT_VARIANT_SEVENTH_ENERGY = 0.09;
-const MAX_SPARSE_DOMINANT_THIRD_ENERGY = 0.3;
-const MIN_SPARSE_DOMINANT_FIFTH_ENERGY = 0.8;
-const MIN_SUSPENSION_TO_THIRD_RATIO = 1.2;
-const OPEN_STRUM_CANDIDATE_NAME = 'open-strum';
-const OPEN_STRUM_BASE_BINS = [4, 9, 2, 7, 11];
-const OPEN_STRUM_TEMPLATE_OFFSETS = [0, 1, 2, 3, 4, 5];
-const OPEN_STRUM_THRESHOLD = 0.45;
-const OPEN_STRUM_BEST_CHORD_MARGIN = 0.22;
-
-function stripChordAnnotation(chordName) {
-  return chordName.replace(/\s*\([^)]*\)\s*$/, '').trim();
-}
-
-function parseChordDescriptor(chordName) {
-  if (!chordName || typeof chordName !== 'string') return null;
-
-  const cleaned = stripChordAnnotation(chordName);
-
-  const hyphenMatch = cleaned.match(/^([A-Z][a-z]*)-([A-Za-z0-9]+)$/);
-  if (hyphenMatch) {
-    const root = hyphenMatch[1];
-    const type = hyphenMatch[2];
-    if (GERMAN_TO_BIN[root] !== undefined && TYPE_INTERVALS[type] !== undefined) {
-      return { root, type };
-    }
-  }
-
-  const suffixes = ['7sus4', 'maj7', 'm7', 'sus2', 'sus4', 'add9', 'dim'];
-  for (const suffix of suffixes) {
-    if (!cleaned.endsWith(suffix)) continue;
-    const root = cleaned.slice(0, -suffix.length);
-    if (GERMAN_TO_BIN[root] !== undefined) return { root, type: suffix };
-  }
-
-  const dom7Match = cleaned.match(/^([A-Z][a-z]*)7$/);
-  if (dom7Match) {
-    const root = dom7Match[1];
-    if (GERMAN_TO_BIN[root] !== undefined) {
-      return { root, type: '7' };
-    }
-  }
-
-  return null;
-}
-
-function getChordDescriptor(chordName) {
-  const parsed = parseChordDescriptor(chordName);
-  if (!parsed) return null;
-
-  const rootBin = GERMAN_TO_BIN[parsed.root];
-  const intervals = TYPE_INTERVALS[parsed.type];
-  if (rootBin === undefined || !intervals) return null;
-
-  const descriptor = {
-    type: parsed.type,
-    rootBin,
-    fifthBin: (rootBin + 7) % 12,
-    minorThirdBin: (rootBin + 3) % 12,
-    majorThirdBin: (rootBin + 4) % 12,
-    expectedThirdBin: null,
-    expectedSecondBin: null,
-    expectedFourthBin: null,
-    competingThirdBin: null,
-    expectedSeventhBin: null,
-    extensionSecondBin: null,
-  };
-
-  if (['Dur', '7', 'maj7', 'add9'].includes(parsed.type)) {
-    descriptor.expectedThirdBin = (rootBin + 4) % 12;
-    descriptor.competingThirdBin = (rootBin + 3) % 12;
-  } else if (['Moll', 'm7', 'dim'].includes(parsed.type)) {
-    descriptor.expectedThirdBin = (rootBin + 3) % 12;
-    descriptor.competingThirdBin = (rootBin + 4) % 12;
-  }
-
-  if (parsed.type === '7') {
-    descriptor.expectedSeventhBin = (rootBin + 10) % 12;
-  } else if (parsed.type === '7sus4') {
-    descriptor.expectedSeventhBin = (rootBin + 10) % 12;
-  } else if (parsed.type === 'maj7') {
-    descriptor.expectedSeventhBin = (rootBin + 11) % 12;
-  } else if (parsed.type === 'm7') {
-    descriptor.expectedSeventhBin = (rootBin + 10) % 12;
-  }
-
-  if (parsed.type === 'sus2' || parsed.type === 'add9') {
-    descriptor.expectedSecondBin = (rootBin + 2) % 12;
-  }
-  if (parsed.type === 'sus4') {
-    descriptor.expectedFourthBin = (rootBin + 5) % 12;
-  }
-
-  if (!intervals.includes(2)) {
-    descriptor.extensionSecondBin = (rootBin + 2) % 12;
-  }
-
-  return descriptor;
-}
-
-const CHORD_MATCH_SPECIAL_CASES = {
-  Asus2: {
-    acceptedBestMatches: ['Asus2', 'H7sus4'],
-    minimumAcceptedScore: 0.53,
-    reportAsTarget: true,
-  },
-};
-function getEffectiveTargetChordName(chordName) {
-  return chordName;
-}
-
-function getChordProfile(descriptor) {
-  if (!descriptor) return DEFAULT_PROFILE;
-  return CHORD_TYPE_PROFILES[descriptor.type] ?? DEFAULT_PROFILE;
-}
-
-function sharesRoot(descriptorA, descriptorB) {
-  if (!descriptorA || !descriptorB) return false;
-  return descriptorA.rootBin === descriptorB.rootBin;
-}
-
-function isTriadModeSensitive(descriptor) {
-  if (!descriptor) return false;
-  return descriptor.type === 'Dur' || descriptor.type === 'Moll';
-}
-
-function isAnnotatedVariant(chordName) {
-  const annotation = chordName.match(/\(([^)]*)\)/)?.[1]?.trim();
-  if (!annotation) return false;
-
-  return /finger|rock|klein/i.test(annotation);
-}
+import {
+  NOTE_TO_BIN,
+  DEFAULT_PROFILE,
+  BASS_VARIANT_COUNTERPART,
+  BASS_VARIANT_FUND_FACTOR,
+  SUS_IDENTITY_COUNTERPART,
+  SUS_IDENTITY_FUND_FACTOR,
+  MIN_TRIAD_THIRD_SEPARATION,
+  MIN_SUSPENSION_ENERGY,
+  MAX_SUSPENSION_COMPETING_THIRD_ENERGY,
+  MIN_ADD9_ENERGY,
+  MIN_ADD9_THIRD_ENERGY,
+  MIN_ADD9_TO_SECOND_RATIO,
+  MIN_MAJOR_TRIAD_DOMINANT_SEVENTH_LEAKAGE,
+  MIN_MAJOR_SEVENTH_RATIO,
+  MIN_MINOR_SEVENTH_RATIO,
+  MIN_DOMINANT_VARIANT_SEVENTH_ENERGY,
+  MAX_SPARSE_DOMINANT_THIRD_ENERGY,
+  MIN_SPARSE_DOMINANT_FIFTH_ENERGY,
+  MIN_SUSPENSION_TO_THIRD_RATIO,
+  OPEN_STRUM_CANDIDATE_NAME,
+  OPEN_STRUM_BASE_BINS,
+  OPEN_STRUM_TEMPLATE_OFFSETS,
+  OPEN_STRUM_THRESHOLD,
+  OPEN_STRUM_BEST_CHORD_MARGIN,
+} from './essentiaChordConstants.js';
+import {
+  getChordDescriptor,
+  getChordProfile,
+  isTriadModeSensitive,
+  isAnnotatedVariant,
+  sharesRoot,
+  CHORD_MATCH_SPECIAL_CASES,
+  getEffectiveTargetChordName,
+} from './essentiaChordDescriptors.js';
 
 function getMeanEnergy(hpcp, template, includeTemplateBins) {
   let sum = 0;

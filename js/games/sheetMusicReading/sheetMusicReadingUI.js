@@ -1,3 +1,111 @@
+import { getSetting, SETTING_KEYS } from '../../shared/globalSettings.js';
+
+export function updateStrategyStatus() {
+  const pitchKey = getSetting(SETTING_KEYS.SHEET_MUSIC_RECOGNITION_STRATEGY);
+  const onsetKey = getSetting(SETTING_KEYS.SHEET_MUSIC_ONSET_STRATEGY);
+  const pitchLabel = pitchKey ?? '—';
+  const onsetLabel = onsetKey ?? '—';
+  const pitchEl = document.getElementById('sheet-music-strategy-pitch');
+  const onsetEl = document.getElementById('sheet-music-strategy-onset');
+  if (pitchEl) pitchEl.textContent = pitchLabel;
+  if (onsetEl) onsetEl.textContent = onsetLabel;
+}
+
+export function updateCurrentNoteDisplay(ui, state, note) {
+  if (!ui?.currentNote) return;
+  if (!state.active) {
+    ui.currentNote.textContent = '–';
+    return;
+  }
+  if (note) {
+    ui.currentNote.textContent = `${note.name}${note.octave}`;
+  } else if (state.currentBarIndex === -1) {
+    ui.currentNote.textContent = '✓';
+  } else {
+    ui.currentNote.textContent = '–';
+  }
+}
+
+export function updateFeedback(ui, state, kind = null, text = '') {
+  if (!ui?.feedback) return;
+  ui.feedback.className = 'feedback-text';
+  if (!state.active) {
+    ui.feedback.textContent = '';
+    return;
+  }
+  if (kind === 'correct') {
+    ui.feedback.textContent = text || 'Richtig! ✓';
+    ui.feedback.classList.add('correct');
+    return;
+  }
+  if (kind === 'wrong') {
+    ui.feedback.textContent = text || 'Falsch!';
+    ui.feedback.classList.add('wrong');
+    return;
+  }
+  ui.feedback.textContent = text;
+}
+
+export function syncActiveUiVisibility(ui, state) {
+  if (!ui?.status || !ui?.permission) return;
+  ui.status.classList.toggle('u-hidden', !state.active);
+  if (!state.active) {
+    ui.permission.classList.add('u-hidden');
+  }
+}
+
+export function getBeatCount(timeSig) {
+  return parseInt(timeSig.split('/')[0], 10) || 4;
+}
+
+export function renderBeatDots(ui, timeSig) {
+  const container = ui?.beatIndicator;
+  if (!container) return;
+  const count = getBeatCount(timeSig);
+  container.innerHTML = '';
+  for (let i = 0; i < count; i++) {
+    const dot = document.createElement('span');
+    dot.className = 'beat-dot';
+    container.appendChild(dot);
+  }
+}
+
+export function updateBeatDot(ui, beatIndex) {
+  const container = ui?.beatIndicator;
+  if (!container) return;
+  const dots = container.querySelectorAll('.beat-dot');
+  dots.forEach((dot, i) => {
+    dot.classList.toggle('beat-dot--active', i === beatIndex);
+  });
+}
+
+export function clearBeatDots(ui) {
+  const container = ui?.beatIndicator;
+  if (!container) return;
+  container.querySelectorAll('.beat-dot').forEach(dot => dot.classList.remove('beat-dot--active'));
+}
+
+export async function enumerateAndShowMics(ui) {
+  if (!globalThis.navigator?.mediaDevices?.enumerateDevices) return;
+  try {
+    const devices = await globalThis.navigator.mediaDevices.enumerateDevices();
+    const mics = devices.filter(d => d.kind === 'audioinput');
+    if (mics.length <= 1) return;
+    const { micPanel, micSelect } = ui ?? {};
+    if (!micPanel || !micSelect) return;
+    const prevValue = micSelect.value;
+    micSelect.innerHTML = '';
+    for (let i = 0; i < mics.length; i++) {
+      const opt = document.createElement('option');
+      opt.value = mics[i].deviceId;
+      opt.textContent = mics[i].label || `Mikrofon ${i + 1}`;
+      micSelect.appendChild(opt);
+    }
+    if (prevValue) micSelect.value = prevValue;
+    micPanel.classList.remove('u-hidden');
+  } catch { /* permission denied or API unavailable */ }
+}
+
 export function resolveSheetMusicUI(root = document) {
   return {
     view: root.getElementById?.('view-sheet-music') ?? document.getElementById('view-sheet-music'),

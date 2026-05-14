@@ -2,7 +2,7 @@ import {
   generateBars, getFilteredNotes, getTimeSignatureConfig,
   EndlessBarGenerator,
 } from './sheetMusicLogic.js';
-import { renderScore, appendRow } from './sheetMusicSVG.js';
+import { renderScore } from './sheetMusicSVG.js';
 import { PlaybackController } from './playbackController.js';
 import { PlaybackBar } from './playbackBar.js';
 import { wireStringToggles, syncStringToggles, wireFretSlider, syncFretSlider } from '../../utils/settings.js';
@@ -18,7 +18,17 @@ import {
   resolveSheetMusicUI,
   syncSheetMusicUI,
   setPlaybackButtonState,
+  updateStrategyStatus,
+  updateCurrentNoteDisplay,
+  updateFeedback,
+  syncActiveUiVisibility,
+  renderBeatDots,
+  updateBeatDot,
+  clearBeatDots,
+  enumerateAndShowMics,
 } from './sheetMusicReadingUI.js';
+import { createRecordingUI } from './sheetMusicReadingRecordingUI.js';
+import { createEndlessHelpers } from './sheetMusicReadingEndless.js';
 import {
   createMatchState,
 } from '../../shared/audio/fastNoteMatcher.js';
@@ -40,9 +50,6 @@ import {
   closeAudioSession,
 } from '../../shared/audio/audioSessionService.js';
 import { createRecorder } from './sheetMusicRecorder.js';
-import { buildZip, downloadBlob } from '../../shared/zip.js';
-import { saveSheetMusicTake } from '../../shared/audioAnalyseStorage.js';
-import { collectBrowserEnvironment } from '../../shared/browserEnvironment.js';
 import { getEssentia } from '../chordExerciseEssentia/essentiaLoader.js';
 import { createEssentiaSheetMusicStrategy } from './essentiaSheetMusicStrategy.js';
 
@@ -61,19 +68,6 @@ getEssentia().then(ess => {
 }).catch(err => {
   console.warn('[sheetMusicReading] Essentia nicht verfügbar:', err.message);
 });
-
-function updateStrategyStatus() {
-  const pitchKey = getSetting(SETTING_KEYS.SHEET_MUSIC_RECOGNITION_STRATEGY);
-  const onsetKey = getSetting(SETTING_KEYS.SHEET_MUSIC_ONSET_STRATEGY);
-
-  const pitchLabel = pitchKey ?? '—';
-  const onsetLabel = onsetKey ?? '—';
-
-  const pitchEl = document.getElementById('sheet-music-strategy-pitch');
-  const onsetEl = document.getElementById('sheet-music-strategy-onset');
-  if (pitchEl) pitchEl.textContent = pitchLabel;
-  if (onsetEl) onsetEl.textContent = onsetLabel;
-}
 
 function resolveInjectedBars() {
   const injectedBars = globalThis.__GT_SHEET_MUSIC_READING_BARS__;
@@ -118,15 +112,15 @@ export function createSheetMusicReadingFeature() {
   // ── Recording state ─────────────────────────────────────────────────────
   const recorder = createRecorder();
   let savedRecordings = []; // Array<{ baseName, wav, manifest }>
+  const { syncRecordingUI, startRecording, stopRecording, cancelRecording, downloadRecordings } = createRecordingUI({
+    recorder, getSaved: () => savedRecordings, setSaved: v => { savedRecordings = v; },
+    getAudioSession: () => audioSession, getUI: () => ui,
+  });
 
   // ── Endless mode state ──────────────────────────────────────────────────
-  let endlessGen       = null;
-  let allRowDivs       = [];
-  let allPlaybackBars  = [];
-  let allStaveLayouts  = [];
-  let endlessFirstRowIndex = 0;
-  let endlessShiftTimeoutId = null;
-  let pendingEndlessRowAsset = null;
+  const endlessS = { gen: null, rowDivs: [], playbackBars: [], staveLayouts: [], firstRowIndex: 0, shiftTimeoutId: null, pendingAsset: null };
+  const { appendEndlessRow, clearEndlessShiftTimeout, shiftEndlessWindowToRow, cleanupEndlessState } =
+    createEndlessHelpers(endlessS, () => state, () => ui, BARS_PER_ROW, ENDLESS_SCROLL_TARGET_FRACTION, ENDLESS_SCROLL_SHIFT_DELAY_MS);
 
   function getNotesPool() {
     return getFilteredNotes(state.settings.maxFret, state.settings.activeStrings);
@@ -188,52 +182,8 @@ export function createSheetMusicReadingFeature() {
     markCurrentNote();
   }
 
-  function updateCurrentNoteDisplay() {
-    if (!ui?.currentNote) return;
-    if (!state.active) {
-      ui.currentNote.textContent = '–';
-      return;
-    }
-    const note = getCurrentNote();
-    if (note) {
-      ui.currentNote.textContent = `${note.name}${note.octave}`;
-    } else if (state.currentBarIndex === -1) {
-      ui.currentNote.textContent = '✓';
-    } else {
-      ui.currentNote.textContent = '–';
-    }
-  }
-
-  function updateFeedback(kind = null, text = '') {
-    if (!ui?.feedback) return;
-    ui.feedback.className = 'feedback-text';
-    if (!state.active) {
-      ui.feedback.textContent = '';
-      return;
-    }
-    if (kind === 'correct') {
-      ui.feedback.textContent = text || 'Richtig! ✓';
-      ui.feedback.classList.add('correct');
-      return;
-    }
-    if (kind === 'wrong') {
-      ui.feedback.textContent = text || 'Falsch!';
-      ui.feedback.classList.add('wrong');
-      return;
-    }
-    ui.feedback.textContent = text;
-  }
-
-  function syncActiveUiVisibility() {
-    if (!ui?.status || !ui?.permission) return;
-    ui.status.classList.toggle('u-hidden', !state.active);
-    if (!state.active) {
-      ui.permission.classList.add('u-hidden');
-    }
-  }
-
   function renderCurrentScore() {
-    if (state.endless && allRowDivs.length > 0) return;
+    if (state.endless && endlessS.rowDivs.length > 0) return;
     const result = renderScore(
       ui.container,
       state.bars,
@@ -314,7 +264,7 @@ export function createSheetMusicReadingFeature() {
     state.isListening = true;
     applyTargetFftSize();
     analyzeIntervalId = setInterval(analyzeFrame, ANALYZE_INTERVAL_MS);
-    void enumerateAndShowMics();
+    void enumerateAndShowMics(ui);
   }
 
   function advanceToNextNote() {
@@ -337,7 +287,7 @@ export function createSheetMusicReadingFeature() {
     if (state.endless && !isTimedRecognitionMode()) {
       regenerate();
       applyTargetFftSize();
-      updateFeedback();
+      updateFeedback(ui, state);
       return;
     }
 
@@ -347,8 +297,8 @@ export function createSheetMusicReadingFeature() {
     state.awaitingOnset = true;
     state.isLocked = false;
     renderCurrentScore();
-    updateCurrentNoteDisplay();
-    updateFeedback('correct', 'Alle Noten gespielt! ✓');
+    updateCurrentNoteDisplay(ui, state, getCurrentNote());
+    updateFeedback(ui, state, 'correct', 'Alle Noten gespielt! ✓');
   }
 
   function handleCorrectNote() {
@@ -363,10 +313,10 @@ export function createSheetMusicReadingFeature() {
     note.status = 'correct';
 
     renderCurrentScore();
-    updateFeedback('correct');
+    updateFeedback(ui, state, 'correct');
 
     if (isTimedRecognitionMode()) {
-      updateCurrentNoteDisplay();
+      updateCurrentNoteDisplay(ui, state, getCurrentNote());
       return;
     }
 
@@ -376,8 +326,8 @@ export function createSheetMusicReadingFeature() {
     }
     applyTargetFftSize();
     renderCurrentScore();
-    updateCurrentNoteDisplay();
-    updateFeedback();
+    updateCurrentNoteDisplay(ui, state, getCurrentNote());
+    updateFeedback(ui, state);
   }
 
   function analyzeFrame() {
@@ -453,14 +403,14 @@ export function createSheetMusicReadingFeature() {
     state.awaitingOnset = true;
     state.isLocked = false;
     renderCurrentScore();
-    updateCurrentNoteDisplay();
-    updateFeedback('correct', 'Durchlauf beendet.');
+    updateCurrentNoteDisplay(ui, state, getCurrentNote());
+    updateFeedback(ui, state, 'correct', 'Durchlauf beendet.');
   }
 
   function restartTimedEndlessPass() {
     stopPlayback();
     regenerate();
-    updateFeedback();
+    updateFeedback(ui, state);
     startPlayback();
   }
 
@@ -494,8 +444,8 @@ export function createSheetMusicReadingFeature() {
     state.awaitingOnset = true;
     state.isLocked = false;
     renderCurrentScore();
-    updateCurrentNoteDisplay();
-    updateFeedback();
+    updateCurrentNoteDisplay(ui, state, getCurrentNote());
+    updateFeedback(ui, state);
     applyTargetFftSize();
   }
 
@@ -504,21 +454,21 @@ export function createSheetMusicReadingFeature() {
     state.active = nextActive;
     saveSheetMusicActive(state.active);
     syncSettingsUI();
-    syncActiveUiVisibility();
+    syncActiveUiVisibility(ui, state);
 
     if (!state.active) {
       await stopListening();
       resetActiveSequenceState();
       renderCurrentScore();
-      updateCurrentNoteDisplay();
-      updateFeedback();
+      updateCurrentNoteDisplay(ui, state, getCurrentNote());
+      updateFeedback(ui, state);
       return;
     }
 
     resetActiveSequenceState();
     renderCurrentScore();
-    updateCurrentNoteDisplay();
-    updateFeedback();
+    updateCurrentNoteDisplay(ui, state, getCurrentNote());
+    updateFeedback(ui, state);
     startListening();
   }
 
@@ -526,143 +476,6 @@ export function createSheetMusicReadingFeature() {
   function updatePoolWarning() {
     const el = ui?.poolWarning;
     if (el) el.hidden = getNotesPool().length >= MIN_POOL_SIZE;
-  }
-
-  // ── Beat indicator ───────────────────────────────────────────────────────
-  function getBeatCount(timeSig) {
-    return parseInt(timeSig.split('/')[0], 10) || 4;
-  }
-
-  function renderBeatDots(timeSig) {
-    const container = ui?.beatIndicator;
-    if (!container) return;
-    const count = getBeatCount(timeSig);
-    container.innerHTML = '';
-    for (let i = 0; i < count; i++) {
-      const dot = document.createElement('span');
-      dot.className = 'beat-dot';
-      container.appendChild(dot);
-    }
-  }
-
-  function updateBeatDot(beatIndex) {
-    const container = ui?.beatIndicator;
-    if (!container) return;
-    const dots = container.querySelectorAll('.beat-dot');
-    dots.forEach((dot, i) => {
-      dot.classList.toggle('beat-dot--active', i === beatIndex);
-    });
-  }
-
-  function clearBeatDots() {
-    const container = ui?.beatIndicator;
-    if (!container) return;
-    container.querySelectorAll('.beat-dot').forEach(dot => dot.classList.remove('beat-dot--active'));
-  }
-
-  // ── Microphone enumeration ───────────────────────────────────────────────
-  async function enumerateAndShowMics() {
-    if (!globalThis.navigator?.mediaDevices?.enumerateDevices) return;
-    try {
-      const devices = await globalThis.navigator.mediaDevices.enumerateDevices();
-      const mics = devices.filter(d => d.kind === 'audioinput');
-      if (mics.length <= 1) return;
-      const { micPanel, micSelect } = ui ?? {};
-      if (!micPanel || !micSelect) return;
-      const prevValue = micSelect.value;
-      micSelect.innerHTML = '';
-      for (let i = 0; i < mics.length; i++) {
-        const opt = document.createElement('option');
-        opt.value = mics[i].deviceId;
-        opt.textContent = mics[i].label || `Mikrofon ${i + 1}`;
-        micSelect.appendChild(opt);
-      }
-      if (prevValue) micSelect.value = prevValue;
-      micPanel.classList.remove('u-hidden');
-    } catch { /* permission denied or API unavailable */ }
-  }
-
-  // ── Recording helpers ───────────────────────────────────────────────────
-  function makeBasename(bars, bpm, timeSig) {
-    const timeSigSafe = timeSig.replace('/', '-');
-    const uniqueNoteNames = [...new Set(bars.flat().map(n => n.name))].slice(0, 8).join('');
-    const chars = '0123456789abcdefghijklmnopqrstuvwxyz';
-    const rand = Array.from({ length: 5 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
-    return `notenlesen_${timeSigSafe}_${bpm}bpm_${uniqueNoteNames}_${rand}`;
-  }
-
-  function makeManifest(bars, bpm, timeSig, browserEnv) {
-    return {
-      notes: bars.flat().map(n => `${n.name}${n.octave}`),
-      bpm,
-      timeSig,
-      notesPerBeat: 1,
-      description: 'Noten lesen',
-      category: 'sheet-music-reading',
-      recordedAt: new Date().toISOString(),
-      browserEnv: browserEnv ?? {},
-    };
-  }
-
-  function syncRecordingUI() {
-    const isRec = recorder.isRecording;
-    ui.recordBtn?.classList.toggle('u-hidden', isRec);
-    ui.recordStopBtn?.classList.toggle('u-hidden', !isRec);
-    ui.recordCancelBtn?.classList.toggle('u-hidden', !isRec);
-    if (ui.downloadBtn) ui.downloadBtn.classList.toggle('u-hidden', savedRecordings.length === 0);
-    if (ui.analyseBtn) ui.analyseBtn.classList.toggle('u-hidden', savedRecordings.length === 0);
-    if (ui.recordingsBtn) ui.recordingsBtn.classList.remove('u-hidden');
-  }
-
-  async function startRecording() {
-    if (recorder.isRecording) return;
-    try {
-      await recorder.start(audioSession.stream ?? null);
-    } catch {
-      if (ui.permission) {
-        ui.permission.classList.remove('u-hidden');
-        ui.permission.textContent = 'Mikrofon nicht verfügbar. Aufnahme konnte nicht gestartet werden.';
-      }
-      return;
-    }
-    syncRecordingUI();
-  }
-
-  async function stopRecording() {
-    const capturedMimeType = recorder.mimeType; // capture before stop() calls cleanup()
-    const [wav, browserEnv] = await Promise.all([
-      recorder.stop(),
-      collectBrowserEnvironment(capturedMimeType),
-    ]);
-    if (!wav) {
-      syncRecordingUI();
-      return;
-    }
-    const baseName = makeBasename(state.bars, state.bpm, state.timeSig);
-    const manifest = makeManifest(state.bars, state.bpm, state.timeSig, browserEnv);
-    savedRecordings.push({ baseName, wav, manifest });
-    // Automatisch als vollständigen WAV+JSON-Take sichern, damit Analyse und Übersicht ihn laden können.
-    saveSheetMusicTake(wav, manifest, { baseName }).catch(() => {});
-    syncRecordingUI();
-  }
-
-  function cancelRecording() {
-    recorder.cancel();
-    syncRecordingUI();
-  }
-
-  function downloadRecordings() {
-    if (!savedRecordings.length) return;
-    const files = savedRecordings.flatMap(({ baseName, wav, manifest }) => [
-      { name: `${baseName}.wav`,  data: wav },
-      { name: `${baseName}.json`, data: new TextEncoder().encode(JSON.stringify(manifest, null, 2)) },
-    ]);
-    const zip = buildZip(files);
-    downloadBlob(zip, `noten-lesen-aufnahmen-${Date.now()}.zip`, 'application/zip');
-    if (confirm('Gespeicherte Aufnahmen jetzt löschen?')) {
-      savedRecordings = [];
-      syncRecordingUI();
-    }
   }
 
   // ── Score rendering (normal mode) ───────────────────────────────────────
@@ -675,108 +488,9 @@ export function createSheetMusicReadingFeature() {
       : generateBars(BARS_PER_ROW, config.beatsPerBar, getNotesPool());
     resetActiveSequenceState();
     renderCurrentScore();
-    updateCurrentNoteDisplay();
+    updateCurrentNoteDisplay(ui, state, getCurrentNote());
     if (state.active && state.isListening) {
       applyTargetFftSize();
-    }
-  }
-
-  // ── Endless mode helpers ────────────────────────────────────────────────
-  function buildEndlessRow(container = ui.container) {
-    const bars      = endlessGen.nextBatch(BARS_PER_ROW);
-    const { notationDiv, staveLayout, rowDiv, vw } = appendRow(
-      container, bars, state.showTab, state.timeSig,
-    );
-    const bar = new PlaybackBar();
-    bar.render(notationDiv, staveLayout, vw);
-    bar.hide();
-    return { rowDiv, playbackBar: bar, staveLayout };
-  }
-
-  function appendEndlessRow(container = ui.container) {
-    const asset = buildEndlessRow(container);
-    allRowDivs.push(asset.rowDiv);
-    allPlaybackBars.push(asset.playbackBar);
-    allStaveLayouts.push(asset.staveLayout);
-    return asset;
-  }
-
-  function disposePendingEndlessRowAsset() {
-    if (!pendingEndlessRowAsset) return;
-    pendingEndlessRowAsset.playbackBar.destroy();
-    pendingEndlessRowAsset.rowDiv.remove();
-    pendingEndlessRowAsset = null;
-  }
-
-  function clearEndlessShiftTimeout() {
-    if (!endlessShiftTimeoutId) return;
-    clearTimeout(endlessShiftTimeoutId);
-    endlessShiftTimeoutId = null;
-    disposePendingEndlessRowAsset();
-  }
-
-  function getEndlessScrollTarget(container, rowDiv) {
-    if (!container || !rowDiv) return 0;
-    const target = rowDiv.offsetTop - container.clientHeight * ENDLESS_SCROLL_TARGET_FRACTION;
-    return Math.max(0, target);
-  }
-
-  function shiftEndlessWindowToRow(absoluteRowIndex) {
-    if (endlessShiftTimeoutId) return;
-    if (absoluteRowIndex <= endlessFirstRowIndex) return;
-
-    const localRowIndex = absoluteRowIndex - endlessFirstRowIndex;
-    const currentRowDiv = allRowDivs[localRowIndex];
-    const container = ui?.container;
-    if (!container || !currentRowDiv) return;
-
-    const scratch = document.createElement('div');
-    pendingEndlessRowAsset = buildEndlessRow(scratch);
-
-    container.scrollTo({
-      top: getEndlessScrollTarget(container, currentRowDiv),
-      behavior: 'smooth',
-    });
-
-    endlessShiftTimeoutId = setTimeout(() => {
-      endlessShiftTimeoutId = null;
-
-      const nextAsset = pendingEndlessRowAsset;
-      pendingEndlessRowAsset = null;
-      if (!nextAsset) return;
-
-      const removedRowDiv = allRowDivs.shift() ?? null;
-      const removedPlaybackBar = allPlaybackBars.shift() ?? null;
-      allStaveLayouts.shift();
-
-      const removedHeight = removedRowDiv?.offsetHeight ?? 0;
-      removedPlaybackBar?.destroy();
-      removedRowDiv?.remove();
-
-      container.appendChild(nextAsset.rowDiv);
-      allRowDivs.push(nextAsset.rowDiv);
-      allPlaybackBars.push(nextAsset.playbackBar);
-      allStaveLayouts.push(nextAsset.staveLayout);
-      endlessFirstRowIndex += 1;
-
-      if (removedHeight > 0) {
-        container.scrollTop = Math.max(0, container.scrollTop - removedHeight);
-      }
-    }, ENDLESS_SCROLL_SHIFT_DELAY_MS);
-  }
-
-  function cleanupEndlessState() {
-    clearEndlessShiftTimeout();
-    allPlaybackBars.forEach(bar => bar.destroy());
-    allRowDivs      = [];
-    allPlaybackBars = [];
-    allStaveLayouts = [];
-    endlessGen      = null;
-    endlessFirstRowIndex = 0;
-    const container = ui?.container;
-    if (container) {
-      container.classList.remove('score-container--endless');
-      container.scrollTop = 0;
     }
   }
 
@@ -808,7 +522,7 @@ export function createSheetMusicReadingFeature() {
       playbackBar.moveToBeat(barIndex, beatIndex, config.beatsPerBar);
     });
 
-    playback.onTick(({ beatIndex }) => updateBeatDot(beatIndex));
+    playback.onTick(({ beatIndex }) => updateBeatDot(ui, beatIndex));
 
     // Immediately snap cursor to the first note so it's visible during count-in.
     playbackBar.show();
@@ -829,44 +543,44 @@ export function createSheetMusicReadingFeature() {
     container.classList.add('score-container--endless');
 
     // Reset endless state
-    allRowDivs      = [];
-    allPlaybackBars = [];
-    allStaveLayouts = [];
-    endlessFirstRowIndex = 0;
+    endlessS.rowDivs = [];
+    endlessS.playbackBars = [];
+    endlessS.staveLayouts = [];
+    endlessS.firstRowIndex = 0;
     clearEndlessShiftTimeout();
 
     const config = getTimeSigConfig();
-    endlessGen = new EndlessBarGenerator(config.beatsPerBar, getNotesPool());
+    endlessS.gen = new EndlessBarGenerator(config.beatsPerBar, getNotesPool());
 
     for (let i = 0; i < ENDLESS_VISIBLE_ROWS; i++) appendEndlessRow();
 
     // Show first row's playback bar and snap it to the first beat immediately.
-    allPlaybackBars[0].show();
-    allPlaybackBars[0].moveToBeat(0, 0, config.beatsPerBar);
+    endlessS.playbackBars[0].show();
+    endlessS.playbackBars[0].moveToBeat(0, 0, config.beatsPerBar);
 
     playback.onBeat(({ barIndex, beatIndex }) => {
       const rowIndex   = Math.floor(barIndex / BARS_PER_ROW);
       const barInRow   = barIndex % BARS_PER_ROW;
-      const visibleRowIndex = rowIndex - endlessFirstRowIndex;
+      const visibleRowIndex = rowIndex - endlessS.firstRowIndex;
 
       // Show only the current row's playback bar
-      allPlaybackBars.forEach((bar, i) => {
+      endlessS.playbackBars.forEach((bar, i) => {
         if (i === visibleRowIndex) bar.show(); else bar.hide();
       });
 
       // Move the playback bar within the current row
-      if (allPlaybackBars[visibleRowIndex]) {
-        allPlaybackBars[visibleRowIndex].moveToBeat(
+      if (endlessS.playbackBars[visibleRowIndex]) {
+        endlessS.playbackBars[visibleRowIndex].moveToBeat(
           barInRow, beatIndex, config.beatsPerBar,
         );
       }
 
-      if (barInRow === 0 && beatIndex === 0 && rowIndex > endlessFirstRowIndex) {
+      if (barInRow === 0 && beatIndex === 0 && rowIndex > endlessS.firstRowIndex) {
         shiftEndlessWindowToRow(rowIndex);
       }
     });
 
-    playback.onTick(({ beatIndex }) => updateBeatDot(beatIndex));
+    playback.onTick(({ beatIndex }) => updateBeatDot(ui, beatIndex));
 
     // 0 = no wrap (play forever)
     playback.start(state.bpm, config.beatsPerBar, 0, config.beatsPerBar);
@@ -876,7 +590,7 @@ export function createSheetMusicReadingFeature() {
     if (!isPlaying) return;
     isPlaying = false;
     playback.stop();
-    clearBeatDots();
+    clearBeatDots(ui);
 
     if (state.endless) {
       cleanupEndlessState();
@@ -900,8 +614,8 @@ export function createSheetMusicReadingFeature() {
   // ── Settings sync ───────────────────────────────────────────────────────
   function syncSettingsUI() {
     syncSheetMusicUI(ui, state, syncFretSlider, syncStringToggles, updatePoolWarning);
-    syncActiveUiVisibility();
-    updateCurrentNoteDisplay();
+    syncActiveUiVisibility(ui, state);
+    updateCurrentNoteDisplay(ui, state, getCurrentNote());
   }
 
   // ── Exercise lifecycle ──────────────────────────────────────────────────
@@ -920,7 +634,7 @@ export function createSheetMusicReadingFeature() {
         stopPlayback();
         if (state.endless) cleanupEndlessState();
         regenerate();
-        updateFeedback();
+        updateFeedback(ui, state);
       });
 
       ui.activeBtn.addEventListener('click', () => {
@@ -952,7 +666,7 @@ export function createSheetMusicReadingFeature() {
 
       // Recording controls
       ui.recordBtn?.addEventListener('click', () => void startRecording());
-      ui.recordStopBtn?.addEventListener('click', () => void stopRecording());
+      ui.recordStopBtn?.addEventListener('click', () => void stopRecording(state));
       ui.recordCancelBtn?.addEventListener('click', cancelRecording);
       ui.downloadBtn?.addEventListener('click', downloadRecordings);
       ui.analyseBtn?.addEventListener('click', () => {
@@ -976,7 +690,7 @@ export function createSheetMusicReadingFeature() {
         saveSheetMusicTimeSig(state.timeSig);
         stopPlayback();
         if (state.endless) cleanupEndlessState();
-        renderBeatDots(state.timeSig);
+        renderBeatDots(ui, state.timeSig);
         regenerate();
       });
 
@@ -985,7 +699,7 @@ export function createSheetMusicReadingFeature() {
         stopPlayback();
         if (state.endless) cleanupEndlessState();
         regenerate();
-        updateFeedback();
+        updateFeedback(ui, state);
       });
 
       // String toggles
@@ -997,7 +711,7 @@ export function createSheetMusicReadingFeature() {
           stopPlayback();
           if (state.endless) cleanupEndlessState();
           regenerate();
-          updateFeedback();
+          updateFeedback(ui, state);
         },
       );
 
@@ -1052,8 +766,8 @@ export function createSheetMusicReadingFeature() {
 
     syncSettingsUI();
     syncRecordingUI();
-    renderBeatDots(state.timeSig);
-    updateFeedback();
+    renderBeatDots(ui, state.timeSig);
+    updateFeedback(ui, state);
     updateStrategyStatus();
     if (ui.permission) {
       ui.permission.classList.add('u-hidden');
