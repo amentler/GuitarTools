@@ -77,6 +77,15 @@
       flex-wrap: wrap;
       padding: 0.5rem 0;
     }
+
+    .recordings-actions__delete {
+      border-color: #c0392b;
+      color: #c0392b;
+    }
+
+    .recordings-actions__delete:hover:not(:disabled) {
+      background: #fdf0ee;
+    }
   </style>
 </head>
 <body>
@@ -89,6 +98,7 @@
       <div id="recordings-actions" class="recordings-actions u-hidden">
         <button id="btn-open-analyse" class="btn-play-stop">📊 Audio-Analyse öffnen</button>
         <button id="btn-open-tagger" class="btn-play-stop">🏷️ Onset Tagger öffnen</button>
+        <button id="btn-delete-recording" class="btn-play-stop recordings-actions__delete">🗑 Aufnahme löschen</button>
       </div>
     </div>
   </section>

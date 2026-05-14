@@ -1,4 +1,7 @@
-import { getAllRecordingsMeta } from './recordingsOverviewStorage.js';
+import {
+  deleteRecordingBySource,
+  getAllRecordingsMeta,
+} from './recordingsOverviewStorage.js';
 import {
   formatFileSize,
   formatDate,
@@ -18,15 +21,17 @@ export function createRecordingsOverviewFeature() {
       actions:    q('recordings-actions'),
       analyseBtn: q('btn-open-analyse'),
       taggerBtn:  q('btn-open-tagger'),
+      deleteBtn:  q('btn-delete-recording'),
       emptyMsg:   q('recordings-empty'),
     };
   }
 
   function renderList(ui) {
-    const { list, emptyMsg } = ui;
+    const { list, emptyMsg, actions } = ui;
     list.innerHTML = '';
     if (_recordings.length === 0) {
       emptyMsg?.classList.remove('u-hidden');
+      actions?.classList.add('u-hidden');
       return;
     }
     emptyMsg?.classList.add('u-hidden');
@@ -57,6 +62,29 @@ export function createRecordingsOverviewFeature() {
     ui.actions.classList.remove('u-hidden');
   }
 
+  async function refreshList(ui) {
+    _recordings = await getAllRecordingsMeta();
+    renderList(ui);
+  }
+
+  async function deleteSelectedRecording(ui) {
+    if (!_selected) return;
+    if (!confirm('Diese Aufnahme unwiderruflich löschen?')) return;
+
+    const deleteBtn = ui.deleteBtn;
+    if (deleteBtn) deleteBtn.disabled = true;
+    try {
+      await deleteRecordingBySource(_selected.source, _selected.id);
+      _selected = null;
+      ui.actions?.classList.add('u-hidden');
+      await refreshList(ui);
+    } catch {
+      alert('Aufnahme konnte nicht gelöscht werden.');
+    } finally {
+      if (deleteBtn) deleteBtn.disabled = false;
+    }
+  }
+
   function mount(root) {
     _root = root;
     const ui = resolveUI();
@@ -73,10 +101,11 @@ export function createRecordingsOverviewFeature() {
       window.location.href = buildOnsetTaggerUrl(_selected.source, _selected.id);
     });
 
-    getAllRecordingsMeta().then(recordings => {
-      _recordings = recordings;
-      renderList(ui);
-    }).catch(() => {
+    ui.deleteBtn?.addEventListener('click', () => {
+      void deleteSelectedRecording(ui);
+    });
+
+    refreshList(ui).catch(() => {
       if (ui.emptyMsg) {
         ui.emptyMsg.textContent = 'Aufnahmen konnten nicht geladen werden.';
         ui.emptyMsg.classList.remove('u-hidden');

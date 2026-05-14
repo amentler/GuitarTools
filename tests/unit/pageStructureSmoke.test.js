@@ -40,4 +40,12 @@ describe('Page structure smoke', () => {
       expect(bootstrap).toContain('.mount(root)');
     }
   });
+
+  it('wires the recordings page actions', () => {
+    const html = readFileSync(path.join(pagesRoot, 'recordings', 'index.html'), 'utf8');
+
+    expect(html).toContain('id="btn-open-analyse"');
+    expect(html).toContain('id="btn-open-tagger"');
+    expect(html).toContain('id="btn-delete-recording"');
+  });
 });

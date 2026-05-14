@@ -41,6 +41,17 @@ export async function getSheetMusicRecordingMeta() {
   }
 }
 
+export async function deleteSheetMusicRecording(id) {
+  if (id !== SM_KEY) return false;
+  const db = await openSheetMusicDb();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(SM_STORE_NAME, 'readwrite');
+    tx.objectStore(SM_STORE_NAME).delete(SM_KEY);
+    tx.oncomplete = () => { db.close(); resolve(true); };
+    tx.onerror = () => { db.close(); reject(tx.error); };
+  });
+}
+
 // ── Chord Recorder DB ─────────────────────────────────────────────────────────
 
 const CR_DB_NAME    = 'chord-recorder';
@@ -79,6 +90,17 @@ export async function getChordRecordingsMeta() {
   }
 }
 
+export async function deleteChordRecording(id) {
+  if (!id) return false;
+  const db = await openChordRecorderDb();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(CR_STORE_NAME, 'readwrite');
+    tx.objectStore(CR_STORE_NAME).delete(id);
+    tx.oncomplete = () => { db.close(); resolve(true); };
+    tx.onerror = () => { db.close(); reject(tx.error); };
+  });
+}
+
 // ── Combined ──────────────────────────────────────────────────────────────────
 
 export async function getAllRecordingsMeta() {
@@ -88,4 +110,10 @@ export async function getAllRecordingsMeta() {
   ]);
   const all = [...(smEntry ? [smEntry] : []), ...crEntries];
   return sortByDate(all);
+}
+
+export async function deleteRecordingBySource(source, id) {
+  if (source === 'sheet-music') return deleteSheetMusicRecording(id);
+  if (source === 'chord-recorder') return deleteChordRecording(id);
+  return false;
 }
