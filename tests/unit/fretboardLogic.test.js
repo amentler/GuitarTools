@@ -4,7 +4,7 @@ import {
   OPEN_STRING_NOTES,
   getNoteAtPosition,
   getRandomPosition,
-} from '../../js/games/fretboardToneRecognition/fretboardLogic.js';
+} from '../../js/domain/fretboard/fretboardLogic.js';
 
 describe('getNoteAtPosition', () => {
   it('returns the open string note at fret 0', () => {

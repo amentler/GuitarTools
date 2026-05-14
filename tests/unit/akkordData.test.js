@@ -7,7 +7,7 @@ import {
   CHORD_ROOTS,
   validateFingerData,
 } from '../../js/data/akkordData.js';
-import { getChordNotes } from '../../js/utils/chordDetectionUtils.js';
+import { getChordNotes } from '../../js/domain/chords/chordDetectionLogic.js';
 
 function pitchClasses(chordName) {
   return [...new Set(getChordNotes(chordName).map(n => n.note))].sort();

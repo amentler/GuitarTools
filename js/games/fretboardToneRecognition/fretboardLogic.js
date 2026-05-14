@@ -1,5 +1,3 @@
-export * from '../../domain/fretboard/fretboardLogic.js';
-
 /**
  * Initializes the game state.
  */
