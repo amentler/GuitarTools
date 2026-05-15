@@ -6,6 +6,7 @@ sweep-runs/
 
 # Weitere temporäre Daten
 graphify-out/cache/
+graphify-out/.rebuild.lock
 test-results/
 .last-run.json
 

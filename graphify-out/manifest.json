@@ -30,8 +30,8 @@
     "semantic_hash": ""
   },
   "/mnt/c/Projekte/GuitarTools/sw.js": {
-    "mtime": 1778837205.637954,
-    "ast_hash": "01d926513acdac82410269eecbff7b9d",
+    "mtime": 1778842177.8396828,
+    "ast_hash": "40043f1a5533a8cf09fbd11d28a6f5b1",
     "semantic_hash": ""
   },
   "/mnt/c/Projekte/GuitarTools/vitest.config.js": {
@@ -780,8 +780,13 @@
     "semantic_hash": ""
   },
   "/mnt/c/Projekte/GuitarTools/scripts/auto-update-version.sh": {
-    "mtime": 1778765234.5704346,
-    "ast_hash": "520c96e42b28ac8acea2e4f55ed31a17",
+    "mtime": 1778841706.516723,
+    "ast_hash": "1aaebf9fe6e3b3249380b563805f9a6d",
+    "semantic_hash": ""
+  },
+  "/mnt/c/Projekte/GuitarTools/scripts/autoUpdateVersionCore.mjs": {
+    "mtime": 1778841701.5562785,
+    "ast_hash": "7b759329337634ce9e6de936c61699c3",
     "semantic_hash": ""
   },
   "/mnt/c/Projekte/GuitarTools/scripts/chord-recognition-fingerprint.mjs": {
@@ -845,8 +850,8 @@
     "semantic_hash": ""
   },
   "/mnt/c/Projekte/GuitarTools/scripts/sheet-onset-sweep.mjs": {
-    "mtime": 1778835399.0723944,
-    "ast_hash": "d288c97855c9408b02d5de3a2bb65c8b",
+    "mtime": 1778842113.7349606,
+    "ast_hash": "3183b7bf280f3aec58c3392047e8f441",
     "semantic_hash": ""
   },
   "/mnt/c/Projekte/GuitarTools/scripts/sheetMusicOnsetConfig.mjs": {
@@ -855,8 +860,8 @@
     "semantic_hash": ""
   },
   "/mnt/c/Projekte/GuitarTools/scripts/sheetOnsetSweepCore.mjs": {
-    "mtime": 1778835257.9095445,
-    "ast_hash": "0e5b4353458f1c532e0d2de2829a1b28",
+    "mtime": 1778842124.460139,
+    "ast_hash": "b967530f5d664ef5dbe76bb1d5634e20",
     "semantic_hash": ""
   },
   "/mnt/c/Projekte/GuitarTools/sweep-runs/onset/2026-05-12T04-02-08-294Z/best-001.config.json": {
@@ -15985,47 +15990,47 @@
     "semantic_hash": ""
   },
   "/mnt/c/Projekte/GuitarTools/sweep-runs/onset/2026-05-15T09-19-03-875Z/best-by-strategy.json": {
-    "mtime": 1778840646.064507,
+    "mtime": 1778841365.5906086,
     "ast_hash": "835a7148db7ec5448b05a5dbb4f34b3a",
     "semantic_hash": ""
   },
   "/mnt/c/Projekte/GuitarTools/sweep-runs/onset/2026-05-15T09-19-03-875Z/best-guitar-onset-broadband-or.config.json": {
-    "mtime": 1778840646.0785167,
+    "mtime": 1778841365.6287253,
     "ast_hash": "508ccaeb9dc460782607ed75114be784",
     "semantic_hash": ""
   },
   "/mnt/c/Projekte/GuitarTools/sweep-runs/onset/2026-05-15T09-19-03-875Z/best-guitar-onset-broadband-or.json": {
-    "mtime": 1778840646.0765183,
+    "mtime": 1778841365.6227243,
     "ast_hash": "0cc0cc86f545e37f6ecded83b1371dbb",
     "semantic_hash": ""
   },
   "/mnt/c/Projekte/GuitarTools/sweep-runs/onset/2026-05-15T09-19-03-875Z/best-guitar-onset-legacy-bandpass.config.json": {
-    "mtime": 1778840646.0825145,
+    "mtime": 1778841365.63576,
     "ast_hash": "25ba2ed749181c15e3b08b7d97813a93",
     "semantic_hash": ""
   },
   "/mnt/c/Projekte/GuitarTools/sweep-runs/onset/2026-05-15T09-19-03-875Z/best-guitar-onset-legacy-bandpass.json": {
-    "mtime": 1778840646.0805159,
+    "mtime": 1778841365.6317246,
     "ast_hash": "daf882fa8df44c3a9a0c582587f6bf66",
     "semantic_hash": ""
   },
   "/mnt/c/Projekte/GuitarTools/sweep-runs/onset/2026-05-15T09-19-03-875Z/best-guitar-onset-sweep-standard.config.json": {
-    "mtime": 1778840646.0705135,
+    "mtime": 1778841365.6076818,
     "ast_hash": "547dcadcc7bc851257690c848b1a78f4",
     "semantic_hash": ""
   },
   "/mnt/c/Projekte/GuitarTools/sweep-runs/onset/2026-05-15T09-19-03-875Z/best-guitar-onset-sweep-standard.json": {
-    "mtime": 1778840646.0685074,
+    "mtime": 1778841365.6006777,
     "ast_hash": "6689764fbb2aad830eff738575c96a96",
     "semantic_hash": ""
   },
   "/mnt/c/Projekte/GuitarTools/sweep-runs/onset/2026-05-15T09-19-03-875Z/best-guitar-onset.config.json": {
-    "mtime": 1778840646.0745149,
+    "mtime": 1778841365.616721,
     "ast_hash": "818f9a9ed2408632a5e5e15299b3667c",
     "semantic_hash": ""
   },
   "/mnt/c/Projekte/GuitarTools/sweep-runs/onset/2026-05-15T09-19-03-875Z/best-guitar-onset.json": {
-    "mtime": 1778840646.0725183,
+    "mtime": 1778841365.6117246,
     "ast_hash": "e40f0590fa232c0bc66e2d646a48984f",
     "semantic_hash": ""
   },
@@ -16036,6 +16041,61 @@
   },
   "/mnt/c/Projekte/GuitarTools/sweep-runs/onset/2026-05-15T09-19-03-875Z/sweep-spec.json": {
     "mtime": 1778836744.013864,
+    "ast_hash": "7f0825e619be3db2568c1976b71f0160",
+    "semantic_hash": ""
+  },
+  "/mnt/c/Projekte/GuitarTools/sweep-runs/onset/2026-05-15T10-40-39-392Z/best-by-strategy.json": {
+    "mtime": 1778841743.6194677,
+    "ast_hash": "90ed9c55da5e388de8761cfb22e4802b",
+    "semantic_hash": ""
+  },
+  "/mnt/c/Projekte/GuitarTools/sweep-runs/onset/2026-05-15T10-40-39-392Z/best-guitar-onset-broadband-or.config.json": {
+    "mtime": 1778841743.6384308,
+    "ast_hash": "d10ef5367536c5b622869e6f7c4ad8aa",
+    "semantic_hash": ""
+  },
+  "/mnt/c/Projekte/GuitarTools/sweep-runs/onset/2026-05-15T10-40-39-392Z/best-guitar-onset-broadband-or.json": {
+    "mtime": 1778841743.6364312,
+    "ast_hash": "02307b6cee37135aa3cda19a0182cfbc",
+    "semantic_hash": ""
+  },
+  "/mnt/c/Projekte/GuitarTools/sweep-runs/onset/2026-05-15T10-40-39-392Z/best-guitar-onset-legacy-bandpass.config.json": {
+    "mtime": 1778841743.6424322,
+    "ast_hash": "c4c4141b290f457ef71ea6162fa71b5c",
+    "semantic_hash": ""
+  },
+  "/mnt/c/Projekte/GuitarTools/sweep-runs/onset/2026-05-15T10-40-39-392Z/best-guitar-onset-legacy-bandpass.json": {
+    "mtime": 1778841743.6404283,
+    "ast_hash": "b5eea9c208a0929262f7f11c2b455550",
+    "semantic_hash": ""
+  },
+  "/mnt/c/Projekte/GuitarTools/sweep-runs/onset/2026-05-15T10-40-39-392Z/best-guitar-onset-sweep-standard.config.json": {
+    "mtime": 1778841743.6294723,
+    "ast_hash": "ea325e4d569c5faa2b064e8dba201935",
+    "semantic_hash": ""
+  },
+  "/mnt/c/Projekte/GuitarTools/sweep-runs/onset/2026-05-15T10-40-39-392Z/best-guitar-onset-sweep-standard.json": {
+    "mtime": 1778841743.6264663,
+    "ast_hash": "ff1eff52610f939744647f0e46e40954",
+    "semantic_hash": ""
+  },
+  "/mnt/c/Projekte/GuitarTools/sweep-runs/onset/2026-05-15T10-40-39-392Z/best-guitar-onset.config.json": {
+    "mtime": 1778841743.6344664,
+    "ast_hash": "017f33a34975c04661dcaf177b7a35bb",
+    "semantic_hash": ""
+  },
+  "/mnt/c/Projekte/GuitarTools/sweep-runs/onset/2026-05-15T10-40-39-392Z/best-guitar-onset.json": {
+    "mtime": 1778841743.6314695,
+    "ast_hash": "d299491860806c7af03d1ee7493209af",
+    "semantic_hash": ""
+  },
+  "/mnt/c/Projekte/GuitarTools/sweep-runs/onset/2026-05-15T10-40-39-392Z/fixtures.json": {
+    "mtime": 1778841639.5481713,
+    "ast_hash": "6ab4e35b17e85eb145fe9f51ea4db25e",
+    "semantic_hash": ""
+  },
+  "/mnt/c/Projekte/GuitarTools/sweep-runs/onset/2026-05-15T10-40-39-392Z/sweep-spec.json": {
+    "mtime": 1778841639.5441709,
     "ast_hash": "7f0825e619be3db2568c1976b71f0160",
     "semantic_hash": ""
   },
@@ -16995,8 +17055,8 @@
     "semantic_hash": ""
   },
   "/mnt/c/Projekte/GuitarTools/tests/unit/autoUpdateVersion.test.js": {
-    "mtime": 1778570826.719164,
-    "ast_hash": "12bdb6cf3a87f3b0b5dabaf0c3e51424",
+    "mtime": 1778841710.447564,
+    "ast_hash": "f1bda85191b892508763b1aeb5ab3ab1",
     "semantic_hash": ""
   },
   "/mnt/c/Projekte/GuitarTools/tests/unit/browserEnvironment.test.js": {
@@ -17460,18 +17520,18 @@
     "semantic_hash": ""
   },
   "/mnt/c/Projekte/GuitarTools/AGENTS.md": {
-    "mtime": 1778840185.520469,
-    "ast_hash": "9593db7d243e2fcc3cca59a66bdc7739",
+    "mtime": 1778841733.797573,
+    "ast_hash": "0ea492e3ba184e196a30640551f67c32",
     "semantic_hash": ""
   },
   "/mnt/c/Projekte/GuitarTools/CLAUDE.md": {
-    "mtime": 1778840024.194041,
-    "ast_hash": "f1cd5acda7722d12166bd4f0fa72dc78",
+    "mtime": 1778841714.5859756,
+    "ast_hash": "ac21f2be2564a1f7f622a1151d9b427a",
     "semantic_hash": ""
   },
   "/mnt/c/Projekte/GuitarTools/codex.md": {
-    "mtime": 1778788024.1980662,
-    "ast_hash": "dbb2651f57178b172bfa556a6d037d03",
+    "mtime": 1778841721.71778,
+    "ast_hash": "37e86857ee06f84b59009ca3a3b84291",
     "semantic_hash": ""
   },
   "/mnt/c/Projekte/GuitarTools/copilot.md": {
@@ -17480,8 +17540,8 @@
     "semantic_hash": ""
   },
   "/mnt/c/Projekte/GuitarTools/GEMINI.md": {
-    "mtime": 1778840024.300361,
-    "ast_hash": "be4963b07ad9e1781d79522b63482b7e",
+    "mtime": 1778841718.6734679,
+    "ast_hash": "df9af30f83b0b0c14a6c8fa13cc452fe",
     "semantic_hash": ""
   },
   "/mnt/c/Projekte/GuitarTools/index.html": {
@@ -17495,8 +17555,8 @@
     "semantic_hash": ""
   },
   "/mnt/c/Projekte/GuitarTools/version.txt": {
-    "mtime": 1778836558.816663,
-    "ast_hash": "7c621894cbee19c51294f30570d39c54",
+    "mtime": 1778842271.8363118,
+    "ast_hash": "3c6a993422f5631b13a29059a6170e0b",
     "semantic_hash": ""
   },
   "/mnt/c/Projekte/GuitarTools/docs/architecture.md": {
@@ -17875,8 +17935,13 @@
     "semantic_hash": ""
   },
   "/mnt/c/Projekte/GuitarTools/sweep-runs/onset/2026-05-15T09-19-03-875Z/report.md": {
-    "mtime": 1778840646.06151,
-    "ast_hash": "bcf35f34ba37abd325f5acb84e553d37",
+    "mtime": 1778841365.5856192,
+    "ast_hash": "0d33e8aa848cfcea34f9ee23886f1110",
+    "semantic_hash": ""
+  },
+  "/mnt/c/Projekte/GuitarTools/sweep-runs/onset/2026-05-15T10-40-39-392Z/report.md": {
+    "mtime": 1778841743.5829155,
+    "ast_hash": "4c0cfec11a8417f4a0849b2ad4c793e4",
     "semantic_hash": ""
   },
   "/mnt/c/Projekte/GuitarTools/tests/fixtures/analyser-goldens/notes/README.md": {
