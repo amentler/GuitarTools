@@ -56,5 +56,20 @@ BEFORE committing any changes, you MUST:
 - Use `graphify query`, `graphify path`, or `graphify explain` for complex relations.
 - After code changes, run `graphify update .`.
 
+#### System Setup (einmalig pro Maschine)
+
+graphify ist über pipx installiert. Das PyPI-Paket heißt `graphifyy` (zwei `y`), der Befehl ist `graphify`:
+
+```bash
+pipx install graphifyy
+```
+
+Falls `pipx` nicht verfügbar ist:
+```bash
+pip install --user graphifyy
+```
+
+Der PreToolUse-Hook in `.codex/hooks.json` ruft `graphify hook-check` vor jedem Bash-Call auf. Er ist so abgesichert, dass er bei fehlendem graphify nicht blockiert (`command -v graphify >/dev/null 2>&1 && graphify hook-check; exit 0`). graphify sollte trotzdem installiert sein, damit der Graph aktuell bleibt.
+
 ### Shortcuts
 - `sfp` -> `npm run sfp` (Short for specific fingerprinting/fixtures tasks).
