@@ -19,6 +19,7 @@ import {
 import { loadRecordingFromSource } from '../../shared/recordingLoader.js';
 import { detectOnsetsOffline } from '../../shared/audio/offlineOnsetDetection.js';
 import { getGuitarOnsetStrategies } from '../../shared/audio/guitarOnsetStrategies.js';
+import { createGlobalDebugStore } from '../../shared/debug/index.js';
 
 import {
   clientXToTime,
@@ -42,6 +43,7 @@ const FOCUS_WINDOW_SEC = 1;
  * @returns {{ mount(root: Element): void, unmount(): void }}
  */
 export function createOnsetTaggerFeature() {
+  const _debugStore = createGlobalDebugStore();
   // ── State ──────────────────────────────────────────────────────────────────
   let _samples       = null;   // Float32Array
   let _sampleRate    = 44100;
@@ -345,6 +347,12 @@ export function createOnsetTaggerFeature() {
       _sampleRate = decoded.sampleRate;
       _duration   = decoded.duration;
       _audioBuffer = null;
+      _debugStore.addEntry('audio:decoded', {
+        sampleRate: _sampleRate,
+        duration: _duration,
+        length: decoded.length,
+        filename,
+      }, { source: 'onsetTagger' });
 
       _rangeStart = 0;
       _rangeEnd   = _duration;

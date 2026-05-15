@@ -7,6 +7,7 @@
  * Factory-Pattern: export function createAudioAnalyseFeature()
  */
 
+import { createGlobalDebugStore } from '../../shared/debug/index.js';
 import { loadLatestSheetMusicTake } from '../../shared/audioAnalyseStorage.js';
 import { loadRecordingFromSource } from '../../shared/recordingLoader.js';
 import { decodeWav, analyzeAudio } from './audioAnalyseEngine.js';
@@ -42,6 +43,7 @@ const PITCH_STRATEGY_LABELS = {
  * @returns {{ mount(root?: Document|Element): void, unmount(): void }}
  */
 export function createAudioAnalyseFeature() {
+  const _debugStore = createGlobalDebugStore();
   let _root = null;
 
   // ── Playback-State ─────────────────────────────────────────────────────────
@@ -134,6 +136,12 @@ export function createAudioAnalyseFeature() {
       showStatus(ui, `Fehler beim Dekodieren: ${err.message}`, true);
       return;
     }
+    _debugStore.addEntry('audio:decoded', {
+      sampleRate: decoded.sampleRate,
+      duration: decoded.audioBuffer.duration,
+      length: decoded.audioBuffer.length,
+      filename,
+    }, { source: 'audioAnalyse' });
 
     showStatus(ui, 'Analysiere Frames…');
     const pitchStrategyKey = ui.pitchStrategySelect?.value ?? getSetting(SETTING_KEYS.SHEET_MUSIC_RECOGNITION_STRATEGY);
