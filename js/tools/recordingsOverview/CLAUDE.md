@@ -37,7 +37,10 @@ Bulk-Aktionen erlauben Download und Löschen nach Quelle (Noten lesen / Akkord-R
 
 ## ZIP-Infrastruktur
 
-Verwendet `js/shared/zip.js` (`buildZip`, `downloadBlob`) — das zentrale ZIP-Modul für alle Tools.
+Verwendet `js/shared/zip.js` (`buildRecordingZip`, `buildCollectionZip`, `downloadBlob`) — das zentrale ZIP-Modul für alle Tools.
+
+- Einzelne Aufnahme → `baseName.zip` mit `baseName.wav` + `baseName.json` direkt darin
+- Mehrere Aufnahmen → Container-ZIP mit je einem Inner-ZIP pro Aufnahme
 
 ## Seite
 

@@ -29,6 +29,7 @@ import {
 } from '../../shared/audio/sheetMusicRecognition.js';
 import { getEssentia } from '../../shared/audio/essentiaLoader.js';
 import { createEssentiaSheetMusicStrategy } from '../../shared/audio/essentiaSheetMusicStrategy.js';
+import { readZip } from '../../shared/zip.js';
 
 const PITCH_STRATEGY_LABELS = {
   'fast-note-matcher': 'Fast Note Matcher',
@@ -301,8 +302,22 @@ export function createAudioAnalyseFeature() {
 
   async function handleFileInput(ui, file) {
     if (!file) return;
+    if (file.name.toLowerCase().endsWith('.zip') || file.type === 'application/zip') {
+      const buf     = await file.arrayBuffer();
+      const entries = readZip(new Uint8Array(buf));
+      const wavEntry  = entries.find(e => e.name.toLowerCase().endsWith('.wav'));
+      if (!wavEntry) { showStatus(ui, 'Keine WAV-Datei in der ZIP gefunden.', true); return; }
+      const jsonEntry = entries.find(e => e.name.toLowerCase().endsWith('.json'));
+      let sidecar;
+      if (jsonEntry) {
+        try { sidecar = JSON.parse(new TextDecoder().decode(jsonEntry.data)); } catch { /* ignore */ }
+      }
+      showStatus(ui, `Lese ${wavEntry.name} aus ZIP…`);
+      await runAnalysis(ui, wavEntry.data.buffer, wavEntry.name, sidecar);
+      return;
+    }
     if (!file.name.endsWith('.wav') && file.type !== 'audio/wav') {
-      showStatus(ui, 'Bitte eine WAV-Datei auswählen.', true);
+      showStatus(ui, 'Bitte eine WAV- oder ZIP-Datei auswählen.', true);
       return;
     }
     showStatus(ui, `Lese ${file.name}…`);

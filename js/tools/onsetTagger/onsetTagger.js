@@ -28,7 +28,7 @@ import {
   updateOnsetMarkers,
 } from './onsetTaggerWaveform.js';
 
-import { buildZip, downloadBlob } from '../../shared/zip.js';
+import { buildRecordingZip, readZip, downloadBlob } from '../../shared/zip.js';
 import {
   DEFAULT_SIDECAR_FIELDS,
   renderMetaForm,
@@ -83,6 +83,9 @@ export function createOnsetTaggerFeature() {
       jsonBtn:       q('tagger-json-btn'),
       jsonInput:     q('tagger-json-input'),
       jsonLabel:     q('tagger-json-label'),
+      zipBtn:        q('tagger-zip-btn'),
+      zipInput:      q('tagger-zip-input'),
+      zipLabel:      q('tagger-zip-label'),
       waveformWrap:  q('tagger-waveform-wrap'),
       step1:         q('tagger-step1'),
       step2:         q('tagger-step2'),
@@ -321,21 +324,12 @@ export function createOnsetTaggerFeature() {
 
   function handleExport(ui) {
     if (!_wavArrayBuffer) return;
-
     const formValues = readMetaForm(ui);
     const sidecar    = buildSidecarWithOnsets(formValues, _onsetsMs);
     const jsonBytes  = new TextEncoder().encode(JSON.stringify(sidecar, null, 2));
-
     const wavName    = _wavFilename || 'recording.wav';
-    const jsonName   = _sidecarFilename || wavName.replace(/\.wav$/i, '.json');
-
-    const zipData = buildZip([
-      { name: wavName,  data: new Uint8Array(_wavArrayBuffer) },
-      { name: jsonName, data: jsonBytes },
-    ]);
-
-    const base = wavName.replace(/\.wav$/i, '');
-    downloadBlob(zipData, `${base}-tagged.zip`, 'application/zip');
+    const base       = wavName.replace(/\.wav$/i, '');
+    downloadBlob(buildRecordingZip(base, new Uint8Array(_wavArrayBuffer), jsonBytes), `${base}-tagged.zip`, 'application/zip');
   }
 
   // ── File loading ───────────────────────────────────────────────────────────
@@ -418,6 +412,26 @@ export function createOnsetTaggerFeature() {
     reader.readAsText(file);
   }
 
+  async function loadZip(file, ui) {
+    const buf     = await file.arrayBuffer();
+    const entries = readZip(new Uint8Array(buf));
+    const wavEntry  = entries.find(e => e.name.toLowerCase().endsWith('.wav'));
+    const jsonEntry = entries.find(e => e.name.toLowerCase().endsWith('.json'));
+    if (!wavEntry) {
+      if (ui.zipLabel) ui.zipLabel.textContent = 'Keine WAV-Datei in ZIP';
+      return;
+    }
+    if (ui.zipLabel) ui.zipLabel.textContent = file.name + ' ✓';
+    await applyWavBuffer(wavEntry.data.buffer, wavEntry.name, ui);
+    if (jsonEntry) {
+      try {
+        applySidecarData(JSON.parse(new TextDecoder().decode(jsonEntry.data)), jsonEntry.name, ui);
+      } catch (err) {
+        if (ui.jsonLabel) ui.jsonLabel.textContent = `Fehler: ${err.message}`;
+      }
+    }
+  }
+
   function enableStep2(ui) {
     if (!_samples) return;
     ui.step2.classList.remove('tagger-section--disabled');
@@ -452,6 +466,17 @@ export function createOnsetTaggerFeature() {
       ui.jsonInput.addEventListener('change', (e) => {
         const file = e.target.files?.[0];
         if (file) loadJson(file, ui);
+      });
+    }
+
+    // ZIP file button
+    if (ui.zipBtn && ui.zipInput) {
+      ui.zipBtn.addEventListener('click', () => ui.zipInput.click());
+    }
+    if (ui.zipInput) {
+      ui.zipInput.addEventListener('change', (e) => {
+        const file = e.target.files?.[0];
+        if (file) loadZip(file, ui);
       });
     }
 

@@ -77,6 +77,10 @@ PLOT_W = 930
 - Alle SVG-Crosshair-`<line>`-Elemente werden synchron aktualisiert
 - Tooltip zeigt: Zeit, RMS, Hz, Note, Onset-Konfidenz, Onset-Indikator
 
+## ZIP-Import
+
+`handleFileInput` erkennt `.zip`-Dateien (Endung oder `application/zip` MIME-Type) und extrahiert via `readZip` (`js/shared/zip.js`) die erste WAV-Datei und – falls vorhanden – die JSON-Sidecar daraus. Das Datei-Input akzeptiert `.wav,audio/wav,.zip,application/zip`; das Drop-Label lautet „WAV- oder ZIP-Datei wählen". Import ohne Sidecar bleibt möglich.
+
 ## IndexedDB-Schema
 
 - **Database**: `gt-audio-analyse-db`

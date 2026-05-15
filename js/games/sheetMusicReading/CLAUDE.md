@@ -101,9 +101,11 @@ Optionaler Aktiv-Modus: Mikrofon-basierte Tonprüfung.
 - `stop()`: gibt 16-bit-mono-WAV als `Uint8Array` zurück, räumt auf; gibt `null` zurück falls keine Daten
 - `cancel()`: räumt auf, kein Rückgabewert
 
-### `sheetMusicZip.js`
-- `buildZip(files)` → `Uint8Array` – Store-ZIP ohne externe Deps, mit CRC-32
-- `downloadBlob(data, filename, mimeType)` – ObjectURL-Download-Helper
+### ZIP-Export
+
+Nutzt `buildRecordingZip` + `buildCollectionZip` + `downloadBlob` aus `js/shared/zip.js`.
+- Einzelne Aufnahme → `baseName.zip` mit WAV+JSON direkt darin
+- Mehrere Aufnahmen → Container-ZIP mit je einem Inner-ZIP pro Aufnahme
 
 ## Implementierter Stand (laut backlog.md)
 

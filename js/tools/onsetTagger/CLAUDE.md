@@ -63,7 +63,11 @@ Routing:
 
 ## ZIP-Implementierung
 
-Nutzt `buildZip` + `downloadBlob` aus `js/games/sheetMusicReading/sheetMusicZip.js` (Store-mode, keine externen Deps).
+Nutzt `buildRecordingZip`, `readZip` + `downloadBlob` aus `js/shared/zip.js` (Store-mode, keine externen Deps).
+
+Export: `baseName-tagged.zip` mit `baseName.wav` + `baseName.json` direkt darin.
+
+Import: Neben WAV- und JSON-Button gibt es einen **ZIP-Button** (`tagger-zip-btn`). Beim Laden einer ZIP-Datei wird die WAV-Datei extrahiert und – falls vorhanden – die JSON-Sidecar automatisch mitgeladen. Import ohne Sidecar bleibt möglich (Formular-Defaults werden verwendet).
 
 ## Playback
 
