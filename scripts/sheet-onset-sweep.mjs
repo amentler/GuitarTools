@@ -409,16 +409,21 @@ async function main() {
       const beam = sortResults(strategyResults).slice(0, spec.beamSize);
       const isFirstRound = round === startRound && beam.length === 0;
       const isGlobalReset = spec.globalResetInterval && round % spec.globalResetInterval === 0;
-      const isStagnationProbe = !isFirstRound && !isGlobalReset
+      const isStagnationReset = spec.stagnationResetInterval && state.stagnationCount >= spec.stagnationResetInterval;
+      const isStagnationProbe = !isFirstRound && !isGlobalReset && !isStagnationReset
         && spec.stagnationRounds && state.stagnationCount >= spec.stagnationRounds;
 
       let roundMode;
       let rawCandidates;
-      if (isFirstRound || isGlobalReset) {
+      if (isFirstRound || isGlobalReset || isStagnationReset) {
         rawCandidates = createInitialCandidatesForStrategy(spec, strategy.key, spec.candidatesPerRound, random);
         state.effectiveRound = 0;
         state.stagnationCount = 0;
-        roundMode = isGlobalReset ? 'global-reset' : 'initial';
+        if (isStagnationReset) {
+          roundMode = 'stagnation-reset';
+        } else {
+          roundMode = isGlobalReset ? 'global-reset' : 'initial';
+        }
       } else {
         rawCandidates = createRefinedCandidatesForStrategy(
           spec,
@@ -488,7 +493,7 @@ async function main() {
       if (strategyRoundBestScore > state.recentRoundBest + minImprovement) {
         state.recentRoundBest = strategyRoundBestScore;
         state.stagnationCount = 0;
-      } else if (mode !== 'global-reset' && mode !== 'initial') {
+      } else if (mode !== 'global-reset' && mode !== 'initial' && mode !== 'stagnation-reset') {
         state.stagnationCount++;
       }
     }

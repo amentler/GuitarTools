@@ -17,6 +17,7 @@ export const DEFAULT_SWEEP_SPEC = Object.freeze({
   candidatesPerRound: 40,
   timeBudgetMinutes: null,
   stagnationRounds: 3,
+  stagnationResetInterval: 12,
   stagnationProbeCount: 10,
   minScoreImprovement: 1.0,
   globalResetInterval: 30,
