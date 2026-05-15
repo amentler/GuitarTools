@@ -1,0 +1,89 @@
+{
+  "fixturesDir": "tests/fixtures/sequences",
+  "outputDir": "sweep-runs/onset",
+  "beamSize": 5,
+  "rounds": 300,
+  "candidatesPerRound": 80,
+  "timeBudgetMinutes": 240,
+  "stagnationRounds": 3,
+  "stagnationProbeCount": 10,
+  "globalResetInterval": 30,
+  "seed": 1337,
+  "score": {
+    "underPenalty": 6,
+    "overPenalty": 1,
+    "extremeUnderPenalty": 25,
+    "extremeUnderMultiplier": 0.75,
+    "extremeOverPenalty": 25,
+    "extremeOverMultiplier": 1.5,
+    "guardrailOverMultiplier": 1.5
+  },
+  "fixtureOverrides": {
+    "open-strings/fast.wav": {
+      "role": "target",
+      "minOnsets": 13,
+      "maxOnsets": 18,
+      "weight": 3
+    },
+    "open-strings/aeaedgdgbebeabab.wav": {
+      "role": "target",
+      "minOnsets": 13,
+      "maxOnsets": 18,
+      "weight": 2
+    },
+    "open-strings/aeaedgdgbebeabab_slow.wav": {
+      "role": "target",
+      "minOnsets": 13,
+      "maxOnsets": 18,
+      "weight": 2
+    },
+    "open-strings/slow.wav": {
+      "role": "target",
+      "minOnsets": 13,
+      "maxOnsets": 18,
+      "weight": 1
+    },
+    "open-strings/medium.wav": {
+      "role": "guardrail",
+      "minOnsets": 13,
+      "maxOnsets": 18,
+      "weight": 4
+    },
+    "open-strings/eeeeaaaaddddgggg.wav": {
+      "role": "guardrail",
+      "minOnsets": 13,
+      "maxOnsets": 18,
+      "weight": 4
+    },
+    "sheet-music-reading/4-4_40bpm_EBGDA_1jtn8.wav": {
+      "role": "guardrail",
+      "minOnsets": 13,
+      "maxOnsets": 18,
+      "weight": 3
+    },
+    "sheet-music-reading/4-4_40bpm_EGADB_9low6.wav": {
+      "role": "guardrail",
+      "minOnsets": 13,
+      "maxOnsets": 18,
+      "weight": 3
+    }
+  },
+  "parameters": {
+    "analyzeIntervalMs": [25, 50],
+    "cooldownFrames": [2, 4],
+    "relativeReattackFactor": [1.4, 4.0],
+    "relativeReattackMinDelta": [0.004, 0.025],
+    "relativeFluxFactor": [1.4, 5.0],
+    "spectralNoveltyRatio": [1.5, 6.0],
+    "spectralNoveltyMinBins": [6, 64],
+    "confirmedRmsFactor": [1.15, 2.2],
+    "confirmedRmsMinDelta": [0.002, 0.012],
+    "confirmedFluxFactor": [1.0, 2.4],
+    "confirmedMinFlux": [0.003, 0.02],
+    "confirmedMinBandRatio": [0.006, 0.05],
+    "confirmedSpectralNoveltyMinBins": [2, 32],
+    "cooldownOverrideFactor": [1.8, 5.0],
+    "cooldownOverrideMinFlux": [0.004, 0.03],
+    "cooldownOverrideMinBandRatio": [0.02, 0.09]
+  }
+}

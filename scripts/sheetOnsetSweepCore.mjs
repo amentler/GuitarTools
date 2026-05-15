@@ -8,6 +8,13 @@ import {
 import { basename, dirname, join, relative, resolve } from 'path';
 import { DEFAULT_GUITAR_ONSET_OPTIONS } from '../js/shared/audio/guitarOnsetDetector.js';
 import { getGuitarOnsetStrategies } from '../js/shared/audio/guitarOnsetStrategies.js';
+import {
+  DEFAULT_TAGGED_ONSET_SCORING,
+  percentile,
+  scoreTaggedOnsets,
+} from './taggedOnsetScoring.mjs';
+
+export { scoreTaggedOnsets } from './taggedOnsetScoring.mjs';
 
 export const DEFAULT_SWEEP_SPEC = Object.freeze({
   fixturesDir: 'tests/fixtures/sequences',
@@ -23,6 +30,7 @@ export const DEFAULT_SWEEP_SPEC = Object.freeze({
   globalResetInterval: 30,
   seed: 1337,
   score: {
+    ...DEFAULT_TAGGED_ONSET_SCORING,
     underPenalty: 4,
     overPenalty: 2,
     extremeUnderPenalty: 20,
@@ -30,18 +38,6 @@ export const DEFAULT_SWEEP_SPEC = Object.freeze({
     extremeOverPenalty: 20,
     extremeOverMultiplier: 1.4,
     guardrailOverMultiplier: 1.4,
-    goodWindowMs: 30,
-    acceptableWindowMs: 50,
-    falsePositiveNearWindowMs: 100,
-    goodMatchScore: 1,
-    goodMatchMinScore: 0.8,
-    acceptableMatchScore: 0.5,
-    acceptableMatchMinScore: 0.2,
-    missPenalty: 1.5,
-    duplicatePenalty: 0.75,
-    nearFalsePositivePenalty: 1.5,
-    farFalsePositivePenalty: 2.5,
-    overfirePenalty: 0.35,
   },
   parameters: {
     relativeReattackFactor: [1.4, 4.0],
@@ -400,121 +396,6 @@ export function scoreFixture(fixture, onsetCount, scoreSpec = DEFAULT_SWEEP_SPEC
     extremeUnder,
     extremeOver,
     within,
-  };
-}
-
-function scoreTimedMatch(distanceMs, scoring) {
-  if (distanceMs <= scoring.goodWindowMs) {
-    const span = Math.max(1, scoring.goodWindowMs);
-    return scoring.goodMatchScore
-      - (distanceMs / span) * (scoring.goodMatchScore - scoring.goodMatchMinScore);
-  }
-
-  const span = Math.max(1, scoring.acceptableWindowMs - scoring.goodWindowMs);
-  return scoring.acceptableMatchScore
-    - ((distanceMs - scoring.goodWindowMs) / span)
-      * (scoring.acceptableMatchScore - scoring.acceptableMatchMinScore);
-}
-
-function percentile(values, p) {
-  if (values.length === 0) return null;
-  const sorted = [...values].sort((a, b) => a - b);
-  const index = Math.min(sorted.length - 1, Math.max(0, Math.ceil(sorted.length * p) - 1));
-  return sorted[index];
-}
-
-export function scoreTaggedOnsets(taggedOnsetsMs, detectedOnsetsMs, scoreSpec = DEFAULT_SWEEP_SPEC.score) {
-  const scoring = {
-    ...DEFAULT_SWEEP_SPEC.score,
-    ...scoreSpec,
-  };
-  const tagged = [...taggedOnsetsMs].filter(Number.isFinite).sort((a, b) => a - b);
-  const detected = [...detectedOnsetsMs].filter(Number.isFinite).sort((a, b) => a - b);
-  const pairs = [];
-
-  for (let tagIndex = 0; tagIndex < tagged.length; tagIndex++) {
-    for (let detectionIndex = 0; detectionIndex < detected.length; detectionIndex++) {
-      const distanceMs = Math.abs(detected[detectionIndex] - tagged[tagIndex]);
-      if (distanceMs <= scoring.acceptableWindowMs) {
-        pairs.push({ tagIndex, detectionIndex, distanceMs });
-      }
-    }
-  }
-
-  pairs.sort((a, b) => (
-    a.distanceMs - b.distanceMs
-    || a.tagIndex - b.tagIndex
-    || a.detectionIndex - b.detectionIndex
-  ));
-
-  const matchedTags = new Set();
-  const matchedDetections = new Set();
-  const errorsMs = [];
-  let goodMatches = 0;
-  let acceptableMatches = 0;
-  let matchScore = 0;
-
-  for (const pair of pairs) {
-    if (matchedTags.has(pair.tagIndex) || matchedDetections.has(pair.detectionIndex)) continue;
-    matchedTags.add(pair.tagIndex);
-    matchedDetections.add(pair.detectionIndex);
-    errorsMs.push(pair.distanceMs);
-    matchScore += scoreTimedMatch(pair.distanceMs, scoring);
-    if (pair.distanceMs <= scoring.goodWindowMs) {
-      goodMatches++;
-    } else {
-      acceptableMatches++;
-    }
-  }
-
-  let duplicates = 0;
-  let nearFalsePositives = 0;
-  let farFalsePositives = 0;
-
-  for (let detectionIndex = 0; detectionIndex < detected.length; detectionIndex++) {
-    if (matchedDetections.has(detectionIndex)) continue;
-    const nearestTag = tagged.reduce((nearest, onsetMs, tagIndex) => {
-      const distanceMs = Math.abs(detected[detectionIndex] - onsetMs);
-      return !nearest || distanceMs < nearest.distanceMs
-        ? { tagIndex, distanceMs }
-        : nearest;
-    }, null);
-
-    if (nearestTag && nearestTag.distanceMs <= scoring.acceptableWindowMs && matchedTags.has(nearestTag.tagIndex)) {
-      duplicates++;
-    } else if (nearestTag && nearestTag.distanceMs <= scoring.falsePositiveNearWindowMs) {
-      nearFalsePositives++;
-    } else {
-      farFalsePositives++;
-    }
-  }
-
-  const misses = tagged.length - matchedTags.size;
-  const falsePositives = duplicates + nearFalsePositives + farFalsePositives;
-  const overfire = Math.max(0, detected.length - tagged.length);
-  const score = matchScore
-    - misses * scoring.missPenalty
-    - duplicates * scoring.duplicatePenalty
-    - nearFalsePositives * scoring.nearFalsePositivePenalty
-    - farFalsePositives * scoring.farFalsePositivePenalty
-    - overfire * overfire * scoring.overfirePenalty;
-
-  return {
-    score,
-    goodMatches,
-    acceptableMatches,
-    matches: matchedTags.size,
-    misses,
-    falsePositives,
-    duplicates,
-    nearFalsePositives,
-    farFalsePositives,
-    overfire,
-    meanAbsErrorMs: errorsMs.length > 0
-      ? errorsMs.reduce((sum, value) => sum + value, 0) / errorsMs.length
-      : null,
-    p95AbsErrorMs: percentile(errorsMs, 0.95),
-    errorsMs,
   };
 }
 

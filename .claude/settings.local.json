@@ -52,7 +52,16 @@
       "Bash(Get-ChildItem -Path \"C:\\\\Projekte\\\\GuitarTools\" -Recurse -Directory)",
       "Bash(Select-Object -ExpandProperty FullName)",
       "Skill(implementplan)",
-      "Skill(sync)"
+      "Skill(sync)",
+      "Bash(Get-ChildItem -Path \"C:\\\\Projekte\\\\GuitarTools\" -Directory)",
+      "Bash(Select-Object Name)",
+      "Skill(superpowers:test-driven-development)",
+      "Bash(Get-ChildItem -Path \"tests\\\\fixtures\\\\sequences\\\\sheet-music-reading\" -Filter \"*.wav\")",
+      "Bash(Measure-Object)",
+      "Bash(Select-Object -ExpandProperty Count)",
+      "Bash(graphify update *)",
+      "PowerShell(graphify update *)",
+      "PowerShell(npx graphify update . 2>&1 | Select-Object -Last 5)"
     ]
   }
 }

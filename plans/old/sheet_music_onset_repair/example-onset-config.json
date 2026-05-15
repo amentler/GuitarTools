@@ -1,0 +1,12 @@
+{
+  "analyzeIntervalMs": 50,
+  "onsetFrameSize": 4096,
+  "relativeReattackFactor": 2.2,
+  "relativeReattackMinDelta": 0.012,
+  "relativeFluxFactor": 2.2,
+  "spectralNoveltyRatio": 3.0,
+  "spectralNoveltyMinBins": 20,
+  "cooldownOverrideFactor": 2.8,
+  "cooldownOverrideMinFlux": 0.012,
+  "cooldownOverrideMinBandRatio": 0.05
+}
