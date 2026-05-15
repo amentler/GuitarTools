@@ -1,1 +1,1 @@
-Version 0.150 | 2026-05-14 22:38 | fbe75bd | plans/sheet_music_onset_repair/onset-sweep-spec.json (+3 more)
+Version 0.151 | 2026-05-15 11:15 | 162bfa3 | plans/sheet_music_onset_repair/adaptive-onset-parameters-plan.md (+4 more)

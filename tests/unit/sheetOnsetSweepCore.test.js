@@ -7,6 +7,7 @@ import {
   createRefinedCandidatesForStrategy,
   createSeededRandom,
   createStagnationProbeCandidates,
+  formatReport,
   formatSweepHelp,
   parseArgs,
   scoreCandidate,
@@ -28,7 +29,8 @@ describe('sheetOnsetSweepCore', () => {
     const help = formatSweepHelp();
     expect(help).toContain('--spec <path>');
     expect(help).toContain('--resume <run-dir>');
-    expect(help).toContain('best-001.config.json');
+    expect(help).toContain('best-by-strategy.json');
+    expect(help).toContain('best-<strategy>.config.json');
   });
 
   it('maps analysis and detector parameters to fingerprint options', () => {
@@ -260,6 +262,78 @@ describe('sheetOnsetSweepCore', () => {
     expect(scored.metrics.misses).toBe(1);
     expect(scored.metrics.falsePositives).toBe(2);
     expect(scored.fixtures[0].scoringMode).toBe('timed');
+  });
+
+  it('formats reports as current best parameters per strategy', () => {
+    const results = [
+      scoreCandidate(
+        {
+          id: 'a-worse',
+          round: 1,
+          strategyKey: 'strategy-a',
+          parameters: { strategyKey: 'strategy-a', cooldownFrames: 4 },
+        },
+        [{
+          fixture: {
+            file: 'a.wav',
+            role: 'target',
+            expectedCount: 4,
+            minOnsets: 4,
+            maxOnsets: 4,
+            weight: 1,
+          },
+          onsetCount: 2,
+        }],
+      ),
+      scoreCandidate(
+        {
+          id: 'a-best',
+          round: 2,
+          strategyKey: 'strategy-a',
+          parameters: { strategyKey: 'strategy-a', cooldownFrames: 3 },
+        },
+        [{
+          fixture: {
+            file: 'a.wav',
+            role: 'target',
+            expectedCount: 4,
+            minOnsets: 4,
+            maxOnsets: 4,
+            weight: 1,
+          },
+          onsetCount: 4,
+        }],
+      ),
+      scoreCandidate(
+        {
+          id: 'b-best',
+          round: 1,
+          strategyKey: 'strategy-b',
+          parameters: { strategyKey: 'strategy-b', relativeReattackFactor: 2.25 },
+        },
+        [{
+          fixture: {
+            file: 'b.wav',
+            role: 'target',
+            expectedCount: 4,
+            minOnsets: 4,
+            maxOnsets: 4,
+            weight: 1,
+          },
+          onsetCount: 4,
+        }],
+      ),
+    ];
+
+    const report = formatReport(results, { beamSize: 5 }, [{ file: 'a.wav' }]);
+
+    expect(report).toContain('## Current Best By Strategy');
+    expect(report).toContain('### strategy-a');
+    expect(report).toContain('- id: a-best');
+    expect(report).toContain('| cooldownFrames | 3 |');
+    expect(report).toContain('### strategy-b');
+    expect(report).toContain('| relativeReattackFactor | 2.25 |');
+    expect(report).not.toContain('Best Fixture Counts');
   });
 
   it('creates stagnation probes that vary exactly one parameter from the best candidate', () => {

@@ -40,13 +40,18 @@ The runner writes each run to `sweep-runs/onset/<timestamp>/`.
 
 Important outputs:
 
-- `results.jsonl`: full candidate history and resume source.
-- `results.csv`: ranked candidate summary.
-- `report.md`: human-readable timing/count scores plus per-strategy ranking.
-- `best-001.config.json` to `best-005.config.json`: configs usable with
+- `results.jsonl`: compact candidate history and resume source.
+- `report.md`: current best parameter values per onset strategy.
+- `best-by-strategy.json` and `best-by-strategy.csv`: concise overview of the
+  current best candidate for each strategy.
+- `best-<strategy>.json` and `best-<strategy>.config.json`: current best
+  candidate and config for one onset strategy. Use the config with
   `npm run sheetfingerprint -- --onset-config <file>`.
-- `best-<strategy>.json` and `best-<strategy>-001.config.json`: best configs
-  per onset strategy.
+
+The runner does not write per-round JSON snapshots anymore. After each round it
+prints a narrow table with `strategy`, `mode`, `stagnation`, overall best score
+and round-best score, followed by the current best parameter values for each
+strategy.
 
 Scoring prefers tagged onset timing when a fixture manifest contains
 `onsetsMs`: matches within 30 ms are good, 30..50 ms are acceptable, misses and

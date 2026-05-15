@@ -125,9 +125,11 @@ export function formatSweepHelp() {
     '',
     'Outputs:',
     '  results.jsonl             Complete resumable candidate history.',
-    '  results.csv               Ranked candidate summary.',
-    '  report.md                 Human-readable report with fixture counts.',
-    '  best-001.config.json      Best config for sheetfingerprint/sfp --onset-config.',
+    '  report.md                 Current best parameters per onset strategy.',
+    '  best-by-strategy.json     Current best candidate summary per strategy.',
+    '  best-<strategy>.json      Current best candidate for one strategy.',
+    '  best-<strategy>.config.json',
+    '                            Best config for sheetfingerprint/sfp --onset-config.',
     '',
     'Example:',
     '  npm run onsetsweep -- --spec plans/sheet_music_onset_repair/onset-sweep-spec.json',
@@ -639,8 +641,13 @@ export function formatCsvRow(values) {
   }).join(',');
 }
 
+function formatParameterValue(value) {
+  return Number.isFinite(value) && !Number.isInteger(value)
+    ? String(Math.round(value * 1_000_000) / 1_000_000)
+    : String(value ?? '');
+}
+
 export function formatReport(results, spec, fixtures) {
-  const best = sortResults(results).slice(0, spec.beamSize ?? DEFAULT_SWEEP_SPEC.beamSize);
   const strategyKeys = [...new Set(results.map(row => row.strategyKey).filter(Boolean))].sort();
   const lines = [
     '# Sheet Onset Sweep',
@@ -649,53 +656,27 @@ export function formatReport(results, spec, fixtures) {
     `- beam size: ${spec.beamSize}`,
     `- fixtures: ${fixtures.length}`,
     '',
-    '## Best Candidates',
-    '| rank | id | strategy | round | score | exact | good | acceptable | misses | false positives | duplicates | p95 error ms | total onsets |',
-    '|---:|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|',
-    ...best.map((row, index) => (
-      `| ${index + 1} | ${row.id} | ${row.strategyKey ?? ''} | ${row.round} | ${row.score.toFixed(2)} | `
-      + `${row.metrics.exact} | ${row.metrics.goodMatches ?? 0} | ${row.metrics.acceptableMatches ?? 0} | `
-      + `${row.metrics.misses ?? row.metrics.under ?? 0} | ${row.metrics.falsePositives ?? row.metrics.over ?? 0} | `
-      + `${row.metrics.duplicates ?? 0} | ${row.metrics.p95AbsErrorMs ?? ''} | `
-      + `${row.metrics.totalOnsets} |`
-    )),
-    '',
-    '## Best By Strategy',
+    '## Current Best By Strategy',
   ];
 
   for (const strategyKey of strategyKeys) {
-    const strategyBest = sortResults(results.filter(row => row.strategyKey === strategyKey))
-      .slice(0, spec.beamSize ?? DEFAULT_SWEEP_SPEC.beamSize);
-    lines.push('', `### ${strategyKey}`, '', '| rank | id | round | score | good | acceptable | misses | false positives | duplicates | p95 error ms |');
-    lines.push('|---:|---|---:|---:|---:|---:|---:|---:|---:|---:|');
-    for (const [index, row] of strategyBest.entries()) {
-      lines.push(
-        `| ${index + 1} | ${row.id} | ${row.round} | ${row.score.toFixed(2)} | `
-        + `${row.metrics.goodMatches ?? 0} | ${row.metrics.acceptableMatches ?? 0} | `
-        + `${row.metrics.misses ?? row.metrics.under ?? 0} | `
-        + `${row.metrics.falsePositives ?? row.metrics.over ?? 0} | `
-        + `${row.metrics.duplicates ?? 0} | ${row.metrics.p95AbsErrorMs ?? ''} |`,
-      );
-    }
-  }
-
-  lines.push(
-    '',
-    '## Best Fixture Counts',
-  );
-
-  for (const row of best) {
-    lines.push('', `### ${row.id}`, '', '| fixture | role | expected | tagged | onsets | good | acceptable | misses | false positives | duplicates | score |');
-    lines.push('|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|');
-    for (const fixture of row.fixtures) {
-      lines.push(
-        `| ${fixture.fixture.file} | ${fixture.fixture.role} | ${fixture.fixture.expectedCount} | `
-        + `${fixture.fixture.taggedOnsetsMs?.length ?? ''} | ${fixture.onsetCount} | `
-        + `${fixture.goodMatches ?? ''} | ${fixture.acceptableMatches ?? ''} | `
-        + `${fixture.misses ?? fixture.under ?? ''} | ${fixture.falsePositives ?? fixture.over ?? ''} | `
-        + `${fixture.duplicates ?? ''} | `
-        + `${fixture.score.toFixed(2)} |`,
-      );
+    const row = sortResults(results.filter(candidate => candidate.strategyKey === strategyKey))[0];
+    if (!row) continue;
+    lines.push(
+      '',
+      `### ${strategyKey}`,
+      '',
+      `- id: ${row.id}`,
+      `- round: ${row.round}`,
+      `- score: ${row.score.toFixed(2)}`,
+      `- good/acceptable/misses/false positives: ${row.metrics.goodMatches ?? 0}/${row.metrics.acceptableMatches ?? 0}/${row.metrics.misses ?? row.metrics.under ?? 0}/${row.metrics.falsePositives ?? row.metrics.over ?? 0}`,
+      '',
+      '| parameter | value |',
+      '|---|---:|',
+    );
+    for (const [key, value] of Object.entries(row.parameters)) {
+      if (key === 'strategyKey') continue;
+      lines.push(`| ${key} | ${formatParameterValue(value)} |`);
     }
   }
 

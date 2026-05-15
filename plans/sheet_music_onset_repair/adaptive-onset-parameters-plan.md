@@ -25,6 +25,10 @@ Sweep mit getaggtem Onset-Scoring implementiert; weiteres Strategie-Tuning offen
   Onset-Strategien separat, nutzt `manifest.onsetsMs` fuer Timing-Scoring
   und schreibt zusaetzlich strategie-spezifische Best-Artefakte. `runsweep.ps1`
   startet den Standard-Sweep mit 20 Workern.
+- Update 2026-05-15: Die Ausgabe ist auf unabhaengige Strategie-Bests
+  zugeschnitten. Globale Best-Configs und grosse Round-Snapshots werden nicht
+  mehr geschrieben; pro Runde erscheint eine schmale Konsolentabelle mit
+  Overall-/Round-Best je Strategie und den aktuell besten Parametern.
 
 ## Ziel
 
