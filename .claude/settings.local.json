@@ -61,7 +61,8 @@
       "Bash(Select-Object -ExpandProperty Count)",
       "Bash(graphify update *)",
       "PowerShell(graphify update *)",
-      "PowerShell(npx graphify update . 2>&1 | Select-Object -Last 5)"
+      "PowerShell(npx graphify update . 2>&1 | Select-Object -Last 5)",
+      "Skill(superpowers:systematic-debugging)"
     ]
   }
 }

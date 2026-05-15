@@ -687,6 +687,45 @@ function formatAlignmentIssueCase(item) {
     + `${item.acceptedNote ?? '-'} | ${formatMs(item.acceptTimeMs)} | ${formatMs(item.delayMs)} | ${item.status} |`;
 }
 
+function formatOnsetStrategyDetailSection(onsetReport) {
+  const key = onsetReport.onsetStrategy.key;
+  const { cases, counts, metrics } = onsetReport;
+  const taggedCases = cases.filter(c => c.onsetTaggedScore);
+
+  const lines = [
+    `## Onset Strategy Detail: ${key}`,
+    '',
+    '### Onset Count per Fixture',
+    '_Status: **exact** = Anzahl stimmt genau, **under** = zu wenig erkannt, **over** = zu viele erkannt, **mixed** = laut Tagged-Analyse beides (gleichzeitig fehlende und überschüssige Onsets)_',
+    '',
+    '| fixture | expected notes | detected onsets | delta | status | onset times |',
+    '|---|---:|---:|---:|---|---|',
+    ...cases.map(formatOnsetCase),
+    '',
+    `_Gesamt: ${counts.totalDetected}/${counts.totalExpected} Onsets erkannt (${formatPercent(metrics.onsetCountRatio)}). `
+      + `exact: ${counts.exact} · under: ${counts.under} · over: ${counts.over} · mixed: ${counts.mixed}_`,
+  ];
+
+  if (taggedCases.length > 0) {
+    lines.push(
+      '',
+      '### Tagged Onset Accuracy per Fixture',
+      '_Vergleich der erkannten Onsets mit manuell getaggten Referenzzeitpunkten (Toleranzfenster: 50 ms)._',
+      '_**good** = Treffer < 20 ms Abweichung, **acceptable** = Treffer < 50 ms, **misses** = Onset verpasst, **false positives** = Fehlalarm ohne Referenz in der Nähe, **bias** = mittlere Richtungsabweichung (negativ = zu früh gefeuert)_',
+      '',
+      '| fixture | tags | hits | good | acceptable | misses | false positives | duplicates | mean abs | p95 abs | bias |',
+      '|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|',
+      ...taggedCases.map(formatTaggedOnsetCase),
+      '',
+      `_Gesamttreffer: ${counts.goodMatches + counts.acceptableMatches}/${counts.totalTaggedOnsets} `
+        + `(${formatPercent(metrics.taggedHitRate)}). `
+        + `good: ${counts.goodMatches} · acceptable: ${counts.acceptableMatches} · misses: ${counts.misses} · false positives: ${counts.falsePositives}_`,
+    );
+  }
+
+  return lines;
+}
+
 export function formatSheetMusicSequenceFingerprintReport(report) {
   const { counts, metrics, cases, strategyReports, onsetStrategyReports } = report;
   const onsetConfig = report.onsetConfig ?? {};
@@ -720,6 +759,7 @@ export function formatSheetMusicSequenceFingerprintReport(report) {
     '| onset strategy | fixtures | exact | under | over | detected/expected | onset ratio | tagged hits | tagged p95 |',
     '|---|---:|---:|---:|---:|---:|---:|---:|---:|',
     ...onsetStrategyTable,
+    ...(onsetStrategyReports ?? []).flatMap(row => ['', ...formatOnsetStrategyDetailSection(row)]),
     '',
     '## Default Strategy Detail',
     `- evaluated: ${counts.evaluated}`,
