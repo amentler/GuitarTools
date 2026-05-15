@@ -1,1 +1,1 @@
-Version 0.151 | 2026-05-15 11:15 | 162bfa3 | plans/sheet_music_onset_repair/adaptive-onset-parameters-plan.md (+4 more)
+Version 0.152 | 2026-05-15 12:33 | 132e0f6 | .agents/rules/graphify.md (+16 more)
