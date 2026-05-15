@@ -565,9 +565,8 @@ export function createOnsetTaggerFeature() {
         const strategyKey = btn.dataset.strategyKey;
         setStrategyStatus(ui, 'Erkennung läuft ...');
         btn.disabled = true;
-        requestAnimationFrame(() => {
-          try {
-            const result = detectOnsetsOffline(_samples, _sampleRate, { strategyKey });
+        detectOnsetsOffline(_samples, _sampleRate, { strategyKey })
+          .then(result => {
             const merged = mergeOnsetsWithMinDistance(
               _onsetsMs,
               result.onsetsMs,
@@ -577,12 +576,9 @@ export function createOnsetTaggerFeature() {
             _selectedOnsetIndex = -1;
             updateOnsetUI(ui);
             setStrategyStatus(ui, `${merged.added} hinzugefügt, ${merged.skipped} übersprungen.`);
-          } catch (err) {
-            setStrategyStatus(ui, `Fehler: ${err.message}`);
-          } finally {
-            btn.disabled = false;
-          }
-        });
+          })
+          .catch(err => setStrategyStatus(ui, `Fehler: ${err.message}`))
+          .finally(() => { btn.disabled = false; });
       });
     }
 
