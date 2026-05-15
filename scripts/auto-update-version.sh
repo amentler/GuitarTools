@@ -5,34 +5,14 @@
 # Called from .husky/pre-commit. It only updates metadata files that are not
 # already staged for the current commit.
 
+AUTO_UPDATE_VERSION_CORE="scripts/autoUpdateVersionCore.mjs"
+
 normalize_version_counter() {
-    local version=$1
-
-    if [[ ! "$version" =~ ^[0-9]+(\.[0-9]+)?$ ]]; then
-        return 1
-    fi
-
-    local whole=${version%%.*}
-    local fraction=""
-    if [[ "$version" == *.* ]]; then
-        fraction=${version#*.}
-    fi
-
-    if [[ -z "$fraction" ]]; then
-        fraction="0"
-    fi
-
-    if [[ "$whole" == "0" ]]; then
-        echo "$fraction"
-        return 0
-    fi
-
-    echo "${whole}${fraction}"
+    node "$AUTO_UPDATE_VERSION_CORE" normalize "$1"
 }
 
 format_version_from_counter() {
-    local counter=$1
-    echo "0.$counter"
+    node "$AUTO_UPDATE_VERSION_CORE" format "$1"
 }
 
 extract_numeric_version_from_file() {
@@ -78,11 +58,7 @@ extract_current_version() {
 }
 
 bump_version() {
-    local current_version=$1
-    local counter
-    counter=$(normalize_version_counter "$current_version") || return 1
-    counter=$((10#$counter + 1))
-    format_version_from_counter "$counter"
+    node "$AUTO_UPDATE_VERSION_CORE" bump "$1"
 }
 
 sync_sw_cache_version() {

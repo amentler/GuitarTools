@@ -7,7 +7,7 @@ This file is the central hub for all AI agents (Claude, Gemini, Codex, Copilot, 
 - **Documentation authority:** `AGENTS.md` is the authoritative, always-current instruction file for this project and must be kept up to date after completed tasks.
 - **Supplementary docs only when needed:** `CLAUDE.md`, `GEMINI.md`, `codex.md`, and plan files are complementary. Update them only when the task adds platform-specific, workflow-specific, or planning-specific information that is worth preserving there.
 - **Feature-specific documentation:** If a module subfolder (e.g. `js/games/myGame/`) does not yet have a `CLAUDE.md`, create one to document its local state.
-- **Automated Versioning:** Do NOT edit `version.txt` manually unless the commit intentionally owns metadata. The `pre-commit` hook (`scripts/auto-update-version.sh`) regenerates and stages it automatically if not already staged.
+- **Automated Versioning:** Do NOT edit `version.txt` manually unless the commit intentionally owns metadata. The `pre-commit` hook (`scripts/auto-update-version.sh`) regenerates and stages it automatically if not already staged. Pure version-counter logic lives in `scripts/autoUpdateVersionCore.mjs`; keep tests focused on that module instead of shell-spawning Bash from Vitest.
 - **Service-Worker Assets:** When adding or renaming local assets (JS, CSS, JSON, Icons, etc.), you MUST update the `ASSETS` list in `sw.js` to ensure proper offline caching and reloads.
 - **Keep Plans Current:** Update implementation status in `plans/` files immediately after execution. Store new ideas in `plans/ideen.md`.
 
