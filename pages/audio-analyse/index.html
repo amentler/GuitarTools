@@ -46,14 +46,24 @@
 
   </section>
 
-  <!-- Fixierte Bottom-Bar: Slider + Transport-Buttons -->
-  <div id="analyse-bottom-bar" class="analyse-bottom-bar u-hidden">
-    <div class="analyse-slider-row">
+  <!-- Fixierte Bottom-Bar: Strategie-Auswahl + Slider + Transport-Buttons -->
+  <div id="analyse-bottom-bar" class="analyse-bottom-bar">
+    <div class="analyse-strategy-select-row">
+      <label class="analyse-strategy-label">
+        Pitch:
+        <select id="analyse-pitch-select" class="analyse-strategy-select"></select>
+      </label>
+      <label class="analyse-strategy-label">
+        Onset:
+        <select id="analyse-onset-select" class="analyse-strategy-select"></select>
+      </label>
+    </div>
+    <div id="analyse-slider-row" class="analyse-slider-row u-hidden">
       <span id="analyse-slider-time" class="analyse-slider-time">0.00 s</span>
       <input type="range" id="analyse-slider" class="analyse-slider" min="0" max="1000" value="0" step="1" />
       <span id="analyse-slider-dur" class="analyse-slider-dur">0.00 s</span>
     </div>
-    <div class="analyse-transport-row">
+    <div id="analyse-transport-row" class="analyse-transport-row u-hidden">
       <button id="btn-play-pause" class="btn-play-stop">▶ Abspielen</button>
       <button id="btn-stop-audio" class="btn-play-stop">⏹ Stop</button>
     </div>

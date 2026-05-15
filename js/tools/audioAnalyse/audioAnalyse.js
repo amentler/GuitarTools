@@ -23,9 +23,11 @@ import {
 } from '../../shared/globalSettings.js';
 import {
   resolveGuitarOnsetStrategy,
+  getGuitarOnsetStrategies,
 } from '../../shared/audio/guitarOnsetStrategies.js';
 import {
   setEssentiaSheetMusicStrategyInstance,
+  getSheetMusicRecognitionStrategies,
 } from '../../shared/audio/sheetMusicRecognition.js';
 import { getEssentia } from '../../shared/audio/essentiaLoader.js';
 import { createEssentiaSheetMusicStrategy } from '../../shared/audio/essentiaSheetMusicStrategy.js';
@@ -53,6 +55,8 @@ export function createAudioAnalyseFeature() {
   let _analysisDur    = 1;
   let _cachedSamples  = null;   // Float32Array für späteren Re-Decode-Bedarf
   let _cachedSR       = 44100;
+  let _cachedFilename = '';
+  let _cachedManifest = null;
   let _sliderDragging = false;
 
   function resolveUI(root) {
@@ -66,12 +70,16 @@ export function createAudioAnalyseFeature() {
       statusMsg:      q('analyse-status-msg'),
       strategyPitch:  q('analyse-strategy-pitch'),
       strategyOnset:  q('analyse-strategy-onset'),
-      playPauseBtn:   q('btn-play-pause'),
-      stopBtn:        q('btn-stop-audio'),
-      bottomBar:      q('analyse-bottom-bar'),
-      sliderEl:       q('analyse-slider'),
-      sliderTimeEl:   q('analyse-slider-time'),
-      sliderDurEl:    q('analyse-slider-dur'),
+      playPauseBtn:        q('btn-play-pause'),
+      stopBtn:             q('btn-stop-audio'),
+      bottomBar:           q('analyse-bottom-bar'),
+      sliderRow:           q('analyse-slider-row'),
+      transportRow:        q('analyse-transport-row'),
+      sliderEl:            q('analyse-slider'),
+      sliderTimeEl:        q('analyse-slider-time'),
+      sliderDurEl:         q('analyse-slider-dur'),
+      pitchStrategySelect: q('analyse-pitch-select'),
+      onsetStrategySelect: q('analyse-onset-select'),
     };
   }
 
@@ -101,8 +109,8 @@ export function createAudioAnalyseFeature() {
   }
 
   function updateStrategyLabels(ui) {
-    const pitchKey = getSetting(SETTING_KEYS.SHEET_MUSIC_RECOGNITION_STRATEGY);
-    const onsetKey = getSetting(SETTING_KEYS.SHEET_MUSIC_ONSET_STRATEGY);
+    const pitchKey = ui.pitchStrategySelect?.value ?? getSetting(SETTING_KEYS.SHEET_MUSIC_RECOGNITION_STRATEGY);
+    const onsetKey = ui.onsetStrategySelect?.value ?? getSetting(SETTING_KEYS.SHEET_MUSIC_ONSET_STRATEGY);
     const onsetStrategy = resolveGuitarOnsetStrategy(onsetKey);
     if (ui.strategyPitch) ui.strategyPitch.textContent = PITCH_STRATEGY_LABELS[pitchKey] ?? pitchKey;
     if (ui.strategyOnset) ui.strategyOnset.textContent = onsetStrategy?.label ?? onsetKey;
@@ -128,8 +136,8 @@ export function createAudioAnalyseFeature() {
     }
 
     showStatus(ui, 'Analysiere Frames…');
-    const pitchStrategyKey = getSetting(SETTING_KEYS.SHEET_MUSIC_RECOGNITION_STRATEGY);
-    const onsetStrategyKey = getSetting(SETTING_KEYS.SHEET_MUSIC_ONSET_STRATEGY);
+    const pitchStrategyKey = ui.pitchStrategySelect?.value ?? getSetting(SETTING_KEYS.SHEET_MUSIC_RECOGNITION_STRATEGY);
+    const onsetStrategyKey = ui.onsetStrategySelect?.value ?? getSetting(SETTING_KEYS.SHEET_MUSIC_ONSET_STRATEGY);
     let result;
     try {
       await ensureSelectedPitchStrategyReady(pitchStrategyKey);
@@ -143,11 +151,13 @@ export function createAudioAnalyseFeature() {
       return;
     }
 
-    // Samples + Metadaten für Wiedergabe cachen
-    _cachedSamples = decoded.samples;
-    _cachedSR      = decoded.sampleRate;
-    _analysisDur   = result.duration;
-    _audioBuffer   = null; // wird lazy beim ersten Play erstellt
+    // Samples + Metadaten für Wiedergabe und Re-Analyse cachen
+    _cachedSamples  = decoded.samples;
+    _cachedSR       = decoded.sampleRate;
+    _cachedFilename = filename;
+    _cachedManifest = manifest;
+    _analysisDur    = result.duration;
+    _audioBuffer    = null; // wird lazy beim ersten Play erstellt
 
     hideStatus(ui);
     showStats(ui, result, filename);
@@ -157,15 +167,12 @@ export function createAudioAnalyseFeature() {
     initCrosshair(ui.chartsWrapper);
     ui.chartsWrapper.classList.remove('u-hidden');
 
-    // Bottom-Bar einblenden und Slider kalibrieren
-    if (ui.bottomBar) ui.bottomBar.classList.remove('u-hidden');
+    // Slider + Transport einblenden und Slider kalibrieren
+    if (ui.sliderRow)   ui.sliderRow.classList.remove('u-hidden');
+    if (ui.transportRow) ui.transportRow.classList.remove('u-hidden');
     if (ui.sliderEl) { ui.sliderEl.value = '0'; }
     if (ui.sliderTimeEl) ui.sliderTimeEl.textContent = '0.00 s';
     if (ui.sliderDurEl) ui.sliderDurEl.textContent = `${result.duration.toFixed(2)} s`;
-
-    // Play/Stop-Buttons einblenden
-    if (ui.playPauseBtn) ui.playPauseBtn.classList.remove('u-hidden');
-    if (ui.stopBtn)      ui.stopBtn.classList.remove('u-hidden');
     setPlayPauseLabel(ui, false);
   }
 
@@ -279,6 +286,38 @@ export function createAudioAnalyseFeature() {
     stopPlayback(ui);
   }
 
+  async function reAnalyze(ui) {
+    if (!_cachedSamples) return;
+    stopPlayback(ui);
+    showStatus(ui, 'Analysiere Frames…');
+    const pitchStrategyKey = ui.pitchStrategySelect?.value ?? getSetting(SETTING_KEYS.SHEET_MUSIC_RECOGNITION_STRATEGY);
+    const onsetStrategyKey = ui.onsetStrategySelect?.value ?? getSetting(SETTING_KEYS.SHEET_MUSIC_ONSET_STRATEGY);
+    let result;
+    try {
+      await ensureSelectedPitchStrategyReady(pitchStrategyKey);
+      result = await analyzeAudio(_cachedSamples, _cachedSR, {
+        onsetStrategyKey,
+        pitchStrategyKey,
+        targetSequence: _cachedManifest?.notes,
+      });
+    } catch (err) {
+      showStatus(ui, `Analyse-Fehler: ${err.message}`, true);
+      return;
+    }
+    _analysisDur = result.duration;
+    _audioBuffer = null;
+    hideStatus(ui);
+    showStats(ui, result, _cachedFilename);
+    if (!ui.chartsWrapper) return;
+    renderAllCharts(ui.chartsWrapper, _cachedSamples, result);
+    initCrosshair(ui.chartsWrapper);
+    if (ui.sliderEl) ui.sliderEl.value = '0';
+    if (ui.sliderTimeEl) ui.sliderTimeEl.textContent = '0.00 s';
+    if (ui.sliderDurEl) ui.sliderDurEl.textContent = `${result.duration.toFixed(2)} s`;
+    setPlayPauseLabel(ui, false);
+    updateStrategyLabels(ui);
+  }
+
   async function handleLoadLatest(ui, { silent = false } = {}) {
     if (!silent) showStatus(ui, 'Lade neueste Notenlesen-Aufnahme aus IndexedDB…');
     let entry;
@@ -345,6 +384,30 @@ export function createAudioAnalyseFeature() {
   function mount(root = document) {
     _root = root;
     const ui = resolveUI(root);
+
+    // Dropdowns mit Strategielisten befüllen und auf globale Defaults vorselektieren
+    const defaultPitch = getSetting(SETTING_KEYS.SHEET_MUSIC_RECOGNITION_STRATEGY);
+    const defaultOnset = getSetting(SETTING_KEYS.SHEET_MUSIC_ONSET_STRATEGY);
+
+    if (ui.pitchStrategySelect) {
+      ui.pitchStrategySelect.innerHTML = getSheetMusicRecognitionStrategies()
+        .map(s => `<option value="${s.key}"${s.key === defaultPitch ? ' selected' : ''}>${s.label}</option>`)
+        .join('');
+    }
+    if (ui.onsetStrategySelect) {
+      ui.onsetStrategySelect.innerHTML = getGuitarOnsetStrategies()
+        .map(s => `<option value="${s.key}"${s.key === defaultOnset ? ' selected' : ''}>${s.label}</option>`)
+        .join('');
+    }
+
+    ui.pitchStrategySelect?.addEventListener('change', () => {
+      updateStrategyLabels(ui);
+      if (_cachedSamples) void reAnalyze(ui);
+    });
+    ui.onsetStrategySelect?.addEventListener('change', () => {
+      updateStrategyLabels(ui);
+      if (_cachedSamples) void reAnalyze(ui);
+    });
 
     updateStrategyLabels(ui);
 
@@ -422,8 +485,10 @@ export function createAudioAnalyseFeature() {
       _audioCtx.close();
       _audioCtx = null;
     }
-    _audioBuffer  = null;
-    _cachedSamples = null;
+    _audioBuffer    = null;
+    _cachedSamples  = null;
+    _cachedFilename = '';
+    _cachedManifest = null;
     _root = null;
   }
 
