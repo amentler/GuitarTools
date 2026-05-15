@@ -9,6 +9,7 @@ import { join } from 'path';
 import { fileURLToPath } from 'url';
 import { Worker } from 'worker_threads';
 import { readWavFile } from '../tests/helpers/wavDecoder.js';
+import { resampleLinear } from '../tests/helpers/resampleAudio.js';
 import {
   candidateKey,
   candidateToOptions,
@@ -28,7 +29,7 @@ import {
   sortResults,
   writeJson,
 } from './sheetOnsetSweepCore.mjs';
-import { ONSET_FFT_SIZE, ONSET_HOP_DIVISOR } from '../js/shared/audio/onsetPipelineConfig.js';
+import { ONSET_FFT_SIZE, ONSET_HOP_DIVISOR, BROWSER_SAMPLE_RATE } from '../js/shared/audio/onsetPipelineConfig.js';
 
 const DEFAULT_WORKER_COUNT = Math.max(1, Math.floor(cpus().length / 2));
 const WORKER_SCRIPT = fileURLToPath(new URL('./sheet-onset-sweep-worker.mjs', import.meta.url));
@@ -58,10 +59,11 @@ function makeCandidateId(round, index, parameters) {
 }
 
 function loadAudioFixtures(fixtures) {
-  return fixtures.map(fixture => ({
-    fixture,
-    audio: readWavFile(fixture.wavPath),
-  }));
+  return fixtures.map(fixture => {
+    const { samples: rawSamples, sampleRate: rawRate } = readWavFile(fixture.wavPath);
+    const samples = resampleLinear(rawSamples, rawRate, BROWSER_SAMPLE_RATE);
+    return { fixture, audio: { samples, sampleRate: BROWSER_SAMPLE_RATE } };
+  });
 }
 
 function prepareSharedFixtures(loadedFixtures) {

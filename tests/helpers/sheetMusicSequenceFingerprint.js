@@ -1,6 +1,7 @@
 import { existsSync, readdirSync, readFileSync } from 'fs';
 import { basename, dirname, join, relative } from 'path';
 import { readWavFile } from './wavDecoder.js';
+import { resampleLinear } from './resampleAudio.js';
 import {
   createMatchState,
 } from '../../js/shared/audio/fastNoteMatcher.js';
@@ -13,7 +14,7 @@ import {
   getGuitarOnsetStrategies,
   resolveGuitarOnsetStrategy,
 } from '../../js/shared/audio/guitarOnsetStrategies.js';
-import { ONSET_FFT_SIZE, ONSET_LIVE_ANALYZE_INTERVAL_MS } from '../../js/shared/audio/onsetPipelineConfig.js';
+import { ONSET_FFT_SIZE, ONSET_LIVE_ANALYZE_INTERVAL_MS, BROWSER_SAMPLE_RATE } from '../../js/shared/audio/onsetPipelineConfig.js';
 import { computeDbSpectrum } from './chordHpcpExtraction.js';
 import { percentile, scoreTaggedOnsets } from '../../scripts/taggedOnsetScoring.mjs';
 
@@ -413,7 +414,9 @@ function evaluateFixture(fixture, options = {}) {
     };
   }
 
-  const { samples, sampleRate } = readWavFile(fixture.wavPath);
+  const { samples: rawSamples, sampleRate: rawRate } = readWavFile(fixture.wavPath);
+  const samples = resampleLinear(rawSamples, rawRate, BROWSER_SAMPLE_RATE);
+  const sampleRate = BROWSER_SAMPLE_RATE;
   const result = runSheetMusicSequenceSimulation(samples, sampleRate, fixture.expectedNotes, options);
   const onsetResult = countGuitarOnsets(samples, sampleRate, options);
   const onsetEvaluation = createOnsetEvaluation(fixture, onsetResult.timestampsMs);
@@ -543,7 +546,9 @@ export function evaluateOnsetStrategyReport(
     fixtureCount: evaluated.length,
   });
   const cases = evaluated.map(fixture => {
-    const { samples, sampleRate } = readWavFile(fixture.wavPath);
+    const { samples: rawSamples, sampleRate: rawRate } = readWavFile(fixture.wavPath);
+    const samples = resampleLinear(rawSamples, rawRate, BROWSER_SAMPLE_RATE);
+    const sampleRate = BROWSER_SAMPLE_RATE;
     const onsetResult = countGuitarOnsets(samples, sampleRate, { ...options, onsetStrategy });
     const onsetEvaluation = createOnsetEvaluation(fixture, onsetResult.timestampsMs);
     return {
