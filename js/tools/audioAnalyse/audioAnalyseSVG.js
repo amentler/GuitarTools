@@ -13,6 +13,13 @@
  */
 
 import { noteToFrequency } from '../../shared/audio/guitarPitchDetection.js';
+import {
+  makeCrosshairLine,
+  registerCursorLabel,
+  resetCrosshairRegistry,
+  setAnalysisData,
+} from './audioAnalyseSVGCrosshair.js';
+export { setCrosshairFromFraction, initCrosshair } from './audioAnalyseSVGCrosshair.js';
 
 // ── Gemeinsame Layout-Konstanten ─────────────────────────────────────────────
 
@@ -25,7 +32,6 @@ const PAD_B = 26;   // Platz für X-Achsen-Labels
 const PLOT_W = CHART_W - PAD_L - PAD_R;
 
 const COLOR_ONSET    = '#e74c3c';
-const COLOR_CROSS    = '#7c4dff';
 const COLOR_INVALID  = '#bbbbbb'; // Farbe für Frames mit isValid=false
 const COLOR_GRID     = '#e8d8c0';
 const COLOR_AXIS     = '#8a7a6a';
@@ -40,12 +46,8 @@ const GUITAR_STRINGS = [
   { label: 'E4', hz: 329.63 },
 ];
 
-// Registry aller Crosshair-Linien (alle Charts, aktualisiert beim Hover)
-let _crosshairLines = [];
 // Registry aller Playhead-Linien (alle Charts, aktualisiert während Wiedergabe)
 let _playheadLines = [];
-// Registry der Inline-Cursor-Labels (eines pro Chart)
-let _cursorLabels = [];
 let _analysisFrames = [];
 let _analysisDuration = 1;
 
@@ -65,20 +67,6 @@ function makeSvg(height) {
     preserveAspectRatio: 'none',
     class: 'analysis-chart-svg',
   });
-}
-
-function makeCrosshairLine(svg, height) {
-  const line = svgEl('line', {
-    x1: PAD_L, y1: PAD_T, x2: PAD_L, y2: height - PAD_B,
-    stroke: COLOR_CROSS,
-    'stroke-width': '1',
-    'stroke-dasharray': '4 3',
-    opacity: '0',
-    'pointer-events': 'none',
-  });
-  svg.appendChild(line);
-  _crosshairLines.push(line);
-  return line;
 }
 
 function makePlayheadLine(svg, height) {
@@ -198,7 +186,7 @@ function createSection(title, svg, chartH, cursorConfig = null) {
     const valueEl = document.createElement('div');
     valueEl.className = 'analysis-cursor-value';
     wrap.appendChild(valueEl);
-    _cursorLabels.push({ el: valueEl, getValue: cursorConfig.getValue });
+    registerCursorLabel(valueEl, cursorConfig.getValue);
   }
 
   return wrap;
@@ -621,9 +609,9 @@ export function renderAllCharts(container, samples, result) {
   const { frames, onsets, duration, sampleRate, onsetOptions } = result;
 
   // Reset Crosshair- und Playhead-Registry für diesen Renderdurchlauf
-  _crosshairLines = [];
+  resetCrosshairRegistry();
+  setAnalysisData(frames, duration);
   _playheadLines = [];
-  _cursorLabels = [];
   _analysisFrames = frames;
   _analysisDuration = duration;
 
@@ -768,73 +756,3 @@ export function getFrameAtFraction(fraction) {
 
 // ── Crosshair + Inline-Labels ────────────────────────────────────────────────
 
-/**
- * Berechnet zu einer Fraktion den nächsten Frame und aktualisiert:
- * – Crosshair-Linien auf allen Charts
- * – Inline-Cursor-Label jedes Charts
- * @param {number} fraction  0..1
- */
-function _updateCrosshairAtFraction(fraction) {
-  const svgX    = PAD_L + Math.max(0, Math.min(1, fraction)) * PLOT_W;
-  const leftPct = (svgX / CHART_W) * 100;
-
-  for (const line of _crosshairLines) {
-    line.setAttribute('x1', svgX);
-    line.setAttribute('x2', svgX);
-    line.setAttribute('opacity', '0.85');
-  }
-
-  const t = fraction * _analysisDuration;
-  const frame = _analysisFrames.length
-    ? _analysisFrames.reduce((best, f) =>
-        Math.abs(f.t - t) < Math.abs(best.t - t) ? f : best,
-        _analysisFrames[0])
-    : null;
-
-  for (const label of _cursorLabels) {
-    label.el.style.left = `${leftPct}%`;
-    if (frame) {
-      label.el.textContent = label.getValue(frame);
-      label.el.style.opacity = '1';
-    } else {
-      label.el.style.opacity = '0';
-    }
-  }
-}
-
-/**
- * Setzt den Crosshair von außen (z.B. Slider-Seek oder Pause-Position).
- * @param {number} fraction  0..1
- */
-export function setCrosshairFromFraction(fraction) {
-  _updateCrosshairAtFraction(fraction);
-}
-
-/**
- * Initialisiert den synchronen Crosshair-Indikator für alle Charts.
- * Muss nach renderAllCharts() aufgerufen werden.
- *
- * @param {HTMLElement} wrapper  Wrapper-Div der Chart-Sektion
- */
-export function initCrosshair(wrapper) {
-  wrapper.addEventListener('pointermove', (e) => {
-    if (_crosshairLines.length === 0 || _analysisDuration === 0) return;
-
-    const rect = wrapper.getBoundingClientRect();
-    const fraction = Math.max(0, Math.min(1,
-      (e.clientX - rect.left - (rect.width * PAD_L / CHART_W))
-      / (rect.width * PLOT_W / CHART_W),
-    ));
-
-    _updateCrosshairAtFraction(fraction);
-  });
-
-  wrapper.addEventListener('pointerleave', () => {
-    for (const line of _crosshairLines) {
-      line.setAttribute('opacity', '0');
-    }
-    for (const label of _cursorLabels) {
-      label.el.style.opacity = '0';
-    }
-  });
-}
