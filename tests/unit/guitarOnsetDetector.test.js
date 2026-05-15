@@ -72,9 +72,9 @@ describe('guitarOnsetDetector', () => {
   it('computes subband flux separately per configured band', () => {
     const previous = new Float32Array(32);
     const current = new Float32Array(32);
-    current[4] = 1.0;
-    current[10] = 0.8;
-    current[20] = 0.6;
+    current[2] = 1.0;  // bin 2 = 250 Hz → low band (0–400 Hz at 8000 Hz / fftSize 64)
+    current[4] = 0.8;  // bin 4 = 500 Hz → mid band (400–1200 Hz)
+    current[10] = 0.6; // bin 10 = 1250 Hz → high band (1200–4000 Hz)
 
     const subbandFlux = computeSubbandFlux(previous, current, {
       subbands: [

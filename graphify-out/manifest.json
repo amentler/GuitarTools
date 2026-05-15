@@ -30,8 +30,8 @@
     "semantic_hash": ""
   },
   "/mnt/c/Projekte/GuitarTools/sw.js": {
-    "mtime": 1778855771.084695,
-    "ast_hash": "dbe326c481a1f5b07cfc7afd1c8057f6",
+    "mtime": 1778857648.1088827,
+    "ast_hash": "7e0fd1bcfdb120dbedf04d9eaef9f32a",
     "semantic_hash": ""
   },
   "/mnt/c/Projekte/GuitarTools/vitest.config.js": {
@@ -839,9 +839,14 @@
     "ast_hash": "7aa291cf8da5e9ed984a44451c3dceb4",
     "semantic_hash": ""
   },
+  "/mnt/c/Projekte/GuitarTools/scripts/sfp-worker.mjs": {
+    "mtime": 1778857349.190743,
+    "ast_hash": "fdf5d0680372695b7e16f2c8ed0220b0",
+    "semantic_hash": ""
+  },
   "/mnt/c/Projekte/GuitarTools/scripts/sheet-and-note-fingerprint.mjs": {
-    "mtime": 1778570813.3465216,
-    "ast_hash": "47145350f666fc836bd8946b144edda6",
+    "mtime": 1778857357.9864392,
+    "ast_hash": "edc654d8ef8d7a1b544dcd45e35cd2a0",
     "semantic_hash": ""
   },
   "/mnt/c/Projekte/GuitarTools/scripts/sheet-music-sequence-fingerprint.mjs": {
@@ -17115,13 +17120,13 @@
     "semantic_hash": ""
   },
   "/mnt/c/Projekte/GuitarTools/tests/helpers/sheetMusicNoteFingerprint.js": {
-    "mtime": 1778570826.5787613,
-    "ast_hash": "f274f7bf6962fb6de9f9a0a093c5bdc9",
+    "mtime": 1778857275.6444588,
+    "ast_hash": "7efa6460b37f24d583aa57668ad66b1d",
     "semantic_hash": ""
   },
   "/mnt/c/Projekte/GuitarTools/tests/helpers/sheetMusicSequenceFingerprint.js": {
-    "mtime": 1778856766.1496682,
-    "ast_hash": "4c425a7a8163d16ce6fa7b2d739838a8",
+    "mtime": 1778857257.233257,
+    "ast_hash": "d02dba4206956b3f2e18b949adf905c3",
     "semantic_hash": ""
   },
   "/mnt/c/Projekte/GuitarTools/tests/helpers/wavDecoder.js": {
@@ -17705,8 +17710,8 @@
     "semantic_hash": ""
   },
   "/mnt/c/Projekte/GuitarTools/version.txt": {
-    "mtime": 1778855938.882695,
-    "ast_hash": "79c90c427f5afe4c4cbed6802a6b619b",
+    "mtime": 1778857647.5820575,
+    "ast_hash": "6e903735ed83cce055641fa76f0fb39f",
     "semantic_hash": ""
   },
   "/mnt/c/Projekte/GuitarTools/docs/architecture.md": {
@@ -17900,8 +17905,8 @@
     "semantic_hash": ""
   },
   "/mnt/c/Projekte/GuitarTools/plans/onset-detection-improvement.md": {
-    "mtime": 1778856766.1426687,
-    "ast_hash": "2e62b4748f68d2d6a3b14b82e6e901f4",
+    "mtime": 1778857404.578349,
+    "ast_hash": "3d8b5b269e6c7e74611a1f874b41d3b8",
     "semantic_hash": ""
   },
   "/mnt/c/Projekte/GuitarTools/plans/architektur/code-review-2026-05-05.md": {
@@ -17952,6 +17957,11 @@
   "/mnt/c/Projekte/GuitarTools/plans/old/taggingsystem.md": {
     "mtime": 1778703695.8050022,
     "ast_hash": "99c841295592dd3c8cced67db577946a",
+    "semantic_hash": ""
+  },
+  "/mnt/c/Projekte/GuitarTools/plans/old/unified-offline-audio-pipeline.md": {
+    "mtime": 1778856095.903048,
+    "ast_hash": "60ad155eb26f98646221fc4c6c9587bc",
     "semantic_hash": ""
   },
   "/mnt/c/Projekte/GuitarTools/plans/old/chord_recognition_improvement/chord-recorder-spec.md": {
