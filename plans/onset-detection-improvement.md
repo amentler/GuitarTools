@@ -1,7 +1,7 @@
 # Plan: Onset-Detection-Verbesserung vor ML
 
 **Erstellt:** 2026-05-15  
-**Status:** Phase 1 laeuft. Tagged-Onset-Scoring ist zwischen Sweep und SFP vereinheitlicht; Fingerprint-Report zeigt jetzt Hit/Miss- und Timing-Metriken fuer getaggte Fixtures. Offene Teile von Phase 1 betreffen weitergehende Fehlerklassifikation und optionale Trace-Ausgaben.
+**Status:** Phase 1 und Phase 2 sind teilweise umgesetzt. Tagged-Onset-Scoring ist zwischen Sweep und SFP vereinheitlicht; der Fingerprint-Report zeigt Hit/Miss- und Timing-Metriken fuer getaggte Fixtures. Der Feature-Layer im Detector enthaelt jetzt HFC, centroid/rolloff, flatness, crest factor und subband flux als Diagnosewerte. `sfp` nutzt ausserdem Fortschrittslogs und einen Worker-Pool mit `verfuegbare Kerne - 2` (mindestens 1), damit lange Laeufe beobachtbar und besser parallelisiert sind. Offene Teile betreffen weitergehende Fehlerklassifikation, optionale Trace-Ausgaben und spaetere Strategienutzung der neuen Features.
 
 ## Ziel
 
@@ -281,6 +281,14 @@ Arbeitshypothese:
   - Fingerprint-Reports enthalten die neuen Werte
   - Sweep und Fingerprint zeigen fuer getaggte Fixtures dieselben Match-Zahlen
     (`good hits`, `hits`, `misses`, `duplicates`, `false positives`)
+- Stand:
+  - erledigt: neue Diagnose-Features im Detector als reine Hilfs-/Messwerte
+    (`HFC`, `centroid`, `rolloff`, `flatness`, `crest factor`, `subband flux`)
+  - erledigt: Fingerprint-Report zeigt die neuen Feature-Werte pro Fixture
+  - erledigt: Feature-Helper durch Unit-Tests abgesichert
+  - offen: optionale Visualisierung/Trace-Ausgabe im Audio-Analyse-Tool
+  - naechster Schritt: Phase 3 mit `Brightness Reattack` und
+    `Multiband Attack Consensus`
 
 ### Phase 3: Zwei risikoarme Strategien bauen
 

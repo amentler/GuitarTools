@@ -44,6 +44,15 @@ function formatSignedMs(value) {
   return `${rounded > 0 ? '+' : ''}${rounded}ms`;
 }
 
+function formatFeatureValue(value, digits = 3) {
+  if (!Number.isFinite(value)) return '-';
+  const abs = Math.abs(value);
+  if (abs >= 1000) return `${Math.round(value)}`;
+  if (abs >= 100) return value.toFixed(1);
+  if (abs >= 10) return value.toFixed(2);
+  return value.toFixed(digits);
+}
+
 function collectWavFiles(dir) {
   const files = [];
   for (const entry of readdirSync(dir, { withFileTypes: true })) {
@@ -103,6 +112,25 @@ export function countGuitarOnsets(samples, sampleRate, options = {}) {
     ?? (options.onsetStrategyKey ? resolveGuitarOnsetStrategy(options.onsetStrategyKey) : null)
     ?? resolveGuitarOnsetStrategy(DEFAULT_GUITAR_ONSET_STRATEGY_KEY);
   const timestampsMs = [];
+  const featureSummary = {
+    frameCount: 0,
+    onsetFrameCount: 0,
+    peakHfcDelta: 0,
+    peakCentroidDelta: 0,
+    peakRolloffDelta: 0,
+    peakFlatnessDelta: 0,
+    peakCrestFactorDelta: 0,
+    peakBroadbandFlux: 0,
+    peakSpectralNoveltyBins: 0,
+    peakLowFlux: 0,
+    peakLowMidFlux: 0,
+    peakPresenceFlux: 0,
+    onsetHfcDeltaSum: 0,
+    onsetCentroidDeltaSum: 0,
+    onsetRolloffDeltaSum: 0,
+    onsetFlatnessDeltaSum: 0,
+    onsetCrestFactorDeltaSum: 0,
+  };
   let onsetState = onsetStrategy.createState();
 
   for (let offset = 0; offset + frameSize <= samples.length; offset += hopSize) {
@@ -110,10 +138,29 @@ export function countGuitarOnsets(samples, sampleRate, options = {}) {
     const result = onsetStrategy.update(onsetState, {
       frequencyData: computeDbSpectrum(frame, frameSize),
       samples: frame,
+      sampleRate,
+      fftSize: frameSize,
     }, options.onsetDetectorOptions);
     onsetState = result.nextState;
+    featureSummary.frameCount++;
+    featureSummary.peakHfcDelta = Math.max(featureSummary.peakHfcDelta, Math.abs(result.hfcDelta ?? 0));
+    featureSummary.peakCentroidDelta = Math.max(featureSummary.peakCentroidDelta, Math.abs(result.spectralCentroidDelta ?? 0));
+    featureSummary.peakRolloffDelta = Math.max(featureSummary.peakRolloffDelta, Math.abs(result.spectralRolloffDelta ?? 0));
+    featureSummary.peakFlatnessDelta = Math.max(featureSummary.peakFlatnessDelta, Math.abs(result.spectralFlatnessDelta ?? 0));
+    featureSummary.peakCrestFactorDelta = Math.max(featureSummary.peakCrestFactorDelta, Math.abs(result.crestFactorDelta ?? 0));
+    featureSummary.peakBroadbandFlux = Math.max(featureSummary.peakBroadbandFlux, result.broadbandFlux ?? 0);
+    featureSummary.peakSpectralNoveltyBins = Math.max(featureSummary.peakSpectralNoveltyBins, result.spectralNoveltyBins ?? 0);
+    featureSummary.peakLowFlux = Math.max(featureSummary.peakLowFlux, result.subbandFlux?.low?.flux ?? 0);
+    featureSummary.peakLowMidFlux = Math.max(featureSummary.peakLowMidFlux, result.subbandFlux?.lowMid?.flux ?? 0);
+    featureSummary.peakPresenceFlux = Math.max(featureSummary.peakPresenceFlux, result.subbandFlux?.presence?.flux ?? 0);
     if (result.event === 'onset') {
       timestampsMs.push(Math.round((offset / sampleRate) * 1000));
+      featureSummary.onsetFrameCount++;
+      featureSummary.onsetHfcDeltaSum += result.hfcDelta ?? 0;
+      featureSummary.onsetCentroidDeltaSum += result.spectralCentroidDelta ?? 0;
+      featureSummary.onsetRolloffDeltaSum += result.spectralRolloffDelta ?? 0;
+      featureSummary.onsetFlatnessDeltaSum += result.spectralFlatnessDelta ?? 0;
+      featureSummary.onsetCrestFactorDeltaSum += result.crestFactorDelta ?? 0;
     }
   }
 
@@ -122,6 +169,25 @@ export function countGuitarOnsets(samples, sampleRate, options = {}) {
     timestampsMs,
     frameSize,
     hopSize,
+    featureSummary: {
+      frameCount: featureSummary.frameCount,
+      onsetFrameCount: featureSummary.onsetFrameCount,
+      peakHfcDelta: featureSummary.peakHfcDelta,
+      peakCentroidDelta: featureSummary.peakCentroidDelta,
+      peakRolloffDelta: featureSummary.peakRolloffDelta,
+      peakFlatnessDelta: featureSummary.peakFlatnessDelta,
+      peakCrestFactorDelta: featureSummary.peakCrestFactorDelta,
+      peakBroadbandFlux: featureSummary.peakBroadbandFlux,
+      peakSpectralNoveltyBins: featureSummary.peakSpectralNoveltyBins,
+      peakLowFlux: featureSummary.peakLowFlux,
+      peakLowMidFlux: featureSummary.peakLowMidFlux,
+      peakPresenceFlux: featureSummary.peakPresenceFlux,
+      meanOnsetHfcDelta: safeDivide(featureSummary.onsetHfcDeltaSum, featureSummary.onsetFrameCount),
+      meanOnsetCentroidDelta: safeDivide(featureSummary.onsetCentroidDeltaSum, featureSummary.onsetFrameCount),
+      meanOnsetRolloffDelta: safeDivide(featureSummary.onsetRolloffDeltaSum, featureSummary.onsetFrameCount),
+      meanOnsetFlatnessDelta: safeDivide(featureSummary.onsetFlatnessDeltaSum, featureSummary.onsetFrameCount),
+      meanOnsetCrestFactorDelta: safeDivide(featureSummary.onsetCrestFactorDeltaSum, featureSummary.onsetFrameCount),
+    },
   };
 }
 
@@ -365,6 +431,7 @@ function evaluateFixture(fixture, options = {}) {
     onsetDelta: onsetEvaluation.onsetDelta,
     onsetStatus: onsetEvaluation.onsetStatus,
     onsetTimestampsMs: onsetResult.timestampsMs,
+    onsetFeatureSummary: onsetResult.featureSummary,
     onsetTaggedScore: onsetEvaluation.onsetTaggedScore,
     onsetAcceptAlignment: buildOnsetAcceptAlignment(fixture, onsetResult.timestampsMs, result),
     sampleRate,
@@ -375,7 +442,7 @@ function evaluateFixture(fixture, options = {}) {
   };
 }
 
-function summarizeSequenceCases(fixtures, cases, strategy) {
+export function summarizeSequenceCases(fixtures, cases, strategy) {
   const evaluated = cases.filter(row => !row.skipped);
   const passed = evaluated.filter(row => row.passed);
   const failed = evaluated.filter(row => !row.passed);
@@ -433,65 +500,114 @@ function summarizeSequenceCases(fixtures, cases, strategy) {
   };
 }
 
+export function evaluateSequenceStrategyReport(
+  fixtures = discoverSheetMusicSequenceFixtures(),
+  strategy = getSheetMusicRecognitionStrategies()[0],
+  options = {},
+) {
+  const progress = typeof options.onProgress === 'function' ? options.onProgress : null;
+  progress?.({
+    phase: 'sequence-strategy-start',
+    strategyKey: strategy.key,
+    fixtureCount: fixtures.length,
+  });
+  const cases = fixtures.map((fixture, index) => {
+    if (index === 0 || (index + 1) % 5 === 0 || index === fixtures.length - 1) {
+      progress?.({
+        phase: 'sequence-strategy-progress',
+        strategyKey: strategy.key,
+        current: index + 1,
+        total: fixtures.length,
+        fixture: fixture.file,
+      });
+    }
+    return evaluateFixture(fixture, { ...options, strategy });
+  });
+  progress?.({
+    phase: 'sequence-strategy-done',
+    strategyKey: strategy.key,
+    fixtureCount: fixtures.length,
+  });
+  return summarizeSequenceCases(fixtures, cases, strategy);
+}
+
+export function evaluateOnsetStrategyReport(
+  fixtures = discoverSheetMusicSequenceFixtures(),
+  onsetStrategy = getGuitarOnsetStrategies()[0],
+  options = {},
+) {
+  const progress = typeof options.onProgress === 'function' ? options.onProgress : null;
+  const evaluated = fixtures.filter(f => f.expectedNotes.length > 0);
+  progress?.({
+    phase: 'sequence-onset-strategy-start',
+    strategyKey: onsetStrategy.key,
+    fixtureCount: evaluated.length,
+  });
+  const cases = evaluated.map(fixture => {
+    const { samples, sampleRate } = readWavFile(fixture.wavPath);
+    const onsetResult = countGuitarOnsets(samples, sampleRate, { ...options, onsetStrategy });
+    const onsetEvaluation = createOnsetEvaluation(fixture, onsetResult.timestampsMs);
+    return {
+      fixture,
+      expectedCount: onsetEvaluation.expectedCount,
+      onsetCount: onsetEvaluation.onsetCount,
+      onsetDelta: onsetEvaluation.onsetDelta,
+      onsetStatus: onsetEvaluation.onsetStatus,
+      onsetTimestampsMs: onsetResult.timestampsMs,
+      onsetFeatureSummary: onsetResult.featureSummary,
+      onsetTaggedScore: onsetEvaluation.onsetTaggedScore,
+    };
+  });
+  progress?.({
+    phase: 'sequence-onset-strategy-done',
+    strategyKey: onsetStrategy.key,
+    fixtureCount: evaluated.length,
+  });
+  const totalExpected = cases.reduce((s, c) => s + c.expectedCount, 0);
+  const totalDetected = cases.reduce((s, c) => s + c.onsetCount, 0);
+  const onsetSummary = summarizeOnsetMetrics(cases);
+  return {
+    onsetStrategy,
+    cases,
+    counts: {
+      total: cases.length,
+      exact: onsetSummary.counts.exact,
+      under: onsetSummary.counts.under,
+      over: onsetSummary.counts.over,
+      mixed: onsetSummary.counts.mixed,
+      totalExpected,
+      totalDetected,
+      totalTaggedOnsets: onsetSummary.counts.totalTaggedOnsets,
+      goodMatches: onsetSummary.counts.goodMatches,
+      acceptableMatches: onsetSummary.counts.acceptableMatches,
+      misses: onsetSummary.counts.misses,
+      falsePositives: onsetSummary.counts.falsePositives,
+      duplicates: onsetSummary.counts.duplicates,
+    },
+    metrics: {
+      onsetCountRatio: safeDivide(totalDetected, totalExpected),
+      onsetPrecision: onsetSummary.metrics.onsetPrecision,
+      onsetRecall: onsetSummary.metrics.onsetRecall,
+      onsetF1: onsetSummary.metrics.onsetF1,
+      taggedHitRate: onsetSummary.metrics.taggedHitRate,
+      onsetP95AbsErrorMs: onsetSummary.metrics.p95AbsErrorMs,
+    },
+  };
+}
+
 export function evaluateSheetMusicSequenceFingerprint(fixtures = discoverSheetMusicSequenceFixtures(), options = {}) {
   const strategies = options.strategies ?? getSheetMusicRecognitionStrategies();
   const onsetStrategies = options.onsetStrategies ?? getGuitarOnsetStrategies();
-
-  const strategyReports = strategies.map(strategy => {
-    const cases = fixtures.map(fixture => evaluateFixture(fixture, { ...options, strategy }));
-    return summarizeSequenceCases(fixtures, cases, strategy);
-  });
+  const strategyReports = strategies.map(strategy => (
+    evaluateSequenceStrategyReport(fixtures, strategy, options)
+  ));
   const defaultReport = strategyReports[0];
 
   // Onset strategy reports: evaluate onset detection quality independently
   // of pitch strategy, always using the default pitch strategy for consistency.
-  const onsetStrategyReports = onsetStrategies.map(onsetStrategy => {
-    const evaluated = fixtures.filter(f => f.expectedNotes.length > 0);
-    const cases = evaluated.map(fixture => {
-      const { samples, sampleRate } = readWavFile(fixture.wavPath);
-      const onsetResult = countGuitarOnsets(samples, sampleRate, { ...options, onsetStrategy });
-      const onsetEvaluation = createOnsetEvaluation(fixture, onsetResult.timestampsMs);
-      return {
-        fixture,
-        expectedCount: onsetEvaluation.expectedCount,
-        onsetCount: onsetEvaluation.onsetCount,
-        onsetDelta: onsetEvaluation.onsetDelta,
-        onsetStatus: onsetEvaluation.onsetStatus,
-        onsetTimestampsMs: onsetResult.timestampsMs,
-        onsetTaggedScore: onsetEvaluation.onsetTaggedScore,
-      };
-    });
-    const totalExpected = cases.reduce((s, c) => s + c.expectedCount, 0);
-    const totalDetected = cases.reduce((s, c) => s + c.onsetCount, 0);
-    const onsetSummary = summarizeOnsetMetrics(cases);
-    return {
-      onsetStrategy,
-      cases,
-      counts: {
-        total: cases.length,
-        exact: onsetSummary.counts.exact,
-        under: onsetSummary.counts.under,
-        over: onsetSummary.counts.over,
-        mixed: onsetSummary.counts.mixed,
-        totalExpected,
-        totalDetected,
-        totalTaggedOnsets: onsetSummary.counts.totalTaggedOnsets,
-        goodMatches: onsetSummary.counts.goodMatches,
-        acceptableMatches: onsetSummary.counts.acceptableMatches,
-        misses: onsetSummary.counts.misses,
-        falsePositives: onsetSummary.counts.falsePositives,
-        duplicates: onsetSummary.counts.duplicates,
-      },
-      metrics: {
-        onsetCountRatio: safeDivide(totalDetected, totalExpected),
-        onsetPrecision: onsetSummary.metrics.onsetPrecision,
-        onsetRecall: onsetSummary.metrics.onsetRecall,
-        onsetF1: onsetSummary.metrics.onsetF1,
-        taggedHitRate: onsetSummary.metrics.taggedHitRate,
-        onsetP95AbsErrorMs: onsetSummary.metrics.p95AbsErrorMs,
-      },
-    };
-  });
+  const onsetStrategyReports = onsetStrategies.map(onsetStrategy => (
+    evaluateOnsetStrategyReport(fixtures, onsetStrategy, options)
+  ));
 
   return {
     ...defaultReport,
@@ -535,6 +651,18 @@ function formatTaggedOnsetCase(row) {
   return `| ${row.fixture.file} | ${row.fixture.taggedOnsetsMs.length} | ${tagged.matches} | ${tagged.goodMatches} | `
     + `${tagged.acceptableMatches} | ${tagged.misses} | ${tagged.falsePositives} | ${tagged.duplicates} | `
     + `${formatMs(tagged.meanAbsErrorMs)} | ${formatMs(tagged.p95AbsErrorMs)} | ${formatSignedMs(tagged.meanSignedErrorMs)} |`;
+}
+
+function formatFeatureCase(row) {
+  const features = row.onsetFeatureSummary;
+  return `| ${row.fixture.file} | ${features.frameCount} | ${features.onsetFrameCount} | `
+    + `${formatFeatureValue(features.peakHfcDelta)} | ${formatFeatureValue(features.peakCentroidDelta)} | `
+    + `${formatFeatureValue(features.peakRolloffDelta)} | ${formatFeatureValue(features.peakFlatnessDelta)} | `
+    + `${formatFeatureValue(features.peakCrestFactorDelta)} | ${formatFeatureValue(features.peakBroadbandFlux)} | `
+    + `${formatFeatureValue(features.peakLowFlux)} / ${formatFeatureValue(features.peakLowMidFlux)} / ${formatFeatureValue(features.peakPresenceFlux)} | `
+    + `${formatFeatureValue(features.meanOnsetHfcDelta)} | ${formatFeatureValue(features.meanOnsetCentroidDelta)} | `
+    + `${formatFeatureValue(features.meanOnsetRolloffDelta)} | ${formatFeatureValue(features.meanOnsetFlatnessDelta)} | `
+    + `${formatFeatureValue(features.meanOnsetCrestFactorDelta)} |`;
 }
 
 function formatAlignmentSummaryCase(row) {
@@ -653,6 +781,13 @@ export function formatSheetMusicSequenceFingerprintReport(report) {
     ...cases
       .filter(row => !row.skipped && row.onsetTaggedScore)
       .map(formatTaggedOnsetCase),
+    '',
+    '## Onset Feature Detail',
+    '| fixture | frames | onset frames | peak hfcΔ | peak centroidΔ | peak rolloffΔ | peak flatnessΔ | peak crestΔ | peak flux | peak subband fluxes | onset hfcΔ | onset centroidΔ | onset rolloffΔ | onset flatnessΔ | onset crestΔ |',
+    '|---|---:|---:|---:|---:|---:|---:|---:|---:|---|---:|---:|---:|---:|---:|',
+    ...cases
+      .filter(row => !row.skipped)
+      .map(formatFeatureCase),
     '',
     '## Onset To Accept Alignment',
     '| fixture | expected notes | detected onsets | accepted notes | missing onsets | missing accepts | mismatches | avg onset->accept | first issue |',

@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import {
+  computeCrestFactor,
+  computeHighFrequencyContent,
+  computeSpectralCentroid,
+  computeSpectralFlatness,
+  computeSpectralRolloff,
+  computeSubbandFlux,
   createGuitarOnsetState,
   DEFAULT_GUITAR_ONSET_OPTIONS,
   updateGuitarOnsetDetector,
@@ -36,6 +42,56 @@ describe('guitarOnsetDetector', () => {
     expect(DEFAULT_GUITAR_ONSET_OPTIONS.confirmedFluxFactor).toBe(2.097673);
   });
 
+  it('computes high-frequency content with higher weight for upper bins', () => {
+    const lowWeighted = new Float32Array([0, 1, 0, 0, 0, 0]);
+    const highWeighted = new Float32Array([0, 0, 0, 0, 1, 0]);
+
+    expect(computeHighFrequencyContent(highWeighted)).toBeGreaterThan(computeHighFrequencyContent(lowWeighted));
+  });
+
+  it('computes spectral centroid and rolloff in ascending order for brighter spectra', () => {
+    const darker = new Float32Array([0, 4, 2, 0, 0, 0]);
+    const brighter = new Float32Array([0, 0, 1, 3, 4, 0]);
+
+    expect(computeSpectralCentroid(brighter)).toBeGreaterThan(computeSpectralCentroid(darker));
+    expect(computeSpectralRolloff(brighter, { rolloffPercent: 0.85 })).toBeGreaterThan(
+      computeSpectralRolloff(darker, { rolloffPercent: 0.85 }),
+    );
+  });
+
+  it('computes spectral flatness and crest factor as pure helpers', () => {
+    const tonal = new Float32Array([0, 4, 0.1, 0.05, 0.01, 0]);
+    const noisy = new Float32Array([0, 1, 0.9, 1.1, 0.95, 0]);
+    const peaky = new Float32Array([1, 0, 0, 0]);
+    const even = new Float32Array([1, 1, 1, 1]);
+
+    expect(computeSpectralFlatness(noisy)).toBeGreaterThan(computeSpectralFlatness(tonal));
+    expect(computeCrestFactor(peaky)).toBeGreaterThan(computeCrestFactor(even));
+  });
+
+  it('computes subband flux separately per configured band', () => {
+    const previous = new Float32Array(32);
+    const current = new Float32Array(32);
+    current[4] = 1.0;
+    current[10] = 0.8;
+    current[20] = 0.6;
+
+    const subbandFlux = computeSubbandFlux(previous, current, {
+      subbands: [
+        { key: 'low', minHz: 0, maxHz: 400 },
+        { key: 'mid', minHz: 400, maxHz: 1200 },
+        { key: 'high', minHz: 1200, maxHz: 4000 },
+      ],
+      sampleRate: 8000,
+      fftSize: 64,
+      binDelta: 0.001,
+    });
+
+    expect(subbandFlux.low.flux).toBeGreaterThan(0);
+    expect(subbandFlux.mid.flux).toBeGreaterThan(0);
+    expect(subbandFlux.high.flux).toBeGreaterThan(0);
+  });
+
   it('detects a broadband spectral attack independently of pitch', () => {
     let state = createGuitarOnsetState();
     ({ nextState: state } = updateGuitarOnsetDetector(state, {
@@ -51,6 +107,11 @@ describe('guitarOnsetDetector', () => {
     expect(result.event).toBe('onset');
     expect(result.broadbandFlux).toBeGreaterThan(0);
     expect(result.bandRatio).toBeGreaterThan(0.075);
+    expect(result.hfc).toBeGreaterThan(0);
+    expect(result.spectralCentroid).toBeGreaterThan(0);
+    expect(result.spectralRolloff).toBeGreaterThan(0);
+    expect(result.crestFactor).toBeGreaterThan(0);
+    expect(result.subbandFlux.low.flux).toBeGreaterThanOrEqual(0);
   });
 
   it('does not retrigger on a steady sustained spectrum', () => {
