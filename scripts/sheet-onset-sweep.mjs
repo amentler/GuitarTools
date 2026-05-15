@@ -282,12 +282,13 @@ function printRoundSummary(round, roundResults, allResults, strategies, roundMod
 
   for (const strategy of strategies) {
     const best = bestForStrategy(allResults, strategy.key);
+    const roundBest = roundBestForStrategy(roundResults, strategy.key);
+
+    const isNewBest = best && roundBest && best.id === roundBest.id;
+    if (!isNewBest) continue;
+
     console.log('');
-    console.log(`[${strategy.key}] best parameters`);
-    if (!best) {
-      console.log('  -');
-      continue;
-    }
+    console.log(`[${strategy.key}] NEW best parameters (score: ${formatScore(best.score)})`);
     for (const [key, value] of Object.entries(best.parameters)) {
       if (key === 'strategyKey') continue;
       console.log(`  ${key.padEnd(32)} ${formatParameterValue(value)}`);
