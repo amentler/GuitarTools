@@ -13,12 +13,13 @@ import {
   getGuitarOnsetStrategies,
   resolveGuitarOnsetStrategy,
 } from '../../js/shared/audio/guitarOnsetStrategies.js';
+import { ONSET_FFT_SIZE, ONSET_LIVE_ANALYZE_INTERVAL_MS } from '../../js/shared/audio/onsetPipelineConfig.js';
 import { computeDbSpectrum } from './chordHpcpExtraction.js';
 import { percentile, scoreTaggedOnsets } from '../../scripts/taggedOnsetScoring.mjs';
 
 const SEQUENCES_DIR = join(process.cwd(), 'tests/fixtures/sequences');
-export const SHEET_FINGERPRINT_ANALYZE_INTERVAL_MS = 41;
-export const SHEET_FINGERPRINT_ONSET_FRAME_SIZE = 4096;
+export const SHEET_FINGERPRINT_ANALYZE_INTERVAL_MS = ONSET_LIVE_ANALYZE_INTERVAL_MS;
+export const SHEET_FINGERPRINT_ONSET_FRAME_SIZE = ONSET_FFT_SIZE;
 export const SHEET_FINGERPRINT_POSITIVE_FIXTURE_FILES = [
   'open-strings/eeeeaaaaddddgggg.wav',
   'open-strings/medium.wav',
@@ -105,9 +106,7 @@ function normalizeFrameForSheetMusicReading(frameResult) {
 
 export function countGuitarOnsets(samples, sampleRate, options = {}) {
   const frameSize = options.onsetFrameSize ?? SHEET_FINGERPRINT_ONSET_FRAME_SIZE;
-  const hopSize = options.onsetHopSize ?? Math.max(1, Math.round(
-    sampleRate * ((options.analyzeIntervalMs ?? SHEET_FINGERPRINT_ANALYZE_INTERVAL_MS) / 1000),
-  ));
+  const hopSize = options.onsetHopSize ?? Math.round(frameSize / 4);
   const onsetStrategy = options.onsetStrategy
     ?? (options.onsetStrategyKey ? resolveGuitarOnsetStrategy(options.onsetStrategyKey) : null)
     ?? resolveGuitarOnsetStrategy(DEFAULT_GUITAR_ONSET_STRATEGY_KEY);
@@ -154,7 +153,7 @@ export function countGuitarOnsets(samples, sampleRate, options = {}) {
     featureSummary.peakLowMidFlux = Math.max(featureSummary.peakLowMidFlux, result.subbandFlux?.lowMid?.flux ?? 0);
     featureSummary.peakPresenceFlux = Math.max(featureSummary.peakPresenceFlux, result.subbandFlux?.presence?.flux ?? 0);
     if (result.event === 'onset') {
-      timestampsMs.push(Math.round((offset / sampleRate) * 1000));
+      timestampsMs.push(Math.round(((offset + frameSize) / sampleRate) * 1000));
       featureSummary.onsetFrameCount++;
       featureSummary.onsetHfcDeltaSum += result.hfcDelta ?? 0;
       featureSummary.onsetCentroidDeltaSum += result.spectralCentroidDelta ?? 0;

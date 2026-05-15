@@ -28,11 +28,10 @@ import {
   sortResults,
   writeJson,
 } from './sheetOnsetSweepCore.mjs';
+import { ONSET_FFT_SIZE, ONSET_HOP_DIVISOR } from '../js/shared/audio/onsetPipelineConfig.js';
 
 const DEFAULT_WORKER_COUNT = Math.max(1, Math.floor(cpus().length / 2));
 const WORKER_SCRIPT = fileURLToPath(new URL('./sheet-onset-sweep-worker.mjs', import.meta.url));
-const DEFAULT_ONSET_FRAME_SIZE = 4096;
-const DEFAULT_ANALYZE_INTERVAL_MS = 41;
 
 function slugifyStrategyKey(strategyKey) {
   return String(strategyKey).replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '');
@@ -84,8 +83,9 @@ function dispatchBatch(worker, batch, sharedFixtures, scoreSpec) {
 }
 
 function resolveHopSize(options, sampleRate) {
-  return options.onsetHopSize
-    ?? Math.max(1, Math.round(sampleRate * ((options.analyzeIntervalMs ?? DEFAULT_ANALYZE_INTERVAL_MS) / 1000)));
+  if (options.onsetHopSize) return options.onsetHopSize;
+  if (options.analyzeIntervalMs) return Math.max(1, Math.round(sampleRate * (options.analyzeIntervalMs / 1000)));
+  return Math.round((options.onsetFrameSize ?? ONSET_FFT_SIZE) / ONSET_HOP_DIVISOR);
 }
 
 function estimateFrameCount(samplesBuffer, frameSize, hopSize) {
@@ -96,7 +96,7 @@ function estimateFrameCount(samplesBuffer, frameSize, hopSize) {
 
 function getAnalysisConfig(candidate, sampleRate) {
   const options = candidateToOptions(candidate.parameters);
-  const frameSize = options.onsetFrameSize ?? DEFAULT_ONSET_FRAME_SIZE;
+  const frameSize = options.onsetFrameSize ?? ONSET_FFT_SIZE;
   const hopSize = resolveHopSize(options, sampleRate);
   return {
     key: `${frameSize}:${hopSize}`,

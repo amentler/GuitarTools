@@ -1,7 +1,6 @@
 import { collectFrameData } from './collectFrameData.js';
 import { resolveGuitarOnsetStrategy } from './guitarOnsetStrategies.js';
-
-const DEFAULT_FFT_SIZE = 4096;
+import { ONSET_FFT_SIZE, ONSET_HOP_DIVISOR } from './onsetPipelineConfig.js';
 
 /**
  * Runs a registered guitar onset strategy over a decoded mono sample buffer.
@@ -15,8 +14,8 @@ const DEFAULT_FFT_SIZE = 4096;
  */
 export async function detectOnsetsOffline(samples, sampleRate, options = {}) {
   const strategy = resolveGuitarOnsetStrategy(options.strategyKey);
-  const fftSize = options.fftSize ?? DEFAULT_FFT_SIZE;
-  const hopSize = options.hopSize ?? fftSize;
+  const fftSize = options.fftSize ?? ONSET_FFT_SIZE;
+  const hopSize = options.hopSize ?? Math.round(fftSize / ONSET_HOP_DIVISOR);
   const duration = samples.length / sampleRate;
 
   const frameInputs = await collectFrameData(samples, sampleRate, fftSize, hopSize);
@@ -30,8 +29,8 @@ export async function detectOnsetsOffline(samples, sampleRate, options = {}) {
     state = result.nextState;
     if (result.event === 'onset') {
       const offset = i * hopSize;
-      const tCenter = Math.min(duration, (offset + fftSize / 2) / sampleRate);
-      onsetsSec.push(tCenter);
+      const tEnd = Math.min(duration, (offset + fftSize) / sampleRate);
+      onsetsSec.push(tEnd);
     }
   }
 
