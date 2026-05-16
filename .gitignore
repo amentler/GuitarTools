@@ -1,5 +1,8 @@
 node_modules/
 .DS_Store
+sfp-report.md
+.claude/settings.local.json
+test-results/
 
 # Sweep-Ergebnisse ignorieren
 sweep-runs/
