@@ -286,7 +286,12 @@ Arbeitshypothese:
     (`HFC`, `centroid`, `rolloff`, `flatness`, `crest factor`, `subband flux`)
   - erledigt: Fingerprint-Report zeigt die neuen Feature-Werte pro Fixture
   - erledigt: Feature-Helper durch Unit-Tests abgesichert
-  - offen: optionale Visualisierung/Trace-Ausgabe im Audio-Analyse-Tool
+  - erledigt: optionale Visualisierung im Audio-Analyse-Tool mit
+    HFC/HFC-Delta, Centroid-/Rolloff-Delta, Flatness, Crest Factor und
+    Subband-Flux-Kurven
+  - erledigt: Audio-Analyse-Zoom per Start-/Ende-Slider, optionale vertikale
+    Normalisierung sowie getrennt schaltbare erkannte/getaggte Onset-Marker
+  - offen: optionale Datei-/CLI-Trace-Ausgabe ausserhalb des Audio-Analyse-Tools
   - naechster Schritt: Phase 3 mit `Brightness Reattack` und
     `Multiband Attack Consensus`
 

@@ -59,6 +59,12 @@ export function createAudioAnalyseFeature() {
   let _cachedSR       = 44100;
   let _cachedFilename = '';
   let _cachedManifest = null;
+  let _analysisResult = null;
+  let _rangeStart     = 0;
+  let _rangeEnd       = 0;
+  let _normalizeY     = true;
+  let _showDetectedOnsets = true;
+  let _showTaggedOnsets   = true;
   let _sliderDragging = false;
 
   function resolveUI(root) {
@@ -80,6 +86,13 @@ export function createAudioAnalyseFeature() {
       sliderEl:            q('analyse-slider'),
       sliderTimeEl:        q('analyse-slider-time'),
       sliderDurEl:         q('analyse-slider-dur'),
+      rangeControls:       q('analyse-range-controls'),
+      rangeStartEl:        q('analyse-range-start'),
+      rangeEndEl:          q('analyse-range-end'),
+      rangeDisplay:        q('analyse-range-display'),
+      normalizeYEl:        q('analyse-normalize-y'),
+      showDetectedOnsetsEl: q('analyse-show-detected-onsets'),
+      showTaggedOnsetsEl:   q('analyse-show-tagged-onsets'),
       pitchStrategySelect: q('analyse-pitch-select'),
       onsetStrategySelect: q('analyse-onset-select'),
     };
@@ -116,6 +129,80 @@ export function createAudioAnalyseFeature() {
     const onsetStrategy = resolveGuitarOnsetStrategy(onsetKey);
     if (ui.strategyPitch) ui.strategyPitch.textContent = PITCH_STRATEGY_LABELS[pitchKey] ?? pitchKey;
     if (ui.strategyOnset) ui.strategyOnset.textContent = onsetStrategy?.label ?? onsetKey;
+  }
+
+  function getTaggedOnsetsSec() {
+    const taggedMs = _cachedManifest?.onsetsMs;
+    if (!Array.isArray(taggedMs)) return [];
+    return taggedMs
+      .filter(ms => Number.isFinite(ms))
+      .map(ms => ms / 1000)
+      .sort((a, b) => a - b);
+  }
+
+  function renderCurrentAnalysis(ui) {
+    if (!ui.chartsWrapper || !_cachedSamples || !_analysisResult) return;
+    renderAllCharts(ui.chartsWrapper, _cachedSamples, _analysisResult, {
+      rangeStart: _rangeStart,
+      rangeEnd: _rangeEnd,
+      normalizeY: _normalizeY,
+      showDetectedOnsets: _showDetectedOnsets,
+      showTaggedOnsets: _showTaggedOnsets,
+      taggedOnsets: getTaggedOnsetsSec(),
+    });
+    initCrosshair(ui.chartsWrapper);
+    ui.chartsWrapper.classList.remove('u-hidden');
+  }
+
+  function syncRangeControls(ui) {
+    if (!_analysisResult || !ui.rangeStartEl || !ui.rangeEndEl) return;
+    const duration = Math.max(0, _analysisResult.duration);
+    let start = parseFloat(ui.rangeStartEl.value);
+    let end = parseFloat(ui.rangeEndEl.value);
+    if (!Number.isFinite(start)) start = 0;
+    if (!Number.isFinite(end)) end = duration;
+    if (start >= end) {
+      if (document.activeElement === ui.rangeStartEl) {
+        start = Math.max(0, end - 0.01);
+        ui.rangeStartEl.value = start.toFixed(4);
+      } else {
+        end = Math.min(duration, start + 0.01);
+        ui.rangeEndEl.value = end.toFixed(4);
+      }
+    }
+    _rangeStart = Math.max(0, Math.min(Math.max(0, duration - 0.01), start));
+    _rangeEnd = Math.max(_rangeStart + 0.01, Math.min(duration, end));
+    if (ui.rangeDisplay) {
+      ui.rangeDisplay.textContent = `${_rangeStart.toFixed(2)} s - ${_rangeEnd.toFixed(2)} s`;
+    }
+    renderCurrentAnalysis(ui);
+    updatePlayhead(_analysisDur > 0 ? _playOffset / _analysisDur : 0);
+  }
+
+  function resetRangeControls(ui, duration) {
+    _rangeStart = 0;
+    _rangeEnd = duration;
+    if (ui.rangeStartEl) {
+      ui.rangeStartEl.min = '0';
+      ui.rangeStartEl.max = duration.toFixed(4);
+      ui.rangeStartEl.step = '0.001';
+      ui.rangeStartEl.value = '0';
+    }
+    if (ui.rangeEndEl) {
+      ui.rangeEndEl.min = '0';
+      ui.rangeEndEl.max = duration.toFixed(4);
+      ui.rangeEndEl.step = '0.001';
+      ui.rangeEndEl.value = duration.toFixed(4);
+    }
+    if (ui.rangeDisplay) {
+      ui.rangeDisplay.textContent = `0.00 s - ${duration.toFixed(2)} s`;
+    }
+    if (ui.normalizeYEl) ui.normalizeYEl.checked = _normalizeY;
+    if (ui.showDetectedOnsetsEl) ui.showDetectedOnsetsEl.checked = _showDetectedOnsets;
+    if (ui.showTaggedOnsetsEl) {
+      ui.showTaggedOnsetsEl.checked = _showTaggedOnsets;
+      ui.showTaggedOnsetsEl.disabled = getTaggedOnsetsSec().length === 0;
+    }
   }
 
   async function ensureSelectedPitchStrategyReady(pitchStrategyKey) {
@@ -164,20 +251,20 @@ export function createAudioAnalyseFeature() {
     _cachedSR       = decoded.sampleRate;
     _cachedFilename = filename;
     _cachedManifest = manifest;
+    _analysisResult = result;
     _analysisDur    = result.duration;
     _audioBuffer    = null; // wird lazy beim ersten Play erstellt
 
     hideStatus(ui);
     showStats(ui, result, filename);
 
-    if (!ui.chartsWrapper) return;
-    renderAllCharts(ui.chartsWrapper, decoded.samples, result);
-    initCrosshair(ui.chartsWrapper);
-    ui.chartsWrapper.classList.remove('u-hidden');
+    resetRangeControls(ui, result.duration);
+    renderCurrentAnalysis(ui);
 
     // Slider + Transport einblenden und Slider kalibrieren
     if (ui.sliderRow)   ui.sliderRow.classList.remove('u-hidden');
     if (ui.transportRow) ui.transportRow.classList.remove('u-hidden');
+    if (ui.rangeControls) ui.rangeControls.classList.remove('u-hidden');
     if (ui.sliderEl) { ui.sliderEl.value = '0'; }
     if (ui.sliderTimeEl) ui.sliderTimeEl.textContent = '0.00 s';
     if (ui.sliderDurEl) ui.sliderDurEl.textContent = `${result.duration.toFixed(2)} s`;
@@ -312,13 +399,13 @@ export function createAudioAnalyseFeature() {
       showStatus(ui, `Analyse-Fehler: ${err.message}`, true);
       return;
     }
+    _analysisResult = result;
     _analysisDur = result.duration;
     _audioBuffer = null;
     hideStatus(ui);
     showStats(ui, result, _cachedFilename);
-    if (!ui.chartsWrapper) return;
-    renderAllCharts(ui.chartsWrapper, _cachedSamples, result);
-    initCrosshair(ui.chartsWrapper);
+    resetRangeControls(ui, result.duration);
+    renderCurrentAnalysis(ui);
     if (ui.sliderEl) ui.sliderEl.value = '0';
     if (ui.sliderTimeEl) ui.sliderTimeEl.textContent = '0.00 s';
     if (ui.sliderDurEl) ui.sliderDurEl.textContent = `${result.duration.toFixed(2)} s`;
@@ -456,6 +543,21 @@ export function createAudioAnalyseFeature() {
       if (wasPlaying) startPlayback(ui, newOffset);
     });
 
+    ui.rangeStartEl?.addEventListener('input', () => syncRangeControls(ui));
+    ui.rangeEndEl?.addEventListener('input', () => syncRangeControls(ui));
+    ui.normalizeYEl?.addEventListener('change', () => {
+      _normalizeY = ui.normalizeYEl.checked;
+      renderCurrentAnalysis(ui);
+    });
+    ui.showDetectedOnsetsEl?.addEventListener('change', () => {
+      _showDetectedOnsets = ui.showDetectedOnsetsEl.checked;
+      renderCurrentAnalysis(ui);
+    });
+    ui.showTaggedOnsetsEl?.addEventListener('change', () => {
+      _showTaggedOnsets = ui.showTaggedOnsetsEl.checked;
+      renderCurrentAnalysis(ui);
+    });
+
     wireDropzone(ui);
 
     const params = new URLSearchParams(window.location.search);
@@ -497,6 +599,7 @@ export function createAudioAnalyseFeature() {
     _cachedSamples  = null;
     _cachedFilename = '';
     _cachedManifest = null;
+    _analysisResult = null;
     _root = null;
   }
 

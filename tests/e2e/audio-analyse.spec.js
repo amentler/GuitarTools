@@ -1,6 +1,8 @@
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { readFile, writeFile } from 'fs/promises';
 import { test, expect } from '@playwright/test';
+import { buildRecordingZip } from '../../js/shared/zip.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -89,6 +91,84 @@ test.describe('Audio-Analyse Werkzeug', () => {
     expect(joined).toContain('band-ratio');
     expect(joined).toContain('onset');
     expect(joined).toContain('frequenz');
+    expect(joined).toContain('hfc');
+    expect(joined).toContain('centroid');
+    expect(joined).toContain('flatness');
+    expect(joined).toContain('crest factor');
+    expect(joined).toContain('subband flux');
+  });
+
+  test('Zoom- und Anzeigeoptionen sind nach Analyse bedienbar', async ({ page }) => {
+    await page.locator('#input-wav-file').setInputFiles(FIXTURE_WAV);
+    await expect(page.locator('#analyse-charts-wrapper')).toBeVisible({ timeout: 30_000 });
+
+    await expect(page.locator('#analyse-range-controls')).toBeVisible();
+    await expect(page.locator('#analyse-normalize-y')).toBeChecked();
+    await expect(page.locator('#analyse-show-detected-onsets')).toBeChecked();
+    await expect(page.locator('#analyse-show-tagged-onsets')).toBeChecked();
+
+    const firstSvg = page.locator('svg.analysis-chart-svg').first();
+    const beforeText = await firstSvg.evaluate(el => el.textContent);
+    await page.locator('#analyse-range-start').evaluate((el) => {
+      el.value = '1';
+      el.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+    await expect(page.locator('#analyse-range-display')).toContainText('1.00 s');
+    const afterText = await firstSvg.evaluate(el => el.textContent);
+    expect(afterText).not.toEqual(beforeText);
+    expect(afterText).toContain('1.0s');
+  });
+
+  test('Vertikale Normalisierung verändert die Kurvenskalierung', async ({ page }) => {
+    await page.locator('#input-wav-file').setInputFiles(FIXTURE_WAV);
+    await expect(page.locator('#analyse-charts-wrapper')).toBeVisible({ timeout: 30_000 });
+
+    const rmsBlock = page.locator('.analysis-chart-block').filter({ hasText: /rms/i }).first();
+    const pointsNormalized = await rmsBlock.locator('polyline').getAttribute('points');
+    await page.locator('#analyse-normalize-y').uncheck();
+    const pointsFixedScale = await rmsBlock.locator('polyline').getAttribute('points');
+    expect(pointsFixedScale).not.toEqual(pointsNormalized);
+  });
+
+  test('Erkannte Onset-Marker lassen sich ausblenden', async ({ page }) => {
+    await page.locator('#input-wav-file').setInputFiles(FIXTURE_WAV);
+    await expect(page.locator('#analyse-charts-wrapper')).toBeVisible({ timeout: 30_000 });
+
+    await expect(page.locator('.analysis-marker-detected').first()).toBeVisible();
+    await page.locator('#analyse-show-detected-onsets').uncheck();
+    await expect(page.locator('.analysis-marker-detected')).toHaveCount(0);
+  });
+
+  test('Getaggte Onsets aus ZIP-Sidecar werden optional angezeigt', async ({ page }, testInfo) => {
+    const wavData = await readFile(FIXTURE_WAV);
+    const jsonData = new TextEncoder().encode(JSON.stringify({
+      notes: ['E2', 'G2'],
+      onsetsMs: [500, 1500],
+    }));
+    const zipPath = testInfo.outputPath('audio-analyse-tagged.zip');
+    await writeFile(zipPath, buildRecordingZip('audio-analyse-tagged', new Uint8Array(wavData), jsonData));
+
+    await page.locator('#input-wav-file').setInputFiles(zipPath);
+    await expect(page.locator('#analyse-charts-wrapper')).toBeVisible({ timeout: 30_000 });
+
+    await expect(page.locator('#analyse-show-tagged-onsets')).toBeEnabled();
+    await expect(page.locator('.analysis-marker-tagged').first()).toBeVisible();
+    await page.locator('#analyse-show-tagged-onsets').uncheck();
+    await expect(page.locator('.analysis-marker-tagged')).toHaveCount(0);
+  });
+
+  test('Strategie-Dropdowns sind schwarz auf weiß lesbar', async ({ page }) => {
+    const select = page.locator('#analyse-pitch-select');
+    await expect(select).toBeVisible();
+    const styles = await select.evaluate((el) => {
+      const computed = window.getComputedStyle(el);
+      return {
+        color: computed.color,
+        backgroundColor: computed.backgroundColor,
+      };
+    });
+    expect(styles.color).toBe('rgb(0, 0, 0)');
+    expect(styles.backgroundColor).toBe('rgb(255, 255, 255)');
   });
 
   test('Spektralfluss-Chart hat sichtbare Linie (nicht konstant 0)', async ({ page }) => {

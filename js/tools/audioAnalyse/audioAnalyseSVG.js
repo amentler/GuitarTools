@@ -1,17 +1,3 @@
-/**
- * audioAnalyseSVG.js
- *
- * SVG-basierte Chart-Bibliothek für das Audio-Analyse Werkzeug.
- * Alle Charts teilen sich die gleiche X-Achse (Zeit in Sekunden).
- * Onset-Marker erscheinen als vertikale rote gestrichelte Linien auf allen Charts.
- * Ein synchroner Crosshair-Indikator zeigt beim Hover die Werte des nächsten Frames.
- *
- * Koordinatensystem:
- *   viewBox: "0 0 CHART_W {H}"
- *   Plot-Bereich X: PAD_L .. CHART_W - PAD_R
- *   Plot-Bereich Y: PAD_T .. H - PAD_B
- */
-
 import { noteToFrequency } from '../../shared/audio/guitarPitchDetection.js';
 import {
   makeCrosshairLine,
@@ -19,9 +5,8 @@ import {
   resetCrosshairRegistry,
   setAnalysisData,
 } from './audioAnalyseSVGCrosshair.js';
+import { buildTimeSeriesSpecs } from './audioAnalyseSVGSeries.js';
 export { setCrosshairFromFraction, initCrosshair } from './audioAnalyseSVGCrosshair.js';
-
-// ── Gemeinsame Layout-Konstanten ─────────────────────────────────────────────
 
 const CHART_W = 1000;
 const PAD_L = 58;   // Platz für Y-Achsen-Labels
@@ -32,11 +17,12 @@ const PAD_B = 26;   // Platz für X-Achsen-Labels
 const PLOT_W = CHART_W - PAD_L - PAD_R;
 
 const COLOR_ONSET    = '#e74c3c';
+const COLOR_TAGGED_ONSET = '#1f8b4c';
 const COLOR_INVALID  = '#bbbbbb'; // Farbe für Frames mit isValid=false
 const COLOR_GRID     = '#e8d8c0';
 const COLOR_AXIS     = '#8a7a6a';
+const MIN_VISIBLE_RANGE_SEC = 0.01;
 
-// Gitarren-Saiten Referenzfrequenzen
 const GUITAR_STRINGS = [
   { label: 'E2', hz: 82.41 },
   { label: 'A2', hz: 110.00 },
@@ -46,12 +32,11 @@ const GUITAR_STRINGS = [
   { label: 'E4', hz: 329.63 },
 ];
 
-// Registry aller Playhead-Linien (alle Charts, aktualisiert während Wiedergabe)
 let _playheadLines = [];
 let _analysisFrames = [];
 let _analysisDuration = 1;
-
-// ── SVG-Hilfsfunktionen ──────────────────────────────────────────────────────
+let _analysisRangeStart = 0;
+let _analysisRangeEnd = 1;
 
 function svgEl(tag, attrs = {}) {
   const el = document.createElementNS('http://www.w3.org/2000/svg', tag);
@@ -82,26 +67,96 @@ function makePlayheadLine(svg, height) {
   return line;
 }
 
-/** Konvertiert Zeit in Sekunden zur SVG-X-Koordinate. */
-function timeToX(t, duration) {
-  return PAD_L + (t / duration) * PLOT_W;
+function timeToX(t, rangeStart, rangeEnd) {
+  const range = Math.max(MIN_VISIBLE_RANGE_SEC, rangeEnd - rangeStart);
+  return PAD_L + ((t - rangeStart) / range) * PLOT_W;
 }
 
-/** Zeichnet Onset-Marker auf einem SVG. */
-function appendOnsetMarkers(svg, onsets, duration, chartH) {
-  for (const t of onsets) {
-    const x = timeToX(t, duration);
-    svg.appendChild(svgEl('line', {
-      x1: x, y1: PAD_T, x2: x, y2: chartH - PAD_B,
-      stroke: COLOR_ONSET,
-      'stroke-width': '1.2',
-      'stroke-dasharray': '5 3',
-      opacity: '0.7',
-    }));
+function appendOnsetMarkers(svg, markerSets, rangeStart, rangeEnd, chartH) {
+  for (const markerSet of markerSets) {
+    if (!markerSet.visible) continue;
+    for (const t of markerSet.onsets) {
+      if (t < rangeStart || t > rangeEnd) continue;
+      const x = timeToX(t, rangeStart, rangeEnd);
+      svg.appendChild(svgEl('line', {
+        x1: x, y1: PAD_T, x2: x, y2: chartH - PAD_B,
+        stroke: markerSet.color,
+        'stroke-width': markerSet.strokeWidth ?? '1.2',
+        'stroke-dasharray': markerSet.dasharray ?? '5 3',
+        opacity: markerSet.opacity ?? '0.7',
+        class: markerSet.className,
+      }));
+    }
   }
 }
 
-/** Zeichnet horizontale Gitternetzlinien + Y-Achsen-Labels. */
+function makeMarkerSets(onsets, options = {}) {
+  return [
+    {
+      onsets,
+      visible: options.showDetectedOnsets !== false,
+      color: COLOR_ONSET,
+      className: 'analysis-marker-detected',
+      dasharray: '5 3',
+      strokeWidth: '1.2',
+      opacity: '0.72',
+    },
+    {
+      onsets: options.taggedOnsets ?? [],
+      visible: options.showTaggedOnsets !== false,
+      color: COLOR_TAGGED_ONSET,
+      className: 'analysis-marker-tagged',
+      dasharray: '2 2',
+      strokeWidth: '1.5',
+      opacity: '0.82',
+    },
+  ];
+}
+
+function filterFramesToRange(frames, rangeStart, rangeEnd) {
+  return frames.filter(frame => frame.t >= rangeStart && frame.t <= rangeEnd);
+}
+
+function resolveChartRange(duration, options = {}) {
+  const maxStart = Math.max(0, duration - MIN_VISIBLE_RANGE_SEC);
+  const rangeStart = Math.max(0, Math.min(maxStart, options.rangeStart ?? 0));
+  const requestedEnd = Number.isFinite(options.rangeEnd) ? options.rangeEnd : duration;
+  const rangeEnd = Math.max(
+    Math.min(duration, rangeStart + MIN_VISIBLE_RANGE_SEC),
+    Math.min(duration, requestedEnd),
+  );
+  return {
+    rangeStart,
+    rangeEnd: Math.min(duration, Math.max(rangeStart + MIN_VISIBLE_RANGE_SEC, rangeEnd)),
+  };
+}
+
+function resolveYRange(values, options, fallbackMax = 1) {
+  const normalized = options.normalizeY !== false;
+  const yMin = options.yMin ?? 0;
+  if (!normalized && Number.isFinite(options.yMax)) {
+    return { yMin, yMax: options.yMax };
+  }
+  const dataMax = values.length ? Math.max(...values) : fallbackMax;
+  const dataMin = values.length ? Math.min(...values) : yMin;
+  if (normalized) {
+    if (dataMin < 0) {
+      const maxAbs = Math.max(Math.abs(dataMin), Math.abs(dataMax), Number.EPSILON);
+      return { yMin: -maxAbs, yMax: maxAbs };
+    }
+    return { yMin: 0, yMax: Math.max(dataMax * 1.05, Number.EPSILON) };
+  }
+  return { yMin, yMax: Number.isFinite(options.yMax) ? options.yMax : (dataMax * 1.05 || fallbackMax) };
+}
+
+function makeTicks(yMin, yMax, requestedTicks) {
+  if (requestedTicks?.length) {
+    return requestedTicks.filter(tick => tick >= yMin && tick <= yMax);
+  }
+  if (yMin < 0) return [yMin, 0, yMax];
+  return [yMin, yMax];
+}
+
 function appendYGrid(svg, chartH, ticks, { yMin, yMax, format, color = COLOR_GRID }) {
   const plotH = chartH - PAD_T - PAD_B;
   for (const v of ticks) {
@@ -122,13 +177,12 @@ function appendYGrid(svg, chartH, ticks, { yMin, yMax, format, color = COLOR_GRI
   }
 }
 
-/** Zeichnet X-Achse mit Zeit-Labels. */
-function appendXAxis(svg, duration, chartH) {
+function appendXAxis(svg, rangeStart, rangeEnd, chartH) {
   const y = chartH - PAD_B + 10;
   const tickCount = 6;
   for (let i = 0; i <= tickCount; i++) {
-    const t = (i / tickCount) * duration;
-    const x = timeToX(t, duration);
+    const t = rangeStart + (i / tickCount) * (rangeEnd - rangeStart);
+    const x = timeToX(t, rangeStart, rangeEnd);
     svg.appendChild(svgEl('line', {
       x1: x, y1: chartH - PAD_B, x2: x, y2: chartH - PAD_B + 4,
       stroke: COLOR_AXIS, 'stroke-width': '0.5',
@@ -145,14 +199,11 @@ function appendXAxis(svg, duration, chartH) {
   }
 }
 
-/** Zeichnet den Y-Achsen-Rahmen. */
 function appendAxes(svg, chartH) {
-  // Y-Achse
   svg.appendChild(svgEl('line', {
     x1: PAD_L, y1: PAD_T, x2: PAD_L, y2: chartH - PAD_B,
     stroke: COLOR_AXIS, 'stroke-width': '0.8',
   }));
-  // X-Achse
   svg.appendChild(svgEl('line', {
     x1: PAD_L, y1: chartH - PAD_B, x2: CHART_W - PAD_R, y2: chartH - PAD_B,
     stroke: COLOR_AXIS, 'stroke-width': '0.8',
@@ -200,13 +251,19 @@ function createSection(title, svg, chartH, cursorConfig = null) {
  * @param {Float32Array} samples
  * @param {number} sampleRate
  * @param {number[]} onsets  Onset-Zeitpunkte in Sekunden
+ * @param {{ rangeStart?: number, rangeEnd?: number, normalizeY?: boolean, taggedOnsets?: number[], showDetectedOnsets?: boolean, showTaggedOnsets?: boolean }} [options]
  */
-export function renderWaveform(container, samples, sampleRate, onsets) {
+export function renderWaveform(container, samples, sampleRate, onsets, options = {}) {
   const chartH = 130;
   const plotH = chartH - PAD_T - PAD_B;
   const duration = samples.length / sampleRate;
+  const { rangeStart, rangeEnd } = resolveChartRange(duration, options);
+  const markerSets = makeMarkerSets(onsets, options);
   const bins = Math.min(PLOT_W, 1400); // max Datenpunkte
-  const binSize = Math.ceil(samples.length / bins);
+  const startSample = Math.max(0, Math.floor(rangeStart * sampleRate));
+  const endSample = Math.min(samples.length, Math.ceil(rangeEnd * sampleRate));
+  const visibleLength = Math.max(1, endSample - startSample);
+  const binSize = Math.ceil(visibleLength / bins);
 
   const svg = makeSvg(chartH);
 
@@ -214,7 +271,7 @@ export function renderWaveform(container, samples, sampleRate, onsets) {
   // hier wird einfach das Signal gezeigt.
 
   appendAxes(svg, chartH);
-  appendXAxis(svg, duration, chartH);
+  appendXAxis(svg, rangeStart, rangeEnd, chartH);
 
   // Y-Achsen-Label ±1
   for (const v of [1, 0.5, 0, -0.5, -1]) {
@@ -229,24 +286,31 @@ export function renderWaveform(container, samples, sampleRate, onsets) {
     ));
   }
 
+  let peak = 1;
+  if (options.normalizeY !== false) {
+    peak = Number.EPSILON;
+    for (let i = startSample; i < endSample; i++) {
+      peak = Math.max(peak, Math.abs(samples[i] ?? 0));
+    }
+  }
+
   // Envelope als gefüllte Polygon-Fläche (min/max pro Bin)
   const topPts = [];
   const botPts = [];
   for (let b = 0; b < bins; b++) {
-    const start = b * binSize;
-    const end = Math.min(start + binSize, samples.length);
+    const start = startSample + b * binSize;
+    const end = Math.min(start + binSize, endSample);
     let mn = Infinity; let mx = -Infinity;
     for (let i = start; i < end; i++) {
       const v = samples[i];
       if (v < mn) mn = v;
       if (v > mx) mx = v;
     }
-    mn = Math.max(-1, mn);
-    mx = Math.min(1, mx);
+    mn = Math.max(-peak, mn);
+    mx = Math.min(peak, mx);
     const x = PAD_L + (b / bins) * PLOT_W;
-    const midT = ((b + 0.5) * binSize) / samples.length * duration;
-    topPts.push([x, PAD_T + plotH * (0.5 - mx / 2), midT]);
-    botPts.push([x, PAD_T + plotH * (0.5 - mn / 2), midT]);
+    topPts.push([x, PAD_T + plotH * (0.5 - mx / (2 * peak))]);
+    botPts.push([x, PAD_T + plotH * (0.5 - mn / (2 * peak))]);
   }
 
   const polyPts = [
@@ -260,7 +324,7 @@ export function renderWaveform(container, samples, sampleRate, onsets) {
     opacity: '0.6',
   }));
 
-  appendOnsetMarkers(svg, onsets, duration, chartH);
+  appendOnsetMarkers(svg, markerSets, rangeStart, rangeEnd, chartH);
   makeCrosshairLine(svg, chartH);
   makePlayheadLine(svg, chartH);
 
@@ -283,6 +347,9 @@ export function renderWaveform(container, samples, sampleRate, onsets) {
  *   format?: (v:number)=>string,
  *   duration: number,
  *   onsets: number[],
+ *   rangeStart?: number,
+ *   rangeEnd?: number,
+ *   normalizeY?: boolean,
  * }} options
  */
 export function renderTimeSeries(container, frames, valueKey, options) {
@@ -295,24 +362,25 @@ export function renderTimeSeries(container, frames, valueKey, options) {
     format,
     thresholds = [],
   } = options;
+  const { rangeStart, rangeEnd } = resolveChartRange(duration, options);
+  const visibleFrames = filterFramesToRange(frames, rangeStart, rangeEnd);
+  const markerSets = makeMarkerSets(onsets, options);
 
   // Y-Range: feste Werte oder aus Daten berechnen
-  const values = frames.map(f => f[valueKey]).filter(v => Number.isFinite(v));
-  const dataMax = values.length ? Math.max(...values) : 1;
-  const yMin = options.yMin ?? 0;
-  const yMax = options.yMax ?? (dataMax * 1.05 || 1);
+  const values = visibleFrames.map(f => f[valueKey]).filter(v => Number.isFinite(v));
+  const { yMin, yMax } = resolveYRange(values, options, 1);
 
   const svg = makeSvg(chartH);
   appendAxes(svg, chartH);
-  appendXAxis(svg, duration, chartH);
+  appendXAxis(svg, rangeStart, rangeEnd, chartH);
 
   // Ungültige Frames grau hinterlegen
   let inInvalid = false;
   let invalidStart = PAD_L;
-  for (let i = 0; i <= frames.length; i++) {
-    const frame = frames[i];
+  for (let i = 0; i <= visibleFrames.length; i++) {
+    const frame = visibleFrames[i];
     const isInvalid = frame ? !frame.isValid : false;
-    const x = frame ? timeToX(frame.t, duration) : CHART_W - PAD_R;
+    const x = frame ? timeToX(frame.t, rangeStart, rangeEnd) : CHART_W - PAD_R;
     if (!inInvalid && isInvalid) {
       inInvalid = true;
       invalidStart = x;
@@ -326,15 +394,15 @@ export function renderTimeSeries(container, frames, valueKey, options) {
   }
 
   // Gitternetz + Y-Labels
-  const effectiveTicks = ticks.length ? ticks : [yMin, yMax];
+  const effectiveTicks = makeTicks(yMin, yMax, ticks);
   appendYGrid(svg, chartH, effectiveTicks, { yMin, yMax, format });
 
   // Datenlinie
-  const points = frames
+  const points = visibleFrames
     .map(f => {
       const v = f[valueKey];
       if (!Number.isFinite(v)) return null;
-      const x = timeToX(f.t, duration);
+      const x = timeToX(f.t, rangeStart, rangeEnd);
       const y = PAD_T + plotH * (1 - (v - yMin) / (yMax - yMin));
       return `${x},${Math.max(PAD_T, Math.min(chartH - PAD_B, y))}`;
     })
@@ -377,7 +445,7 @@ export function renderTimeSeries(container, frames, valueKey, options) {
     }
   }
 
-  appendOnsetMarkers(svg, onsets, duration, chartH);
+  appendOnsetMarkers(svg, markerSets, rangeStart, rangeEnd, chartH);
   makeCrosshairLine(svg, chartH);
   makePlayheadLine(svg, chartH);
 
@@ -398,7 +466,7 @@ export function renderTimeSeries(container, frames, valueKey, options) {
  * @param {number[]} onsets
  * @param {number} duration
  */
-export function renderFrequencyChart(container, frames, onsets, duration) {
+export function renderFrequencyChart(container, frames, onsets, duration, options = {}) {
   const chartH = 250;
   const plotH = chartH - PAD_T - PAD_B;
   const minHz = 70;
@@ -409,10 +477,13 @@ export function renderFrequencyChart(container, frames, onsets, duration) {
   function hzToY(hz) {
     return PAD_T + plotH * (1 - (Math.log(hz) - logMin) / (logMax - logMin));
   }
+  const { rangeStart, rangeEnd } = resolveChartRange(duration, options);
+  const visibleFrames = filterFramesToRange(frames, rangeStart, rangeEnd);
+  const markerSets = makeMarkerSets(onsets, options);
 
   const svg = makeSvg(chartH);
   appendAxes(svg, chartH);
-  appendXAxis(svg, duration, chartH);
+  appendXAxis(svg, rangeStart, rangeEnd, chartH);
 
   // Gitarrensaiten-Referenzlinien
   for (const { label, hz } of GUITAR_STRINGS) {
@@ -429,9 +500,9 @@ export function renderFrequencyChart(container, frames, onsets, duration) {
   }
 
   // Datenpunkte (Kreise) – gültige Hz-Werte
-  for (const frame of frames) {
+  for (const frame of visibleFrames) {
     if (frame.hz === null || !Number.isFinite(frame.hz)) continue;
-    const x = timeToX(frame.t, duration);
+    const x = timeToX(frame.t, rangeStart, rangeEnd);
     const y = hzToY(frame.hz);
     svg.appendChild(svgEl('circle', {
       cx: x, cy: y, r: '3',
@@ -454,7 +525,7 @@ export function renderFrequencyChart(container, frames, onsets, duration) {
     ));
   }
 
-  appendOnsetMarkers(svg, onsets, duration, chartH);
+  appendOnsetMarkers(svg, markerSets, rangeStart, rangeEnd, chartH);
   makeCrosshairLine(svg, chartH);
   makePlayheadLine(svg, chartH);
 
@@ -470,10 +541,13 @@ export function renderFrequencyChart(container, frames, onsets, duration) {
  * @param {number[]} onsets
  * @param {number} duration
  */
-export function renderNoteChart(container, frames, onsets, duration) {
+export function renderNoteChart(container, frames, onsets, duration, options = {}) {
+  const { rangeStart, rangeEnd } = resolveChartRange(duration, options);
+  const visibleFrames = filterFramesToRange(frames, rangeStart, rangeEnd);
+  const markerSets = makeMarkerSets(onsets, options);
   // Alle erkannten Noten einsammeln und nach Frequenz sortieren
   const noteMap = new Map();
-  for (const f of frames) {
+  for (const f of visibleFrames) {
     if (f.note === null) continue;
     const key = `${f.note}${f.octave}`;
     if (!noteMap.has(key)) {
@@ -500,7 +574,7 @@ export function renderNoteChart(container, frames, onsets, duration) {
 
   const svg = makeSvg(chartH);
   appendAxes(svg, chartH);
-  appendXAxis(svg, duration, chartH);
+  appendXAxis(svg, rangeStart, rangeEnd, chartH);
 
   // Y-Achsen-Labels + Gitternetzlinien
   for (const label of sortedNotes) {
@@ -516,10 +590,10 @@ export function renderNoteChart(container, frames, onsets, duration) {
   }
 
   // Datenpunkte
-  for (const frame of frames) {
+  for (const frame of visibleFrames) {
     if (frame.note === null) continue;
     const label = `${frame.note}${frame.octave}`;
-    const x = timeToX(frame.t, duration);
+    const x = timeToX(frame.t, rangeStart, rangeEnd);
     const y = noteToY(label);
     svg.appendChild(svgEl('circle', {
       cx: x, cy: y, r: '4',
@@ -528,7 +602,7 @@ export function renderNoteChart(container, frames, onsets, duration) {
     }));
   }
 
-  appendOnsetMarkers(svg, onsets, duration, chartH);
+  appendOnsetMarkers(svg, markerSets, rangeStart, rangeEnd, chartH);
   makeCrosshairLine(svg, chartH);
   makePlayheadLine(svg, chartH);
 
@@ -544,7 +618,7 @@ export function renderNoteChart(container, frames, onsets, duration) {
  * @param {number[]} onsets
  * @param {number} duration
  */
-export function renderGateChart(container, frames, onsets, duration) {
+export function renderGateChart(container, frames, onsets, duration, options = {}) {
   const LANES = [
     { key: 'gateRelativeRms',      label: 'Rel. RMS',    color: '#2ecc71' },
     { key: 'gateRelativeFlux',     label: 'Rel. Flux',   color: '#3498db' },
@@ -554,10 +628,13 @@ export function renderGateChart(container, frames, onsets, duration) {
   ];
   const laneH = 16;
   const chartH = LANES.length * laneH + PAD_T + PAD_B;
+  const { rangeStart, rangeEnd } = resolveChartRange(duration, options);
+  const visibleFrames = filterFramesToRange(frames, rangeStart, rangeEnd);
+  const markerSets = makeMarkerSets(onsets, options);
 
   const svg = makeSvg(chartH);
   appendAxes(svg, chartH);
-  appendXAxis(svg, duration, chartH);
+  appendXAxis(svg, rangeStart, rangeEnd, chartH);
 
   LANES.forEach(({ key, label, color }, i) => {
     const y = PAD_T + i * laneH;
@@ -575,9 +652,9 @@ export function renderGateChart(container, frames, onsets, duration) {
       { textContent: label },
     ));
     // Active frames as filled rects
-    for (const frame of frames) {
+    for (const frame of visibleFrames) {
       if (!frame[key]) continue;
-      const x = timeToX(frame.t, duration);
+      const x = timeToX(frame.t, rangeStart, rangeEnd);
       svg.appendChild(svgEl('rect', {
         x: x - 1, y: y + 1, width: 3, height: laneH - 2,
         fill: color, opacity: '0.85',
@@ -585,7 +662,7 @@ export function renderGateChart(container, frames, onsets, duration) {
     }
   });
 
-  appendOnsetMarkers(svg, onsets, duration, chartH);
+  appendOnsetMarkers(svg, markerSets, rangeStart, rangeEnd, chartH);
   makeCrosshairLine(svg, chartH);
   makePlayheadLine(svg, chartH);
 
@@ -604,107 +681,41 @@ export function renderGateChart(container, frames, onsets, duration) {
  * @param {HTMLElement} container
  * @param {Float32Array} samples
  * @param {import('./audioAnalyseEngine.js').AnalysisResult} result
+ * @param {{ rangeStart?: number, rangeEnd?: number, normalizeY?: boolean, showDetectedOnsets?: boolean, showTaggedOnsets?: boolean, taggedOnsets?: number[] }} [options]
  */
-export function renderAllCharts(container, samples, result) {
+export function renderAllCharts(container, samples, result, options = {}) {
   const { frames, onsets, duration, sampleRate, onsetOptions } = result;
+  const { rangeStart, rangeEnd } = resolveChartRange(duration, options);
+  const chartOptions = {
+    ...options,
+    rangeStart,
+    rangeEnd,
+  };
 
   // Reset Crosshair- und Playhead-Registry für diesen Renderdurchlauf
   resetCrosshairRegistry();
-  setAnalysisData(frames, duration);
+  setAnalysisData(filterFramesToRange(frames, rangeStart, rangeEnd), duration, { rangeStart, rangeEnd });
   _playheadLines = [];
   _analysisFrames = frames;
   _analysisDuration = duration;
+  _analysisRangeStart = rangeStart;
+  _analysisRangeEnd = rangeEnd;
 
   container.innerHTML = '';
 
-  renderWaveform(container, samples, sampleRate, onsets);
+  renderWaveform(container, samples, sampleRate, onsets, chartOptions);
 
-  renderTimeSeries(container, frames, 'rms', {
-    title: 'RMS (Energie)',
-    yMin: 0, yMax: 0.5,
-    ticks: [0, 0.1, 0.2, 0.3, 0.4, 0.5],
-    color: '#ff6b35',
-    format: v => v.toFixed(2),
-    duration, onsets,
-  });
+  for (const [key, title, color, format, extra] of buildTimeSeriesSpecs(onsetOptions)) {
+    renderTimeSeries(container, frames, key, { ...chartOptions, ...extra, title, color, format, duration, onsets });
+  }
 
-  renderTimeSeries(container, frames, 'broadbandFlux', {
-    title: 'Spektralfluss (Broadband Flux)',
-    yMin: 0,
-    ticks: [0, 0.02, 0.05, 0.1],
-    color: '#e74c3c',
-    format: v => v.toFixed(3),
-    duration, onsets,
-  });
+  renderGateChart(container, frames, onsets, duration, chartOptions);
 
-  renderTimeSeries(container, frames, 'bandRatio', {
-    title: 'Band-Ratio (Anteil wachsender Bins)',
-    yMin: 0,
-    color: '#e67e22',
-    format: v => v.toFixed(2),
-    duration, onsets,
-  });
-
-  renderTimeSeries(container, frames, 'activeBandRatio', {
-    title: 'Aktive Bänder (Anteil aktiver Spektral-Bins)',
-    yMin: 0,
-    color: '#f39c12',
-    format: v => v.toFixed(2),
-    duration, onsets,
-  });
-
-  renderTimeSeries(container, frames, 'confidence', {
-    title: 'Onset-Konfidenz',
-    yMin: 0,
-    color: '#e74c3c',
-    format: v => v.toFixed(2),
-    duration, onsets,
-  });
-
-  const relativeReattackFactor = onsetOptions?.relativeReattackFactor ?? 4;
-  const relativeFluxFactor = onsetOptions?.relativeFluxFactor ?? 1.4;
-  const spectralNoveltyMinBins = onsetOptions?.spectralNoveltyMinBins ?? 36;
-  const confirmedSpectralNoveltyMinBins = onsetOptions?.confirmedSpectralNoveltyMinBins ?? 14;
-
-  renderTimeSeries(container, frames, 'relativeRms', {
-    title: 'Relative RMS (RMS / Sustain-Floor)',
-    yMin: 0,
-    ticks: [0, 1],
-    color: '#27ae60',
-    format: v => v.toFixed(2),
-    thresholds: [{ value: relativeReattackFactor, color: '#e74c3c', label: `×${relativeReattackFactor}` }],
-    duration, onsets,
-  });
-
-  renderTimeSeries(container, frames, 'relativeFlux', {
-    title: 'Relative Flux (Flux / Flux-History)',
-    yMin: 0,
-    ticks: [0, 1],
-    color: '#2980b9',
-    format: v => v.toFixed(2),
-    thresholds: [{ value: relativeFluxFactor, color: '#e74c3c', label: `×${relativeFluxFactor}` }],
-    duration, onsets,
-  });
-
-  renderTimeSeries(container, frames, 'spectralNoveltyBins', {
-    title: 'Spektrale Novelty Bins',
-    yMin: 0,
-    ticks: [0],
-    color: '#8e44ad',
-    format: v => String(Math.round(v)),
-    thresholds: [
-      { value: spectralNoveltyMinBins, color: '#e74c3c', label: `min ${spectralNoveltyMinBins}` },
-      { value: confirmedSpectralNoveltyMinBins, color: '#e67e22', label: `conf. ${confirmedSpectralNoveltyMinBins}` },
-    ],
-    duration, onsets,
-  });
-
-  renderGateChart(container, frames, onsets, duration);
-
-  renderFrequencyChart(container, frames, onsets, duration);
-  renderNoteChart(container, frames, onsets, duration);
+  renderFrequencyChart(container, frames, onsets, duration, chartOptions);
+  renderNoteChart(container, frames, onsets, duration, chartOptions);
 
   renderTimeSeries(container, frames, 'clippingRatio', {
+    ...chartOptions,
     title: 'Clipping-Rate (Übersteuerung)',
     yMin: 0, yMax: 0.05,
     ticks: [0, 0.01, 0.02, 0.05],
@@ -721,7 +732,10 @@ export function renderAllCharts(container, samples, result) {
  * @param {number} fraction  0 = Anfang, 1 = Ende
  */
 export function updatePlayhead(fraction) {
-  const svgX = PAD_L + Math.max(0, Math.min(1, fraction)) * PLOT_W;
+  const absoluteTime = Math.max(0, Math.min(1, fraction)) * _analysisDuration;
+  const range = Math.max(MIN_VISIBLE_RANGE_SEC, _analysisRangeEnd - _analysisRangeStart);
+  const visibleFraction = Math.max(0, Math.min(1, (absoluteTime - _analysisRangeStart) / range));
+  const svgX = PAD_L + visibleFraction * PLOT_W;
   for (const line of _playheadLines) {
     line.setAttribute('x1', svgX);
     line.setAttribute('x2', svgX);
@@ -755,4 +769,3 @@ export function getFrameAtFraction(fraction) {
 }
 
 // ── Crosshair + Inline-Labels ────────────────────────────────────────────────
-

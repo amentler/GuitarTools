@@ -51,6 +51,8 @@ export async function decodeWav(arrayBuffer) {
  *   - rms, clippingRatio, isValid         (Signalqualität)
  *   - broadbandFlux, bandRatio,
  *     activeBandRatio, confidence, isOnset (Onset-Detektor)
+ *   - HFC, centroid, rolloff, flatness, crest factor und subband flux
+ *     (Onset-Diagnose)
  *   - hz, note, octave, cents             (Noten-lesen-Erkennung)
  *
  * @param {Float32Array} samples
@@ -112,7 +114,12 @@ export async function analyzeAudio(samples, sampleRate, options = {}) {
     const level = analyzeInputLevel(frame);
 
     // Onset-Erkennung – gleicher Aufruf wie in sheetMusicReading.analyzeFrame()
-    const onsetResult = onsetStrategy.update(onsetState, { frequencyData, samples: frame });
+    const onsetResult = onsetStrategy.update(onsetState, {
+      frequencyData,
+      samples: frame,
+      sampleRate,
+      fftSize,
+    });
     onsetState = onsetResult.nextState;
     lastOnsetResult = onsetResult;
 
@@ -176,6 +183,19 @@ export async function analyzeAudio(samples, sampleRate, options = {}) {
       confidence: onsetResult.confidence ?? 0,
       isOnset,
       spectralNoveltyBins: onsetResult.spectralNoveltyBins ?? 0,
+      hfc: onsetResult.hfc ?? 0,
+      hfcDelta: onsetResult.hfcDelta ?? 0,
+      spectralCentroid: onsetResult.spectralCentroid ?? 0,
+      spectralCentroidDelta: onsetResult.spectralCentroidDelta ?? 0,
+      spectralRolloff: onsetResult.spectralRolloff ?? 0,
+      spectralRolloffDelta: onsetResult.spectralRolloffDelta ?? 0,
+      spectralFlatness: onsetResult.spectralFlatness ?? 0,
+      spectralFlatnessDelta: onsetResult.spectralFlatnessDelta ?? 0,
+      crestFactor: onsetResult.crestFactor ?? 0,
+      crestFactorDelta: onsetResult.crestFactorDelta ?? 0,
+      subbandFluxLow: onsetResult.subbandFlux?.low?.flux ?? 0,
+      subbandFluxLowMid: onsetResult.subbandFlux?.lowMid?.flux ?? 0,
+      subbandFluxPresence: onsetResult.subbandFlux?.presence?.flux ?? 0,
       relativeRms: onsetResult.relativeRms ?? 0,
       relativeFlux: onsetResult.relativeFlux ?? 0,
       sustainFloorRms: onsetResult.sustainFloorRms ?? 0,

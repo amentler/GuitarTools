@@ -8,7 +8,8 @@ Ein Statistik- und Debugging-Werkzeug, das WAV-Aufnahmen aus der „Noten lesen"
 |---|---|
 | `audioAnalyse.js` | Haupt-Controller (`createAudioAnalyseFeature`): UI-Verdrahtung, IndexedDB-Laden, Datei-Upload, Drag & Drop |
 | `audioAnalyseEngine.js` | Reine Analyse-Logik: WAV-Decode + Frame-Loop (Onset + Pitch + InputLevel) |
-| `audioAnalyseSVG.js` | SVG-Chart-Renderer: 9 Charts untereinander + synchroner Crosshair mit Tooltip |
+| `audioAnalyseSVG.js` | SVG-Chart-Renderer: Zeitreihen, Marker, Zoom-Range und synchroner Crosshair |
+| `audioAnalyseSVGSeries.js` | Kompakte Spezifikationen fuer die numerischen Zeitreihen-Charts |
 
 Der Storage-Dienst liegt in `js/shared/audioAnalyseStorage.js` (wegen Cross-Layer-Zugriffen aus Games und Tools).
 
@@ -39,8 +40,8 @@ Rückgabe:
 
 ```ts
 {
-  frames: FrameData[],   // t, rms, clippingRatio, isValid, broadbandFlux, bandRatio,
-                         // activeBandRatio, confidence, isOnset, hz, note, octave, cents
+  frames: FrameData[],   // t, rms, clippingRatio, isValid, onset metrics,
+                         // Phase-2-Features, hz, note, octave, cents
   onsets: number[],      // Sekunden der erkannten Onsets
   sampleRate, fftSize, hopSize, duration
 }
@@ -48,7 +49,7 @@ Rückgabe:
 
 ## SVG-Charts (`renderAllCharts`)
 
-9 Charts in fixer Reihenfolge, gemeinsame X-Achse (Zeit):
+Charts in fixer Reihenfolge, gemeinsame X-Achse (Zeit):
 
 1. **Wellenform** – Envelope min/max per Bin (H=90)
 2. **RMS** – Energie über Zeit (H=72)
@@ -56,11 +57,22 @@ Rückgabe:
 4. **Band-Ratio** – `bandRatio` (H=72)
 5. **Aktive Bänder** – `activeBandRatio` (H=72)
 6. **Onset-Konfidenz** – 0..1 (H=72)
-7. **Frequenz Hz** – log-Skala 70..1200 Hz, Gitarren-Saitenlinien (H=110)
-8. **Erkannte Note** – diskrete Y-Achse, nach Frequenz sortiert (H=dynamisch)
-9. **Clipping-Rate** – Übersteuerungsindikator (H=72)
+7. **Relative RMS / Flux / Novelty** – Gate-nahe Diagnosekurven
+8. **Phase-2-Features** – HFC, HFC-Delta, Centroid-/Rolloff-Delta,
+   Spectral Flatness, Crest Factor und Subband Flux Low/Low-Mid/Presence
+9. **Gate-Status** – boolesche Detektorbedingungen
+10. **Frequenz Hz** – log-Skala 70..1200 Hz, Gitarren-Saitenlinien
+11. **Erkannte Note** – diskrete Y-Achse, nach Frequenz sortiert
+12. **Clipping-Rate** – Übersteuerungsindikator
 
-Onset-Marker: rote gestrichelte Linien (`#e74c3c`) auf allen Charts.
+Marker: erkannte Onsets rot gestrichelt (`#e74c3c`), getaggte Onsets gruen
+gestrichelt (`#1f8b4c`) auf allen Charts. Getaggte Onsets kommen aus
+Sidecar/Manifest `onsetsMs`.
+
+Die Bottom-Bar bietet Start-/Ende-Range-Slider, eine standardmaessig aktive
+vertikale Normalisierung fuer numerische Kurven und Checkboxen fuer erkannte
+und getaggte Onset-Marker. Frequenz-, Noten- und Gate-Charts behalten ihre
+fachliche Skala.
 
 ### Layout-Konstanten
 
@@ -72,10 +84,10 @@ PLOT_W = 930
 
 ### Crosshair
 
-- Modul-Level: `_crosshairLines[]`, `_tooltipEl`, `_analysisFrames`, `_analysisDuration`
+- Modul-Level: `_crosshairLines[]`, `_analysisFrames`, `_analysisDuration`
 - `initCrosshair(wrapper)` setzt `pointermove`-Listener auf Wrapper-`<div>`
 - Alle SVG-Crosshair-`<line>`-Elemente werden synchron aktualisiert
-- Tooltip zeigt: Zeit, RMS, Hz, Note, Onset-Konfidenz, Onset-Indikator
+- Inline-Labels zeigen pro Chart den Wert des naechsten sichtbaren Frames.
 
 ## ZIP-Import
 
