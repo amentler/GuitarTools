@@ -24,6 +24,16 @@ beforeAll(async () => {
 }, 30_000);
 
 describe('sheet music sequence fingerprint', () => {
+  it('discovers ZIP-backed sequence fixtures alongside loose WAV/JSON pairs', () => {
+    const zipFixture = discoverSheetMusicSequenceFixtures().find(fixture => (
+      fixture.file === 'sheet-music-reading/4-4_40bpm_EGADB_9low6-tagged.zip'
+    ));
+
+    expect(zipFixture).toBeTruthy();
+    expect(zipFixture.expectedNotes).toHaveLength(16);
+    expect(zipFixture.taggedOnsetsMs).toHaveLength(16);
+  });
+
   it('keeps currently recognized sequence WAVs green through the sheet music recognition path', () => {
     const fixtures = discoverSheetMusicSequenceFixtures().filter(fixture => (
       SHEET_FINGERPRINT_POSITIVE_FIXTURE_FILES.includes(fixture.file)

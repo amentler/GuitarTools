@@ -7,9 +7,9 @@ import { buildRecordingZip } from '../../js/shared/zip.js';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // Baseline-Fixture: in sheetMusicSequenceFingerprint als positive Datei gelistet
-const FIXTURE_WAV = path.resolve(
+const FIXTURE_ZIP = path.resolve(
   __dirname,
-  '../fixtures/sequences/sheet-music-reading/4-4_40bpm_EGADB_9low6.wav',
+  '../fixtures/sequences/sheet-music-reading/4-4_40bpm_EGADB_9low6-tagged.zip',
 );
 
 test.describe('Audio-Analyse Werkzeug', () => {
@@ -23,9 +23,9 @@ test.describe('Audio-Analyse Werkzeug', () => {
     await expect(page.locator('#analyse-charts-wrapper')).toBeHidden();
   });
 
-  test('WAV-Upload löst Analyse aus und zeigt Stats-Header mit Onsets', async ({ page }) => {
+  test('ZIP-Upload löst Analyse aus und zeigt Stats-Header mit Onsets', async ({ page }) => {
     const fileInput = page.locator('#input-wav-file');
-    await fileInput.setInputFiles(FIXTURE_WAV);
+    await fileInput.setInputFiles(FIXTURE_ZIP);
 
     // Stats-Header erscheint nach der Analyse
     const statsHeader = page.locator('#analyse-stats-header');
@@ -43,7 +43,7 @@ test.describe('Audio-Analyse Werkzeug', () => {
     expect(onsetCount).toBeGreaterThan(0);
   });
 
-  test('WAV-Upload zeigt keinen OfflineAudioContext-suspend-Fehler', async ({ page }) => {
+  test('ZIP-Upload zeigt keinen OfflineAudioContext-suspend-Fehler', async ({ page }) => {
     await page.addInitScript(() => {
       if (window.OfflineAudioContext?.prototype) {
         delete window.OfflineAudioContext.prototype.suspend;
@@ -54,7 +54,7 @@ test.describe('Audio-Analyse Werkzeug', () => {
     });
     await page.goto('/pages/audio-analyse/index.html');
 
-    await page.locator('#input-wav-file').setInputFiles(FIXTURE_WAV);
+    await page.locator('#input-wav-file').setInputFiles(FIXTURE_ZIP);
 
     const status = page.locator('#analyse-status-msg');
     await expect(status).not.toContainText('offCtx.suspend is not a function');
@@ -63,7 +63,7 @@ test.describe('Audio-Analyse Werkzeug', () => {
   });
 
   test('Charts-Wrapper wird sichtbar und enthält SVG-Charts', async ({ page }) => {
-    await page.locator('#input-wav-file').setInputFiles(FIXTURE_WAV);
+    await page.locator('#input-wav-file').setInputFiles(FIXTURE_ZIP);
     const wrapper = page.locator('#analyse-charts-wrapper');
     await expect(wrapper).toBeVisible({ timeout: 30_000 });
 
@@ -80,7 +80,7 @@ test.describe('Audio-Analyse Werkzeug', () => {
   });
 
   test('Chart-Labels enthalten erwartete Titel', async ({ page }) => {
-    await page.locator('#input-wav-file').setInputFiles(FIXTURE_WAV);
+    await page.locator('#input-wav-file').setInputFiles(FIXTURE_ZIP);
     await expect(page.locator('#analyse-charts-wrapper')).toBeVisible({ timeout: 30_000 });
 
     const labels = await page.locator('.analysis-chart-label').allInnerTexts();
@@ -172,7 +172,7 @@ test.describe('Audio-Analyse Werkzeug', () => {
   });
 
   test('Spektralfluss-Chart hat sichtbare Linie (nicht konstant 0)', async ({ page }) => {
-    await page.locator('#input-wav-file').setInputFiles(FIXTURE_WAV);
+    await page.locator('#input-wav-file').setInputFiles(FIXTURE_ZIP);
     await expect(page.locator('#analyse-charts-wrapper')).toBeVisible({ timeout: 30_000 });
 
     // Der Spektralfluss-Chart hat ein <polyline>-Element mit mehr als einem Punkt
@@ -190,7 +190,7 @@ test.describe('Audio-Analyse Werkzeug', () => {
   });
 
   test('Tooltip erscheint beim Hover und enthält alle relevanten Werte', async ({ page }) => {
-    await page.locator('#input-wav-file').setInputFiles(FIXTURE_WAV);
+    await page.locator('#input-wav-file').setInputFiles(FIXTURE_ZIP);
     const wrapper = page.locator('#analyse-charts-wrapper');
     await expect(wrapper).toBeVisible({ timeout: 30_000 });
 
@@ -222,7 +222,7 @@ test.describe('Audio-Analyse Werkzeug', () => {
   });
 
   test('Tooltip bleibt nach Pointerleave offen und schließt per Klick', async ({ page }) => {
-    await page.locator('#input-wav-file').setInputFiles(FIXTURE_WAV);
+    await page.locator('#input-wav-file').setInputFiles(FIXTURE_ZIP);
     const wrapper = page.locator('#analyse-charts-wrapper');
     await expect(wrapper).toBeVisible({ timeout: 30_000 });
 

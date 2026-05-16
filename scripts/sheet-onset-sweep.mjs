@@ -8,8 +8,8 @@ import { cpus } from 'os';
 import { join } from 'path';
 import { fileURLToPath } from 'url';
 import { Worker } from 'worker_threads';
-import { readWavFile } from '../tests/helpers/wavDecoder.js';
 import { resampleLinear } from '../tests/helpers/resampleAudio.js';
+import { loadSequenceFixtureAudio } from '../tests/helpers/sequenceFixtureLoader.js';
 import {
   candidateKey,
   candidateToOptions,
@@ -60,7 +60,7 @@ function makeCandidateId(round, index, parameters) {
 
 function loadAudioFixtures(fixtures) {
   return fixtures.map(fixture => {
-    const { samples: rawSamples, sampleRate: rawRate } = readWavFile(fixture.wavPath);
+    const { samples: rawSamples, sampleRate: rawRate } = loadSequenceFixtureAudio(fixture);
     const samples = resampleLinear(rawSamples, rawRate, BROWSER_SAMPLE_RATE);
     return { fixture, audio: { samples, sampleRate: BROWSER_SAMPLE_RATE } };
   });

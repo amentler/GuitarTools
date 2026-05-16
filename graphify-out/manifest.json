@@ -25,13 +25,18 @@
     "semantic_hash": ""
   },
   "/mnt/c/Projekte/GuitarTools/runsweep.sh": {
-    "mtime": 1778784558.581314,
-    "ast_hash": "8f0571dcdb3b2caaec11a57907737bcc",
+    "mtime": 1778879897.2024915,
+    "ast_hash": "f592ee0975f87bde852d38259eceb9e4",
+    "semantic_hash": ""
+  },
+  "/mnt/c/Projekte/GuitarTools/sfp.sh": {
+    "mtime": 1778867706.367439,
+    "ast_hash": "ef712a6c530696a48f5e5a0921ba6069",
     "semantic_hash": ""
   },
   "/mnt/c/Projekte/GuitarTools/sw.js": {
-    "mtime": 1778857648.1088827,
-    "ast_hash": "7e0fd1bcfdb120dbedf04d9eaef9f32a",
+    "mtime": 1778930891.0693069,
+    "ast_hash": "de959818b02ded49bd3f514e1ce8c914",
     "semantic_hash": ""
   },
   "/mnt/c/Projekte/GuitarTools/vitest.config.js": {
@@ -320,8 +325,8 @@
     "semantic_hash": ""
   },
   "/mnt/c/Projekte/GuitarTools/js/games/sheetMusicReading/sheetMusicListening.js": {
-    "mtime": 1778837205.058764,
-    "ast_hash": "952d6725969ac0d31e00eda3bcb41049",
+    "mtime": 1778878375.086145,
+    "ast_hash": "52be9388ecb2a549205acaf707bac4c6",
     "semantic_hash": ""
   },
   "/mnt/c/Projekte/GuitarTools/js/games/sheetMusicReading/sheetMusicLogic.js": {
@@ -465,8 +470,8 @@
     "semantic_hash": ""
   },
   "/mnt/c/Projekte/GuitarTools/js/shared/audio/guitarOnsetStrategies.js": {
-    "mtime": 1778781468.7248924,
-    "ast_hash": "57dd70086d1bd38028ad71815d66c4d3",
+    "mtime": 1778878362.7827916,
+    "ast_hash": "6e926d867ce0aec3ff415ddc57860d07",
     "semantic_hash": ""
   },
   "/mnt/c/Projekte/GuitarTools/js/shared/audio/guitarPitchDetection.js": {
@@ -490,8 +495,13 @@
     "semantic_hash": ""
   },
   "/mnt/c/Projekte/GuitarTools/js/shared/audio/offlineOnsetDetection.js": {
-    "mtime": 1778856766.1305704,
-    "ast_hash": "95421ed2646343b05eb602f08ab0a6a5",
+    "mtime": 1778878345.2987635,
+    "ast_hash": "8c50501fb53a2955ba612a461beda892",
+    "semantic_hash": ""
+  },
+  "/mnt/c/Projekte/GuitarTools/js/shared/audio/onsetPipelineConfig.js": {
+    "mtime": 1778888110.6204524,
+    "ast_hash": "aabb1f0a167ae9715f7beee5e8008986",
     "semantic_hash": ""
   },
   "/mnt/c/Projekte/GuitarTools/js/shared/audio/rms.js": {
@@ -550,8 +560,8 @@
     "semantic_hash": ""
   },
   "/mnt/c/Projekte/GuitarTools/js/tools/audioAnalyse/audioAnalyse.js": {
-    "mtime": 1778851705.7347798,
-    "ast_hash": "b3af65307c5ffa59697bd06d4dd93a6b",
+    "mtime": 1778887188.6895204,
+    "ast_hash": "b3546d71e324771efc9138b0a4f8e7e5",
     "semantic_hash": ""
   },
   "/mnt/c/Projekte/GuitarTools/js/tools/audioAnalyse/audioAnalyseEngine.js": {
@@ -660,8 +670,8 @@
     "semantic_hash": ""
   },
   "/mnt/c/Projekte/GuitarTools/js/tools/onsetTagger/onsetTagger.js": {
-    "mtime": 1778856766.138669,
-    "ast_hash": "f798dfc1132d28820cc239a2fd1c6eaf",
+    "mtime": 1778887240.9449115,
+    "ast_hash": "fccc32ec70fc82ab998406a5292553cb",
     "semantic_hash": ""
   },
   "/mnt/c/Projekte/GuitarTools/js/tools/onsetTagger/onsetTaggerLogic.js": {
@@ -855,13 +865,13 @@
     "semantic_hash": ""
   },
   "/mnt/c/Projekte/GuitarTools/scripts/sheet-onset-sweep-worker.mjs": {
-    "mtime": 1778786058.5934513,
-    "ast_hash": "345d154633a2467e48a985f5b9bfd211",
+    "mtime": 1778878401.7887583,
+    "ast_hash": "e34e708e5bdf884f8d841ea3271118a6",
     "semantic_hash": ""
   },
   "/mnt/c/Projekte/GuitarTools/scripts/sheet-onset-sweep.mjs": {
-    "mtime": 1778842113.7349606,
-    "ast_hash": "3183b7bf280f3aec58c3392047e8f441",
+    "mtime": 1778933082.0387444,
+    "ast_hash": "369758dda766d63e0302dcf35fe1fb9f",
     "semantic_hash": ""
   },
   "/mnt/c/Projekte/GuitarTools/scripts/sheetMusicOnsetConfig.mjs": {
@@ -870,8 +880,8 @@
     "semantic_hash": ""
   },
   "/mnt/c/Projekte/GuitarTools/scripts/sheetOnsetSweepCore.mjs": {
-    "mtime": 1778851067.8293097,
-    "ast_hash": "a57883a169002ca941e65675cb77a67a",
+    "mtime": 1778933073.2038164,
+    "ast_hash": "accad754638cd3bc6eb46b80c2295e4e",
     "semantic_hash": ""
   },
   "/mnt/c/Projekte/GuitarTools/scripts/taggedOnsetScoring.mjs": {
@@ -931,6 +941,21 @@
   },
   "/mnt/c/Projekte/GuitarTools/sweep-runs/2026-05-15T14-40-08-188Z/sweep-spec.json": {
     "mtime": 1778856008.3320258,
+    "ast_hash": "f0c0708d9e8719237223028670a5ef70",
+    "semantic_hash": ""
+  },
+  "/mnt/c/Projekte/GuitarTools/sweep-runs/2026-05-15T21-18-22-854Z/best-by-strategy.json": {
+    "mtime": 1778879911.6944976,
+    "ast_hash": "58e0494c51d30eb3494f7c9198986bb9",
+    "semantic_hash": ""
+  },
+  "/mnt/c/Projekte/GuitarTools/sweep-runs/2026-05-15T21-18-22-854Z/fixtures.json": {
+    "mtime": 1778879904.1107893,
+    "ast_hash": "1e9e88d789c75e03591e6bd300737c19",
+    "semantic_hash": ""
+  },
+  "/mnt/c/Projekte/GuitarTools/sweep-runs/2026-05-15T21-18-22-854Z/sweep-spec.json": {
+    "mtime": 1778879904.0819304,
     "ast_hash": "f0c0708d9e8719237223028670a5ef70",
     "semantic_hash": ""
   },
@@ -16230,8 +16255,8 @@
     "semantic_hash": ""
   },
   "/mnt/c/Projekte/GuitarTools/tests/e2e/audio-analyse.spec.js": {
-    "mtime": 1778766042.7690275,
-    "ast_hash": "13ae4157f68060f6c96a8167bca847ad",
+    "mtime": 1778933095.4496708,
+    "ast_hash": "1848b9902dd2f929435cbd1ba6c71d60",
     "semantic_hash": ""
   },
   "/mnt/c/Projekte/GuitarTools/tests/e2e/chord-diagram-orientation.spec.js": {
@@ -16312,6 +16337,11 @@
   "/mnt/c/Projekte/GuitarTools/tests/e2e/note-playing-permission.spec.js": {
     "mtime": 1778570816.413513,
     "ast_hash": "f7a335316b32311adf5c60533eced89d",
+    "semantic_hash": ""
+  },
+  "/mnt/c/Projekte/GuitarTools/tests/e2e/onset-tagger-tagged-accuracy.spec.js": {
+    "mtime": 1778874797.362594,
+    "ast_hash": "8b1efbb09c3970b193cd09c066323ceb",
     "semantic_hash": ""
   },
   "/mnt/c/Projekte/GuitarTools/tests/e2e/onset-tagger.spec.js": {
@@ -16934,36 +16964,6 @@
     "ast_hash": "44c6bb0078598dcdb8f592ab3ff21ebb",
     "semantic_hash": ""
   },
-  "/mnt/c/Projekte/GuitarTools/tests/fixtures/sequences/open-strings/aeaedgdgbebeabab.json": {
-    "mtime": 1778570826.0384293,
-    "ast_hash": "cd4de2959c2fab4300d1d60edee2c8c5",
-    "semantic_hash": ""
-  },
-  "/mnt/c/Projekte/GuitarTools/tests/fixtures/sequences/open-strings/aeaedgdgbebeabab_slow.json": {
-    "mtime": 1778570826.0944297,
-    "ast_hash": "9749beafdbb52f59f521c5b1bc710a2c",
-    "semantic_hash": ""
-  },
-  "/mnt/c/Projekte/GuitarTools/tests/fixtures/sequences/open-strings/eeeeaaaaddddgggg.json": {
-    "mtime": 1778570826.1929264,
-    "ast_hash": "86afee9536ac85916e4bd968e6b85aec",
-    "semantic_hash": ""
-  },
-  "/mnt/c/Projekte/GuitarTools/tests/fixtures/sequences/open-strings/fast.json": {
-    "mtime": 1778570728.3045738,
-    "ast_hash": "09db7937c9ef153eabc42fe7a1eb562d",
-    "semantic_hash": ""
-  },
-  "/mnt/c/Projekte/GuitarTools/tests/fixtures/sequences/open-strings/medium.json": {
-    "mtime": 1778570728.3657885,
-    "ast_hash": "d2c9a876aee76d245291b2dfc27e9c3d",
-    "semantic_hash": ""
-  },
-  "/mnt/c/Projekte/GuitarTools/tests/fixtures/sequences/open-strings/slow.json": {
-    "mtime": 1778570728.4468627,
-    "ast_hash": "d144f1cfd99daee5f157256b2a0abf81",
-    "semantic_hash": ""
-  },
   "/mnt/c/Projekte/GuitarTools/tests/fixtures/sequences/sheet-music-reading/4-4_103bpm_ADG_keomz.json": {
     "mtime": 315529200.0,
     "ast_hash": "d65da27267562554878a8ec24676928b",
@@ -16972,31 +16972,6 @@
   "/mnt/c/Projekte/GuitarTools/tests/fixtures/sequences/sheet-music-reading/4-4_120bpm_AGD_r5c07.json": {
     "mtime": 315529200.0,
     "ast_hash": "c438ceee163bcf8d837d294803f0f90f",
-    "semantic_hash": ""
-  },
-  "/mnt/c/Projekte/GuitarTools/tests/fixtures/sequences/sheet-music-reading/4-4_130bpm_EA_ou91c.json": {
-    "mtime": 315529200.0,
-    "ast_hash": "c473cec7c825ed529751ffea22c8c6c2",
-    "semantic_hash": ""
-  },
-  "/mnt/c/Projekte/GuitarTools/tests/fixtures/sequences/sheet-music-reading/4-4_40bpm_EGADB_9low6.json": {
-    "mtime": 1778779509.5738695,
-    "ast_hash": "d01b24bc06502eb602831663bf8d227e",
-    "semantic_hash": ""
-  },
-  "/mnt/c/Projekte/GuitarTools/tests/fixtures/sequences/sheet-music-reading/4-4_59bpm_EA_80clx.json": {
-    "mtime": 315529200.0,
-    "ast_hash": "5e4c979d1936f55e22fa6317f8af0baf",
-    "semantic_hash": ""
-  },
-  "/mnt/c/Projekte/GuitarTools/tests/fixtures/sequences/sheet-music-reading/4-4_59bpm_EA_ghpgq.json": {
-    "mtime": 1778779710.8337758,
-    "ast_hash": "3b3f54f60e84ffa7780dda1d17601335",
-    "semantic_hash": ""
-  },
-  "/mnt/c/Projekte/GuitarTools/tests/fixtures/sequences/sheet-music-reading/4-4_91bpm_GBE_jmkkc.json": {
-    "mtime": 315529200.0,
-    "ast_hash": "bd625d86805b77ceb72ef56661a37f42",
     "semantic_hash": ""
   },
   "/mnt/c/Projekte/GuitarTools/tests/fixtures/sequences/sheet-music-reading/4-4_91bpm_GBE_lgned.json": {
@@ -17027,6 +17002,11 @@
   "/mnt/c/Projekte/GuitarTools/tests/fixtures/sequences/sheet-music-reading/fast.json": {
     "mtime": 1778713796.771829,
     "ast_hash": "4505c148da3769b7e4210df6581d38f8",
+    "semantic_hash": ""
+  },
+  "/mnt/c/Projekte/GuitarTools/tests/fixtures/sequences/sheet-music-reading/medium.json": {
+    "mtime": 1778864722.815325,
+    "ast_hash": "842c6e75db7f4a8575336c9fcd0eae85",
     "semantic_hash": ""
   },
   "/mnt/c/Projekte/GuitarTools/tests/fixtures/sequences/sheet-music-reading/notenlesen1.json": {
@@ -17109,9 +17089,19 @@
     "ast_hash": "be046cd14ed79d91922875f496700507",
     "semantic_hash": ""
   },
+  "/mnt/c/Projekte/GuitarTools/tests/helpers/resampleAudio.js": {
+    "mtime": 1778888121.1169648,
+    "ast_hash": "9f785c931528153de28b6f9af7bda76a",
+    "semantic_hash": ""
+  },
   "/mnt/c/Projekte/GuitarTools/tests/helpers/sequenceFixtureAssertions.js": {
     "mtime": 1778570826.555216,
     "ast_hash": "81bffcedb11b15f410c79556ff226b11",
+    "semantic_hash": ""
+  },
+  "/mnt/c/Projekte/GuitarTools/tests/helpers/sequenceFixtureLoader.js": {
+    "mtime": 1778933042.8801086,
+    "ast_hash": "473f03472a3800609860f63c8665a90d",
     "semantic_hash": ""
   },
   "/mnt/c/Projekte/GuitarTools/tests/helpers/sequenceSimulator.js": {
@@ -17125,8 +17115,8 @@
     "semantic_hash": ""
   },
   "/mnt/c/Projekte/GuitarTools/tests/helpers/sheetMusicSequenceFingerprint.js": {
-    "mtime": 1778857257.233257,
-    "ast_hash": "d02dba4206956b3f2e18b949adf905c3",
+    "mtime": 1778933059.609582,
+    "ast_hash": "fb386e100fbe18e7d20e051899643717",
     "semantic_hash": ""
   },
   "/mnt/c/Projekte/GuitarTools/tests/helpers/wavDecoder.js": {
@@ -17262,6 +17252,11 @@
   "/mnt/c/Projekte/GuitarTools/tests/unit/chordRecorderZip.test.js": {
     "mtime": 1778851620.3190637,
     "ast_hash": "07e3016bfbd2c74e13f23c96e424bee5",
+    "semantic_hash": ""
+  },
+  "/mnt/c/Projekte/GuitarTools/tests/unit/countGuitarOnsetsTaggedAccuracy.test.js": {
+    "mtime": 1778933105.9863873,
+    "ast_hash": "8c0cd77123b856bf301a1d379b0ee0d5",
     "semantic_hash": ""
   },
   "/mnt/c/Projekte/GuitarTools/tests/unit/d3SubharmonicRegression.test.js": {
@@ -17425,8 +17420,8 @@
     "semantic_hash": ""
   },
   "/mnt/c/Projekte/GuitarTools/tests/unit/guitarOnsetDetector.test.js": {
-    "mtime": 1778856766.1546729,
-    "ast_hash": "4e7ac1df45a2c26322acc2388dc8ff8b",
+    "mtime": 1778857834.166321,
+    "ast_hash": "a1111c8ba0bbd99295986249b39581c0",
     "semantic_hash": ""
   },
   "/mnt/c/Projekte/GuitarTools/tests/unit/guitarOnsetStrategies.test.js": {
@@ -17605,8 +17600,8 @@
     "semantic_hash": ""
   },
   "/mnt/c/Projekte/GuitarTools/tests/unit/sheetMusicSequenceFingerprint.test.js": {
-    "mtime": 1778570827.3815167,
-    "ast_hash": "9747f9aaac9828d885d994af255481ab",
+    "mtime": 1778933113.3919528,
+    "ast_hash": "789026695ff64b2b4099522d1c3e1037",
     "semantic_hash": ""
   },
   "/mnt/c/Projekte/GuitarTools/tests/unit/sheetMusicZip.test.js": {
@@ -17675,8 +17670,8 @@
     "semantic_hash": ""
   },
   "/mnt/c/Projekte/GuitarTools/AGENTS.md": {
-    "mtime": 1778841733.797573,
-    "ast_hash": "0ea492e3ba184e196a30640551f67c32",
+    "mtime": 1778933268.4147596,
+    "ast_hash": "84649ad0f7ae52f6a07505f119f91548",
     "semantic_hash": ""
   },
   "/mnt/c/Projekte/GuitarTools/CLAUDE.md": {
@@ -17709,9 +17704,14 @@
     "ast_hash": "26abceda8b17b53c12c7de1f1d46dc09",
     "semantic_hash": ""
   },
+  "/mnt/c/Projekte/GuitarTools/sfp-report.md": {
+    "mtime": 1778888708.2284048,
+    "ast_hash": "a8474b46c8a66483f26a1cddbb79038c",
+    "semantic_hash": ""
+  },
   "/mnt/c/Projekte/GuitarTools/version.txt": {
-    "mtime": 1778857647.5820575,
-    "ast_hash": "6e903735ed83cce055641fa76f0fb39f",
+    "mtime": 1778930890.2111588,
+    "ast_hash": "b7fcf0fd541ad3c2bda14734827065e6",
     "semantic_hash": ""
   },
   "/mnt/c/Projekte/GuitarTools/docs/architecture.md": {
@@ -17835,8 +17835,8 @@
     "semantic_hash": ""
   },
   "/mnt/c/Projekte/GuitarTools/pages/audio-analyse/index.html": {
-    "mtime": 1778851683.957217,
-    "ast_hash": "b2dc39ee51ee2a348b600b568b36fe1f",
+    "mtime": 1778866980.5868402,
+    "ast_hash": "e7948bdf604b6704ad98e444a3573a86",
     "semantic_hash": ""
   },
   "/mnt/c/Projekte/GuitarTools/pages/chord-playing-essentia/index.html": {
@@ -17994,6 +17994,11 @@
     "ast_hash": "11e87fdf4c05a42ec918fe9461e6a1ff",
     "semantic_hash": ""
   },
+  "/mnt/c/Projekte/GuitarTools/sweep-runs/2026-05-15T21-18-22-854Z/report.md": {
+    "mtime": 1778879911.6801093,
+    "ast_hash": "adbc09d15cd430c32a8b14f4c2921d6c",
+    "semantic_hash": ""
+  },
   "/mnt/c/Projekte/GuitarTools/sweep-runs/onset/2026-05-12T04-02-08-294Z/report.md": {
     "mtime": 1778570815.7339442,
     "ast_hash": "2be9768a5e7659e6326a3930f8a64e8a",
@@ -18124,6 +18129,36 @@
     "ast_hash": "172ac2934b4a71e0b8705d52e12e8943",
     "semantic_hash": ""
   },
+  "/mnt/c/Projekte/GuitarTools/test-results/audio-analyse-Audio-Analys-5cbc0-th\u00e4lt-alle-relevanten-Werte-chromium/error-context.md": {
+    "mtime": 1778875240.2922635,
+    "ast_hash": "ad8e04859c5233ad49f160c3b6c3b17a",
+    "semantic_hash": ""
+  },
+  "/mnt/c/Projekte/GuitarTools/test-results/audio-analyse-Audio-Analys-a32ef-ffen-und-schlie\u00dft-per-Klick-chromium/error-context.md": {
+    "mtime": 1778875254.104753,
+    "ast_hash": "1a19e4fe5e2d47465065dbb8e67e63de",
+    "semantic_hash": ""
+  },
+  "/mnt/c/Projekte/GuitarTools/test-results/onset-tagger-Onset-Tagger--48900-hange-persists-until-export-chromium/error-context.md": {
+    "mtime": 1778875210.9435036,
+    "ast_hash": "405563f4a46db55a8b2dc6770c473e2f",
+    "semantic_hash": ""
+  },
+  "/mnt/c/Projekte/GuitarTools/test-results/onset-tagger-Onset-Tagger--54769-enders-metadata-form-fields-chromium/error-context.md": {
+    "mtime": 1778875201.5000243,
+    "ast_hash": "2aad46a91d1d45a189845f38a0cbc44a",
+    "semantic_hash": ""
+  },
+  "/mnt/c/Projekte/GuitarTools/test-results/onset-tagger-Onset-Tagger--f7a5d-ton-triggers-a-ZIP-download-chromium/error-context.md": {
+    "mtime": 1778875214.0671,
+    "ast_hash": "f675a6f8b127c201cfa548ca0852adef",
+    "semantic_hash": ""
+  },
+  "/mnt/c/Projekte/GuitarTools/test-results/onset-tagger-Onset-Tagger-loading-both-files-enables-step-2-chromium/error-context.md": {
+    "mtime": 1778875196.8588643,
+    "ast_hash": "517b6794b475dc651d19faea37a9db22",
+    "semantic_hash": ""
+  },
   "/mnt/c/Projekte/GuitarTools/tests/fixtures/analyser-goldens/notes/README.md": {
     "mtime": 1778570817.911083,
     "ast_hash": "1f094bf66b8e1359d0df0549e73b57ac",
@@ -18135,13 +18170,73 @@
     "semantic_hash": ""
   },
   "/mnt/c/Projekte/GuitarTools/tests/fixtures/dropsequence/README.md": {
-    "mtime": 1778570826.0154238,
-    "ast_hash": "5895ea20d5d3d5458a4c398ff3b50b3a",
+    "mtime": 1778933281.996055,
+    "ast_hash": "120810001cfd775b554be7176027451e",
     "semantic_hash": ""
   },
   "/mnt/c/Projekte/GuitarTools/icons/icon.svg": {
     "mtime": 1778570726.4592855,
     "ast_hash": "d567714f9effe99e9977ada77ae94b82",
+    "semantic_hash": ""
+  },
+  "/mnt/c/Projekte/GuitarTools/test-results/audio-analyse-Audio-Analys-5cbc0-th\u00e4lt-alle-relevanten-Werte-chromium/test-failed-1.png": {
+    "mtime": 1778875239.9745164,
+    "ast_hash": "11bbec553fd124a11ea364458abe9bad",
+    "semantic_hash": ""
+  },
+  "/mnt/c/Projekte/GuitarTools/test-results/audio-analyse-Audio-Analys-a32ef-ffen-und-schlie\u00dft-per-Klick-chromium/test-failed-1.png": {
+    "mtime": 1778875253.750142,
+    "ast_hash": "11bbec553fd124a11ea364458abe9bad",
+    "semantic_hash": ""
+  },
+  "/mnt/c/Projekte/GuitarTools/test-results/onset-tagger-Onset-Tagger--48900-hange-persists-until-export-chromium/test-failed-1.png": {
+    "mtime": 1778875210.5543208,
+    "ast_hash": "400ee0df184e230b628e65a7afbec32d",
+    "semantic_hash": ""
+  },
+  "/mnt/c/Projekte/GuitarTools/test-results/onset-tagger-Onset-Tagger--54769-enders-metadata-form-fields-chromium/test-failed-1.png": {
+    "mtime": 1778875201.1142588,
+    "ast_hash": "400ee0df184e230b628e65a7afbec32d",
+    "semantic_hash": ""
+  },
+  "/mnt/c/Projekte/GuitarTools/test-results/onset-tagger-Onset-Tagger--f7a5d-ton-triggers-a-ZIP-download-chromium/test-failed-1.png": {
+    "mtime": 1778875213.7441652,
+    "ast_hash": "400ee0df184e230b628e65a7afbec32d",
+    "semantic_hash": ""
+  },
+  "/mnt/c/Projekte/GuitarTools/test-results/onset-tagger-Onset-Tagger-loading-both-files-enables-step-2-chromium/test-failed-1.png": {
+    "mtime": 1778875196.431589,
+    "ast_hash": "400ee0df184e230b628e65a7afbec32d",
+    "semantic_hash": ""
+  },
+  "/mnt/c/Projekte/GuitarTools/test-results/audio-analyse-Audio-Analys-5cbc0-th\u00e4lt-alle-relevanten-Werte-chromium/video.webm": {
+    "mtime": 1778875240.2672641,
+    "ast_hash": "6ce31b3ffb9a672e158abc64ad51af24",
+    "semantic_hash": ""
+  },
+  "/mnt/c/Projekte/GuitarTools/test-results/audio-analyse-Audio-Analys-a32ef-ffen-und-schlie\u00dft-per-Klick-chromium/video.webm": {
+    "mtime": 1778875254.0727532,
+    "ast_hash": "8bbf5cdbb09d4cc998694df50dd396f3",
+    "semantic_hash": ""
+  },
+  "/mnt/c/Projekte/GuitarTools/test-results/onset-tagger-Onset-Tagger--48900-hange-persists-until-export-chromium/video.webm": {
+    "mtime": 1778875210.9107513,
+    "ast_hash": "dca8fd3d38896143705f5bd06bc187ea",
+    "semantic_hash": ""
+  },
+  "/mnt/c/Projekte/GuitarTools/test-results/onset-tagger-Onset-Tagger--54769-enders-metadata-form-fields-chromium/video.webm": {
+    "mtime": 1778875201.4620042,
+    "ast_hash": "7ae0e862ee857d6f182605c41cd03520",
+    "semantic_hash": ""
+  },
+  "/mnt/c/Projekte/GuitarTools/test-results/onset-tagger-Onset-Tagger--f7a5d-ton-triggers-a-ZIP-download-chromium/video.webm": {
+    "mtime": 1778875214.0248337,
+    "ast_hash": "699218a7fc3e45724053962c9b326e58",
+    "semantic_hash": ""
+  },
+  "/mnt/c/Projekte/GuitarTools/test-results/onset-tagger-Onset-Tagger-loading-both-files-enables-step-2-chromium/video.webm": {
+    "mtime": 1778875196.8160038,
+    "ast_hash": "0d868bd5605d18b4a525c8507eafa563",
     "semantic_hash": ""
   },
   "/mnt/c/Projekte/GuitarTools/tests/fixtures/audio/a3.wav": {
@@ -19409,36 +19504,6 @@
     "ast_hash": "9a78c14d2c6f2dd0dd8cf590cb0f5df8",
     "semantic_hash": ""
   },
-  "/mnt/c/Projekte/GuitarTools/tests/fixtures/sequences/open-strings/aeaedgdgbebeabab.wav": {
-    "mtime": 1778570826.082445,
-    "ast_hash": "fb6ec01d4e6d5e8c236a39804cfdea5f",
-    "semantic_hash": ""
-  },
-  "/mnt/c/Projekte/GuitarTools/tests/fixtures/sequences/open-strings/aeaedgdgbebeabab_slow.wav": {
-    "mtime": 1778570826.178926,
-    "ast_hash": "83036b15382e00f3bff73958679d3b41",
-    "semantic_hash": ""
-  },
-  "/mnt/c/Projekte/GuitarTools/tests/fixtures/sequences/open-strings/eeeeaaaaddddgggg.wav": {
-    "mtime": 1778570826.2496917,
-    "ast_hash": "46a6adfd8a277cc1f383822fd149d0cd",
-    "semantic_hash": ""
-  },
-  "/mnt/c/Projekte/GuitarTools/tests/fixtures/sequences/open-strings/fast.wav": {
-    "mtime": 1778570728.3414173,
-    "ast_hash": "50a54378320b267599633bc6689f8711",
-    "semantic_hash": ""
-  },
-  "/mnt/c/Projekte/GuitarTools/tests/fixtures/sequences/open-strings/medium.wav": {
-    "mtime": 1778570728.423344,
-    "ast_hash": "c4ddfcb559973f68b32fa2288a59504a",
-    "semantic_hash": ""
-  },
-  "/mnt/c/Projekte/GuitarTools/tests/fixtures/sequences/open-strings/slow.wav": {
-    "mtime": 1778570728.515387,
-    "ast_hash": "241cee7852f107bddfc5f2cddcbadba2",
-    "semantic_hash": ""
-  },
   "/mnt/c/Projekte/GuitarTools/tests/fixtures/sequences/sheet-music-reading/4-4_103bpm_ADG_keomz.wav": {
     "mtime": 315529200.0,
     "ast_hash": "f3f4d39e359bfa752f17c9040fee3950",
@@ -19447,31 +19512,6 @@
   "/mnt/c/Projekte/GuitarTools/tests/fixtures/sequences/sheet-music-reading/4-4_120bpm_AGD_r5c07.wav": {
     "mtime": 315529200.0,
     "ast_hash": "e3a555cecdf85d7c01a7a1fea2e97642",
-    "semantic_hash": ""
-  },
-  "/mnt/c/Projekte/GuitarTools/tests/fixtures/sequences/sheet-music-reading/4-4_130bpm_EA_ou91c.wav": {
-    "mtime": 315529200.0,
-    "ast_hash": "22dc412a688004c6280d3502267fcb55",
-    "semantic_hash": ""
-  },
-  "/mnt/c/Projekte/GuitarTools/tests/fixtures/sequences/sheet-music-reading/4-4_40bpm_EGADB_9low6.wav": {
-    "mtime": 1778779509.5561495,
-    "ast_hash": "815899237c9cc5381e4b44d54f02d98c",
-    "semantic_hash": ""
-  },
-  "/mnt/c/Projekte/GuitarTools/tests/fixtures/sequences/sheet-music-reading/4-4_59bpm_EA_80clx.wav": {
-    "mtime": 315529200.0,
-    "ast_hash": "e3e3147c2f10671f93541d32a0267fa4",
-    "semantic_hash": ""
-  },
-  "/mnt/c/Projekte/GuitarTools/tests/fixtures/sequences/sheet-music-reading/4-4_59bpm_EA_ghpgq.wav": {
-    "mtime": 1778779710.817523,
-    "ast_hash": "ee81b95d80666d775142acd8f89745c9",
-    "semantic_hash": ""
-  },
-  "/mnt/c/Projekte/GuitarTools/tests/fixtures/sequences/sheet-music-reading/4-4_91bpm_GBE_jmkkc.wav": {
-    "mtime": 315529200.0,
-    "ast_hash": "160518e09c7ba034926af8e5887def6d",
     "semantic_hash": ""
   },
   "/mnt/c/Projekte/GuitarTools/tests/fixtures/sequences/sheet-music-reading/4-4_91bpm_GBE_lgned.wav": {
@@ -19502,6 +19542,11 @@
   "/mnt/c/Projekte/GuitarTools/tests/fixtures/sequences/sheet-music-reading/fast.wav": {
     "mtime": 1778713796.7708294,
     "ast_hash": "50a54378320b267599633bc6689f8711",
+    "semantic_hash": ""
+  },
+  "/mnt/c/Projekte/GuitarTools/tests/fixtures/sequences/sheet-music-reading/medium.wav": {
+    "mtime": 1778864722.7982585,
+    "ast_hash": "c4ddfcb559973f68b32fa2288a59504a",
     "semantic_hash": ""
   },
   "/mnt/c/Projekte/GuitarTools/tests/fixtures/sequences/sheet-music-reading/notenlesen1.wav": {

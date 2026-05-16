@@ -1,8 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { readFileSync } from 'fs';
 import { join } from 'path';
-import { readWavFile } from '../helpers/wavDecoder.js';
 import { countGuitarOnsets } from '../helpers/sheetMusicSequenceFingerprint.js';
+import {
+  discoverSequenceFixtureSources,
+  loadSequenceFixtureAudio,
+} from '../helpers/sequenceFixtureLoader.js';
 import { resolveGuitarOnsetStrategy } from '../../js/shared/audio/guitarOnsetStrategies.js';
 
 const SEQUENCES_DIR = join(process.cwd(), 'tests/fixtures/sequences');
@@ -22,10 +24,10 @@ function hitsWithinWindow(taggedMs, detectedMs) {
 
 describe('countGuitarOnsets – getaggte Onset-Genauigkeit', () => {
   it('broadband-or erkennt alle 16 getaggten Onsets in medium.wav im [-30ms, +90ms]-Fenster', () => {
-    const wavPath = join(SEQUENCES_DIR, 'sheet-music-reading/medium.wav');
-    const sidecarPath = join(SEQUENCES_DIR, 'sheet-music-reading/medium.json');
-    const { samples, sampleRate } = readWavFile(wavPath);
-    const { onsetsMs: taggedMs } = JSON.parse(readFileSync(sidecarPath, 'utf-8'));
+    const fixture = discoverSequenceFixtureSources(SEQUENCES_DIR)
+      .find(entry => entry.file === 'sheet-music-reading/medium.wav');
+    const { samples, sampleRate } = loadSequenceFixtureAudio(fixture);
+    const { onsetsMs: taggedMs } = fixture.manifest;
 
     const strategy = resolveGuitarOnsetStrategy('guitar-onset-broadband-or');
     const { timestampsMs: detectedMs } = countGuitarOnsets(samples, sampleRate, { onsetStrategy: strategy });

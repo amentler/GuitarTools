@@ -1,7 +1,6 @@
-import { existsSync, readdirSync, readFileSync } from 'fs';
-import { basename, dirname, join, relative } from 'path';
-import { readWavFile } from './wavDecoder.js';
+import { join } from 'path';
 import { resampleLinear } from './resampleAudio.js';
+import { discoverSequenceFixtureSources, loadSequenceFixtureAudio } from './sequenceFixtureLoader.js';
 import {
   createMatchState,
 } from '../../js/shared/audio/fastNoteMatcher.js';
@@ -25,7 +24,7 @@ export const SHEET_FINGERPRINT_POSITIVE_FIXTURE_FILES = [
   'open-strings/eeeeaaaaddddgggg.wav',
   'open-strings/medium.wav',
   'open-strings/slow.wav',
-  'sheet-music-reading/4-4_40bpm_EGADB_9low6.wav',
+  'sheet-music-reading/4-4_40bpm_EGADB_9low6-tagged.zip',
 ];
 
 // Manifest tempo fields are recording metadata only. Real takes can be slower,
@@ -55,27 +54,12 @@ function formatFeatureValue(value, digits = 3) {
   return value.toFixed(digits);
 }
 
-function collectWavFiles(dir) {
-  const files = [];
-  for (const entry of readdirSync(dir, { withFileTypes: true })) {
-    const fullPath = join(dir, entry.name);
-    if (entry.isDirectory()) {
-      files.push(...collectWavFiles(fullPath));
-    } else if (entry.isFile() && entry.name.endsWith('.wav')) {
-      files.push(fullPath);
-    }
-  }
-  return files.sort((a, b) => a.localeCompare(b));
-}
-
-function readSequenceManifest(wavPath) {
-  const jsonPath = join(dirname(wavPath), `${basename(wavPath, '.wav')}.json`);
-  if (!existsSync(jsonPath)) return null;
-  const manifest = JSON.parse(readFileSync(jsonPath, 'utf8'));
+function readSequenceManifest(manifest, file) {
+  if (!manifest) return null;
   if (!Array.isArray(manifest.notes) || manifest.notes.length === 0) {
-    throw new Error(`Invalid sequence manifest without notes: ${jsonPath}`);
+    throw new Error(`Invalid sequence manifest without notes: ${file}`);
   }
-  return { ...manifest, jsonPath };
+  return manifest;
 }
 
 function normalizeTaggedOnsets(manifest) {
@@ -87,11 +71,10 @@ function normalizeTaggedOnsets(manifest) {
 }
 
 export function discoverSheetMusicSequenceFixtures() {
-  return collectWavFiles(SEQUENCES_DIR).map(wavPath => {
-    const manifest = readSequenceManifest(wavPath);
+  return discoverSequenceFixtureSources(SEQUENCES_DIR).map(source => {
+    const manifest = readSequenceManifest(source.manifest, source.file);
     return {
-      file: relative(SEQUENCES_DIR, wavPath).replace(/\\/g, '/'),
-      wavPath,
+      ...source,
       manifest,
       expectedNotes: manifest?.notes ?? [],
       taggedOnsetsMs: normalizeTaggedOnsets(manifest),
@@ -414,7 +397,7 @@ function evaluateFixture(fixture, options = {}) {
     };
   }
 
-  const { samples: rawSamples, sampleRate: rawRate } = readWavFile(fixture.wavPath);
+  const { samples: rawSamples, sampleRate: rawRate } = loadSequenceFixtureAudio(fixture);
   const samples = resampleLinear(rawSamples, rawRate, BROWSER_SAMPLE_RATE);
   const sampleRate = BROWSER_SAMPLE_RATE;
   const result = runSheetMusicSequenceSimulation(samples, sampleRate, fixture.expectedNotes, options);
@@ -546,7 +529,7 @@ export function evaluateOnsetStrategyReport(
     fixtureCount: evaluated.length,
   });
   const cases = evaluated.map(fixture => {
-    const { samples: rawSamples, sampleRate: rawRate } = readWavFile(fixture.wavPath);
+    const { samples: rawSamples, sampleRate: rawRate } = loadSequenceFixtureAudio(fixture);
     const samples = resampleLinear(rawSamples, rawRate, BROWSER_SAMPLE_RATE);
     const sampleRate = BROWSER_SAMPLE_RATE;
     const onsetResult = countGuitarOnsets(samples, sampleRate, { ...options, onsetStrategy });

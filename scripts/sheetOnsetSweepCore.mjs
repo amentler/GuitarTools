@@ -1,13 +1,13 @@
 import {
   existsSync,
   mkdirSync,
-  readFileSync,
-  readdirSync,
   writeFileSync,
 } from 'fs';
-import { basename, dirname, join, relative, resolve } from 'path';
+import { readFileSync } from 'fs';
+import { dirname, relative, resolve } from 'path';
 import { DEFAULT_GUITAR_ONSET_OPTIONS } from '../js/shared/audio/guitarOnsetDetector.js';
 import { getGuitarOnsetStrategies } from '../js/shared/audio/guitarOnsetStrategies.js';
+import { discoverSequenceFixtureSources } from '../tests/helpers/sequenceFixtureLoader.js';
 import {
   DEFAULT_TAGGED_ONSET_SCORING,
   percentile,
@@ -175,25 +175,6 @@ export function createSeededRandom(seed) {
   };
 }
 
-function collectWavFiles(dir) {
-  const files = [];
-  for (const entry of readdirSync(dir, { withFileTypes: true })) {
-    const fullPath = join(dir, entry.name);
-    if (entry.isDirectory()) {
-      files.push(...collectWavFiles(fullPath));
-    } else if (entry.isFile() && entry.name.toLowerCase().endsWith('.wav')) {
-      files.push(fullPath);
-    }
-  }
-  return files.sort((a, b) => a.localeCompare(b));
-}
-
-function readFixtureManifest(wavPath) {
-  const jsonPath = join(dirname(wavPath), `${basename(wavPath, '.wav')}.json`);
-  if (!existsSync(jsonPath)) return {};
-  return JSON.parse(readFileSync(jsonPath, 'utf8'));
-}
-
 function normalizeTaggedOnsets(manifest) {
   if (!Array.isArray(manifest.onsetsMs)) return null;
   return manifest.onsetsMs
@@ -220,14 +201,14 @@ function applyFixtureOverride(fixture, overrides = {}) {
 export function discoverSweepFixtures(spec) {
   const fixturesDir = resolve(process.cwd(), spec.fixturesDir);
   const overrides = spec.fixtureOverrides ?? {};
-  return collectWavFiles(fixturesDir).map(wavPath => {
-    const manifest = readFixtureManifest(wavPath);
-    const expectedCount = normalizeExpectedCount(manifest, wavPath);
-    const file = relative(fixturesDir, wavPath);
+  return discoverSequenceFixtureSources(fixturesDir).map(source => {
+    const manifest = source.manifest ?? {};
+    const expectedCount = normalizeExpectedCount(manifest, source.sourcePath);
+    const file = source.file ?? relative(fixturesDir, source.sourcePath);
     const role = manifest.role ?? 'target';
     const fixture = {
+      ...source,
       file,
-      wavPath,
       manifest,
       role,
       expectedCount,
