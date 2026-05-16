@@ -3,8 +3,35 @@ import { basename, dirname, join, relative } from 'path';
 import { readZip } from '../../js/shared/zip.js';
 import { decodeWav, readWavFile } from './wavDecoder.js';
 
+const SEQUENCE_FIXTURE_SUFFIX_RE = /(?:-tagged)?\.(?:wav|zip)$/i;
+
 function normalizeRelativePath(filePath) {
   return filePath.replace(/\\/g, '/');
+}
+
+function normalizeLookupPath(nameOrPath) {
+  return normalizeRelativePath(nameOrPath).toLowerCase();
+}
+
+function toFixtureStem(nameOrPath) {
+  return normalizeLookupPath(nameOrPath).replace(SEQUENCE_FIXTURE_SUFFIX_RE, '');
+}
+
+function scoreFixtureLookupMatch(fixture, nameOrStem) {
+  const normalizedQuery = normalizeLookupPath(nameOrStem);
+  const queryStem = toFixtureStem(nameOrStem);
+  const fixtureFile = normalizeLookupPath(fixture.file);
+  const fixtureStem = toFixtureStem(fixture.file);
+  const queryBase = basename(normalizedQuery);
+  const queryStemBase = basename(queryStem);
+  const fixtureBase = basename(fixtureFile);
+  const fixtureStemBase = basename(fixtureStem);
+
+  if (fixtureFile === normalizedQuery) return 0;
+  if (fixtureStem === queryStem) return 1;
+  if (fixtureBase === queryBase) return 2;
+  if (fixtureStemBase === queryStemBase) return 3;
+  return Number.POSITIVE_INFINITY;
 }
 
 function collectFixtureFiles(dir) {
@@ -81,6 +108,37 @@ export function discoverSequenceFixtureSources(fixturesDir) {
       ? readSequenceZip(filePath, fixturesDir)
       : readLooseSequencePair(filePath, fixturesDir)
   ));
+}
+
+export function resolveSequenceFixtureSource(fixturesDir, nameOrStem) {
+  const fixtures = discoverSequenceFixtureSources(fixturesDir);
+  let bestScore = Number.POSITIVE_INFINITY;
+  let bestMatches = [];
+
+  for (const fixture of fixtures) {
+    const score = scoreFixtureLookupMatch(fixture, nameOrStem);
+    if (!Number.isFinite(score)) continue;
+    if (score < bestScore) {
+      bestScore = score;
+      bestMatches = [fixture];
+      continue;
+    }
+    if (score === bestScore) {
+      bestMatches.push(fixture);
+    }
+  }
+
+  if (bestMatches.length === 0) {
+    return null;
+  }
+
+  if (bestMatches.length > 1) {
+    throw new Error(
+      `Ambiguous sequence fixture stem "${nameOrStem}": ${bestMatches.map(match => match.file).join(', ')}`,
+    );
+  }
+
+  return bestMatches[0];
 }
 
 export function loadSequenceFixtureAudio(fixture) {

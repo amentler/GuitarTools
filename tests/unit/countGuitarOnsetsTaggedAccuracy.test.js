@@ -2,8 +2,8 @@ import { describe, it, expect } from 'vitest';
 import { join } from 'path';
 import { countGuitarOnsets } from '../helpers/sheetMusicSequenceFingerprint.js';
 import {
-  discoverSequenceFixtureSources,
   loadSequenceFixtureAudio,
+  resolveSequenceFixtureSource,
 } from '../helpers/sequenceFixtureLoader.js';
 import { resolveGuitarOnsetStrategy } from '../../js/shared/audio/guitarOnsetStrategies.js';
 
@@ -24,8 +24,7 @@ function hitsWithinWindow(taggedMs, detectedMs) {
 
 describe('countGuitarOnsets – getaggte Onset-Genauigkeit', () => {
   it('broadband-or erkennt alle 16 getaggten Onsets in medium.wav im [-30ms, +90ms]-Fenster', () => {
-    const fixture = discoverSequenceFixtureSources(SEQUENCES_DIR)
-      .find(entry => entry.file === 'sheet-music-reading/medium.wav');
+    const fixture = resolveSequenceFixtureSource(SEQUENCES_DIR, 'sheet-music-reading/medium');
     const { samples, sampleRate } = loadSequenceFixtureAudio(fixture);
     const { onsetsMs: taggedMs } = fixture.manifest;
 
