@@ -11,6 +11,7 @@ const FIXTURE_ZIP = path.resolve(
   __dirname,
   '../fixtures/sequences/sheet-music-reading/4-4_40bpm_EGADB_9low6-tagged.zip',
 );
+const FIXTURE_WAV = path.resolve(__dirname, '../fixtures/audio/E2/e2.wav');
 
 test.describe('Audio-Analyse Werkzeug', () => {
   test.beforeEach(async ({ page }) => {
@@ -54,7 +55,7 @@ test.describe('Audio-Analyse Werkzeug', () => {
     });
     await page.goto('/pages/audio-analyse/index.html');
 
-    await page.locator('#input-wav-file').setInputFiles(FIXTURE_ZIP);
+    await page.locator('#input-wav-file').setInputFiles(FIXTURE_WAV);
 
     const status = page.locator('#analyse-status-msg');
     await expect(status).not.toContainText('offCtx.suspend is not a function');
@@ -63,7 +64,7 @@ test.describe('Audio-Analyse Werkzeug', () => {
   });
 
   test('Charts-Wrapper wird sichtbar und enthält SVG-Charts', async ({ page }) => {
-    await page.locator('#input-wav-file').setInputFiles(FIXTURE_ZIP);
+    await page.locator('#input-wav-file').setInputFiles(FIXTURE_WAV);
     const wrapper = page.locator('#analyse-charts-wrapper');
     await expect(wrapper).toBeVisible({ timeout: 30_000 });
 
@@ -80,7 +81,7 @@ test.describe('Audio-Analyse Werkzeug', () => {
   });
 
   test('Chart-Labels enthalten erwartete Titel', async ({ page }) => {
-    await page.locator('#input-wav-file').setInputFiles(FIXTURE_ZIP);
+    await page.locator('#input-wav-file').setInputFiles(FIXTURE_WAV);
     await expect(page.locator('#analyse-charts-wrapper')).toBeVisible({ timeout: 30_000 });
 
     const labels = await page.locator('.analysis-chart-label').allInnerTexts();
@@ -99,7 +100,7 @@ test.describe('Audio-Analyse Werkzeug', () => {
   });
 
   test('Zoom- und Anzeigeoptionen sind nach Analyse bedienbar', async ({ page }) => {
-    await page.locator('#input-wav-file').setInputFiles(FIXTURE_WAV);
+    await page.locator('#input-wav-file').setInputFiles(FIXTURE_ZIP);
     await expect(page.locator('#analyse-charts-wrapper')).toBeVisible({ timeout: 30_000 });
 
     await expect(page.locator('#analyse-range-controls')).toBeVisible();
@@ -120,7 +121,7 @@ test.describe('Audio-Analyse Werkzeug', () => {
   });
 
   test('Vertikale Normalisierung verändert die Kurvenskalierung', async ({ page }) => {
-    await page.locator('#input-wav-file').setInputFiles(FIXTURE_WAV);
+    await page.locator('#input-wav-file').setInputFiles(FIXTURE_ZIP);
     await expect(page.locator('#analyse-charts-wrapper')).toBeVisible({ timeout: 30_000 });
 
     const rmsBlock = page.locator('.analysis-chart-block').filter({ hasText: /rms/i }).first();
@@ -131,7 +132,7 @@ test.describe('Audio-Analyse Werkzeug', () => {
   });
 
   test('Erkannte Onset-Marker lassen sich ausblenden', async ({ page }) => {
-    await page.locator('#input-wav-file').setInputFiles(FIXTURE_WAV);
+    await page.locator('#input-wav-file').setInputFiles(FIXTURE_ZIP);
     await expect(page.locator('#analyse-charts-wrapper')).toBeVisible({ timeout: 30_000 });
 
     await expect(page.locator('.analysis-marker-detected').first()).toBeVisible();

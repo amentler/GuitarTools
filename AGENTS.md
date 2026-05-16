@@ -36,6 +36,7 @@ BEFORE committing any changes, you MUST:
 2. Run `npm run test:precommit` (Fast unit tests). All tests must pass.
    - **Scope:** `fretboardLogic`, `tunerLogic`, `tonFinderLogic`, `akkordLogic`, `sheetMusicLogic`, `metronomeLogic`, `notePlayingLogic`, `appNavigationHistory`, `exerciseHeader`.
    - **Note:** Use `npm test` for a full run (includes slow audio tests) if you modified audio detection logic.
+   - **Sync path:** Use `npm run test:sync` for the normal sync workflow. It adds only fast golden/frozen audio regressions on top of `test:precommit`, but still excludes the slow Real-WAV suites.
 3. Run `graphify update .` to keep the knowledge graph current.
 4. Verify `version.txt` and `sw.js` (handled by hook, but ensure no conflicts).
 
