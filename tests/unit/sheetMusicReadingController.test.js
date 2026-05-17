@@ -32,7 +32,8 @@ const recorderStart = vi.fn();
 const recorderStop = vi.fn();
 const recorderCancel = vi.fn();
 const saveSheetMusicTake = vi.fn().mockResolvedValue(undefined);
-const buildZip = vi.fn(() => new Uint8Array([1, 2, 3]));
+const buildRecordingZip = vi.fn(() => new Uint8Array([1, 2, 3]));
+const buildCollectionZip = vi.fn(() => new Uint8Array([4, 5, 6]));
 const downloadBlob = vi.fn();
 let mockedRowIndex = 0;
 let recorderRecording = false;
@@ -114,7 +115,9 @@ vi.mock('../../js/shared/browserEnvironment.js', () => ({
 }));
 
 vi.mock('../../js/shared/zip.js', () => ({
-  buildZip,
+  buildZip: vi.fn(() => new Uint8Array([0])),
+  buildRecordingZip,
+  buildCollectionZip,
   downloadBlob,
 }));
 
@@ -270,7 +273,8 @@ describe('SheetMusicReading controller behavior', () => {
     recorderCancel.mockImplementation(() => {
       recorderRecording = false;
     });
-    buildZip.mockClear();
+    buildRecordingZip.mockClear();
+    buildCollectionZip.mockClear();
     saveSheetMusicTake.mockClear();
     saveSheetMusicTake.mockResolvedValue(undefined);
     downloadBlob.mockClear();
@@ -433,16 +437,15 @@ describe('SheetMusicReading controller behavior', () => {
     await Promise.resolve(); // flush stopRecording continuation (push to savedRecordings)
     document.getElementById('btn-download-recordings').click();
 
-    const files = buildZip.mock.calls.at(-1)[0];
-    const manifestFile = files.find(file => file.name.endsWith('.json'));
-    const manifest = JSON.parse(new TextDecoder().decode(manifestFile.data));
+    const jsonBytes = buildRecordingZip.mock.calls.at(-1)[2];
+    const manifest = JSON.parse(new TextDecoder().decode(jsonBytes));
 
     expect(manifest.notes).toEqual(['E4', 'B3']);
     expect(manifest.bpm).toBe(40);
     expect(manifest.category).toBe('sheet-music-reading');
     expect(downloadBlob).toHaveBeenCalledWith(
       expect.any(Uint8Array),
-      expect.stringMatching(/^noten-lesen-aufnahmen-\d+\.zip$/),
+      expect.stringMatching(/^notenlesen_.*\.zip$/),
       'application/zip',
     );
   });
@@ -489,7 +492,8 @@ describe('SheetMusicReading controller behavior', () => {
 
     expect(saveSheetMusicTake).not.toHaveBeenCalled();
     document.getElementById('btn-download-recordings').click();
-    expect(buildZip).not.toHaveBeenCalled();
+    expect(buildRecordingZip).not.toHaveBeenCalled();
+    expect(buildCollectionZip).not.toHaveBeenCalled();
   });
 
   it('exports one WAV and one JSON file for each take created during the session', async () => {
@@ -512,14 +516,11 @@ describe('SheetMusicReading controller behavior', () => {
 
     document.getElementById('btn-download-recordings').click();
 
-    const files = buildZip.mock.calls.at(-1)[0];
-    const wavFiles = files.filter(file => file.name.endsWith('.wav'));
-    const jsonFiles = files.filter(file => file.name.endsWith('.json'));
-    expect(wavFiles).toHaveLength(2);
-    expect(jsonFiles).toHaveLength(2);
-    expect(wavFiles.map(file => file.name.replace(/\.wav$/, '')).sort())
-      .toEqual(jsonFiles.map(file => file.name.replace(/\.json$/, '')).sort());
-    expect(wavFiles.every(file => /^notenlesen_4-4_80bpm_E_[0-9a-z]{5}\.wav$/.test(file.name)))
-      .toBe(true);
+    const recs = buildCollectionZip.mock.calls.at(-1)[0];
+    expect(recs).toHaveLength(2);
+    expect(recs.every(r => r.wav instanceof Uint8Array)).toBe(true);
+    expect(recs.every(r => ArrayBuffer.isView(r.json) && r.json.byteLength > 0)).toBe(true);
+    expect(new Set(recs.map(r => r.baseName)).size).toBe(2);
+    expect(recs.every(r => /^notenlesen_4-4_80bpm_E_[0-9a-z]{5}$/.test(r.baseName))).toBe(true);
   });
 });

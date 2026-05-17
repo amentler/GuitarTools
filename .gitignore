@@ -1,11 +1,15 @@
 node_modules/
 .DS_Store
+sfp-report.md
+.claude/settings.local.json
+test-results/
 
 # Sweep-Ergebnisse ignorieren
 sweep-runs/
 
 # Weitere temporäre Daten
 graphify-out/cache/
+graphify-out/.rebuild.lock
 test-results/
 .last-run.json
 
@@ -13,3 +17,5 @@ test-results/
 __pycache__/
 *.py[cod]
 *$py.class
+
+GuitarSet/

@@ -15,7 +15,7 @@
 import { resolveGuitarOnsetStrategy } from '../../shared/audio/guitarOnsetStrategies.js';
 import { analyzeInputLevel } from '../../shared/audio/inputLevel.js';
 import { createMatchState } from '../../shared/audio/fastNoteMatcher.js';
-import { computeDbSpectrum } from '../../shared/audio/dbSpectrum.js';
+import { collectFrameData } from '../../shared/audio/collectFrameData.js';
 import { NOTES } from '../../shared/music/sheetMusicLogic.js';
 import {
   classifySheetMusicFrame,
@@ -23,7 +23,7 @@ import {
   SHEET_MUSIC_CENTS_TOLERANCE,
   updateSheetMusicMatchState,
 } from '../../shared/audio/sheetMusicRecognition.js';
-import { ONSET_FFT_SIZE, ONSET_HOP_SIZE, ONSET_HOP_DIVISOR } from '../../shared/audio/onsetPipelineConfig.js';
+import { ONSET_FFT_SIZE, ONSET_HOP_SIZE } from '../../shared/audio/onsetPipelineConfig.js';
 
 const DEFAULT_ANALYSIS_TARGET = `${NOTES[0].name}${NOTES[0].octave}`;
 
@@ -43,95 +43,6 @@ export async function decodeWav(arrayBuffer) {
   } finally {
     audioCtx.close().catch(() => {});
   }
-}
-
-/**
- * Sammelt frequencyData + timeDomainData für jeden Frame offline via
- * OfflineAudioContext + AnalyserNode.getFloatFrequencyData() –
- * identisch zur live Analyse in sheetMusicReading.js.
- *
- * @param {Float32Array} samples
- * @param {number} sampleRate
- * @param {number} requestedFftSize
- * @param {number} requestedHopSize
- * @returns {Promise<{
- *   frames: Array<{ samples: Float32Array, frequencyData: Float32Array }>,
- *   actualFftSize: number,
- *   actualHopSize: number,
- *   actualSampleRate: number,
- *   collectFrameDataPath: 'offline-audio-context' | 'js-fft-fallback',
- * }>}
- */
-export async function collectFrameData(samples, sampleRate, requestedFftSize, requestedHopSize) {
-  const frameCount = Math.floor((samples.length - requestedFftSize) / requestedHopSize) + 1;
-
-  if (typeof OfflineAudioContext.prototype.suspend !== 'function') {
-    const frames = Array.from({ length: frameCount }, (_, i) => {
-      const frame = samples.slice(i * requestedHopSize, i * requestedHopSize + requestedFftSize);
-      return {
-        samples: frame,
-        frequencyData: computeDbSpectrum(frame, requestedFftSize),
-      };
-    });
-    return {
-      frames,
-      actualFftSize: requestedFftSize,
-      actualHopSize: requestedHopSize,
-      actualSampleRate: sampleRate,
-      collectFrameDataPath: 'js-fft-fallback',
-    };
-  }
-
-  const totalLength = Math.max(samples.length, frameCount * requestedHopSize + requestedFftSize);
-
-  const offCtx = new OfflineAudioContext(1, totalLength, sampleRate);
-  const audioBuffer = offCtx.createBuffer(1, samples.length, sampleRate);
-  audioBuffer.copyToChannel(samples, 0);
-
-  const analyser = offCtx.createAnalyser();
-  analyser.fftSize = requestedFftSize;
-  analyser.smoothingTimeConstant = 0; // frame-by-frame, ohne Glättung
-
-  const actualFftSize = analyser.fftSize;
-  const actualHopSize = Math.round(actualFftSize / ONSET_HOP_DIVISOR);
-
-  const source = offCtx.createBufferSource();
-  source.buffer = audioBuffer;
-  source.connect(analyser);
-  analyser.connect(offCtx.destination);
-
-  const frameTimeDomain = new Array(frameCount);
-  const frameFreq = new Array(frameCount);
-
-  // Suspend am Ende jedes Frame-Fensters und Daten vom AnalyserNode lesen.
-  // Das ist die gleiche API wie in analyzeFrame() in sheetMusicReading.js.
-  for (let i = 0; i < frameCount; i++) {
-    const suspendTime = (i * requestedHopSize + requestedFftSize) / sampleRate;
-    offCtx.suspend(suspendTime).then(() => {
-      const td = new Float32Array(actualFftSize);
-      const fd = new Float32Array(analyser.frequencyBinCount);
-      analyser.getFloatTimeDomainData(td);
-      analyser.getFloatFrequencyData(fd);
-      frameTimeDomain[i] = td;
-      frameFreq[i] = fd;
-      offCtx.resume();
-    });
-  }
-
-  source.start(0);
-  await offCtx.startRendering();
-
-  const frames = frameTimeDomain.map((td, i) => ({
-    samples: td,
-    frequencyData: frameFreq[i],
-  }));
-  return {
-    frames,
-    actualFftSize,
-    actualHopSize,
-    actualSampleRate: sampleRate,
-    collectFrameDataPath: 'offline-audio-context',
-  };
 }
 
 /**
@@ -193,14 +104,11 @@ export async function analyzeAudio(samples, sampleRate, options = {}) {
 
   const duration = samples.length / sampleRate;
 
-  // Collect frames for both pipelines in parallel
-  const [onsetFrameResult, pitchFrameResult] = await Promise.all([
+  // Collect frames for both pipelines in parallel.
+  const [onsetFrames, pitchFrames] = await Promise.all([
     collectFrameData(samples, sampleRate, onsetFftSize, onsetHopSize),
     collectFrameData(samples, sampleRate, pitchFftSize, pitchHopSize),
   ]);
-
-  const onsetFrames = onsetFrameResult.frames;
-  const pitchFrames = pitchFrameResult.frames;
 
   // ── Pitch analysis on pitch frames ─────────────────────────────────────────
   let matchState = createMatchState();
@@ -298,6 +206,19 @@ export async function analyzeAudio(samples, sampleRate, options = {}) {
       confidence: onsetResult.confidence ?? 0,
       isOnset,
       spectralNoveltyBins: onsetResult.spectralNoveltyBins ?? 0,
+      hfc: onsetResult.hfc ?? 0,
+      hfcDelta: onsetResult.hfcDelta ?? 0,
+      spectralCentroid: onsetResult.spectralCentroid ?? 0,
+      spectralCentroidDelta: onsetResult.spectralCentroidDelta ?? 0,
+      spectralRolloff: onsetResult.spectralRolloff ?? 0,
+      spectralRolloffDelta: onsetResult.spectralRolloffDelta ?? 0,
+      spectralFlatness: onsetResult.spectralFlatness ?? 0,
+      spectralFlatnessDelta: onsetResult.spectralFlatnessDelta ?? 0,
+      crestFactor: onsetResult.crestFactor ?? 0,
+      crestFactorDelta: onsetResult.crestFactorDelta ?? 0,
+      subbandFluxLow: onsetResult.subbandFlux?.low?.flux ?? 0,
+      subbandFluxLowMid: onsetResult.subbandFlux?.lowMid?.flux ?? 0,
+      subbandFluxPresence: onsetResult.subbandFlux?.presence?.flux ?? 0,
       relativeRms: onsetResult.relativeRms ?? 0,
       relativeFlux: onsetResult.relativeFlux ?? 0,
       sustainFloorRms: onsetResult.sustainFloorRms ?? 0,
@@ -318,13 +239,13 @@ export async function analyzeAudio(samples, sampleRate, options = {}) {
     frames,
     onsets,
     sampleRate,
-    onsetFftSize: onsetFrameResult.actualFftSize,
-    onsetHopSize: onsetFrameResult.actualHopSize,
-    pitchFftSize: pitchFrameResult.actualFftSize,
-    pitchHopSize: pitchFrameResult.actualHopSize,
+    onsetFftSize,
+    onsetHopSize,
+    pitchFftSize,
+    pitchHopSize,
     // Legacy aliases for existing consumers (e.g. audioAnalyse.js showStats)
-    fftSize: onsetFrameResult.actualFftSize,
-    hopSize: onsetFrameResult.actualHopSize,
+    fftSize: onsetFftSize,
+    hopSize: onsetHopSize,
     duration,
     onsetOptions: lastOnsetResult?.options ?? null,
   };

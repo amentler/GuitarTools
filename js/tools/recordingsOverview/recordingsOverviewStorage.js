@@ -6,7 +6,7 @@ import {
   deleteSheetMusicTake,
   listSheetMusicTakes,
 } from '../../shared/audioAnalyseStorage.js';
-import { buildZip, downloadBlob } from '../../shared/zip.js';
+import { buildRecordingZip, buildCollectionZip, downloadBlob } from '../../shared/zip.js';
 
 // ── Sheet Music DB ────────────────────────────────────────────────────────────
 
@@ -125,7 +125,7 @@ export async function deleteRecordingsByIds(pairs) {
 
 /**
  * @param {{ source: string, id: string, name: string }[]} recordings
- * @returns {Promise<{ name: string, wav: Uint8Array, sidecarJson?: string }[]>}
+ * @returns {Promise<{ baseName: string, wav: Uint8Array, json: Uint8Array }[]>}
  */
 export async function getRecordingsForZip(recordings) {
   const enc = new TextEncoder();
@@ -138,11 +138,11 @@ export async function getRecordingsForZip(recordings) {
     const takes = await listSheetMusicTakes();
     for (const take of takes) {
       if (!smIds.has(take.id)) continue;
-      const baseName = take.baseName ?? take.id;
-      results.push({ name: `${baseName}.wav`, wav: take.wav });
-      if (take.sidecar) {
-        results.push({ name: `${baseName}.json`, wav: enc.encode(JSON.stringify(take.sidecar, null, 2)) });
-      }
+      results.push({
+        baseName: take.baseName ?? take.id,
+        wav:  take.wav,
+        json: enc.encode(JSON.stringify(take.sidecar ?? {}, null, 2)),
+      });
     }
   }
 
@@ -156,11 +156,11 @@ export async function getRecordingsForZip(recordings) {
     });
     for (const entry of entries) {
       if (!crIds.has(entry.baseName)) continue;
-      const wavData = new Uint8Array(await entry.wavBlob.arrayBuffer());
-      results.push({ name: `${entry.baseName}.wav`, wav: wavData });
-      if (entry.sidecar) {
-        results.push({ name: `${entry.baseName}.json`, wav: enc.encode(JSON.stringify(entry.sidecar, null, 2)) });
-      }
+      results.push({
+        baseName: entry.baseName,
+        wav:  new Uint8Array(await entry.wavBlob.arrayBuffer()),
+        json: enc.encode(JSON.stringify(entry.sidecar ?? {}, null, 2)),
+      });
     }
   }
 
@@ -174,7 +174,16 @@ export async function getRecordingsForZip(recordings) {
  */
 export async function downloadRecordingsAsZip(recordings, zipName) {
   if (recordings.length === 0) return;
-  const files = await getRecordingsForZip(recordings);
-  if (files.length === 0) return;
-  downloadBlob(buildZip(files.map(f => ({ name: f.name, data: f.wav }))), zipName, 'application/zip');
+  const pairs = await getRecordingsForZip(recordings);
+  if (pairs.length === 0) return;
+  if (pairs.length === 1) {
+    const { baseName, wav, json } = pairs[0];
+    downloadBlob(
+      buildRecordingZip(baseName, wav, json),
+      `${baseName}.zip`,
+      'application/zip',
+    );
+  } else {
+    downloadBlob(buildCollectionZip(pairs), zipName, 'application/zip');
+  }
 }

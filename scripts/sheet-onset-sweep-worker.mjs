@@ -2,9 +2,8 @@ import { parentPort } from 'worker_threads';
 import { computeLinearAndDbSpectrum } from '../tests/helpers/chordHpcpExtraction.js';
 import { resolveGuitarOnsetStrategy } from '../js/shared/audio/guitarOnsetStrategies.js';
 import { candidateToOptions, scoreCandidate } from './sheetOnsetSweepCore.mjs';
+import { ONSET_FFT_SIZE, ONSET_HOP_DIVISOR } from '../js/shared/audio/onsetPipelineConfig.js';
 
-const DEFAULT_ONSET_FRAME_SIZE = 4096;
-const DEFAULT_ANALYZE_INTERVAL_MS = 41;
 const FRAME_CACHE_CONFIG_LIMIT = Math.max(
   1,
   Number(process.env.ONSET_SWEEP_WORKER_FRAME_CACHE_CONFIG_LIMIT ?? 2),
@@ -13,8 +12,9 @@ const frameCache = new Map();
 const cachedConfigUsage = new Map();
 
 function resolveHopSize(options, sampleRate) {
-  return options.onsetHopSize
-    ?? Math.max(1, Math.round(sampleRate * ((options.analyzeIntervalMs ?? DEFAULT_ANALYZE_INTERVAL_MS) / 1000)));
+  if (options.onsetHopSize) return options.onsetHopSize;
+  if (options.analyzeIntervalMs) return Math.max(1, Math.round(sampleRate * (options.analyzeIntervalMs / 1000)));
+  return Math.round((options.onsetFrameSize ?? ONSET_FFT_SIZE) / ONSET_HOP_DIVISOR);
 }
 
 function precomputeFrames(samples, frameSize, hopSize) {
@@ -94,7 +94,7 @@ parentPort.on('message', ({ batch, fixtures, scoreSpec }) => {
 
   const results = batch.map(candidate => {
     const options = candidateToOptions(candidate.parameters);
-    const frameSize = options.onsetFrameSize ?? DEFAULT_ONSET_FRAME_SIZE;
+    const frameSize = options.onsetFrameSize ?? ONSET_FFT_SIZE;
     const hopSize = resolveHopSize(options, sampleRate);
     const strategy = resolveGuitarOnsetStrategy(candidate.strategyKey ?? candidate.parameters.strategyKey);
 

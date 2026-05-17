@@ -8,7 +8,8 @@ import { cpus } from 'os';
 import { join } from 'path';
 import { fileURLToPath } from 'url';
 import { Worker } from 'worker_threads';
-import { readWavFile } from '../tests/helpers/wavDecoder.js';
+import { resampleLinear } from '../tests/helpers/resampleAudio.js';
+import { loadSequenceFixtureAudio } from '../tests/helpers/sequenceFixtureLoader.js';
 import {
   candidateKey,
   candidateToOptions,
@@ -28,14 +29,23 @@ import {
   sortResults,
   writeJson,
 } from './sheetOnsetSweepCore.mjs';
+import { ONSET_FFT_SIZE, ONSET_HOP_DIVISOR, BROWSER_SAMPLE_RATE } from '../js/shared/audio/onsetPipelineConfig.js';
 
 const DEFAULT_WORKER_COUNT = Math.max(1, Math.floor(cpus().length / 2));
 const WORKER_SCRIPT = fileURLToPath(new URL('./sheet-onset-sweep-worker.mjs', import.meta.url));
-const DEFAULT_ONSET_FRAME_SIZE = 4096;
-const DEFAULT_ANALYZE_INTERVAL_MS = 41;
 
 function slugifyStrategyKey(strategyKey) {
   return String(strategyKey).replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '');
+}
+
+function formatScore(value) {
+  return Number.isFinite(value) ? value.toFixed(2) : '-';
+}
+
+function formatParameterValue(value) {
+  return Number.isFinite(value) && !Number.isInteger(value)
+    ? String(Math.round(value * 1_000_000) / 1_000_000)
+    : String(value ?? '');
 }
 
 function makeCandidateId(round, index, parameters) {
@@ -49,10 +59,11 @@ function makeCandidateId(round, index, parameters) {
 }
 
 function loadAudioFixtures(fixtures) {
-  return fixtures.map(fixture => ({
-    fixture,
-    audio: readWavFile(fixture.wavPath),
-  }));
+  return fixtures.map(fixture => {
+    const { samples: rawSamples, sampleRate: rawRate } = loadSequenceFixtureAudio(fixture);
+    const samples = resampleLinear(rawSamples, rawRate, BROWSER_SAMPLE_RATE);
+    return { fixture, audio: { samples, sampleRate: BROWSER_SAMPLE_RATE } };
+  });
 }
 
 function prepareSharedFixtures(loadedFixtures) {
@@ -74,8 +85,9 @@ function dispatchBatch(worker, batch, sharedFixtures, scoreSpec) {
 }
 
 function resolveHopSize(options, sampleRate) {
-  return options.onsetHopSize
-    ?? Math.max(1, Math.round(sampleRate * ((options.analyzeIntervalMs ?? DEFAULT_ANALYZE_INTERVAL_MS) / 1000)));
+  if (options.onsetHopSize) return options.onsetHopSize;
+  if (options.analyzeIntervalMs) return Math.max(1, Math.round(sampleRate * (options.analyzeIntervalMs / 1000)));
+  return Math.round((options.onsetFrameSize ?? ONSET_FFT_SIZE) / ONSET_HOP_DIVISOR);
 }
 
 function estimateFrameCount(samplesBuffer, frameSize, hopSize) {
@@ -86,7 +98,7 @@ function estimateFrameCount(samplesBuffer, frameSize, hopSize) {
 
 function getAnalysisConfig(candidate, sampleRate) {
   const options = candidateToOptions(candidate.parameters);
-  const frameSize = options.onsetFrameSize ?? DEFAULT_ONSET_FRAME_SIZE;
+  const frameSize = options.onsetFrameSize ?? ONSET_FFT_SIZE;
   const hopSize = resolveHopSize(options, sampleRate);
   return {
     key: `${frameSize}:${hopSize}`,
@@ -173,91 +185,116 @@ async function evaluateBatchParallel(batch, sharedFixtures, scoreSpec, workers) 
   return batchResults.flat();
 }
 
-function writeResultArtifacts(runDir, spec, fixtures, results, sortedResults = null) {
-  const sorted = sortedResults ?? sortResults(results);
-  const best = sorted.slice(0, spec.beamSize);
-  const strategyKeys = [...new Set(results.map(row => row.strategyKey).filter(Boolean))].sort();
-  writeJson(join(runDir, 'best.json'), best);
-  writeFileSync(join(runDir, 'report.md'), formatReport(results, spec, fixtures));
+function compactResult(result) {
+  return {
+    id: result.id,
+    round: result.round,
+    strategyKey: result.strategyKey,
+    parameters: result.parameters,
+    options: result.options,
+    score: result.score,
+    metrics: result.metrics,
+  };
+}
 
-  const csvHeader = formatCsvRow([
-    'rank',
-    'id',
-    'strategyKey',
-    'round',
-    'score',
-    'exact',
-    'goodMatches',
-    'acceptableMatches',
-    'misses',
-    'falsePositives',
-    'duplicates',
-    'meanAbsErrorMs',
-    'p95AbsErrorMs',
-    'under',
-    'over',
-    'extremeUnder',
-    'extremeOver',
-    'totalOnsets',
-    'parameters',
-  ]);
-  const csvRows = sorted.map((row, index) => formatCsvRow([
-    index + 1,
-    row.id,
-    row.strategyKey ?? '',
+function bestForStrategy(results, strategyKey) {
+  return sortResults(results.filter(row => row.strategyKey === strategyKey))[0] ?? null;
+}
+
+function roundBestForStrategy(results, strategyKey) {
+  return results
+    .filter(row => row.strategyKey === strategyKey)
+    .reduce((best, row) => (!best || row.score > best.score ? row : best), null);
+}
+
+function summarizeBest(row) {
+  if (!row) return null;
+  return {
+    strategyKey: row.strategyKey,
+    id: row.id,
+    round: row.round,
+    score: row.score,
+    metrics: row.metrics,
+    parameters: row.parameters,
+    options: row.options,
+  };
+}
+
+function writeBestConfig(runDir, strategyKey, row) {
+  if (!row) return;
+  writeJson(join(runDir, `best-${slugifyStrategyKey(strategyKey)}.config.json`), {
+    ...row.options,
+    onsetStrategyKey: row.strategyKey,
+    _sweep: {
+      id: row.id,
+      round: row.round,
+      strategyKey: row.strategyKey,
+      score: row.score,
+      metrics: row.metrics,
+    },
+  });
+}
+
+function writeResultArtifacts(runDir, spec, fixtures, results, strategies = []) {
+  const strategyKeys = strategies.length > 0
+    ? strategies.map(strategy => strategy.key)
+    : [...new Set(results.map(row => row.strategyKey).filter(Boolean))].sort();
+  const bestRows = strategyKeys.map(strategyKey => bestForStrategy(results, strategyKey));
+  const bestSummaries = bestRows.map(summarizeBest).filter(Boolean);
+
+  writeFileSync(join(runDir, 'report.md'), formatReport(results, spec, fixtures));
+  writeJson(join(runDir, 'best-by-strategy.json'), bestSummaries);
+
+  const csvHeader = formatCsvRow(['strategyKey', 'round', 'score', 'id', 'parameters']);
+  const csvRows = bestRows.filter(Boolean).map(row => formatCsvRow([
+    row.strategyKey,
     row.round,
     row.score,
-    row.metrics.exact,
-    row.metrics.goodMatches ?? 0,
-    row.metrics.acceptableMatches ?? 0,
-    row.metrics.misses ?? 0,
-    row.metrics.falsePositives ?? 0,
-    row.metrics.duplicates ?? 0,
-    row.metrics.meanAbsErrorMs ?? '',
-    row.metrics.p95AbsErrorMs ?? '',
-    row.metrics.under,
-    row.metrics.over,
-    row.metrics.extremeUnder ?? 0,
-    row.metrics.extremeOver ?? 0,
-    row.metrics.totalOnsets,
+    row.id,
     JSON.stringify(row.parameters),
   ]));
-  writeFileSync(join(runDir, 'results.csv'), `${[csvHeader, ...csvRows].join('\n')}\n`);
+  writeFileSync(join(runDir, 'best-by-strategy.csv'), `${[csvHeader, ...csvRows].join('\n')}\n`);
 
-  best.forEach((row, index) => {
-    writeJson(join(runDir, `best-${String(index + 1).padStart(3, '0')}.config.json`), {
-      ...row.options,
-      onsetStrategyKey: row.strategyKey,
-      _sweep: {
-        id: row.id,
-        rank: index + 1,
-        strategyKey: row.strategyKey,
-        score: row.score,
-        metrics: row.metrics,
-      },
-    });
-  });
+  for (const [index, strategyKey] of strategyKeys.entries()) {
+    const row = bestRows[index];
+    if (!row) continue;
+    writeJson(join(runDir, `best-${slugifyStrategyKey(strategyKey)}.json`), summarizeBest(row));
+    writeBestConfig(runDir, strategyKey, row);
+  }
+}
 
-  for (const strategyKey of strategyKeys) {
-    const strategyBest = sortResults(results.filter(row => row.strategyKey === strategyKey))
-      .slice(0, spec.beamSize);
-    writeJson(join(runDir, `best-${slugifyStrategyKey(strategyKey)}.json`), strategyBest);
-    strategyBest.forEach((row, index) => {
-      writeJson(
-        join(runDir, `best-${slugifyStrategyKey(strategyKey)}-${String(index + 1).padStart(3, '0')}.config.json`),
-        {
-          ...row.options,
-          onsetStrategyKey: row.strategyKey,
-          _sweep: {
-            id: row.id,
-            rank: index + 1,
-            strategyKey: row.strategyKey,
-            score: row.score,
-            metrics: row.metrics,
-          },
-        },
-      );
-    });
+function printRoundSummary(round, roundResults, allResults, strategies, roundModes, strategyState) {
+  console.log('');
+  console.log(`[sheet-onset-sweep] round ${round} | evaluated ${roundResults.length}`);
+  console.log('strategy                      mode              stag  best     round');
+  console.log('----------------------------  ----------------  ----  -------  -------');
+
+  for (const strategy of strategies) {
+    const state = strategyState.get(strategy.key);
+    const best = bestForStrategy(allResults, strategy.key);
+    const roundBest = roundBestForStrategy(roundResults, strategy.key);
+    console.log(
+      `${strategy.key.padEnd(28).slice(0, 28)}  `
+      + `${String(roundModes[strategy.key] ?? '-').padEnd(16).slice(0, 16)}  `
+      + `${String(state?.stagnationCount ?? 0).padStart(4)}  `
+      + `${formatScore(best?.score).padStart(7)}  `
+      + `${formatScore(roundBest?.score).padStart(7)}`,
+    );
+  }
+
+  for (const strategy of strategies) {
+    const best = bestForStrategy(allResults, strategy.key);
+    const roundBest = roundBestForStrategy(roundResults, strategy.key);
+
+    const isNewBest = best && roundBest && best.id === roundBest.id;
+    if (!isNewBest) continue;
+
+    console.log('');
+    console.log(`[${strategy.key}] NEW best parameters (score: ${formatScore(best.score)})`);
+    for (const [key, value] of Object.entries(best.parameters)) {
+      if (key === 'strategyKey') continue;
+      console.log(`  ${key.padEnd(32)} ${formatParameterValue(value)}`);
+    }
   }
 }
 
@@ -299,7 +336,6 @@ async function main() {
   }
 
   const runDir = ensureRunDir(spec, args.resumeDir);
-  mkdirSync(join(runDir, 'rounds'), { recursive: true });
   const workerCount = args.workers ?? DEFAULT_WORKER_COUNT;
   const loadedFixtures = loadAudioFixtures(fixtures);
   const sharedFixtures = prepareSharedFixtures(loadedFixtures);
@@ -344,16 +380,10 @@ async function main() {
     console.log(`[sheet-onset-sweep] global reset every ${spec.globalResetInterval} rounds`);
   }
 
-  let bestScoreEver = results.length > 0 ? (sortResults(results)[0]?.score ?? -Infinity) : -Infinity;
-
   process.on('SIGINT', () => {
     console.log('\n[sheet-onset-sweep] interrupted — writing final artifacts...');
-    writeResultArtifacts(runDir, spec, fixtures, results);
-    const interrupted = sortResults(results)[0];
-    if (interrupted) {
-      console.log(`[sheet-onset-sweep] best: ${interrupted.id} score=${interrupted.score.toFixed(2)}`);
-      console.log(`[sheet-onset-sweep] best config: ${join(runDir, 'best-001.config.json')}`);
-    }
+    writeResultArtifacts(runDir, spec, fixtures, results, strategies);
+    printRoundSummary('interrupted', [], results, strategies, {}, strategyState);
     process.exit(0);
   });
 
@@ -381,16 +411,21 @@ async function main() {
       const beam = sortResults(strategyResults).slice(0, spec.beamSize);
       const isFirstRound = round === startRound && beam.length === 0;
       const isGlobalReset = spec.globalResetInterval && round % spec.globalResetInterval === 0;
-      const isStagnationProbe = !isFirstRound && !isGlobalReset
+      const isStagnationReset = spec.stagnationResetInterval && state.stagnationCount >= spec.stagnationResetInterval;
+      const isStagnationProbe = !isFirstRound && !isGlobalReset && !isStagnationReset
         && spec.stagnationRounds && state.stagnationCount >= spec.stagnationRounds;
 
       let roundMode;
       let rawCandidates;
-      if (isFirstRound || isGlobalReset) {
+      if (isFirstRound || isGlobalReset || isStagnationReset) {
         rawCandidates = createInitialCandidatesForStrategy(spec, strategy.key, spec.candidatesPerRound, random);
         state.effectiveRound = 0;
         state.stagnationCount = 0;
-        roundMode = isGlobalReset ? 'global-reset' : 'initial';
+        if (isStagnationReset) {
+          roundMode = 'stagnation-reset';
+        } else {
+          roundMode = isGlobalReset ? 'global-reset' : 'initial';
+        }
       } else {
         rawCandidates = createRefinedCandidatesForStrategy(
           spec,
@@ -431,9 +466,10 @@ async function main() {
 
     const batchResults = await evaluateBatchParallel(batch, sharedFixtures, spec.score, workers);
     for (const result of batchResults) {
-      results.push(result);
-      roundResults.push(result);
-      appendResult(runDir, result);
+      const storedResult = compactResult(result);
+      results.push(storedResult);
+      roundResults.push(storedResult);
+      appendResult(runDir, storedResult);
     }
 
     if (!stoppedEarly) {
@@ -444,35 +480,13 @@ async function main() {
       }
     }
 
-    const sortedResults = sortResults(results);
+    writeResultArtifacts(runDir, spec, fixtures, results, strategies);
 
-    writeJson(join(runDir, 'rounds', `round-${String(round).padStart(3, '0')}.json`), {
-      round,
-      modes: roundModes,
-      evaluated: roundResults.length,
-      best: sortedResults.slice(0, spec.beamSize),
-      bestByStrategy: Object.fromEntries(strategies.map(strategy => [
-        strategy.key,
-        sortResults(results.filter(row => row.strategyKey === strategy.key)).slice(0, spec.beamSize),
-      ])),
-    });
-    writeResultArtifacts(runDir, spec, fixtures, results, sortedResults);
-
-    const currentBest = sortedResults[0];
-    const currentBestScore = currentBest?.score ?? -Infinity;
-    const roundBest = roundResults.length > 0
-      ? roundResults.reduce((a, b) => (b.score > a.score ? b : a))
-      : null;
-    const roundBestScore = roundBest?.score ?? -Infinity;
     const minImprovement = spec.minScoreImprovement ?? 1.0;
 
-    if (currentBestScore > bestScoreEver) bestScoreEver = currentBestScore;
     for (const strategy of strategies) {
       const state = strategyState.get(strategy.key);
-      const strategyRoundResults = roundResults.filter(row => row.strategyKey === strategy.key);
-      const strategyRoundBest = strategyRoundResults.length > 0
-        ? strategyRoundResults.reduce((a, b) => (b.score > a.score ? b : a))
-        : null;
+      const strategyRoundBest = roundBestForStrategy(roundResults, strategy.key);
       const strategyRoundBestScore = strategyRoundBest?.score ?? -Infinity;
       const mode = roundModes[strategy.key];
 
@@ -481,35 +495,19 @@ async function main() {
       if (strategyRoundBestScore > state.recentRoundBest + minImprovement) {
         state.recentRoundBest = strategyRoundBestScore;
         state.stagnationCount = 0;
-      } else if (mode !== 'global-reset' && mode !== 'initial') {
+      } else if (mode !== 'global-reset' && mode !== 'initial' && mode !== 'stagnation-reset') {
         state.stagnationCount++;
       }
     }
 
-    const roundScorePart = roundBest
-      ? ` | round best ${roundBest.score.toFixed(2)}`
-      : '';
-    const strategyProgress = strategies.map(strategy => {
-      const state = strategyState.get(strategy.key);
-      return `${strategy.key}:${roundModes[strategy.key]}${state.stagnationCount > 0 ? `(${state.stagnationCount})` : ''}`;
-    }).join(', ');
-    console.log(
-      `[sheet-onset-sweep] round ${round}: evaluated ${roundResults.length}, `
-      + `global best ${currentBestScore.toFixed(2)} (${currentBest?.id ?? '-'})${roundScorePart}`
-      + ` | strategies ${strategyProgress}`,
-    );
+    printRoundSummary(round, roundResults, results, strategies, roundModes, strategyState);
 
     if (stoppedEarly) break;
   }
 
   await Promise.all(workers.map(w => w.terminate()));
-  writeResultArtifacts(runDir, spec, fixtures, results);
-  const best = sortResults(results)[0];
+  writeResultArtifacts(runDir, spec, fixtures, results, strategies);
   console.log(`[sheet-onset-sweep] done: ${results.length} candidates`);
-  if (best) {
-    console.log(`[sheet-onset-sweep] best: ${best.id} score=${best.score.toFixed(2)}`);
-    console.log(`[sheet-onset-sweep] best config: ${join(runDir, 'best-001.config.json')}`);
-  }
 }
 
 main().catch(err => {

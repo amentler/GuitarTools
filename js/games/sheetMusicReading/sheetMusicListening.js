@@ -1,8 +1,7 @@
 import { requestMicrophoneStream } from '../../shared/audio/microphoneService.js';
 import { openAudioSession, closeAudioSession } from '../../shared/audio/audioSessionService.js';
 import { enumerateAndShowMics } from './sheetMusicReadingUI.js';
-
-const ANALYZE_INTERVAL_MS = 41;
+import { ONSET_FFT_SIZE, ONSET_LIVE_ANALYZE_INTERVAL_MS } from '../../shared/audio/onsetPipelineConfig.js';
 
 export function createListeningController({
   state, audioSession, getUI, onAnalyzeFrame, onApplyFftSize, onClearSuccessTimeout,
@@ -46,7 +45,7 @@ export function createListeningController({
     try {
       await openAudioSession(audioSession, {
         stream: microphoneStream,
-        fftSize: 4096,
+        fftSize: ONSET_FFT_SIZE,
         AudioContextCtor: AudioContext,
       });
     } catch {
@@ -58,7 +57,7 @@ export function createListeningController({
     ui.permission.classList.add('u-hidden');
     state.isListening = true;
     onApplyFftSize();
-    analyzeIntervalId = setInterval(onAnalyzeFrame, ANALYZE_INTERVAL_MS);
+    analyzeIntervalId = setInterval(onAnalyzeFrame, ONSET_LIVE_ANALYZE_INTERVAL_MS);
     void enumerateAndShowMics(ui);
   }
 

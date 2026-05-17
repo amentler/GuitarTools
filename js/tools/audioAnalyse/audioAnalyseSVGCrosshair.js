@@ -10,6 +10,8 @@ let _crosshairLines = [];
 let _cursorLabels = [];
 let _analysisFrames = [];
 let _analysisDuration = 1;
+let _analysisRangeStart = 0;
+let _analysisRangeEnd = 1;
 
 export function makeCrosshairLine(svg, height) {
   const ns = 'http://www.w3.org/2000/svg';
@@ -37,9 +39,11 @@ export function resetCrosshairRegistry() {
   _cursorLabels = [];
 }
 
-export function setAnalysisData(frames, duration) {
+export function setAnalysisData(frames, duration, options = {}) {
   _analysisFrames = frames;
   _analysisDuration = duration;
+  _analysisRangeStart = options.rangeStart ?? 0;
+  _analysisRangeEnd = options.rangeEnd ?? duration;
 }
 
 function _updateCrosshairAtFraction(fraction) {
@@ -52,7 +56,7 @@ function _updateCrosshairAtFraction(fraction) {
     line.setAttribute('opacity', '0.85');
   }
 
-  const t = fraction * _analysisDuration;
+  const t = _analysisRangeStart + fraction * Math.max(0.001, _analysisRangeEnd - _analysisRangeStart);
   const frame = _analysisFrames.length
     ? _analysisFrames.reduce((best, f) =>
         Math.abs(f.t - t) < Math.abs(best.t - t) ? f : best,
@@ -71,7 +75,10 @@ function _updateCrosshairAtFraction(fraction) {
 }
 
 export function setCrosshairFromFraction(fraction) {
-  _updateCrosshairAtFraction(fraction);
+  const absoluteTime = Math.max(0, Math.min(1, fraction)) * _analysisDuration;
+  const visibleFraction = (absoluteTime - _analysisRangeStart)
+    / Math.max(0.001, _analysisRangeEnd - _analysisRangeStart);
+  _updateCrosshairAtFraction(Math.max(0, Math.min(1, visibleFraction)));
 }
 
 export function initCrosshair(wrapper) {

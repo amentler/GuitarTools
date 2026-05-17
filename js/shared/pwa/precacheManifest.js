@@ -11,6 +11,7 @@ const CORE_PRECACHED_URLS = [
   'js/shared/audio/onsetPipelineConfig.js',
   'js/shared/audio/pitchPipelineConfig.js',
   'js/shared/audio/xgboostFeatureExtractor.js',
+  'js/tools/audioAnalyse/audioAnalyseSVGSeries.js',
   'js/shared/learning/srsLogic.js',
   'manifest.json',
   'style.css',

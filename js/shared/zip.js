@@ -140,6 +140,58 @@ export function buildZip(files) {
   return result;
 }
 
+// ── Recording ZIP helpers ────────────────────────────────────────────────────
+
+/**
+ * Builds a single-recording ZIP containing baseName.wav + baseName.json.
+ * @param {string} baseName
+ * @param {Uint8Array} wavData
+ * @param {Uint8Array} jsonData
+ * @returns {Uint8Array}
+ */
+export function buildRecordingZip(baseName, wavData, jsonData) {
+  return buildZip([
+    { name: `${baseName}.wav`,  data: wavData  },
+    { name: `${baseName}.json`, data: jsonData },
+  ]);
+}
+
+/**
+ * Builds a container ZIP where each entry is an inner recording ZIP.
+ * @param {Array<{ baseName: string, wav: Uint8Array, json: Uint8Array }>} recordings
+ * @returns {Uint8Array}
+ */
+export function buildCollectionZip(recordings) {
+  const files = recordings.map(({ baseName, wav, json }) => ({
+    name: `${baseName}.zip`,
+    data: buildRecordingZip(baseName, wav, json),
+  }));
+  return buildZip(files);
+}
+
+/**
+ * Reads a Store-mode ZIP and returns all Local-File-Header entries.
+ * Stops at the first non-local-header signature (Central Directory / EOCD).
+ * @param {Uint8Array} data
+ * @returns {Array<{ name: string, data: Uint8Array }>}
+ */
+export function readZip(data) {
+  const view = new DataView(data.buffer, data.byteOffset, data.byteLength);
+  const entries = [];
+  let offset = 0;
+  while (offset + 4 <= data.length) {
+    if (view.getUint32(offset, true) !== 0x04034B50) break;
+    const compressedSize = view.getUint32(offset + 18, true);
+    const nameLen        = view.getUint16(offset + 26, true);
+    const extraLen       = view.getUint16(offset + 28, true);
+    const name           = new TextDecoder().decode(data.slice(offset + 30, offset + 30 + nameLen));
+    const dataStart      = offset + 30 + nameLen + extraLen;
+    entries.push({ name, data: data.slice(dataStart, dataStart + compressedSize) });
+    offset = dataStart + compressedSize;
+  }
+  return entries;
+}
+
 // ── Download helper ──────────────────────────────────────────────────────────
 
 /**

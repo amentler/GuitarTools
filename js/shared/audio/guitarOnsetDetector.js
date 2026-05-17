@@ -30,6 +30,12 @@ export const GUITAR_ONSET_CONFIRMED_SPECTRAL_NOVELTY_MIN_BINS = 9;
 export const GUITAR_ONSET_COOLDOWN_OVERRIDE_FACTOR = 5;
 export const GUITAR_ONSET_COOLDOWN_OVERRIDE_MIN_FLUX = 0.011324;
 export const GUITAR_ONSET_COOLDOWN_OVERRIDE_MIN_BAND_RATIO = 0.051923;
+export const GUITAR_ONSET_ROLLOFF_PERCENT = 0.85;
+export const DEFAULT_GUITAR_ONSET_SUBBANDS = Object.freeze([
+  { key: 'low', minHz: 80, maxHz: 220 },
+  { key: 'lowMid', minHz: 220, maxHz: 600 },
+  { key: 'presence', minHz: 2000, maxHz: 6000 },
+]);
 
 export const DEFAULT_GUITAR_ONSET_OPTIONS = Object.freeze({
   minRms: GUITAR_ONSET_MIN_RMS,
@@ -63,6 +69,8 @@ export const DEFAULT_GUITAR_ONSET_OPTIONS = Object.freeze({
   cooldownOverrideFactor: GUITAR_ONSET_COOLDOWN_OVERRIDE_FACTOR,
   cooldownOverrideMinFlux: GUITAR_ONSET_COOLDOWN_OVERRIDE_MIN_FLUX,
   cooldownOverrideMinBandRatio: GUITAR_ONSET_COOLDOWN_OVERRIDE_MIN_BAND_RATIO,
+  rolloffPercent: GUITAR_ONSET_ROLLOFF_PERCENT,
+  subbands: DEFAULT_GUITAR_ONSET_SUBBANDS,
 });
 
 export function createGuitarOnsetState() {
@@ -77,6 +85,11 @@ export function createGuitarOnsetState() {
     lastBandRatio: 0,
     lastRms: 0,
     lastActiveBandRatio: 0,
+    lastHfc: 0,
+    lastSpectralCentroid: 0,
+    lastSpectralRolloff: 0,
+    lastSpectralFlatness: 0,
+    lastCrestFactor: 0,
   };
 }
 
@@ -97,6 +110,143 @@ function toLinearMagnitudes(frequencyData, dbFloor) {
     magnitudes[i] = dbToLinear(frequencyData[i], dbFloor);
   }
   return magnitudes;
+}
+
+function resolveBinRange(length, options = {}) {
+  const startBin = Math.max(0, options.startBin ?? 0);
+  const endBin = Math.min(length, options.endBin ?? length);
+  return {
+    startBin,
+    endBin: Math.max(startBin, endBin),
+  };
+}
+
+function resolveFftSize(magnitudes, options = {}) {
+  if (Number.isFinite(options.fftSize) && options.fftSize > 0) return options.fftSize;
+  if (Number.isFinite(options.sampleRate) && Number.isFinite(options.binHz) && options.binHz > 0) {
+    return options.sampleRate / options.binHz;
+  }
+  return Math.max(1, magnitudes.length * 2);
+}
+
+function binToUnit(bin, magnitudes, options = {}) {
+  if (Number.isFinite(options.sampleRate) && options.sampleRate > 0) {
+    const fftSize = resolveFftSize(magnitudes, options);
+    return (bin * options.sampleRate) / fftSize;
+  }
+  return bin;
+}
+
+function hzToBin(hz, magnitudes, options = {}) {
+  if (!(Number.isFinite(options.sampleRate) && options.sampleRate > 0)) return null;
+  const fftSize = resolveFftSize(magnitudes, options);
+  const bin = Math.round((hz * fftSize) / options.sampleRate);
+  return Math.max(0, Math.min(magnitudes.length, bin));
+}
+
+export function computeHighFrequencyContent(magnitudes, options = {}) {
+  if (!magnitudes?.length) return 0;
+  const { startBin, endBin } = resolveBinRange(magnitudes.length, options);
+  let hfc = 0;
+  for (let i = startBin; i < endBin; i++) {
+    const value = magnitudes[i];
+    hfc += value * value * (i + 1);
+  }
+  return hfc;
+}
+
+export function computeSpectralCentroid(magnitudes, options = {}) {
+  if (!magnitudes?.length) return 0;
+  const { startBin, endBin } = resolveBinRange(magnitudes.length, options);
+  let weightedSum = 0;
+  let total = 0;
+  for (let i = startBin; i < endBin; i++) {
+    const value = magnitudes[i];
+    weightedSum += binToUnit(i, magnitudes, options) * value;
+    total += value;
+  }
+  return total > 0 ? weightedSum / total : 0;
+}
+
+export function computeSpectralRolloff(magnitudes, options = {}) {
+  if (!magnitudes?.length) return 0;
+  const { startBin, endBin } = resolveBinRange(magnitudes.length, options);
+  const rolloffPercent = options.rolloffPercent ?? GUITAR_ONSET_ROLLOFF_PERCENT;
+  let totalEnergy = 0;
+  for (let i = startBin; i < endBin; i++) {
+    totalEnergy += magnitudes[i] * magnitudes[i];
+  }
+  if (totalEnergy <= 0) return 0;
+  const threshold = totalEnergy * rolloffPercent;
+  let cumulative = 0;
+  for (let i = startBin; i < endBin; i++) {
+    cumulative += magnitudes[i] * magnitudes[i];
+    if (cumulative >= threshold) {
+      return binToUnit(i, magnitudes, options);
+    }
+  }
+  return binToUnit(Math.max(startBin, endBin - 1), magnitudes, options);
+}
+
+export function computeSpectralFlatness(magnitudes, options = {}) {
+  if (!magnitudes?.length) return 0;
+  const { startBin, endBin } = resolveBinRange(magnitudes.length, options);
+  const epsilon = 1e-12;
+  let logSum = 0;
+  let linearSum = 0;
+  let count = 0;
+  for (let i = startBin; i < endBin; i++) {
+    const value = Math.max(epsilon, magnitudes[i]);
+    logSum += Math.log(value);
+    linearSum += value;
+    count++;
+  }
+  if (count === 0 || linearSum <= 0) return 0;
+  return Math.exp(logSum / count) / (linearSum / count);
+}
+
+export function computeCrestFactor(samples, providedRms = null) {
+  if (!samples?.length) return 0;
+  const rms = Number.isFinite(providedRms) ? providedRms : computeFrameRms(samples);
+  if (!(rms > 0)) return 0;
+  let peak = 0;
+  for (let i = 0; i < samples.length; i++) {
+    peak = Math.max(peak, Math.abs(samples[i]));
+  }
+  return peak / rms;
+}
+
+function resolveSubbandRange(magnitudes, band, options = {}) {
+  const { startBin, endBin } = resolveBinRange(magnitudes.length, options);
+  const minBin = hzToBin(band.minHz, magnitudes, options);
+  const maxBin = hzToBin(band.maxHz, magnitudes, options);
+  if (minBin === null || maxBin === null) {
+    const span = Math.max(1, endBin - startBin);
+    const fallbackBands = options.subbands ?? DEFAULT_GUITAR_ONSET_SUBBANDS;
+    const bandIndex = Math.max(0, fallbackBands.findIndex(item => item.key === band.key));
+    const sliceStart = startBin + Math.floor((bandIndex / fallbackBands.length) * span);
+    const sliceEnd = startBin + Math.floor(((bandIndex + 1) / fallbackBands.length) * span);
+    return { startBin: sliceStart, endBin: Math.max(sliceStart, sliceEnd) };
+  }
+  return {
+    startBin: Math.max(startBin, minBin),
+    endBin: Math.max(Math.max(startBin, minBin), Math.min(endBin, maxBin)),
+  };
+}
+
+export function computeSubbandFlux(previousMagnitudes, currentMagnitudes, options = {}) {
+  const bands = options.subbands ?? DEFAULT_GUITAR_ONSET_SUBBANDS;
+  return Object.fromEntries(bands.map(band => {
+    const range = resolveSubbandRange(currentMagnitudes, band, options);
+    return [
+      band.key,
+      computeBroadbandFlux(previousMagnitudes, currentMagnitudes, {
+        ...options,
+        startBin: range.startBin,
+        endBin: range.endBin,
+      }),
+    ];
+  }));
 }
 
 export function computeBroadbandFlux(previousMagnitudes, currentMagnitudes, options = {}) {
@@ -181,7 +331,14 @@ function computeActiveBandRatioLinear(magnitudes, options) {
   return activeBins / consideredBins;
 }
 
-export function updateGuitarOnsetDetectorNormalized(state, { frequencyData = null, magnitudes = null, samples = null, rms: providedRms = null } = {}, normalizedOptions) {
+export function updateGuitarOnsetDetectorNormalized(state, {
+  frequencyData = null,
+  magnitudes = null,
+  samples = null,
+  rms: providedRms = null,
+  sampleRate = null,
+  fftSize = null,
+} = {}, normalizedOptions) {
   const {
     minRms,
     minFlux,
@@ -214,6 +371,11 @@ export function updateGuitarOnsetDetectorNormalized(state, { frequencyData = nul
     ? providedRms
     : (samples ? computeFrameRms(samples) : state.previousRms);
   const currentMagnitudes = magnitudes ?? (frequencyData ? toLinearMagnitudes(frequencyData, dbFloor) : null);
+  const featureOptions = {
+    ...normalizedOptions,
+    sampleRate,
+    fftSize: Number.isFinite(fftSize) ? fftSize : (samples?.length ?? null),
+  };
   const activeBandRatio = currentMagnitudes
     ? computeActiveBandRatioLinear(currentMagnitudes, normalizedOptions)
     : computeActiveBandRatio(frequencyData, normalizedOptions);
@@ -223,6 +385,22 @@ export function updateGuitarOnsetDetectorNormalized(state, { frequencyData = nul
   const spectralNoveltyBins = currentMagnitudes
     ? computeSpectralNoveltyBins(state.previousMagnitudes, currentMagnitudes, normalizedOptions)
     : 0;
+  const hfc = currentMagnitudes ? computeHighFrequencyContent(currentMagnitudes, normalizedOptions) : 0;
+  const spectralCentroid = currentMagnitudes ? computeSpectralCentroid(currentMagnitudes, featureOptions) : 0;
+  const spectralRolloff = currentMagnitudes ? computeSpectralRolloff(currentMagnitudes, featureOptions) : 0;
+  const spectralFlatness = currentMagnitudes ? computeSpectralFlatness(currentMagnitudes, normalizedOptions) : 0;
+  const crestFactor = samples ? computeCrestFactor(samples, rms) : 0;
+  const subbandFlux = currentMagnitudes
+    ? computeSubbandFlux(state.previousMagnitudes, currentMagnitudes, featureOptions)
+    : Object.fromEntries((featureOptions.subbands ?? DEFAULT_GUITAR_ONSET_SUBBANDS).map(band => [
+      band.key,
+      { flux: 0, growingBins: 0, consideredBins: 0, bandRatio: 0 },
+    ]));
+  const hfcDelta = state.frameCount > 0 ? hfc - (state.lastHfc ?? 0) : 0;
+  const spectralCentroidDelta = state.frameCount > 0 ? spectralCentroid - (state.lastSpectralCentroid ?? 0) : 0;
+  const spectralRolloffDelta = state.frameCount > 0 ? spectralRolloff - (state.lastSpectralRolloff ?? 0) : 0;
+  const spectralFlatnessDelta = state.frameCount > 0 ? spectralFlatness - (state.lastSpectralFlatness ?? 0) : 0;
+  const crestFactorDelta = state.frameCount > 0 ? crestFactor - (state.lastCrestFactor ?? 0) : 0;
 
   const cooldownFramesRemaining = Math.max(0, state.cooldownFramesRemaining - 1);
   const sustainFloorRms = state.sustainFloorRms ?? state.previousRms ?? 0;
@@ -303,6 +481,11 @@ export function updateGuitarOnsetDetectorNormalized(state, { frequencyData = nul
       lastBandRatio: fluxResult.bandRatio,
       lastRms: rms,
       lastActiveBandRatio: activeBandRatio,
+      lastHfc: hfc,
+      lastSpectralCentroid: spectralCentroid,
+      lastSpectralRolloff: spectralRolloff,
+      lastSpectralFlatness: spectralFlatness,
+      lastCrestFactor: crestFactor,
     },
     event,
     onset: event === 'onset',
@@ -319,6 +502,17 @@ export function updateGuitarOnsetDetectorNormalized(state, { frequencyData = nul
     bandRatio: fluxResult.bandRatio,
     activeBandRatio,
     spectralNoveltyBins,
+    hfc,
+    hfcDelta,
+    spectralCentroid,
+    spectralCentroidDelta,
+    spectralRolloff,
+    spectralRolloffDelta,
+    spectralFlatness,
+    spectralFlatnessDelta,
+    crestFactor,
+    crestFactorDelta,
+    subbandFlux,
     relativeRmsAttack,
     relativeSpectralAttack,
     confirmedWeakRmsFluxAttack,
@@ -332,10 +526,16 @@ export function updateGuitarOnsetDetectorNormalized(state, { frequencyData = nul
   };
 }
 
-export function updateGuitarOnsetDetector(state, { frequencyData = null, samples = null, rms: providedRms = null } = {}, options = {}) {
+export function updateGuitarOnsetDetector(state, {
+  frequencyData = null,
+  samples = null,
+  rms: providedRms = null,
+  sampleRate = null,
+  fftSize = null,
+} = {}, options = {}) {
   return updateGuitarOnsetDetectorNormalized(
     state,
-    { frequencyData, samples, rms: providedRms },
+    { frequencyData, samples, rms: providedRms, sampleRate, fftSize },
     normalizeGuitarOnsetOptions(options),
   );
 }

@@ -4,6 +4,11 @@ ZIP-Dateien mit neuen Notensequenzen hier ablegen. Dieser Ordner ist nur die
 Eingangszone. Importierte Sequenzen sollen spaeter als stabile Testfixtures nach
 `tests/fixtures/sequences/<category>/` ueberfuehrt werden.
 
+Wichtig: Sequence-Fixtures duerfen im Zielordner direkt als einzelnes ZIP mit
+WAV+JSON liegen. Fingerprint-Helfer, `sheetfingerprint` und `sfp` muessen diese
+ZIP-Form direkt lesen koennen. Lose `.wav/.json`-Paare bleiben nur fuer
+Bestandsfixtures kompatibel.
+
 ## Erwartete ZIP-Struktur
 
 Eine ZIP darf eine oder mehrere Sequenzen enthalten. Jede Sequenz besteht aus:
@@ -27,7 +32,20 @@ dem Manifest-Feld `category` bestimmt.
 
 ## Ziel nach dem Import
 
-Nach der Umwandlung soll jede Sequenz als Paar aus WAV und Manifest hier liegen:
+Bevorzugtes Zielformat ist eine einzelne ZIP-Datei pro Sequenz:
+
+```text
+tests/fixtures/sequences/<category>/<name>-tagged.zip
+```
+
+mit folgendem Inhalt:
+
+```text
+<name>.wav
+<name>.json
+```
+
+Das bestehende Paarformat bleibt fuer aeltere Fixtures lesbar:
 
 ```text
 tests/fixtures/sequences/<category>/<name>.wav
@@ -109,8 +127,8 @@ Der spaetere Importer soll fuer jede ZIP:
 1. ZIP entpacken und alle WAV/JSON-Paare finden.
 2. Manifest validieren.
 3. WAV-Datei mit dem lokalen WAV-Decoder pruefen.
-4. Sequenz nach `tests/fixtures/sequences/<category>/` kopieren oder verschieben.
-5. Manifest neben der WAV ablegen.
+4. Sequenz bevorzugt als ZIP nach `tests/fixtures/sequences/<category>/` kopieren oder verschieben.
+5. Optional fuer Rueckwaertskompatibilitaet ein loses Paar erzeugen, aber nicht mehr voraussetzen.
 6. `npm run sheetfingerprint` ausfuehren und den Report pruefen.
 7. Nur vollstaendig erkannte Positiv-Fixtures in die schnelle Positivliste des
    Sheet-Fingerprints aufnehmen.

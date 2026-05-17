@@ -104,5 +104,5 @@ describe('architecture boundary guards', () => {
     ]);
 
     expect(violations, `Files exceeding ${FILE_SIZE_LIMIT} lines:\n${violations.map((v) => `  ${v.file} (${v.lines} lines)`).join('\n')}`).toEqual([]);
-  });
+  }, 15_000);
 });

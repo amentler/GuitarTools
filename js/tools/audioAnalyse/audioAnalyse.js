@@ -7,9 +7,10 @@
  * Factory-Pattern: export function createAudioAnalyseFeature()
  */
 
+import { createGlobalDebugStore } from '../../shared/debug/index.js';
 import { loadLatestSheetMusicTake } from '../../shared/audioAnalyseStorage.js';
 import { loadRecordingFromSource } from '../../shared/recordingLoader.js';
-import { decodeWav, analyzeAudio, collectFrameData } from './audioAnalyseEngine.js';
+import { decodeWav, analyzeAudio } from './audioAnalyseEngine.js';
 import {
   renderAllCharts,
   initCrosshair,
@@ -23,20 +24,22 @@ import {
 } from '../../shared/globalSettings.js';
 import {
   resolveGuitarOnsetStrategy,
+  getGuitarOnsetStrategies,
 } from '../../shared/audio/guitarOnsetStrategies.js';
 import {
   setEssentiaSheetMusicStrategyInstance,
+  getSheetMusicRecognitionStrategies,
 } from '../../shared/audio/sheetMusicRecognition.js';
 import { getEssentia } from '../../shared/audio/essentiaLoader.js';
 import { createEssentiaSheetMusicStrategy } from '../../shared/audio/essentiaSheetMusicStrategy.js';
+import { collectFrameData } from '../../shared/audio/collectFrameData.js';
 import { ONSET_FFT_SIZE, ONSET_HOP_SIZE } from '../../shared/audio/onsetPipelineConfig.js';
 import {
   extractXGBoostFrameFeatures,
   buildContextFeatures,
   getFeatureOrder,
 } from '../../shared/audio/xgboostFeatureExtractor.js';
-import { resolveGuitarOnsetStrategy as _resolveOnset } from '../../shared/audio/guitarOnsetStrategies.js';
-import { downloadBlob } from '../../shared/zip.js';
+import { readZip, downloadBlob } from '../../shared/zip.js';
 
 const PITCH_STRATEGY_LABELS = {
   'fast-note-matcher': 'Fast Note Matcher',
@@ -47,6 +50,7 @@ const PITCH_STRATEGY_LABELS = {
  * @returns {{ mount(root?: Document|Element): void, unmount(): void }}
  */
 export function createAudioAnalyseFeature() {
+  const _debugStore = createGlobalDebugStore();
   let _root = null;
 
   // ── Playback-State ─────────────────────────────────────────────────────────
@@ -60,8 +64,14 @@ export function createAudioAnalyseFeature() {
   let _analysisDur    = 1;
   let _cachedSamples  = null;   // Float32Array für späteren Re-Decode-Bedarf
   let _cachedSR       = 44100;
-  let _cachedFilename = '';     // original file name for export
-  let _cachedManifest = null;   // sidecar/manifest JSON (onsetsMs annotations)
+  let _cachedFilename = '';
+  let _cachedManifest = null;
+  let _analysisResult = null;
+  let _rangeStart     = 0;
+  let _rangeEnd       = 0;
+  let _normalizeY     = true;
+  let _showDetectedOnsets = true;
+  let _showTaggedOnsets   = true;
   let _sliderDragging = false;
 
   function resolveUI(root) {
@@ -75,12 +85,23 @@ export function createAudioAnalyseFeature() {
       statusMsg:      q('analyse-status-msg'),
       strategyPitch:  q('analyse-strategy-pitch'),
       strategyOnset:  q('analyse-strategy-onset'),
-      playPauseBtn:   q('btn-play-pause'),
-      stopBtn:        q('btn-stop-audio'),
-      bottomBar:      q('analyse-bottom-bar'),
-      sliderEl:       q('analyse-slider'),
-      sliderTimeEl:   q('analyse-slider-time'),
-      sliderDurEl:    q('analyse-slider-dur'),
+      playPauseBtn:        q('btn-play-pause'),
+      stopBtn:             q('btn-stop-audio'),
+      bottomBar:           q('analyse-bottom-bar'),
+      sliderRow:           q('analyse-slider-row'),
+      transportRow:        q('analyse-transport-row'),
+      sliderEl:            q('analyse-slider'),
+      sliderTimeEl:        q('analyse-slider-time'),
+      sliderDurEl:         q('analyse-slider-dur'),
+      rangeControls:       q('analyse-range-controls'),
+      rangeStartEl:        q('analyse-range-start'),
+      rangeEndEl:          q('analyse-range-end'),
+      rangeDisplay:        q('analyse-range-display'),
+      normalizeYEl:        q('analyse-normalize-y'),
+      showDetectedOnsetsEl: q('analyse-show-detected-onsets'),
+      showTaggedOnsetsEl:   q('analyse-show-tagged-onsets'),
+      pitchStrategySelect: q('analyse-pitch-select'),
+      onsetStrategySelect: q('analyse-onset-select'),
       exportTrainingBtn:   q('btn-export-training'),
       exportTrainingRow:   q('analyse-training-export-row'),
       exportStatusEl:      q('analyse-export-status'),
@@ -113,11 +134,85 @@ export function createAudioAnalyseFeature() {
   }
 
   function updateStrategyLabels(ui) {
-    const pitchKey = getSetting(SETTING_KEYS.SHEET_MUSIC_RECOGNITION_STRATEGY);
-    const onsetKey = getSetting(SETTING_KEYS.SHEET_MUSIC_ONSET_STRATEGY);
+    const pitchKey = ui.pitchStrategySelect?.value ?? getSetting(SETTING_KEYS.SHEET_MUSIC_RECOGNITION_STRATEGY);
+    const onsetKey = ui.onsetStrategySelect?.value ?? getSetting(SETTING_KEYS.SHEET_MUSIC_ONSET_STRATEGY);
     const onsetStrategy = resolveGuitarOnsetStrategy(onsetKey);
     if (ui.strategyPitch) ui.strategyPitch.textContent = PITCH_STRATEGY_LABELS[pitchKey] ?? pitchKey;
     if (ui.strategyOnset) ui.strategyOnset.textContent = onsetStrategy?.label ?? onsetKey;
+  }
+
+  function getTaggedOnsetsSec() {
+    const taggedMs = _cachedManifest?.onsetsMs;
+    if (!Array.isArray(taggedMs)) return [];
+    return taggedMs
+      .filter(ms => Number.isFinite(ms))
+      .map(ms => ms / 1000)
+      .sort((a, b) => a - b);
+  }
+
+  function renderCurrentAnalysis(ui) {
+    if (!ui.chartsWrapper || !_cachedSamples || !_analysisResult) return;
+    renderAllCharts(ui.chartsWrapper, _cachedSamples, _analysisResult, {
+      rangeStart: _rangeStart,
+      rangeEnd: _rangeEnd,
+      normalizeY: _normalizeY,
+      showDetectedOnsets: _showDetectedOnsets,
+      showTaggedOnsets: _showTaggedOnsets,
+      taggedOnsets: getTaggedOnsetsSec(),
+    });
+    initCrosshair(ui.chartsWrapper);
+    ui.chartsWrapper.classList.remove('u-hidden');
+  }
+
+  function syncRangeControls(ui) {
+    if (!_analysisResult || !ui.rangeStartEl || !ui.rangeEndEl) return;
+    const duration = Math.max(0, _analysisResult.duration);
+    let start = parseFloat(ui.rangeStartEl.value);
+    let end = parseFloat(ui.rangeEndEl.value);
+    if (!Number.isFinite(start)) start = 0;
+    if (!Number.isFinite(end)) end = duration;
+    if (start >= end) {
+      if (document.activeElement === ui.rangeStartEl) {
+        start = Math.max(0, end - 0.01);
+        ui.rangeStartEl.value = start.toFixed(4);
+      } else {
+        end = Math.min(duration, start + 0.01);
+        ui.rangeEndEl.value = end.toFixed(4);
+      }
+    }
+    _rangeStart = Math.max(0, Math.min(Math.max(0, duration - 0.01), start));
+    _rangeEnd = Math.max(_rangeStart + 0.01, Math.min(duration, end));
+    if (ui.rangeDisplay) {
+      ui.rangeDisplay.textContent = `${_rangeStart.toFixed(2)} s - ${_rangeEnd.toFixed(2)} s`;
+    }
+    renderCurrentAnalysis(ui);
+    updatePlayhead(_analysisDur > 0 ? _playOffset / _analysisDur : 0);
+  }
+
+  function resetRangeControls(ui, duration) {
+    _rangeStart = 0;
+    _rangeEnd = duration;
+    if (ui.rangeStartEl) {
+      ui.rangeStartEl.min = '0';
+      ui.rangeStartEl.max = duration.toFixed(4);
+      ui.rangeStartEl.step = '0.001';
+      ui.rangeStartEl.value = '0';
+    }
+    if (ui.rangeEndEl) {
+      ui.rangeEndEl.min = '0';
+      ui.rangeEndEl.max = duration.toFixed(4);
+      ui.rangeEndEl.step = '0.001';
+      ui.rangeEndEl.value = duration.toFixed(4);
+    }
+    if (ui.rangeDisplay) {
+      ui.rangeDisplay.textContent = `0.00 s - ${duration.toFixed(2)} s`;
+    }
+    if (ui.normalizeYEl) ui.normalizeYEl.checked = _normalizeY;
+    if (ui.showDetectedOnsetsEl) ui.showDetectedOnsetsEl.checked = _showDetectedOnsets;
+    if (ui.showTaggedOnsetsEl) {
+      ui.showTaggedOnsetsEl.checked = _showTaggedOnsets;
+      ui.showTaggedOnsetsEl.disabled = getTaggedOnsetsSec().length === 0;
+    }
   }
 
   async function ensureSelectedPitchStrategyReady(pitchStrategyKey) {
@@ -138,10 +233,16 @@ export function createAudioAnalyseFeature() {
       showStatus(ui, `Fehler beim Dekodieren: ${err.message}`, true);
       return;
     }
+    _debugStore.addEntry('audio:decoded', {
+      sampleRate: decoded.sampleRate,
+      duration: decoded.audioBuffer.duration,
+      length: decoded.audioBuffer.length,
+      filename,
+    }, { source: 'audioAnalyse' });
 
     showStatus(ui, 'Analysiere Frames…');
-    const pitchStrategyKey = getSetting(SETTING_KEYS.SHEET_MUSIC_RECOGNITION_STRATEGY);
-    const onsetStrategyKey = getSetting(SETTING_KEYS.SHEET_MUSIC_ONSET_STRATEGY);
+    const pitchStrategyKey = ui.pitchStrategySelect?.value ?? getSetting(SETTING_KEYS.SHEET_MUSIC_RECOGNITION_STRATEGY);
+    const onsetStrategyKey = ui.onsetStrategySelect?.value ?? getSetting(SETTING_KEYS.SHEET_MUSIC_ONSET_STRATEGY);
     let result;
     try {
       await ensureSelectedPitchStrategyReady(pitchStrategyKey);
@@ -155,31 +256,28 @@ export function createAudioAnalyseFeature() {
       return;
     }
 
-    // Samples + Metadaten für Wiedergabe cachen
+    // Samples + Metadaten für Wiedergabe und Re-Analyse cachen
     _cachedSamples  = decoded.samples;
     _cachedSR       = decoded.sampleRate;
     _cachedFilename = filename;
     _cachedManifest = manifest ?? null;
-    _analysisDur   = result.duration;
-    _audioBuffer   = null; // wird lazy beim ersten Play erstellt
+    _analysisResult = result;
+    _analysisDur    = result.duration;
+    _audioBuffer    = null; // wird lazy beim ersten Play erstellt
 
     hideStatus(ui);
     showStats(ui, result, filename);
 
-    if (!ui.chartsWrapper) return;
-    renderAllCharts(ui.chartsWrapper, decoded.samples, result);
-    initCrosshair(ui.chartsWrapper);
-    ui.chartsWrapper.classList.remove('u-hidden');
+    resetRangeControls(ui, result.duration);
+    renderCurrentAnalysis(ui);
 
-    // Bottom-Bar einblenden und Slider kalibrieren
-    if (ui.bottomBar) ui.bottomBar.classList.remove('u-hidden');
+    // Slider + Transport einblenden und Slider kalibrieren
+    if (ui.sliderRow)   ui.sliderRow.classList.remove('u-hidden');
+    if (ui.transportRow) ui.transportRow.classList.remove('u-hidden');
+    if (ui.rangeControls) ui.rangeControls.classList.remove('u-hidden');
     if (ui.sliderEl) { ui.sliderEl.value = '0'; }
     if (ui.sliderTimeEl) ui.sliderTimeEl.textContent = '0.00 s';
     if (ui.sliderDurEl) ui.sliderDurEl.textContent = `${result.duration.toFixed(2)} s`;
-
-    // Play/Stop-Buttons einblenden
-    if (ui.playPauseBtn) ui.playPauseBtn.classList.remove('u-hidden');
-    if (ui.stopBtn)      ui.stopBtn.classList.remove('u-hidden');
     setPlayPauseLabel(ui, false);
 
     // Training-Export-Row einblenden
@@ -196,15 +294,17 @@ export function createAudioAnalyseFeature() {
     if (ui.exportTrainingBtn) ui.exportTrainingBtn.disabled = true;
 
     try {
-      const frameResult = await collectFrameData(
+      const frames = await collectFrameData(
         _cachedSamples,
         _cachedSR,
         ONSET_FFT_SIZE,
         ONSET_HOP_SIZE,
       );
-      const { frames, actualFftSize, actualHopSize, actualSampleRate } = frameResult;
+      const actualFftSize = ONSET_FFT_SIZE;
+      const actualHopSize = ONSET_HOP_SIZE;
+      const actualSampleRate = _cachedSR;
       const onsetStrategyKey = getSetting(SETTING_KEYS.SHEET_MUSIC_ONSET_STRATEGY);
-      const onsetStrategy = _resolveOnset(onsetStrategyKey);
+      const onsetStrategy = resolveGuitarOnsetStrategy(onsetStrategyKey);
       let onsetState = onsetStrategy.createState();
 
       const featureOrder = getFeatureOrder();
@@ -221,7 +321,8 @@ export function createAudioAnalyseFeature() {
       const historyBuffer = [];
 
       for (let i = 0; i < frames.length; i++) {
-        const { samples: frame, frequencyData, t } = frames[i];
+        const { samples: frame, frequencyData } = frames[i];
+        const t = (i * actualHopSize + actualFftSize / 2) / actualSampleRate;
 
         const onsetResult = onsetStrategy.update(onsetState, { frequencyData, samples: frame });
         onsetState = onsetResult.nextState;
@@ -405,6 +506,38 @@ export function createAudioAnalyseFeature() {
     stopPlayback(ui);
   }
 
+  async function reAnalyze(ui) {
+    if (!_cachedSamples) return;
+    stopPlayback(ui);
+    showStatus(ui, 'Analysiere Frames…');
+    const pitchStrategyKey = ui.pitchStrategySelect?.value ?? getSetting(SETTING_KEYS.SHEET_MUSIC_RECOGNITION_STRATEGY);
+    const onsetStrategyKey = ui.onsetStrategySelect?.value ?? getSetting(SETTING_KEYS.SHEET_MUSIC_ONSET_STRATEGY);
+    let result;
+    try {
+      await ensureSelectedPitchStrategyReady(pitchStrategyKey);
+      result = await analyzeAudio(_cachedSamples, _cachedSR, {
+        onsetStrategyKey,
+        pitchStrategyKey,
+        targetSequence: _cachedManifest?.notes,
+      });
+    } catch (err) {
+      showStatus(ui, `Analyse-Fehler: ${err.message}`, true);
+      return;
+    }
+    _analysisResult = result;
+    _analysisDur = result.duration;
+    _audioBuffer = null;
+    hideStatus(ui);
+    showStats(ui, result, _cachedFilename);
+    resetRangeControls(ui, result.duration);
+    renderCurrentAnalysis(ui);
+    if (ui.sliderEl) ui.sliderEl.value = '0';
+    if (ui.sliderTimeEl) ui.sliderTimeEl.textContent = '0.00 s';
+    if (ui.sliderDurEl) ui.sliderDurEl.textContent = `${result.duration.toFixed(2)} s`;
+    setPlayPauseLabel(ui, false);
+    updateStrategyLabels(ui);
+  }
+
   async function handleLoadLatest(ui, { silent = false } = {}) {
     if (!silent) showStatus(ui, 'Lade neueste Notenlesen-Aufnahme aus IndexedDB…');
     let entry;
@@ -428,8 +561,22 @@ export function createAudioAnalyseFeature() {
 
   async function handleFileInput(ui, file) {
     if (!file) return;
+    if (file.name.toLowerCase().endsWith('.zip') || file.type === 'application/zip') {
+      const buf     = await file.arrayBuffer();
+      const entries = readZip(new Uint8Array(buf));
+      const wavEntry  = entries.find(e => e.name.toLowerCase().endsWith('.wav'));
+      if (!wavEntry) { showStatus(ui, 'Keine WAV-Datei in der ZIP gefunden.', true); return; }
+      const jsonEntry = entries.find(e => e.name.toLowerCase().endsWith('.json'));
+      let sidecar;
+      if (jsonEntry) {
+        try { sidecar = JSON.parse(new TextDecoder().decode(jsonEntry.data)); } catch { /* ignore */ }
+      }
+      showStatus(ui, `Lese ${wavEntry.name} aus ZIP…`);
+      await runAnalysis(ui, wavEntry.data.buffer, wavEntry.name, sidecar);
+      return;
+    }
     if (!file.name.endsWith('.wav') && file.type !== 'audio/wav') {
-      showStatus(ui, 'Bitte eine WAV-Datei auswählen.', true);
+      showStatus(ui, 'Bitte eine WAV- oder ZIP-Datei auswählen.', true);
       return;
     }
     showStatus(ui, `Lese ${file.name}…`);
@@ -457,6 +604,30 @@ export function createAudioAnalyseFeature() {
   function mount(root = document) {
     _root = root;
     const ui = resolveUI(root);
+
+    // Dropdowns mit Strategielisten befüllen und auf globale Defaults vorselektieren
+    const defaultPitch = getSetting(SETTING_KEYS.SHEET_MUSIC_RECOGNITION_STRATEGY);
+    const defaultOnset = getSetting(SETTING_KEYS.SHEET_MUSIC_ONSET_STRATEGY);
+
+    if (ui.pitchStrategySelect) {
+      ui.pitchStrategySelect.innerHTML = getSheetMusicRecognitionStrategies()
+        .map(s => `<option value="${s.key}"${s.key === defaultPitch ? ' selected' : ''}>${s.label}</option>`)
+        .join('');
+    }
+    if (ui.onsetStrategySelect) {
+      ui.onsetStrategySelect.innerHTML = getGuitarOnsetStrategies()
+        .map(s => `<option value="${s.key}"${s.key === defaultOnset ? ' selected' : ''}>${s.label}</option>`)
+        .join('');
+    }
+
+    ui.pitchStrategySelect?.addEventListener('change', () => {
+      updateStrategyLabels(ui);
+      if (_cachedSamples) void reAnalyze(ui);
+    });
+    ui.onsetStrategySelect?.addEventListener('change', () => {
+      updateStrategyLabels(ui);
+      if (_cachedSamples) void reAnalyze(ui);
+    });
 
     updateStrategyLabels(ui);
 
@@ -498,6 +669,21 @@ export function createAudioAnalyseFeature() {
       if (wasPlaying) startPlayback(ui, newOffset);
     });
 
+    ui.rangeStartEl?.addEventListener('input', () => syncRangeControls(ui));
+    ui.rangeEndEl?.addEventListener('input', () => syncRangeControls(ui));
+    ui.normalizeYEl?.addEventListener('change', () => {
+      _normalizeY = ui.normalizeYEl.checked;
+      renderCurrentAnalysis(ui);
+    });
+    ui.showDetectedOnsetsEl?.addEventListener('change', () => {
+      _showDetectedOnsets = ui.showDetectedOnsetsEl.checked;
+      renderCurrentAnalysis(ui);
+    });
+    ui.showTaggedOnsetsEl?.addEventListener('change', () => {
+      _showTaggedOnsets = ui.showTaggedOnsetsEl.checked;
+      renderCurrentAnalysis(ui);
+    });
+
     wireDropzone(ui);
 
     const params = new URLSearchParams(window.location.search);
@@ -535,8 +721,11 @@ export function createAudioAnalyseFeature() {
       _audioCtx.close();
       _audioCtx = null;
     }
-    _audioBuffer  = null;
-    _cachedSamples = null;
+    _audioBuffer    = null;
+    _cachedSamples  = null;
+    _cachedFilename = '';
+    _cachedManifest = null;
+    _analysisResult = null;
     _root = null;
   }
 

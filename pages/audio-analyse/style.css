@@ -96,7 +96,7 @@
       display: flex;
       flex-direction: column;
       gap: 0.25rem;
-      padding: 0 0.5rem 7rem; /* extra bottom padding for fixed 2-row bar */
+      padding: 0 0.5rem 12rem; /* extra bottom padding for fixed control bar */
     }
 
     .analysis-chart-block {
@@ -171,6 +171,73 @@
       box-sizing: border-box;
     }
 
+    .analyse-range-controls {
+      width: 100%;
+      max-width: 900px;
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+      padding: 0.25rem 0;
+      box-sizing: border-box;
+    }
+
+    .analyse-range-row {
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      width: 100%;
+    }
+
+    .analyse-range-label {
+      width: 3.5rem;
+      font-size: 0.72rem;
+      color: var(--color-text-muted);
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    .analyse-range-slider {
+      flex: 1;
+      min-width: 0;
+      accent-color: var(--color-accent, #7c4dff);
+      cursor: pointer;
+    }
+
+    .analyse-option-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.85rem;
+      flex-wrap: wrap;
+      padding-top: 0.1rem;
+    }
+
+    .analyse-range-display {
+      font-size: 0.72rem;
+      color: var(--color-text-muted);
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+
+    .analyse-option-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      font-size: 0.72rem;
+      color: var(--color-text);
+      white-space: nowrap;
+    }
+
+    .analyse-option-label input[type="checkbox"] {
+      width: 1rem;
+      height: 1rem;
+      accent-color: var(--color-accent, #7c4dff);
+    }
+
+    .analyse-option-label:has(input:disabled) {
+      opacity: 0.55;
+    }
+
     .analyse-transport-row {
       display: flex;
       align-items: center;
@@ -215,6 +282,56 @@
       font-weight: 600;
     }
 
+    .legend-tagged-onset {
+      color: #1f8b4c;
+      font-weight: 600;
+    }
+
     .legend-invalid {
       color: #aaa;
+    }
+
+    .analyse-strategy-select-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+      padding: 0.3rem 0.5rem;
+      width: 100%;
+      max-width: 900px;
+    }
+
+    .analyse-strategy-label {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.8rem;
+      color: var(--color-text-muted);
+    }
+
+    .analyse-strategy-select {
+      font-size: 0.8rem;
+      background: #fff;
+      color: #000;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      padding: 0.15rem 0.4rem;
+      cursor: pointer;
+    }
+
+    .analyse-strategy-select option {
+      background: #fff;
+      color: #000;
+    }
+
+    @media (max-width: 680px) {
+      .analyse-charts-wrapper {
+        padding-bottom: 15rem;
+      }
+
+      .analyse-option-row {
+        justify-content: flex-start;
+        padding-left: 0.2rem;
+      }
     }

@@ -1,4 +1,4 @@
-import { buildZip, downloadBlob } from '../../shared/zip.js';
+import { buildRecordingZip, buildCollectionZip, downloadBlob } from '../../shared/zip.js';
 import { saveSheetMusicTake } from '../../shared/audioAnalyseStorage.js';
 import { collectBrowserEnvironment } from '../../shared/browserEnvironment.js';
 
@@ -79,12 +79,17 @@ export function createRecordingUI({ recorder, getSaved, setSaved, getAudioSessio
   function downloadRecordings() {
     const savedRecordings = getSaved();
     if (!savedRecordings.length) return;
-    const files = savedRecordings.flatMap(({ baseName, wav, manifest }) => [
-      { name: `${baseName}.wav`,  data: wav },
-      { name: `${baseName}.json`, data: new TextEncoder().encode(JSON.stringify(manifest, null, 2)) },
-    ]);
-    const zip = buildZip(files);
-    downloadBlob(zip, `noten-lesen-aufnahmen-${Date.now()}.zip`, 'application/zip');
+    const enc = new TextEncoder();
+    if (savedRecordings.length === 1) {
+      const { baseName, wav, manifest } = savedRecordings[0];
+      const zip = buildRecordingZip(baseName, wav, enc.encode(JSON.stringify(manifest, null, 2)));
+      downloadBlob(zip, `${baseName}.zip`, 'application/zip');
+    } else {
+      const recs = savedRecordings.map(({ baseName, wav, manifest }) => ({
+        baseName, wav, json: enc.encode(JSON.stringify(manifest, null, 2)),
+      }));
+      downloadBlob(buildCollectionZip(recs), `noten-lesen-aufnahmen-${Date.now()}.zip`, 'application/zip');
+    }
     if (confirm('Gespeicherte Aufnahmen jetzt löschen?')) {
       setSaved([]);
       syncRecordingUI();

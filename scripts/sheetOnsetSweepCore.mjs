@@ -1,13 +1,20 @@
 import {
   existsSync,
   mkdirSync,
-  readFileSync,
-  readdirSync,
   writeFileSync,
 } from 'fs';
-import { basename, dirname, join, relative, resolve } from 'path';
+import { readFileSync } from 'fs';
+import { dirname, relative, resolve } from 'path';
 import { DEFAULT_GUITAR_ONSET_OPTIONS } from '../js/shared/audio/guitarOnsetDetector.js';
 import { getGuitarOnsetStrategies } from '../js/shared/audio/guitarOnsetStrategies.js';
+import { discoverSequenceFixtureSources } from '../tests/helpers/sequenceFixtureLoader.js';
+import {
+  DEFAULT_TAGGED_ONSET_SCORING,
+  percentile,
+  scoreTaggedOnsets,
+} from './taggedOnsetScoring.mjs';
+
+export { scoreTaggedOnsets } from './taggedOnsetScoring.mjs';
 
 export const DEFAULT_SWEEP_SPEC = Object.freeze({
   fixturesDir: 'tests/fixtures/sequences',
@@ -17,11 +24,13 @@ export const DEFAULT_SWEEP_SPEC = Object.freeze({
   candidatesPerRound: 40,
   timeBudgetMinutes: null,
   stagnationRounds: 3,
+  stagnationResetInterval: 12,
   stagnationProbeCount: 10,
   minScoreImprovement: 1.0,
   globalResetInterval: 30,
   seed: 1337,
   score: {
+    ...DEFAULT_TAGGED_ONSET_SCORING,
     underPenalty: 4,
     overPenalty: 2,
     extremeUnderPenalty: 20,
@@ -29,18 +38,6 @@ export const DEFAULT_SWEEP_SPEC = Object.freeze({
     extremeOverPenalty: 20,
     extremeOverMultiplier: 1.4,
     guardrailOverMultiplier: 1.4,
-    goodWindowMs: 30,
-    acceptableWindowMs: 50,
-    falsePositiveNearWindowMs: 100,
-    goodMatchScore: 1,
-    goodMatchMinScore: 0.8,
-    acceptableMatchScore: 0.5,
-    acceptableMatchMinScore: 0.2,
-    missPenalty: 1.5,
-    duplicatePenalty: 0.75,
-    nearFalsePositivePenalty: 1.5,
-    farFalsePositivePenalty: 2.5,
-    overfirePenalty: 0.35,
   },
   parameters: {
     relativeReattackFactor: [1.4, 4.0],
@@ -125,9 +122,11 @@ export function formatSweepHelp() {
     '',
     'Outputs:',
     '  results.jsonl             Complete resumable candidate history.',
-    '  results.csv               Ranked candidate summary.',
-    '  report.md                 Human-readable report with fixture counts.',
-    '  best-001.config.json      Best config for sheetfingerprint/sfp --onset-config.',
+    '  report.md                 Current best parameters per onset strategy.',
+    '  best-by-strategy.json     Current best candidate summary per strategy.',
+    '  best-<strategy>.json      Current best candidate for one strategy.',
+    '  best-<strategy>.config.json',
+    '                            Best config for sheetfingerprint/sfp --onset-config.',
     '',
     'Example:',
     '  npm run onsetsweep -- --spec plans/sheet_music_onset_repair/onset-sweep-spec.json',
@@ -176,25 +175,6 @@ export function createSeededRandom(seed) {
   };
 }
 
-function collectWavFiles(dir) {
-  const files = [];
-  for (const entry of readdirSync(dir, { withFileTypes: true })) {
-    const fullPath = join(dir, entry.name);
-    if (entry.isDirectory()) {
-      files.push(...collectWavFiles(fullPath));
-    } else if (entry.isFile() && entry.name.toLowerCase().endsWith('.wav')) {
-      files.push(fullPath);
-    }
-  }
-  return files.sort((a, b) => a.localeCompare(b));
-}
-
-function readFixtureManifest(wavPath) {
-  const jsonPath = join(dirname(wavPath), `${basename(wavPath, '.wav')}.json`);
-  if (!existsSync(jsonPath)) return {};
-  return JSON.parse(readFileSync(jsonPath, 'utf8'));
-}
-
 function normalizeTaggedOnsets(manifest) {
   if (!Array.isArray(manifest.onsetsMs)) return null;
   return manifest.onsetsMs
@@ -221,14 +201,14 @@ function applyFixtureOverride(fixture, overrides = {}) {
 export function discoverSweepFixtures(spec) {
   const fixturesDir = resolve(process.cwd(), spec.fixturesDir);
   const overrides = spec.fixtureOverrides ?? {};
-  return collectWavFiles(fixturesDir).map(wavPath => {
-    const manifest = readFixtureManifest(wavPath);
-    const expectedCount = normalizeExpectedCount(manifest, wavPath);
-    const file = relative(fixturesDir, wavPath);
+  return discoverSequenceFixtureSources(fixturesDir).map(source => {
+    const manifest = source.manifest ?? {};
+    const expectedCount = normalizeExpectedCount(manifest, source.sourcePath);
+    const file = source.file ?? relative(fixturesDir, source.sourcePath);
     const role = manifest.role ?? 'target';
     const fixture = {
+      ...source,
       file,
-      wavPath,
       manifest,
       role,
       expectedCount,
@@ -400,121 +380,6 @@ export function scoreFixture(fixture, onsetCount, scoreSpec = DEFAULT_SWEEP_SPEC
   };
 }
 
-function scoreTimedMatch(distanceMs, scoring) {
-  if (distanceMs <= scoring.goodWindowMs) {
-    const span = Math.max(1, scoring.goodWindowMs);
-    return scoring.goodMatchScore
-      - (distanceMs / span) * (scoring.goodMatchScore - scoring.goodMatchMinScore);
-  }
-
-  const span = Math.max(1, scoring.acceptableWindowMs - scoring.goodWindowMs);
-  return scoring.acceptableMatchScore
-    - ((distanceMs - scoring.goodWindowMs) / span)
-      * (scoring.acceptableMatchScore - scoring.acceptableMatchMinScore);
-}
-
-function percentile(values, p) {
-  if (values.length === 0) return null;
-  const sorted = [...values].sort((a, b) => a - b);
-  const index = Math.min(sorted.length - 1, Math.max(0, Math.ceil(sorted.length * p) - 1));
-  return sorted[index];
-}
-
-export function scoreTaggedOnsets(taggedOnsetsMs, detectedOnsetsMs, scoreSpec = DEFAULT_SWEEP_SPEC.score) {
-  const scoring = {
-    ...DEFAULT_SWEEP_SPEC.score,
-    ...scoreSpec,
-  };
-  const tagged = [...taggedOnsetsMs].filter(Number.isFinite).sort((a, b) => a - b);
-  const detected = [...detectedOnsetsMs].filter(Number.isFinite).sort((a, b) => a - b);
-  const pairs = [];
-
-  for (let tagIndex = 0; tagIndex < tagged.length; tagIndex++) {
-    for (let detectionIndex = 0; detectionIndex < detected.length; detectionIndex++) {
-      const distanceMs = Math.abs(detected[detectionIndex] - tagged[tagIndex]);
-      if (distanceMs <= scoring.acceptableWindowMs) {
-        pairs.push({ tagIndex, detectionIndex, distanceMs });
-      }
-    }
-  }
-
-  pairs.sort((a, b) => (
-    a.distanceMs - b.distanceMs
-    || a.tagIndex - b.tagIndex
-    || a.detectionIndex - b.detectionIndex
-  ));
-
-  const matchedTags = new Set();
-  const matchedDetections = new Set();
-  const errorsMs = [];
-  let goodMatches = 0;
-  let acceptableMatches = 0;
-  let matchScore = 0;
-
-  for (const pair of pairs) {
-    if (matchedTags.has(pair.tagIndex) || matchedDetections.has(pair.detectionIndex)) continue;
-    matchedTags.add(pair.tagIndex);
-    matchedDetections.add(pair.detectionIndex);
-    errorsMs.push(pair.distanceMs);
-    matchScore += scoreTimedMatch(pair.distanceMs, scoring);
-    if (pair.distanceMs <= scoring.goodWindowMs) {
-      goodMatches++;
-    } else {
-      acceptableMatches++;
-    }
-  }
-
-  let duplicates = 0;
-  let nearFalsePositives = 0;
-  let farFalsePositives = 0;
-
-  for (let detectionIndex = 0; detectionIndex < detected.length; detectionIndex++) {
-    if (matchedDetections.has(detectionIndex)) continue;
-    const nearestTag = tagged.reduce((nearest, onsetMs, tagIndex) => {
-      const distanceMs = Math.abs(detected[detectionIndex] - onsetMs);
-      return !nearest || distanceMs < nearest.distanceMs
-        ? { tagIndex, distanceMs }
-        : nearest;
-    }, null);
-
-    if (nearestTag && nearestTag.distanceMs <= scoring.acceptableWindowMs && matchedTags.has(nearestTag.tagIndex)) {
-      duplicates++;
-    } else if (nearestTag && nearestTag.distanceMs <= scoring.falsePositiveNearWindowMs) {
-      nearFalsePositives++;
-    } else {
-      farFalsePositives++;
-    }
-  }
-
-  const misses = tagged.length - matchedTags.size;
-  const falsePositives = duplicates + nearFalsePositives + farFalsePositives;
-  const overfire = Math.max(0, detected.length - tagged.length);
-  const score = matchScore
-    - misses * scoring.missPenalty
-    - duplicates * scoring.duplicatePenalty
-    - nearFalsePositives * scoring.nearFalsePositivePenalty
-    - farFalsePositives * scoring.farFalsePositivePenalty
-    - overfire * overfire * scoring.overfirePenalty;
-
-  return {
-    score,
-    goodMatches,
-    acceptableMatches,
-    matches: matchedTags.size,
-    misses,
-    falsePositives,
-    duplicates,
-    nearFalsePositives,
-    farFalsePositives,
-    overfire,
-    meanAbsErrorMs: errorsMs.length > 0
-      ? errorsMs.reduce((sum, value) => sum + value, 0) / errorsMs.length
-      : null,
-    p95AbsErrorMs: percentile(errorsMs, 0.95),
-    errorsMs,
-  };
-}
-
 export function scoreTimedFixture(fixture, detectedOnsetsMs = [], scoreSpec = DEFAULT_SWEEP_SPEC.score) {
   const weight = fixture.weight ?? 1;
   const taggedScore = scoreTaggedOnsets(fixture.taggedOnsetsMs, detectedOnsetsMs, scoreSpec);
@@ -639,8 +504,13 @@ export function formatCsvRow(values) {
   }).join(',');
 }
 
+function formatParameterValue(value) {
+  return Number.isFinite(value) && !Number.isInteger(value)
+    ? String(Math.round(value * 1_000_000) / 1_000_000)
+    : String(value ?? '');
+}
+
 export function formatReport(results, spec, fixtures) {
-  const best = sortResults(results).slice(0, spec.beamSize ?? DEFAULT_SWEEP_SPEC.beamSize);
   const strategyKeys = [...new Set(results.map(row => row.strategyKey).filter(Boolean))].sort();
   const lines = [
     '# Sheet Onset Sweep',
@@ -649,53 +519,27 @@ export function formatReport(results, spec, fixtures) {
     `- beam size: ${spec.beamSize}`,
     `- fixtures: ${fixtures.length}`,
     '',
-    '## Best Candidates',
-    '| rank | id | strategy | round | score | exact | good | acceptable | misses | false positives | duplicates | p95 error ms | total onsets |',
-    '|---:|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|',
-    ...best.map((row, index) => (
-      `| ${index + 1} | ${row.id} | ${row.strategyKey ?? ''} | ${row.round} | ${row.score.toFixed(2)} | `
-      + `${row.metrics.exact} | ${row.metrics.goodMatches ?? 0} | ${row.metrics.acceptableMatches ?? 0} | `
-      + `${row.metrics.misses ?? row.metrics.under ?? 0} | ${row.metrics.falsePositives ?? row.metrics.over ?? 0} | `
-      + `${row.metrics.duplicates ?? 0} | ${row.metrics.p95AbsErrorMs ?? ''} | `
-      + `${row.metrics.totalOnsets} |`
-    )),
-    '',
-    '## Best By Strategy',
+    '## Current Best By Strategy',
   ];
 
   for (const strategyKey of strategyKeys) {
-    const strategyBest = sortResults(results.filter(row => row.strategyKey === strategyKey))
-      .slice(0, spec.beamSize ?? DEFAULT_SWEEP_SPEC.beamSize);
-    lines.push('', `### ${strategyKey}`, '', '| rank | id | round | score | good | acceptable | misses | false positives | duplicates | p95 error ms |');
-    lines.push('|---:|---|---:|---:|---:|---:|---:|---:|---:|---:|');
-    for (const [index, row] of strategyBest.entries()) {
-      lines.push(
-        `| ${index + 1} | ${row.id} | ${row.round} | ${row.score.toFixed(2)} | `
-        + `${row.metrics.goodMatches ?? 0} | ${row.metrics.acceptableMatches ?? 0} | `
-        + `${row.metrics.misses ?? row.metrics.under ?? 0} | `
-        + `${row.metrics.falsePositives ?? row.metrics.over ?? 0} | `
-        + `${row.metrics.duplicates ?? 0} | ${row.metrics.p95AbsErrorMs ?? ''} |`,
-      );
-    }
-  }
-
-  lines.push(
-    '',
-    '## Best Fixture Counts',
-  );
-
-  for (const row of best) {
-    lines.push('', `### ${row.id}`, '', '| fixture | role | expected | tagged | onsets | good | acceptable | misses | false positives | duplicates | score |');
-    lines.push('|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|');
-    for (const fixture of row.fixtures) {
-      lines.push(
-        `| ${fixture.fixture.file} | ${fixture.fixture.role} | ${fixture.fixture.expectedCount} | `
-        + `${fixture.fixture.taggedOnsetsMs?.length ?? ''} | ${fixture.onsetCount} | `
-        + `${fixture.goodMatches ?? ''} | ${fixture.acceptableMatches ?? ''} | `
-        + `${fixture.misses ?? fixture.under ?? ''} | ${fixture.falsePositives ?? fixture.over ?? ''} | `
-        + `${fixture.duplicates ?? ''} | `
-        + `${fixture.score.toFixed(2)} |`,
-      );
+    const row = sortResults(results.filter(candidate => candidate.strategyKey === strategyKey))[0];
+    if (!row) continue;
+    lines.push(
+      '',
+      `### ${strategyKey}`,
+      '',
+      `- id: ${row.id}`,
+      `- round: ${row.round}`,
+      `- score: ${row.score.toFixed(2)}`,
+      `- good/acceptable/misses/false positives: ${row.metrics.goodMatches ?? 0}/${row.metrics.acceptableMatches ?? 0}/${row.metrics.misses ?? row.metrics.under ?? 0}/${row.metrics.falsePositives ?? row.metrics.over ?? 0}`,
+      '',
+      '| parameter | value |',
+      '|---|---:|',
+    );
+    for (const [key, value] of Object.entries(row.parameters)) {
+      if (key === 'strategyKey') continue;
+      lines.push(`| ${key} | ${formatParameterValue(value)} |`);
     }
   }
 

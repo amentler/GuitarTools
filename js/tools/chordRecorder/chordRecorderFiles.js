@@ -1,4 +1,4 @@
-import { buildZip, downloadBlob as downloadBlobShared } from '../../shared/zip.js';
+import { buildRecordingZip, buildCollectionZip, downloadBlob as downloadBlobShared } from '../../shared/zip.js';
 
 // ── Pure functions ────────────────────────────────────────────────────────────
 
@@ -161,10 +161,20 @@ export async function downloadAllAsZip(basename = 'chord-recordings') {
   const recordings = getAllRecordings();
   if (recordings.length === 0) return;
   const enc = new TextEncoder();
-  const files = [];
-  for (const { baseName, wavBlob, sidecar } of recordings) {
-    files.push({ name: `${baseName}.wav`, data: new Uint8Array(await wavBlob.arrayBuffer()) });
-    files.push({ name: `${baseName}.json`, data: enc.encode(JSON.stringify(sidecar, null, 2)) });
+  if (recordings.length === 1) {
+    const { baseName, wavBlob, sidecar } = recordings[0];
+    const wav  = new Uint8Array(await wavBlob.arrayBuffer());
+    const json = enc.encode(JSON.stringify(sidecar, null, 2));
+    downloadBlobShared(buildRecordingZip(baseName, wav, json), `${baseName}.zip`, 'application/zip');
+  } else {
+    const recs = [];
+    for (const { baseName, wavBlob, sidecar } of recordings) {
+      recs.push({
+        baseName,
+        wav:  new Uint8Array(await wavBlob.arrayBuffer()),
+        json: enc.encode(JSON.stringify(sidecar, null, 2)),
+      });
+    }
+    downloadBlobShared(buildCollectionZip(recs), `${basename}.zip`, 'application/zip');
   }
-  downloadBlobShared(buildZip(files), `${basename}.zip`, 'application/zip');
 }

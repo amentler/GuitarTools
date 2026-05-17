@@ -1,1 +1,1 @@
-Version 0.154 | 2026-05-17 14:31 | 3ed0e11 | graphify-out/GRAPH_REPORT.md (+16 more)
+Version 0.155 | 2026-05-17 14:58 | fd35231 | .agents/rules/graphify.md (+103 more)

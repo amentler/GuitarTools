@@ -66,7 +66,7 @@ function loadAnalyserGolden(fixture) {
   return JSON.parse(readFileSync(goldenPath, 'utf8'));
 }
 
-function evaluateSingleNoteOnsetFixture(fixture) {
+export function evaluateSingleNoteOnsetFixture(fixture) {
   const golden = loadAnalyserGolden(fixture);
   if (golden.missing) {
     return {
@@ -112,10 +112,20 @@ function evaluateSingleNoteOnsetFixture(fixture) {
   };
 }
 
-function evaluateOpenStringNoteFingerprintForStrategy(fixtures, strategy) {
+export function evaluateOpenStringNoteFingerprintForStrategy(fixtures, strategy, progress = null) {
   const cases = [];
   const counts = { tp: 0, tn: 0, fp: 0, fn: 0, total: 0, expectedPositive: 0, expectedNegative: 0 };
   const targetPitches = uniqueTargetPitches(fixtures);
+  const totalPairs = fixtures.length * targetPitches.length;
+  let processedPairs = 0;
+
+  progress?.({
+    phase: 'note-strategy-start',
+    strategyKey: strategy.key,
+    fixtureCount: fixtures.length,
+    targetPitchCount: targetPitches.length,
+    totalPairs,
+  });
 
   for (const source of fixtures) {
     for (const targetPitch of targetPitches) {
@@ -131,6 +141,17 @@ function evaluateOpenStringNoteFingerprintForStrategy(fixtures, strategy) {
       if (expectedPositive) counts.expectedPositive++;
       else counts.expectedNegative++;
       counts[kind.toLowerCase()]++;
+      processedPairs++;
+      if (processedPairs === 1 || processedPairs % 50 === 0 || processedPairs === totalPairs) {
+        progress?.({
+          phase: 'note-strategy-progress',
+          strategyKey: strategy.key,
+          current: processedPairs,
+          total: totalPairs,
+          fixture: source.file,
+          targetPitch,
+        });
+      }
 
       cases.push({
         kind,
@@ -156,23 +177,56 @@ function evaluateOpenStringNoteFingerprintForStrategy(fixtures, strategy) {
     falseNegativeRate: safeDivide(counts.fn, counts.fn + counts.tp),
   };
 
+  progress?.({
+    phase: 'note-strategy-done',
+    strategyKey: strategy.key,
+    totalPairs,
+  });
   return { strategy, targetPitches, counts, metrics, cases };
 }
 
-export function evaluateOpenStringNoteFingerprint(fixtures = NOTE_AUDIO_FIXTURES, options = {}) {
-  const strategies = options.strategies ?? getSheetMusicRecognitionStrategies();
-  const strategyReports = strategies.map(strategy => (
-    evaluateOpenStringNoteFingerprintForStrategy(fixtures, strategy)
-  ));
-  const defaultReport = strategyReports[0];
-
-  const onsetCases = fixtures.map(evaluateSingleNoteOnsetFixture);
+export function evaluateOpenStringNoteOnsetReport(fixtures = NOTE_AUDIO_FIXTURES, options = {}) {
+  const progress = typeof options.onProgress === 'function' ? options.onProgress : null;
+  progress?.({
+    phase: 'note-onset-start',
+    fixtureCount: fixtures.length,
+  });
+  const onsetCases = fixtures.map((fixture, index) => {
+    if (index === 0 || (index + 1) % 10 === 0 || index === fixtures.length - 1) {
+      progress?.({
+        phase: 'note-onset-progress',
+        current: index + 1,
+        total: fixtures.length,
+        fixture: fixture.file,
+      });
+    }
+    return evaluateSingleNoteOnsetFixture(fixture);
+  });
+  progress?.({
+    phase: 'note-onset-done',
+    fixtureCount: fixtures.length,
+  });
   const onsetCounts = {
     total: onsetCases.length,
     passed: onsetCases.filter(row => row.passed).length,
     failed: onsetCases.filter(row => !row.passed).length,
     missing: onsetCases.filter(row => row.missing).length,
   };
+  return {
+    onsetCases,
+    onsetCounts,
+  };
+}
+
+export function evaluateOpenStringNoteFingerprint(fixtures = NOTE_AUDIO_FIXTURES, options = {}) {
+  const strategies = options.strategies ?? getSheetMusicRecognitionStrategies();
+  const progress = typeof options.onProgress === 'function' ? options.onProgress : null;
+  const strategyReports = strategies.map(strategy => (
+    evaluateOpenStringNoteFingerprintForStrategy(fixtures, strategy, progress)
+  ));
+  const defaultReport = strategyReports[0];
+
+  const onsetReport = evaluateOpenStringNoteOnsetReport(fixtures, options);
 
   return {
     fixtures,
@@ -182,8 +236,8 @@ export function evaluateOpenStringNoteFingerprint(fixtures = NOTE_AUDIO_FIXTURES
     counts: defaultReport.counts,
     metrics: defaultReport.metrics,
     cases: defaultReport.cases,
-    onsetCounts,
-    onsetCases,
+    onsetCounts: onsetReport.onsetCounts,
+    onsetCases: onsetReport.onsetCases,
   };
 }
 

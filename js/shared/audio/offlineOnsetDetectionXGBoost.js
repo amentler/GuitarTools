@@ -16,7 +16,7 @@ import {
   extractXGBoostFrameFeatures,
   buildContextFeatures,
 } from './xgboostFeatureExtractor.js';
-import { collectFrameData } from '../../tools/audioAnalyse/audioAnalyseEngine.js';
+import { collectFrameData } from './collectFrameData.js';
 import { resolveGuitarOnsetStrategy } from './guitarOnsetStrategies.js';
 
 const ONNX_CDN = 'https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/ort.min.js';
@@ -190,10 +190,8 @@ export async function detectOnsetsOfflineXGBoost(samples, sampleRate, model, opt
   }
 
   // Collect frames using the onset pipeline
-  const frameResult = await collectFrameData(samples, sampleRate, fftSize, hopSize);
-  validateAudioConfig(schema, frameResult.actualSampleRate, frameResult.actualFftSize, frameResult.actualHopSize);
-
-  const { frames } = frameResult;
+  const frames = await collectFrameData(samples, sampleRate, fftSize, hopSize);
+  validateAudioConfig(schema, sampleRate, fftSize, hopSize);
   const inputName = schema.inputName ?? session.inputNames[0];
   const outputName = schema.outputName ?? session.outputNames[0];
 
@@ -294,5 +292,5 @@ export async function detectOnsetsOfflineXGBoost(samples, sampleRate, model, opt
     prevLogBandFlux_150_6000 = baseFeatures.logBandFlux_150_6000;
   }
 
-  return applyPeakPicking(probabilities, frameResult.actualHopSize, sampleRate, decision);
+  return applyPeakPicking(probabilities, hopSize, sampleRate, decision);
 }

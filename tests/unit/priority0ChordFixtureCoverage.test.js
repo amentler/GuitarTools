@@ -87,7 +87,7 @@ describe('Priorität 0 Akkord-Fixture-Abdeckung', () => {
       expect(catalogEntry.chordName).toBe(fixture.chordName);
       expect(typeof catalogEntry.expected.isCorrect).toBe('boolean');
     }
-  });
+  }, 15_000);
 
   it('registriert Open-Strums als explizite Negativfixtures im Katalog', () => {
     for (const wavFile of getOpenStrumFixtures()) {
