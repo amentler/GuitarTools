@@ -7,12 +7,50 @@ import {
   updateSheetMusicMatchState,
 } from './sheetMusicRecognition.js';
 import { resolveGuitarOnsetStrategy } from '../../shared/audio/guitarOnsetStrategies.js';
+import {
+  createLiveXGBoostOnsetState,
+  updateLiveXGBoostOnsetDetector,
+} from '../../shared/audio/liveXGBoostOnsetDetector.js';
 import { updateCurrentNoteDisplay, updateFeedback } from './sheetMusicReadingUI.js';
+import { createGlobalDebugStore } from '../../shared/debug/index.js';
+import { ONSET_LIVE_ANALYZE_INTERVAL_MS } from '../../shared/audio/onsetPipelineConfig.js';
+
+const LIVE_XGBOOST_DEBUG_INTERVAL_FRAMES = 120;
 
 export function createNoteHandler({
   state, audioSession, getUI, isTimedRecognitionMode,
   renderCurrentScore, regenerate, onStopPlayback, onStartPlayback,
 }) {
+  const debugStore = createGlobalDebugStore();
+  let analyzeFrameInFlight = false;
+  let droppedAnalyzeFrames = 0;
+
+  function readBrowserMemory() {
+    const memory = globalThis.performance?.memory;
+    if (!memory) return null;
+    return {
+      usedJSHeapSize: memory.usedJSHeapSize ?? null,
+      totalJSHeapSize: memory.totalJSHeapSize ?? null,
+      jsHeapSizeLimit: memory.jsHeapSizeLimit ?? null,
+    };
+  }
+
+  function logLiveXGBoostPerf(onset) {
+    const frames = onset.nextState?.perf?.frames ?? 0;
+    if (!debugStore.isEnabled() || frames === 0 || frames % LIVE_XGBOOST_DEBUG_INTERVAL_FRAMES !== 0) return;
+    debugStore.addEntry('live-xgboost:perf', {
+      frames,
+      elapsedMs: Number(onset.elapsedMs.toFixed(3)),
+      averageElapsedMs: Number(onset.averageElapsedMs.toFixed(3)),
+      maxElapsedMs: Number(onset.maxElapsedMs.toFixed(3)),
+      intervalMs: ONSET_LIVE_ANALYZE_INTERVAL_MS,
+      overInterval: onset.elapsedMs > ONSET_LIVE_ANALYZE_INTERVAL_MS,
+      hardwareConcurrency: globalThis.navigator?.hardwareConcurrency ?? null,
+      droppedAnalyzeFrames,
+      probability: Number(onset.probability.toFixed(4)),
+      memory: readBrowserMemory(),
+    }, { source: 'sheetMusicReading' });
+  }
   function getCurrentNote() {
     const { currentBarIndex: bi, currentBeatIndex: ni } = state;
     if (bi < 0 || bi >= state.bars.length) return null;
@@ -54,12 +92,40 @@ export function createNoteHandler({
     }
   }
 
+  async function prepareOnsetState() {
+    const onsetStrategy = resolveGuitarOnsetStrategy(getSetting(SETTING_KEYS.SHEET_MUSIC_ONSET_STRATEGY));
+    if (onsetStrategy.offlineDetector !== 'xgboost') {
+      state.onsetState = onsetStrategy.createState();
+      return;
+    }
+
+    const startedAt = performance.now();
+    try {
+      state.onsetState = await createLiveXGBoostOnsetState({
+        baseStrategyKey: onsetStrategy.baseStrategyKey,
+      });
+      debugStore.addEntry('live-xgboost:init', {
+        elapsedMs: Number((performance.now() - startedAt).toFixed(3)),
+        hardwareConcurrency: globalThis.navigator?.hardwareConcurrency ?? null,
+        memory: readBrowserMemory(),
+      }, { source: 'sheetMusicReading' });
+    } catch (err) {
+      const fallback = resolveGuitarOnsetStrategy(onsetStrategy.baseStrategyKey);
+      state.onsetState = fallback.createState();
+      debugStore.addEntry('live-xgboost:init-failed', {
+        message: err?.message ?? String(err),
+        fallbackStrategyKey: fallback.key,
+      }, { source: 'sheetMusicReading', level: 'warn' });
+    }
+  }
+
   function resetActiveSequenceState() {
     clearSuccessTimeout();
     state.currentBarIndex = 0;
     state.currentBeatIndex = 0;
     state.matchState = createMatchState();
-    state.onsetState = resolveGuitarOnsetStrategy(getSetting(SETTING_KEYS.SHEET_MUSIC_ONSET_STRATEGY)).createState();
+    state.onsetState = null;
+    void prepareOnsetState();
     state.awaitingOnset = true;
     state.isLocked = false;
 
@@ -137,11 +203,25 @@ export function createNoteHandler({
     updateFeedback(ui, state);
   }
 
-  function analyzeFrame() {
+  async function analyzeFrame() {
+    if (analyzeFrameInFlight) {
+      droppedAnalyzeFrames++;
+      return;
+    }
+    analyzeFrameInFlight = true;
+    try {
+      await analyzeFrameInternal();
+    } finally {
+      analyzeFrameInFlight = false;
+    }
+  }
+
+  async function analyzeFrameInternal() {
     if (!state.active || !state.isListening || !audioSession.analyser || state.isLocked) return;
 
     const targetNote = getCurrentNote();
     if (!targetNote) return;
+    if (!state.onsetState) return;
 
     const buffer = new Float32Array(audioSession.analyser.fftSize);
     audioSession.analyser.getFloatTimeDomainData(buffer);
@@ -154,8 +234,22 @@ export function createNoteHandler({
     }
 
     const onsetStrategy = resolveGuitarOnsetStrategy(getSetting(SETTING_KEYS.SHEET_MUSIC_ONSET_STRATEGY));
-    const onset = onsetStrategy.update(state.onsetState, { frequencyData, samples: buffer });
+    const useLiveXGBoost = onsetStrategy.offlineDetector === 'xgboost'
+      && state.onsetState?.model
+      && state.onsetState?.baseStrategy;
+    let onset;
+    if (useLiveXGBoost) {
+      onset = await updateLiveXGBoostOnsetDetector(state.onsetState, {
+        frequencyData,
+        samples: buffer,
+        sampleRate: audioSession.audioCtx.sampleRate,
+      });
+    } else {
+      const fallbackStrategy = resolveGuitarOnsetStrategy(onsetStrategy.baseStrategyKey ?? onsetStrategy.key);
+      onset = fallbackStrategy.update(state.onsetState, { frequencyData, samples: buffer });
+    }
     state.onsetState = onset.nextState;
+    if (useLiveXGBoost) logLiveXGBoostPerf(onset);
     if (onset.event === 'onset') {
       if (!state.awaitingOnset) state.matchState = createMatchState();
       state.awaitingOnset = false;

@@ -1,0 +1,20 @@
+{
+  "threshold": 0.85,
+  "precision": 0.9164,
+  "recall": 0.7306,
+  "f1": 0.813,
+  "roc_auc": 0.9671,
+  "pr_auc": 0.8387,
+  "confusion_matrix": [
+    [
+      8032,
+      24
+    ],
+    [
+      97,
+      263
+    ]
+  ],
+  "test_positives": 360,
+  "test_negatives": 8056
+}

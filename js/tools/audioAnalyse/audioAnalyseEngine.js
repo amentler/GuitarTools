@@ -13,6 +13,10 @@
  */
 
 import { resolveGuitarOnsetStrategy } from '../../shared/audio/guitarOnsetStrategies.js';
+import {
+  detectOnsetsOfflineXGBoost,
+  loadDefaultXGBoostOnsetModel,
+} from '../../shared/audio/offlineOnsetDetectionXGBoost.js';
 import { analyzeInputLevel } from '../../shared/audio/inputLevel.js';
 import { createMatchState } from '../../shared/audio/fastNoteMatcher.js';
 import { collectFrameData } from '../../shared/audio/collectFrameData.js';
@@ -168,7 +172,19 @@ export async function analyzeAudio(samples, sampleRate, options = {}) {
   }
 
   // ── Onset analysis on onset frames ─────────────────────────────────────────
-  const onsetStrategy = resolveGuitarOnsetStrategy(options.onsetStrategyKey);
+  const selectedOnsetStrategy = resolveGuitarOnsetStrategy(options.onsetStrategyKey);
+  const onsetStrategy = selectedOnsetStrategy.offlineDetector === 'xgboost'
+    ? resolveGuitarOnsetStrategy(selectedOnsetStrategy.baseStrategyKey)
+    : selectedOnsetStrategy;
+  const xgboostOnsets = selectedOnsetStrategy.offlineDetector === 'xgboost'
+    ? await detectOnsetsOfflineXGBoost(
+      samples,
+      sampleRate,
+      await loadDefaultXGBoostOnsetModel(),
+      { onsetStrategyKey: selectedOnsetStrategy.baseStrategyKey },
+    )
+    : null;
+  const xgboostOnsetSet = new Set((xgboostOnsets?.onsetsSec ?? []).map(sec => Math.round(sec * 1000)));
   let onsetState = onsetStrategy.createState();
   let lastOnsetResult = null;
 
@@ -187,9 +203,12 @@ export async function analyzeAudio(samples, sampleRate, options = {}) {
     onsetState = onsetResult.nextState;
     lastOnsetResult = onsetResult;
 
-    const isOnset = onsetResult.event === 'onset';
+    const frameOnsetMs = Math.round((i * onsetHopSize) / sampleRate * 1000);
+    const isOnset = xgboostOnsets
+      ? xgboostOnsetSet.has(frameOnsetMs)
+      : onsetResult.event === 'onset';
     if (isOnset) {
-      onsets.push(tCenter);
+      onsets.push(xgboostOnsets ? frameOnsetMs / 1000 : tCenter);
     }
 
     // Map nearest pitch data to this onset frame

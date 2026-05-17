@@ -1,0 +1,5 @@
+paths:
+  training_data_dir: {{DATA_DIR}}
+  output_model: {{OUTPUT_MODEL}}
+  output_schema: {{OUTPUT_SCHEMA}}
+  output_metrics: {{OUTPUT_METRICS}}

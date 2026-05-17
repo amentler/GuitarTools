@@ -17,23 +17,42 @@ import {
   buildContextFeatures,
 } from './xgboostFeatureExtractor.js';
 import { collectFrameData } from './collectFrameData.js';
-import { resolveGuitarOnsetStrategy } from './guitarOnsetStrategies.js';
+import {
+  GUITAR_ONSET_STRATEGY_KEYS,
+  resolveGuitarOnsetStrategy,
+} from './guitarOnsetStrategies.js';
 
-const ONNX_CDN = 'https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/ort.min.js';
+const ONNX_RUNTIME_URL = new URL('../../lib/onnxruntime/ort.min.js', import.meta.url).href;
+const ONNX_RUNTIME_WASM_PATH = new URL('../../lib/onnxruntime/', import.meta.url).href;
+const DEFAULT_XGBOOST_MODEL_URL = new URL('../../../models/onset_detector_android_firefox.onnx', import.meta.url).href;
+const DEFAULT_XGBOOST_SCHEMA_URL = new URL('../../../models/onset_detector_android_firefox.schema.json', import.meta.url).href;
 
 let _ortPromise = null;
+let _defaultModelPromise = null;
 
 /**
  * Lazily loads onnxruntime-web from CDN or existing global.
  * @returns {Promise<object>} ort namespace
  */
 async function getORT() {
-  if (typeof globalThis.ort !== 'undefined') return globalThis.ort;
+  if (typeof globalThis.ort !== 'undefined') {
+    if (globalThis.ort?.env?.wasm) {
+      globalThis.ort.env.wasm.wasmPaths = ONNX_RUNTIME_WASM_PATH;
+      globalThis.ort.env.wasm.numThreads = 1;
+    }
+    return globalThis.ort;
+  }
   if (_ortPromise) return _ortPromise;
   _ortPromise = new Promise((resolve, reject) => {
     const script = document.createElement('script');
-    script.src = ONNX_CDN;
-    script.onload = () => resolve(globalThis.ort);
+    script.src = ONNX_RUNTIME_URL;
+    script.onload = () => {
+      if (globalThis.ort?.env?.wasm) {
+        globalThis.ort.env.wasm.wasmPaths = ONNX_RUNTIME_WASM_PATH;
+        globalThis.ort.env.wasm.numThreads = 1;
+      }
+      resolve(globalThis.ort);
+    };
     script.onerror = () => reject(new Error('Failed to load onnxruntime-web'));
     document.head.appendChild(script);
   });
@@ -88,6 +107,11 @@ export async function loadXGBoostOnsetModel(modelSource, schemaSource) {
   }
 
   return { session, schema };
+}
+
+export function loadDefaultXGBoostOnsetModel() {
+  _defaultModelPromise ??= loadXGBoostOnsetModel(DEFAULT_XGBOOST_MODEL_URL, DEFAULT_XGBOOST_SCHEMA_URL);
+  return _defaultModelPromise;
 }
 
 /**
@@ -196,7 +220,9 @@ export async function detectOnsetsOfflineXGBoost(samples, sampleRate, model, opt
   const outputName = schema.outputName ?? session.outputNames[0];
 
   // Prepare onset strategy for base feature extraction
-  const onsetStrategy = resolveGuitarOnsetStrategy(options.onsetStrategyKey);
+  const onsetStrategy = resolveGuitarOnsetStrategy(
+    options.onsetStrategyKey ?? GUITAR_ONSET_STRATEGY_KEYS.SWEEP_STANDARD,
+  );
   let onsetState = onsetStrategy.createState();
 
   const probabilities = [];
@@ -270,7 +296,7 @@ export async function detectOnsetsOfflineXGBoost(samples, sampleRate, model, opt
     // Run ONNX inference
     const inputTensor = new ort.Tensor('float32', inputVec, [1, featureOrder.length]);
     const results = await session.run({ [inputName]: inputTensor });
-    const output = results[outputName];
+    const output = results[outputName] ?? results.probabilities;
 
     // Extract probability for the positive class
     const prob = output.data.length >= 2

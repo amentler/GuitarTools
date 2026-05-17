@@ -101,7 +101,10 @@ labels:
   positive_window_ms: 20
 
 xgboost:
-  max_depth: 5
+  device: cuda
+  tree_method: hist
+  fallback_to_cpu: true
+  max_depth: 6
   min_child_weight: 5
   learning_rate: 0.03
   n_estimators: 300
@@ -113,8 +116,12 @@ xgboost:
   scale_pos_weight: auto
 
 sampling:
-  negative_sampling_ratio: 5.0
+  negative_sampling_ratio: 10.0
   strategy: random
+
+decision:
+  probability_threshold: 0.85
+  lookahead_frames: 1
 
 training:
   split_mode: by_file

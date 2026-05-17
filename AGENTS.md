@@ -10,6 +10,7 @@ This file is the central hub for all AI agents (Claude, Gemini, Codex, Copilot, 
 - **Automated Versioning:** Do NOT edit `version.txt` manually unless the commit intentionally owns metadata. The `pre-commit` hook (`scripts/auto-update-version.sh`) regenerates and stages it automatically if not already staged. Pure version-counter logic lives in `scripts/autoUpdateVersionCore.mjs`; keep tests focused on that module instead of shell-spawning Bash from Vitest.
 - **Service-Worker Assets:** When adding or renaming local assets (JS, CSS, JSON, Icons, etc.), you MUST update the `ASSETS` list in `sw.js` to ensure proper offline caching and reloads.
 - **Sequence ZIP Workflow:** Tagged sheet-music sequence fixtures may live as single ZIP files containing WAV+JSON. Test helpers, sheet fingerprints, and `sfp` must keep ZIP support intact; loose `.wav/.json` pairs are compatibility inputs, not the only accepted format.
+- **XGBoost Onset Assets:** The default sheet-music onset strategy is the offline browser XGBoost detector (`xgboost-android-firefox`). Keep `models/onset_detector_android_firefox.{onnx,schema.json,metrics.json}` and the local ONNX Runtime files under `js/lib/onnxruntime/` cached via `js/shared/pwa/precacheManifest.js`/`sw.js`.
 - **Keep Plans Current:** Update implementation status in `plans/` files immediately after execution. Store new ideas in `plans/ideen.md`.
 
 ## 2. Technical Standards & Architecture
@@ -91,7 +92,7 @@ Fuer dieses Repo sind ausserdem die Git-Hooks per `graphify hook install` in `.h
 
 ### Shortcuts
 - `sfp` -> `npm run sfp` (Short for specific fingerprinting/fixtures tasks).
-- Android-Firefox-XGBoost-Onset-Training: lokale JSON-Exports liegen unter `training_data/android_firefox/` und bleiben per `.gitignore` ausserhalb des Repos. Start im Repo-Root mit `./train_android_firefox.sh`; Ausgaben landen standardmaessig unter `models/onset_detector_android_firefox.*`.
+- Android-Firefox-XGBoost-Onset-Training: lokale JSON-Exports liegen u. a. unter `ml/data/android_firefox/` oder `training_data/android_firefox/` und bleiben per `.gitignore` ausserhalb des Repos. Start im Repo-Root mit `./train_android_firefox.sh`; das Skript laesst ein Datenverzeichnis auswaehlen, zeigt dessen Inhalt, startet erst nach Bestaetigung und installiert fehlende Python-Trainingsdependencies automatisch in die ausgewaehlte Python-Umgebung. Die temporaere Config entsteht aus `ml/training_config.yaml` plus dem Pfad-Template `ml/training_config.android_firefox.paths.template.yaml`. Ausgaben landen standardmaessig unter `models/onset_detector_android_firefox.*`. Die Basis-Config fordert CUDA/GPU-Training an und faellt automatisch auf CPU zurueck, wenn die WSL-/Container-GPU nicht verfuegbar ist.
 
 ## graphify
 

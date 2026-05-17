@@ -9,7 +9,7 @@ Usage:
     python train_onset_detector.py [--config training_config.yaml]
 
 Dependencies:
-    pip install xgboost scikit-learn onnxmltools onnx pyyaml numpy
+    pip install xgboost scikit-learn onnxmltools onnx pyyaml numpy packaging
 """
 
 import argparse
@@ -28,6 +28,11 @@ try:
     import xgboost as xgb
 except ImportError:
     sys.exit("ERROR: xgboost is not installed. Run: pip install xgboost")
+
+try:
+    from packaging.version import Version
+except ImportError:
+    sys.exit("ERROR: packaging is not installed. Run: pip install packaging")
 
 try:
     from sklearn.preprocessing import StandardScaler
@@ -279,6 +284,14 @@ def train_model(
     random_state: int,
 ) -> xgb.XGBClassifier:
     xgb_cfg = cfg.get("xgboost", {})
+    xgb_version = Version(xgb.__version__)
+    requested_device = xgb_cfg.get("device", "cpu")
+    tree_method = xgb_cfg.get("tree_method", "hist")
+
+    if requested_device in ("cuda", "gpu") and xgb_version < Version("2.0.0") and tree_method == "hist":
+        tree_method = "gpu_hist"
+
+    use_cuda_device_param = requested_device in ("cuda", "gpu") and xgb_version >= Version("2.0.0")
 
     # scale_pos_weight
     spw = xgb_cfg.get("scale_pos_weight", "auto")
@@ -288,31 +301,56 @@ def train_model(
         spw = n_neg / max(n_pos, 1)
         print(f"  scale_pos_weight (auto): {spw:.2f}")
 
-    model = xgb.XGBClassifier(
-        max_depth=           xgb_cfg.get("max_depth", 5),
-        min_child_weight=    xgb_cfg.get("min_child_weight", 5),
-        learning_rate=       xgb_cfg.get("learning_rate", 0.03),
-        n_estimators=        xgb_cfg.get("n_estimators", 300),
-        subsample=           xgb_cfg.get("subsample", 0.8),
-        colsample_bytree=    xgb_cfg.get("colsample_bytree", 0.8),
-        gamma=               xgb_cfg.get("gamma", 0.3),
-        reg_alpha=           xgb_cfg.get("reg_alpha", 0.05),
-        reg_lambda=          xgb_cfg.get("reg_lambda", 1.5),
-        scale_pos_weight=    spw,
-        objective=           "binary:logistic",
-        eval_metric=         "aucpr",
-        random_state=        random_state,
-        n_jobs=              -1,
-        tree_method=         "hist",
-        early_stopping_rounds= cfg.get("training", {}).get("early_stopping_rounds", 20),
-        verbosity=           1,
+    model_params = {
+        "max_depth":           xgb_cfg.get("max_depth", 5),
+        "min_child_weight":    xgb_cfg.get("min_child_weight", 5),
+        "learning_rate":       xgb_cfg.get("learning_rate", 0.03),
+        "n_estimators":        xgb_cfg.get("n_estimators", 300),
+        "subsample":           xgb_cfg.get("subsample", 0.8),
+        "colsample_bytree":    xgb_cfg.get("colsample_bytree", 0.8),
+        "gamma":               xgb_cfg.get("gamma", 0.3),
+        "reg_alpha":           xgb_cfg.get("reg_alpha", 0.05),
+        "reg_lambda":          xgb_cfg.get("reg_lambda", 1.5),
+        "scale_pos_weight":    spw,
+        "objective":           "binary:logistic",
+        "eval_metric":         "aucpr",
+        "random_state":        random_state,
+        "n_jobs":              -1,
+        "tree_method":         tree_method,
+        "early_stopping_rounds": cfg.get("training", {}).get("early_stopping_rounds", 20),
+        "verbosity":           1,
+    }
+    if use_cuda_device_param:
+        model_params["device"] = "cuda"
+
+    print(
+        f"  XGBoost backend: version={xgb.__version__}, "
+        f"tree_method={model_params['tree_method']}, "
+        f"device={model_params.get('device', 'cpu')}"
     )
 
-    model.fit(
-        X_train, y_train,
-        eval_set=[(X_val, y_val)],
-        verbose=False,
-    )
+    model = xgb.XGBClassifier(**model_params)
+
+    try:
+        model.fit(
+            X_train, y_train,
+            eval_set=[(X_val, y_val)],
+            verbose=False,
+        )
+    except xgb.core.XGBoostError as err:
+        if requested_device not in ("cuda", "gpu") or not xgb_cfg.get("fallback_to_cpu", True):
+            raise
+
+        print(f"  GPU training failed, falling back to CPU: {err}")
+        model_params.pop("device", None)
+        model_params["tree_method"] = "hist"
+        model = xgb.XGBClassifier(**model_params)
+        model.fit(
+            X_train, y_train,
+            eval_set=[(X_val, y_val)],
+            verbose=False,
+        )
+
     print(f"  Best iteration: {model.best_iteration}")
     return model
 
@@ -367,7 +405,8 @@ def export_onnx(model: xgb.XGBClassifier, n_features: int, output_path: str) -> 
 
     # Detect output name
     loaded = onnx.load(output_path)
-    output_name = loaded.graph.output[0].name
+    output_names = [output.name for output in loaded.graph.output]
+    output_name = "probabilities" if "probabilities" in output_names else output_names[0]
     print(f"  ONNX model saved: {output_path}")
     print(f"  Detected output name: {output_name!r}")
     return output_name
@@ -388,6 +427,7 @@ def save_schema(
     cfg: dict,
 ):
     model_id = f"onset_xgb_{datetime.now().strftime('%Y_%m_%d')}_{uuid.uuid4().hex[:6]}"
+    decision_cfg = cfg.get("decision", {})
 
     normalization = {"enabled": False}
     if scaler is not None:
@@ -417,9 +457,9 @@ def save_schema(
         "normalization": normalization,
         "missingValue": 0.0,
         "decision": {
-            "probabilityThreshold": 0.5,
+            "probabilityThreshold": decision_cfg.get("probability_threshold", metrics.get("threshold", 0.5)),
             "refractoryMs":         cfg.get("labels", {}).get("onset_tolerance_ms", 100),
-            "lookaheadFrames":      1,
+            "lookaheadFrames":      decision_cfg.get("lookahead_frames", 1),
         },
         "metrics": metrics,
     }
@@ -448,6 +488,7 @@ def main():
     training_cfg    = cfg.get("training", {})
     paths_cfg       = cfg.get("paths", {})
     sampling_cfg    = cfg.get("sampling", {})
+    decision_cfg    = cfg.get("decision", {})
 
     random_state   = training_cfg.get("random_state", 42)
     test_split     = training_cfg.get("test_split", 0.2)
@@ -458,6 +499,7 @@ def main():
     output_model   = paths_cfg.get("output_model",   "./models/onset_detector.onnx")
     output_schema  = paths_cfg.get("output_schema",  "./models/onset_detector.schema.json")
     output_metrics = paths_cfg.get("output_metrics", "./models/onset_detector.metrics.json")
+    threshold      = decision_cfg.get("probability_threshold", 0.5)
 
     # Load data
     print("--- Loading training data ---")
@@ -490,7 +532,7 @@ def main():
 
     # Metrics
     print("\n--- Evaluating on test set ---")
-    metrics = compute_metrics(model, X_test, y_test)
+    metrics = compute_metrics(model, X_test, y_test, threshold)
 
     # ONNX export
     print("\n--- Exporting ONNX ---")

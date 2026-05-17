@@ -37,5 +37,10 @@ describe('precacheManifest', () => {
     expect(PRECACHE_URLS).toContain('manifest.json');
     expect(PRECACHE_URLS).toContain('pages/metronome/index.html');
     expect(PRECACHE_URLS).toContain('js/lib/essentia/essentia-wasm.web.wasm');
+    expect(PRECACHE_URLS).toContain('js/shared/audio/liveXGBoostOnsetDetector.js');
+    expect(PRECACHE_URLS).toContain('js/lib/onnxruntime/ort.min.js');
+    expect(PRECACHE_URLS).toContain('js/lib/onnxruntime/ort-wasm-simd-threaded.wasm');
+    expect(PRECACHE_URLS).toContain('models/onset_detector_android_firefox.onnx');
+    expect(PRECACHE_URLS).toContain('models/onset_detector_android_firefox.schema.json');
   });
 });

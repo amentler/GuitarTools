@@ -28,12 +28,13 @@ describe('guitarOnsetStrategies', () => {
   it('guitar-onset key is defined', () => {
     expect(GUITAR_ONSET_STRATEGY_KEYS.GUITAR_ONSET).toBe('guitar-onset');
     expect(GUITAR_ONSET_STRATEGY_KEYS.SWEEP_STANDARD).toBe('guitar-onset-sweep-standard');
-    expect(DEFAULT_GUITAR_ONSET_STRATEGY_KEY).toBe(GUITAR_ONSET_STRATEGY_KEYS.SWEEP_STANDARD);
+    expect(GUITAR_ONSET_STRATEGY_KEYS.XGBOOST_ANDROID_FIREFOX).toBe('xgboost-android-firefox');
+    expect(DEFAULT_GUITAR_ONSET_STRATEGY_KEY).toBe(GUITAR_ONSET_STRATEGY_KEYS.XGBOOST_ANDROID_FIREFOX);
   });
 
   it('resolveGuitarOnsetStrategy returns default for unknown key', () => {
     const s = resolveGuitarOnsetStrategy('unknown-key');
-    expect(s.key).toBe(GUITAR_ONSET_STRATEGY_KEYS.SWEEP_STANDARD);
+    expect(s.key).toBe(GUITAR_ONSET_STRATEGY_KEYS.XGBOOST_ANDROID_FIREFOX);
   });
 
   it('resolveGuitarOnsetStrategy returns correct strategy by key', () => {
@@ -42,6 +43,10 @@ describe('guitarOnsetStrategies', () => {
 
     const standard = resolveGuitarOnsetStrategy(GUITAR_ONSET_STRATEGY_KEYS.SWEEP_STANDARD);
     expect(standard.key).toBe(GUITAR_ONSET_STRATEGY_KEYS.SWEEP_STANDARD);
+
+    const xgboost = resolveGuitarOnsetStrategy(GUITAR_ONSET_STRATEGY_KEYS.XGBOOST_ANDROID_FIREFOX);
+    expect(xgboost.offlineDetector).toBe('xgboost');
+    expect(xgboost.baseStrategyKey).toBe(GUITAR_ONSET_STRATEGY_KEYS.SWEEP_STANDARD);
   });
 
   it('getGuitarOnsetStrategies returns same array as GUITAR_ONSET_STRATEGIES', () => {

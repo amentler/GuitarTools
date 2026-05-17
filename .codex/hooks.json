@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/home/amentler/.local/bin/graphify hook-check"
+            "command": "/usr/local/bin/graphify hook-check"
           }
         ]
       }

@@ -6,7 +6,7 @@ import { PRECACHE_URLS } from './js/shared/pwa/precacheManifest.js';
 // - Network First: HTML/navigation and API
 // - Stale While Revalidate: most static runtime assets
 
-const CACHE_VERSION = '0.156';
+const CACHE_VERSION = '0.157';
 const CACHE_PREFIX = 'guitartools';
 const PRECACHE_NAME = `${CACHE_PREFIX}-precache-${CACHE_VERSION}`;
 const STATIC_CACHE_NAME = `${CACHE_PREFIX}-static-${CACHE_VERSION}`;
@@ -123,7 +123,7 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  if (['style', 'script', 'image', 'font', 'audio', 'video'].includes(request.destination)) {
+  if (['style', 'script', 'image', 'font', 'audio', 'video', 'wasm'].includes(request.destination)) {
     event.respondWith(staleWhileRevalidate(request, STATIC_CACHE_NAME));
     return;
   }

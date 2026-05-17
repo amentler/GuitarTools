@@ -1,6 +1,10 @@
 import { collectFrameData } from './collectFrameData.js';
 import { resolveGuitarOnsetStrategy } from './guitarOnsetStrategies.js';
 import { ONSET_FFT_SIZE, ONSET_HOP_DIVISOR } from './onsetPipelineConfig.js';
+import {
+  detectOnsetsOfflineXGBoost,
+  loadDefaultXGBoostOnsetModel,
+} from './offlineOnsetDetectionXGBoost.js';
 
 /**
  * Runs a registered guitar onset strategy over a decoded mono sample buffer.
@@ -14,6 +18,15 @@ import { ONSET_FFT_SIZE, ONSET_HOP_DIVISOR } from './onsetPipelineConfig.js';
  */
 export async function detectOnsetsOffline(samples, sampleRate, options = {}) {
   const strategy = resolveGuitarOnsetStrategy(options.strategyKey);
+  if (strategy.offlineDetector === 'xgboost') {
+    const model = await loadDefaultXGBoostOnsetModel();
+    return detectOnsetsOfflineXGBoost(samples, sampleRate, model, {
+      threshold: options.threshold,
+      refractoryMs: options.refractoryMs,
+      onsetStrategyKey: strategy.baseStrategyKey,
+    });
+  }
+
   const fftSize = options.fftSize ?? ONSET_FFT_SIZE;
   const hopSize = options.hopSize ?? Math.round(fftSize / ONSET_HOP_DIVISOR);
   const duration = samples.length / sampleRate;

@@ -33,13 +33,14 @@ import {
 } from './onsetPipelineConfig.js';
 
 export const GUITAR_ONSET_STRATEGY_KEYS = {
+  XGBOOST_ANDROID_FIREFOX: 'xgboost-android-firefox',
   SWEEP_STANDARD: 'guitar-onset-sweep-standard',
   GUITAR_ONSET: 'guitar-onset',
   BROADBAND_OR: 'guitar-onset-broadband-or',
   LEGACY_BANDPASS: 'guitar-onset-legacy-bandpass',
 };
 
-export const DEFAULT_GUITAR_ONSET_STRATEGY_KEY = GUITAR_ONSET_STRATEGY_KEYS.SWEEP_STANDARD;
+export const DEFAULT_GUITAR_ONSET_STRATEGY_KEY = GUITAR_ONSET_STRATEGY_KEYS.XGBOOST_ANDROID_FIREFOX;
 
 export const SWEEP_STANDARD_GUITAR_ONSET_OPTIONS = Object.freeze({
   relativeReattackFactor: 4,
@@ -82,6 +83,15 @@ function makeStrategyUpdate(baseNormalized, baseRaw) {
 }
 
 export const GUITAR_ONSET_STRATEGIES = [
+  {
+    key: GUITAR_ONSET_STRATEGY_KEYS.XGBOOST_ANDROID_FIREFOX,
+    label: 'XGBoost Android Firefox',
+    description: 'Offline-ONNX-Onset-Erkennung mit Android-Firefox-Modell, Peak-Picking und konservativer Schwelle.',
+    offlineDetector: 'xgboost',
+    baseStrategyKey: GUITAR_ONSET_STRATEGY_KEYS.SWEEP_STANDARD,
+    createState: createGuitarOnsetState,
+    update: makeStrategyUpdate(SWEEP_STANDARD_NORMALIZED_OPTIONS, SWEEP_STANDARD_GUITAR_ONSET_OPTIONS),
+  },
   {
     key: GUITAR_ONSET_STRATEGY_KEYS.SWEEP_STANDARD,
     label: 'Guitar Onset Detector (Sweep Standard)',
