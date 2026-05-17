@@ -31,13 +31,6 @@ export const DEFAULT_SWEEP_SPEC = Object.freeze({
   seed: 1337,
   score: {
     ...DEFAULT_TAGGED_ONSET_SCORING,
-    underPenalty: 4,
-    overPenalty: 2,
-    extremeUnderPenalty: 20,
-    extremeUnderMultiplier: 0.75,
-    extremeOverPenalty: 20,
-    extremeOverMultiplier: 1.4,
-    guardrailOverMultiplier: 1.4,
   },
   parameters: {
     relativeReattackFactor: [1.4, 4.0],
@@ -217,7 +210,11 @@ export function discoverSweepFixtures(spec) {
       maxOnsets: manifest.maxOnsets ?? expectedCount,
       weight: manifest.weight ?? (role === 'guardrail' ? 3 : 1),
     };
-    return applyFixtureOverride(fixture, overrides);
+    const resolvedFixture = applyFixtureOverride(fixture, overrides);
+    if (!Array.isArray(resolvedFixture.taggedOnsetsMs)) {
+      throw new Error(`Sweep fixture requires tagged onsets: ${resolvedFixture.file}`);
+    }
+    return resolvedFixture;
   });
 }
 
@@ -342,45 +339,10 @@ export function createStagnationProbeCandidates(spec, strategyKey, beam, count, 
   });
 }
 
-export function scoreFixture(fixture, onsetCount, scoreSpec = DEFAULT_SWEEP_SPEC.score) {
-  const scoring = {
-    ...DEFAULT_SWEEP_SPEC.score,
-    ...scoreSpec,
-  };
-  const minOnsets = fixture.minOnsets ?? fixture.expectedCount;
-  const maxOnsets = fixture.maxOnsets ?? fixture.expectedCount;
-  const weight = fixture.weight ?? 1;
-  const under = Math.max(0, minOnsets - onsetCount);
-  const over = Math.max(0, onsetCount - maxOnsets);
-  const within = under === 0 && over === 0;
-  const expected = Math.max(1, fixture.expectedCount);
-  const extremeUnderLimit = Math.floor(expected * scoring.extremeUnderMultiplier);
-  const extremeUnder = onsetCount < extremeUnderLimit
-    ? extremeUnderLimit - onsetCount
-    : 0;
-  const extremeOverMultiplier = scoring.extremeOverMultiplier ?? scoring.guardrailOverMultiplier;
-  const extremeLimit = Math.ceil(expected * extremeOverMultiplier);
-  const extremeOver = onsetCount > extremeLimit
-    ? onsetCount - extremeLimit
-    : 0;
-
-  return {
-    score: weight * (
-      (within ? expected : 0)
-      - under * scoring.underPenalty
-      - over * scoring.overPenalty
-      - extremeUnder * scoring.extremeUnderPenalty
-      - extremeOver * scoring.extremeOverPenalty
-    ),
-    under,
-    over,
-    extremeUnder,
-    extremeOver,
-    within,
-  };
-}
-
 export function scoreTimedFixture(fixture, detectedOnsetsMs = [], scoreSpec = DEFAULT_SWEEP_SPEC.score) {
+  if (!Array.isArray(fixture.taggedOnsetsMs)) {
+    throw new Error(`Sweep fixture requires tagged onsets: ${fixture.file ?? '<unknown>'}`);
+  }
   const weight = fixture.weight ?? 1;
   const taggedScore = scoreTaggedOnsets(fixture.taggedOnsetsMs, detectedOnsetsMs, scoreSpec);
   const within = taggedScore.misses === 0 && taggedScore.falsePositives === 0;
@@ -389,8 +351,6 @@ export function scoreTimedFixture(fixture, detectedOnsetsMs = [], scoreSpec = DE
     score: weight * taggedScore.score,
     under: taggedScore.misses,
     over: taggedScore.falsePositives,
-    extremeUnder: 0,
-    extremeOver: 0,
     within,
     scoringMode: 'timed',
   };
@@ -400,8 +360,6 @@ export function scoreCandidate(candidate, fixtureResults, scoreSpec = DEFAULT_SW
   let score = 0;
   let under = 0;
   let over = 0;
-  let extremeUnder = 0;
-  let extremeOver = 0;
   let exact = 0;
   let totalOnsets = 0;
   let totalTaggedOnsets = 0;
@@ -412,14 +370,13 @@ export function scoreCandidate(candidate, fixtureResults, scoreSpec = DEFAULT_SW
   let duplicates = 0;
   const timingErrorsMs = [];
   const rows = fixtureResults.map(row => {
-    const fixtureScore = Array.isArray(row.fixture.taggedOnsetsMs) && Array.isArray(row.timestampsMs)
-      ? scoreTimedFixture(row.fixture, row.timestampsMs, scoreSpec)
-      : scoreFixture(row.fixture, row.onsetCount, scoreSpec);
+    if (!Array.isArray(row.timestampsMs)) {
+      throw new Error(`Sweep result requires onset timestamps: ${row.fixture?.file ?? '<unknown>'}`);
+    }
+    const fixtureScore = scoreTimedFixture(row.fixture, row.timestampsMs, scoreSpec);
     score += fixtureScore.score;
     under += fixtureScore.under;
     over += fixtureScore.over;
-    extremeUnder += fixtureScore.extremeUnder;
-    extremeOver += fixtureScore.extremeOver;
     exact += fixtureScore.within ? 1 : 0;
     totalOnsets += row.onsetCount;
     totalTaggedOnsets += row.fixture.taggedOnsetsMs?.length ?? 0;
@@ -443,8 +400,6 @@ export function scoreCandidate(candidate, fixtureResults, scoreSpec = DEFAULT_SW
       exact,
       under,
       over,
-      extremeUnder,
-      extremeOver,
       totalOnsets,
       totalTaggedOnsets,
       goodMatches,
@@ -464,14 +419,10 @@ export function scoreCandidate(candidate, fixtureResults, scoreSpec = DEFAULT_SW
 export function sortResults(results) {
   return [...results].sort((a, b) => (
     b.score - a.score
-    || (a.metrics.extremeUnder ?? 0) - (b.metrics.extremeUnder ?? 0)
-    || (a.metrics.extremeOver ?? 0) - (b.metrics.extremeOver ?? 0)
     || (a.metrics.falsePositives ?? 0) - (b.metrics.falsePositives ?? 0)
     || (a.metrics.duplicates ?? 0) - (b.metrics.duplicates ?? 0)
     || (a.metrics.misses ?? 0) - (b.metrics.misses ?? 0)
     || (a.metrics.p95AbsErrorMs ?? Infinity) - (b.metrics.p95AbsErrorMs ?? Infinity)
-    || (a.metrics.over ?? 0) - (b.metrics.over ?? 0)
-    || (a.metrics.under ?? 0) - (b.metrics.under ?? 0)
     || a.id.localeCompare(b.id)
   ));
 }

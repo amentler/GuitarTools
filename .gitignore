@@ -1,4 +1,5 @@
 node_modules/
+.venv/
 .DS_Store
 sfp-report.md
 .claude/settings.local.json
@@ -19,3 +20,6 @@ __pycache__/
 *$py.class
 
 GuitarSet/
+
+# Local ML training data is too large for the repo.
+training_data/

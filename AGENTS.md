@@ -91,6 +91,7 @@ Fuer dieses Repo sind ausserdem die Git-Hooks per `graphify hook install` in `.h
 
 ### Shortcuts
 - `sfp` -> `npm run sfp` (Short for specific fingerprinting/fixtures tasks).
+- Android-Firefox-XGBoost-Onset-Training: lokale JSON-Exports liegen unter `training_data/android_firefox/` und bleiben per `.gitignore` ausserhalb des Repos. Start im Repo-Root mit `./train_android_firefox.sh`; Ausgaben landen standardmaessig unter `models/onset_detector_android_firefox.*`.
 
 ## graphify
 

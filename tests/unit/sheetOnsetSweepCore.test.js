@@ -11,7 +11,6 @@ import {
   formatSweepHelp,
   parseArgs,
   scoreCandidate,
-  scoreFixture,
   scoreTaggedOnsets,
   sortResults,
 } from '../../scripts/sheetOnsetSweepCore.mjs';
@@ -76,54 +75,6 @@ describe('sheetOnsetSweepCore', () => {
     expect(refined.every(candidate => candidate.strategyKey === 'guitar-onset-broadband-or')).toBe(true);
   });
 
-  it('scores extreme overcounts harsher than target undercounts', () => {
-    const guardrail = {
-      file: 'medium.wav',
-      role: 'guardrail',
-      expectedCount: 16,
-      minOnsets: 15,
-      maxOnsets: 17,
-      weight: 3,
-    };
-    const target = {
-      file: 'fast.wav',
-      role: 'target',
-      expectedCount: 16,
-      minOnsets: 8,
-      maxOnsets: 18,
-      weight: 2,
-    };
-
-    const guardrailOver = scoreFixture(guardrail, 30);
-    const targetUnder = scoreFixture(target, 4);
-
-    expect(guardrailOver.score).toBeLessThan(targetUnder.score);
-    expect(guardrailOver.extremeOver).toBeGreaterThan(0);
-  });
-
-  it('penalizes slight undercounts more than slight overcounts and tracks extreme undercounts', () => {
-    const fixture = {
-      file: 'sixteen-notes.wav',
-      role: 'target',
-      expectedCount: 16,
-      minOnsets: 13,
-      maxOnsets: 18,
-      weight: 1,
-    };
-
-    const slightUnder = scoreFixture(fixture, 12);
-    const slightOver = scoreFixture(fixture, 19);
-    const extremeUnder = scoreFixture(fixture, 6);
-    const extremeOver = scoreFixture(fixture, 30);
-
-    expect(slightOver.score).toBeGreaterThan(slightUnder.score);
-    expect(slightUnder.extremeUnder).toBe(0);
-    expect(extremeUnder.extremeUnder).toBeGreaterThan(0);
-    expect(extremeUnder.score).toBeLessThan(slightUnder.score);
-    expect(extremeOver.extremeOver).toBeGreaterThan(0);
-    expect(extremeOver.score).toBeLessThan(slightOver.score);
-  });
-
   it('generates deterministic initial candidates for a seed', () => {
     const spec = {
       parameters: {
@@ -171,12 +122,12 @@ describe('sheetOnsetSweepCore', () => {
         fixture: {
           file: 'fast.wav',
           role: 'target',
-          expectedCount: 16,
-          minOnsets: 8,
-          maxOnsets: 18,
+          expectedCount: 3,
+          taggedOnsetsMs: [1000, 2000, 3000],
           weight: 1,
         },
-        onsetCount: 12,
+        onsetCount: 3,
+        timestampsMs: [1000, 2005, 3010],
       }],
     );
     const worse = scoreCandidate(
@@ -185,12 +136,12 @@ describe('sheetOnsetSweepCore', () => {
         fixture: {
           file: 'fast.wav',
           role: 'target',
-          expectedCount: 16,
-          minOnsets: 8,
-          maxOnsets: 18,
+          expectedCount: 3,
+          taggedOnsetsMs: [1000, 2000, 3000],
           weight: 1,
         },
         onsetCount: 2,
+        timestampsMs: [1000, 2500],
       }],
     );
 
@@ -264,6 +215,27 @@ describe('sheetOnsetSweepCore', () => {
     expect(scored.fixtures[0].scoringMode).toBe('timed');
   });
 
+  it('rejects candidate scoring without tagged onset timestamps', () => {
+    expect(() => scoreCandidate(
+      {
+        id: 'untagged',
+        round: 1,
+        strategyKey: 'guitar-onset-sweep-standard',
+        parameters: { strategyKey: 'guitar-onset-sweep-standard', cooldownFrames: 3 },
+      },
+      [{
+        fixture: {
+          file: 'untagged.wav',
+          role: 'target',
+          expectedCount: 3,
+          weight: 1,
+        },
+        onsetCount: 3,
+        timestampsMs: [1000, 2000, 3000],
+      }],
+    )).toThrow('requires tagged onsets');
+  });
+
   it('formats reports as current best parameters per strategy', () => {
     const results = [
       scoreCandidate(
@@ -278,11 +250,11 @@ describe('sheetOnsetSweepCore', () => {
             file: 'a.wav',
             role: 'target',
             expectedCount: 4,
-            minOnsets: 4,
-            maxOnsets: 4,
+            taggedOnsetsMs: [1000, 2000, 3000, 4000],
             weight: 1,
           },
           onsetCount: 2,
+          timestampsMs: [1000, 2600],
         }],
       ),
       scoreCandidate(
@@ -297,11 +269,11 @@ describe('sheetOnsetSweepCore', () => {
             file: 'a.wav',
             role: 'target',
             expectedCount: 4,
-            minOnsets: 4,
-            maxOnsets: 4,
+            taggedOnsetsMs: [1000, 2000, 3000, 4000],
             weight: 1,
           },
           onsetCount: 4,
+          timestampsMs: [1000, 2004, 3008, 4012],
         }],
       ),
       scoreCandidate(
@@ -316,11 +288,11 @@ describe('sheetOnsetSweepCore', () => {
             file: 'b.wav',
             role: 'target',
             expectedCount: 4,
-            minOnsets: 4,
-            maxOnsets: 4,
+            taggedOnsetsMs: [1000, 2000, 3000, 4000],
             weight: 1,
           },
           onsetCount: 4,
+          timestampsMs: [1000, 2004, 3008, 4012],
         }],
       ),
     ];

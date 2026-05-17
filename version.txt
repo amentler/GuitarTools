@@ -1,1 +1,1 @@
-Version 0.155 | 2026-05-17 14:58 | fd35231 | .agents/rules/graphify.md (+103 more)
+Version 0.156 | 2026-05-17 16:34 | d75ca83 | .gitignore (+9 more)
