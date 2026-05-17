@@ -1,0 +1,131 @@
+features:
+  enabled:
+    - rms.current
+    - rms.previous_1
+    - rms.previous_2
+    - rms.previous_3
+    - rms.mean_last_5
+    - rms.max_last_5
+    - rms.median_last_30
+    - rms.mad_last_30
+
+    - broadbandFlux.current
+    - broadbandFlux.previous_1
+    - broadbandFlux.previous_2
+    - broadbandFlux.previous_3
+    - broadbandFlux.mean_last_5
+    - broadbandFlux.max_last_5
+    - broadbandFlux.median_last_30
+    - broadbandFlux.mad_last_30
+
+    - bandRatio.current
+    - bandRatio.previous_1
+    - bandRatio.previous_2
+    - bandRatio.previous_3
+
+    - spectralNoveltyBins.current
+    - spectralNoveltyBins.previous_1
+    - spectralNoveltyBins.previous_2
+    - spectralNoveltyBins.previous_3
+
+    - hfc.current
+    - hfc.previous_1
+    - hfc.previous_2
+    - hfc.previous_3
+
+    - relativeRms.current
+    - relativeFlux.current
+
+    - subbandFlux_low.current
+    - subbandFlux_lowMid.current
+    - subbandFlux_presence.current
+
+    - spectralCentroid.current
+    - spectralRolloff.current
+    - spectralFlatness.current
+    - crestFactor.current
+
+    - hfcDelta.current
+    - spectralCentroidDelta.current
+    - spectralRolloffDelta.current
+    - spectralFlatnessDelta.current
+    - crestFactorDelta.current
+
+    - clippingRatio.current
+    - sustainFloorRms.current
+    - fluxHistory.current
+
+    - zeroCrossingRate.current
+    - zeroCrossingRate.previous_1
+    - zeroCrossingRate.previous_2
+    - zeroCrossingRate.previous_3
+
+    - logBandFlux_150_6000.current
+    - logBandFlux_150_6000.previous_1
+    - logBandFlux_150_6000.previous_2
+    - logBandFlux_150_6000.previous_3
+    - logBandFlux_150_6000.mean_last_5
+    - logBandFlux_150_6000.max_last_5
+    - logBandFlux_150_6000.median_last_30
+    - logBandFlux_150_6000.mad_last_30
+
+    - logBandFlux_500_6000.current
+    - hfc_1000_6000.current
+    - highBandEnergy_2000_6000.current
+    - highToTotalEnergyRatio.current
+
+    - rmsDelta.current
+    - rmsRise.current
+    - fluxSlope.current
+    - peakProminence.current
+
+    - mfcc_00.current
+    - mfcc_00.previous_1
+    - mfcc_00.previous_2
+    - mfcc_00.previous_3
+    - mfcc_01.current
+    - mfcc_02.current
+    - mfcc_03.current
+    - mfcc_04.current
+    - mfcc_05.current
+    - mfcc_06.current
+    - mfcc_07.current
+    - mfcc_08.current
+    - mfcc_09.current
+    - mfcc_10.current
+    - mfcc_11.current
+    - mfcc_12.current
+
+labels:
+  onset_tolerance_ms: 30
+  positive_window_ms: 20
+
+xgboost:
+  max_depth: 5
+  min_child_weight: 5
+  learning_rate: 0.03
+  n_estimators: 300
+  subsample: 0.8
+  colsample_bytree: 0.8
+  gamma: 0.3
+  reg_alpha: 0.05
+  reg_lambda: 1.5
+  scale_pos_weight: auto
+
+sampling:
+  negative_sampling_ratio: 5.0
+  strategy: random
+
+training:
+  split_mode: by_file
+  test_split: 0.2
+  validation_split: 0.1
+  early_stopping_rounds: 20
+  random_state: 42
+  normalize_features: true
+
+paths:
+  training_data_dir: "./training_data"
+  output_model: "./models/onset_detector.onnx"
+  output_schema: "./models/onset_detector.schema.json"
+  output_metrics: "./models/onset_detector.metrics.json"

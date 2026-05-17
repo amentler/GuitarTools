@@ -19,6 +19,10 @@ import {
 import { loadRecordingFromSource } from '../../shared/recordingLoader.js';
 import { detectOnsetsOffline } from '../../shared/audio/offlineOnsetDetection.js';
 import { getGuitarOnsetStrategies } from '../../shared/audio/guitarOnsetStrategies.js';
+import {
+  loadXGBoostOnsetModel,
+  detectOnsetsOfflineXGBoost,
+} from '../../shared/audio/offlineOnsetDetectionXGBoost.js';
 
 import {
   clientXToTime,
@@ -68,6 +72,9 @@ export function createOnsetTaggerFeature() {
   let _playbackRate  = 1.0;
   let _rafId         = null;
 
+  let _onnxModel     = null;   // { session, schema }
+  let _xgboostSchema = null;   // JSON schema from model_schema.json
+
   let _root = null;
   let _svgEl = null;
 
@@ -100,6 +107,17 @@ export function createOnsetTaggerFeature() {
       onsetList:     q('tagger-onset-list'),
       metaForm:      q('tagger-meta-form'),
       exportBtn:     q('tagger-export'),
+      xgboostSection:   q('tagger-xgboost-section'),
+      onnxBtn:          q('tagger-onnx-btn'),
+      onnxInput:        q('tagger-onnx-input'),
+      onnxLabel:        q('tagger-onnx-label'),
+      schemaBtn:        q('tagger-schema-btn'),
+      schemaInput:      q('tagger-schema-input'),
+      schemaLabel:      q('tagger-schema-label'),
+      xgboostThreshold: q('tagger-xgboost-threshold'),
+      xgboostRefractory:q('tagger-xgboost-refractory'),
+      xgboostRunBtn:    q('tagger-xgboost-run'),
+      xgboostStatus:    q('tagger-xgboost-status'),
     };
   }
 
@@ -378,6 +396,7 @@ export function createOnsetTaggerFeature() {
       }
 
       ui.step1.classList.remove('tagger-section--disabled');
+      if (ui.xgboostSection) ui.xgboostSection.classList.remove('tagger-section--disabled');
       redrawWaveform(ui);
       renderOnsetList(ui);
       enableStep2(ui);
@@ -607,6 +626,72 @@ export function createOnsetTaggerFeature() {
       ui.exportBtn.addEventListener('click', () => handleExport(ui));
     }
 
+    // ── XGBoost ONNX ──────────────────────────────────────────────────────────
+    if (ui.onnxBtn) {
+      ui.onnxBtn.addEventListener('click', () => ui.onnxInput?.click());
+    }
+    if (ui.onnxInput) {
+      ui.onnxInput.addEventListener('change', async (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        e.target.value = '';
+        if (ui.onnxLabel) ui.onnxLabel.textContent = `⏳ ${file.name}…`;
+        if (!_xgboostSchema) {
+          // Schema not yet loaded — just mark label and wait
+          if (ui.onnxLabel) ui.onnxLabel.textContent = `${file.name} (Schema fehlt noch)`;
+          // Store pending model file via state — re-use existing onnxInput label
+          _onnxModel = { pendingModelFile: file, session: null, schema: null };
+          updateXGBoostRunBtn(ui);
+          return;
+        }
+        if (ui.xgboostStatus) ui.xgboostStatus.textContent = 'Lade Modell…';
+        try {
+          _onnxModel = await loadXGBoostOnsetModel(file, _xgboostSchema);
+          if (ui.onnxLabel) ui.onnxLabel.textContent = `${file.name} ✓`;
+          if (ui.xgboostStatus) ui.xgboostStatus.textContent = '';
+          updateXGBoostRunBtn(ui);
+        } catch (err) {
+          if (ui.onnxLabel) ui.onnxLabel.textContent = `Fehler: ${err.message}`;
+          if (ui.xgboostStatus) ui.xgboostStatus.textContent = `❌ ${err.message}`;
+        }
+      });
+    }
+    if (ui.schemaBtn) {
+      ui.schemaBtn.addEventListener('click', () => ui.schemaInput?.click());
+    }
+    if (ui.schemaInput) {
+      ui.schemaInput.addEventListener('change', async (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        e.target.value = '';
+        if (ui.schemaLabel) ui.schemaLabel.textContent = `⏳ ${file.name}…`;
+        try {
+          const text = await file.text();
+          _xgboostSchema = JSON.parse(text);
+          if (ui.schemaLabel) ui.schemaLabel.textContent = `${file.name} ✓`;
+          // If model file is pending, complete the load now
+          if (_onnxModel?.pendingModelFile) {
+            const modelFile = _onnxModel.pendingModelFile;
+            _onnxModel = null;
+            if (ui.xgboostStatus) ui.xgboostStatus.textContent = 'Lade Modell…';
+            try {
+              _onnxModel = await loadXGBoostOnsetModel(modelFile, _xgboostSchema);
+              if (ui.onnxLabel) ui.onnxLabel.textContent = `${modelFile.name} ✓`;
+              if (ui.xgboostStatus) ui.xgboostStatus.textContent = '';
+            } catch (err2) {
+              if (ui.xgboostStatus) ui.xgboostStatus.textContent = `❌ ${err2.message}`;
+            }
+          }
+          updateXGBoostRunBtn(ui);
+        } catch (err) {
+          if (ui.schemaLabel) ui.schemaLabel.textContent = `Fehler: ${err.message}`;
+        }
+      });
+    }
+    if (ui.xgboostRunBtn) {
+      ui.xgboostRunBtn.addEventListener('click', () => handleXGBoostRun(ui));
+    }
+
     // Auto-load from recordings overview via URL params
     const params = new URLSearchParams(window.location.search);
     const source = params.get('source');
@@ -621,6 +706,47 @@ export function createOnsetTaggerFeature() {
           if (entry.manifest) applySidecarData(entry.manifest, sidecarFilename, ui);
         });
       }).catch(() => {});
+    }
+  }
+
+  function updateXGBoostRunBtn(ui) {
+    if (!ui.xgboostRunBtn) return;
+    const ready = _samples && _onnxModel && _onnxModel.session && _xgboostSchema;
+    ui.xgboostRunBtn.disabled = !ready;
+  }
+
+  async function handleXGBoostRun(ui) {
+    if (!_samples || !_onnxModel || !_onnxModel.session || !_xgboostSchema) return;
+    if (ui.xgboostRunBtn) ui.xgboostRunBtn.disabled = true;
+    if (ui.xgboostStatus) ui.xgboostStatus.textContent = '⏳ XGBoost läuft…';
+
+    try {
+      const threshold   = parseFloat(ui.xgboostThreshold?.value ?? '0.5');
+      const refractoryMs = parseFloat(ui.xgboostRefractory?.value ?? '100');
+
+      const result = await detectOnsetsOfflineXGBoost(
+        _samples,
+        _sampleRate,
+        _onnxModel,
+        { threshold, refractoryMs },
+      );
+
+      const merged = mergeOnsetsWithMinDistance(
+        _onsetsMs,
+        result.onsetsMs,
+        STRATEGY_IMPORT_MIN_DISTANCE_MS,
+      );
+      _onsetsMs = merged.onsetsMs;
+      _selectedOnsetIndex = -1;
+      updateOnsetUI(ui);
+      if (ui.xgboostStatus) {
+        ui.xgboostStatus.textContent =
+          `✅ ${result.onsetsMs.length} erkannt, ${merged.added} hinzugefügt, ${merged.skipped} übersprungen.`;
+      }
+    } catch (err) {
+      if (ui.xgboostStatus) ui.xgboostStatus.textContent = `❌ ${err.message}`;
+    } finally {
+      updateXGBoostRunBtn(ui);
     }
   }
 

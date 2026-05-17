@@ -27,6 +27,10 @@ import {
   updateGuitarOnsetDetectorNormalized,
 } from './guitarOnsetDetector.js';
 import { applyGuitarBandpass } from './guitarPitchDetection.js';
+import {
+  ONSET_SWEEP_STANDARD_COOLDOWN_FRAMES,
+  ONSET_BROADBAND_OR_COOLDOWN_FRAMES,
+} from './onsetPipelineConfig.js';
 
 export const GUITAR_ONSET_STRATEGY_KEYS = {
   SWEEP_STANDARD: 'guitar-onset-sweep-standard',
@@ -43,7 +47,7 @@ export const SWEEP_STANDARD_GUITAR_ONSET_OPTIONS = Object.freeze({
   relativeFluxFactor: 1.4,
   spectralNoveltyRatio: 1.5,
   spectralNoveltyMinBins: 36,
-  cooldownFrames: 4,
+  cooldownFrames: ONSET_SWEEP_STANDARD_COOLDOWN_FRAMES,
   confirmedRmsFactor: 1.554447,
   confirmedRmsMinDelta: 0.005963,
   confirmedFluxFactor: 2.070733,
@@ -59,7 +63,7 @@ const SWEEP_STANDARD_NORMALIZED_OPTIONS = normalizeGuitarOnsetOptions(SWEEP_STAN
 
 export const BROADBAND_OR_GUITAR_ONSET_OPTIONS = Object.freeze({
   broadbandOrMinBins: 10,
-  cooldownFrames: 3,
+  cooldownFrames: ONSET_BROADBAND_OR_COOLDOWN_FRAMES,
   relativeReattackFactor: null,
   relativeFluxFactor: null,
   confirmedRmsFactor: null,

@@ -9,7 +9,7 @@
 
 import { loadLatestSheetMusicTake } from '../../shared/audioAnalyseStorage.js';
 import { loadRecordingFromSource } from '../../shared/recordingLoader.js';
-import { decodeWav, analyzeAudio } from './audioAnalyseEngine.js';
+import { decodeWav, analyzeAudio, collectFrameData } from './audioAnalyseEngine.js';
 import {
   renderAllCharts,
   initCrosshair,
@@ -29,6 +29,14 @@ import {
 } from '../../shared/audio/sheetMusicRecognition.js';
 import { getEssentia } from '../../shared/audio/essentiaLoader.js';
 import { createEssentiaSheetMusicStrategy } from '../../shared/audio/essentiaSheetMusicStrategy.js';
+import { ONSET_FFT_SIZE, ONSET_HOP_SIZE } from '../../shared/audio/onsetPipelineConfig.js';
+import {
+  extractXGBoostFrameFeatures,
+  buildContextFeatures,
+  getFeatureOrder,
+} from '../../shared/audio/xgboostFeatureExtractor.js';
+import { resolveGuitarOnsetStrategy as _resolveOnset } from '../../shared/audio/guitarOnsetStrategies.js';
+import { downloadBlob } from '../../shared/zip.js';
 
 const PITCH_STRATEGY_LABELS = {
   'fast-note-matcher': 'Fast Note Matcher',
@@ -52,6 +60,8 @@ export function createAudioAnalyseFeature() {
   let _analysisDur    = 1;
   let _cachedSamples  = null;   // Float32Array für späteren Re-Decode-Bedarf
   let _cachedSR       = 44100;
+  let _cachedFilename = '';     // original file name for export
+  let _cachedManifest = null;   // sidecar/manifest JSON (onsetsMs annotations)
   let _sliderDragging = false;
 
   function resolveUI(root) {
@@ -71,6 +81,9 @@ export function createAudioAnalyseFeature() {
       sliderEl:       q('analyse-slider'),
       sliderTimeEl:   q('analyse-slider-time'),
       sliderDurEl:    q('analyse-slider-dur'),
+      exportTrainingBtn:   q('btn-export-training'),
+      exportTrainingRow:   q('analyse-training-export-row'),
+      exportStatusEl:      q('analyse-export-status'),
     };
   }
 
@@ -143,8 +156,10 @@ export function createAudioAnalyseFeature() {
     }
 
     // Samples + Metadaten für Wiedergabe cachen
-    _cachedSamples = decoded.samples;
-    _cachedSR      = decoded.sampleRate;
+    _cachedSamples  = decoded.samples;
+    _cachedSR       = decoded.sampleRate;
+    _cachedFilename = filename;
+    _cachedManifest = manifest ?? null;
     _analysisDur   = result.duration;
     _audioBuffer   = null; // wird lazy beim ersten Play erstellt
 
@@ -166,6 +181,118 @@ export function createAudioAnalyseFeature() {
     if (ui.playPauseBtn) ui.playPauseBtn.classList.remove('u-hidden');
     if (ui.stopBtn)      ui.stopBtn.classList.remove('u-hidden');
     setPlayPauseLabel(ui, false);
+
+    // Training-Export-Row einblenden
+    if (ui.exportTrainingRow) ui.exportTrainingRow.classList.remove('u-hidden');
+    if (ui.exportStatusEl)    ui.exportStatusEl.textContent = '';
+  }
+
+  async function handleTrainingExport(ui) {
+    if (!_cachedSamples) {
+      if (ui.exportStatusEl) ui.exportStatusEl.textContent = 'Keine Audiodaten geladen.';
+      return;
+    }
+    if (ui.exportStatusEl) ui.exportStatusEl.textContent = '⏳ Exportiere…';
+    if (ui.exportTrainingBtn) ui.exportTrainingBtn.disabled = true;
+
+    try {
+      const frameResult = await collectFrameData(
+        _cachedSamples,
+        _cachedSR,
+        ONSET_FFT_SIZE,
+        ONSET_HOP_SIZE,
+      );
+      const { frames, actualFftSize, actualHopSize, actualSampleRate } = frameResult;
+      const onsetStrategyKey = getSetting(SETTING_KEYS.SHEET_MUSIC_ONSET_STRATEGY);
+      const onsetStrategy = _resolveOnset(onsetStrategyKey);
+      let onsetState = onsetStrategy.createState();
+
+      const featureOrder = getFeatureOrder();
+      const trainingFrames = [];
+
+      let prevLinearMag = null;
+      let prevRms = 0;
+      let prevHfc = 0;
+      let prevSpectralCentroid = 0;
+      let prevSpectralRolloff = 0;
+      let prevSpectralFlatness = 0;
+      let prevCrestFactor = 0;
+      let prevLogBandFlux_150_6000 = 0;
+      const historyBuffer = [];
+
+      for (let i = 0; i < frames.length; i++) {
+        const { samples: frame, frequencyData, t } = frames[i];
+
+        const onsetResult = onsetStrategy.update(onsetState, { frequencyData, samples: frame });
+        onsetState = onsetResult.nextState;
+
+        const history = {
+          prevMagnitudes: prevLinearMag,
+          prevRms,
+          prevHfc,
+          prevSpectralCentroid,
+          prevSpectralRolloff,
+          prevSpectralFlatness,
+          prevCrestFactor,
+          prevLogBandFlux_150_6000,
+        };
+
+        const { baseFeatures, linearMagnitudes } = extractXGBoostFrameFeatures(
+          frame,
+          frequencyData,
+          onsetResult,
+          actualSampleRate,
+          actualFftSize,
+          1000,
+          history,
+        );
+
+        const contextFeatures = buildContextFeatures(baseFeatures, historyBuffer, featureOrder);
+        historyBuffer.unshift({ ...baseFeatures });
+        if (historyBuffer.length > 30) historyBuffer.pop();
+
+        prevLinearMag = linearMagnitudes;
+        prevRms = baseFeatures.rms;
+        prevHfc = baseFeatures.hfc;
+        prevSpectralCentroid = baseFeatures.spectralCentroid;
+        prevSpectralRolloff = baseFeatures.spectralRolloff;
+        prevSpectralFlatness = baseFeatures.spectralFlatness;
+        prevCrestFactor = baseFeatures.crestFactor;
+        prevLogBandFlux_150_6000 = baseFeatures.logBandFlux_150_6000;
+
+        trainingFrames.push({ t, features: contextFeatures });
+      }
+
+      const randomStr = Math.random().toString(36).slice(2, 8);
+      const baseName = (_cachedFilename || 'audio').replace(/\.[^.]+$/, '');
+      const exportName = `training_data_${baseName}_${randomStr}.json`;
+
+      const exportObj = {
+        schemaVersion: 1,
+        metadata: {
+          filename: _cachedFilename,
+          sampleRate: actualSampleRate,
+          fftSize: actualFftSize,
+          hopSize: actualHopSize,
+          frameCount: frames.length,
+          featureOrder,
+          onsetStrategyKey: onsetStrategyKey ?? 'default',
+        },
+        frames: trainingFrames,
+        annotations: {
+          onsetsMs: _cachedManifest?.onsetsMs ?? null,
+        },
+      };
+
+      const blob = new Blob([JSON.stringify(exportObj)], { type: 'application/json' });
+      downloadBlob(blob, exportName);
+
+      if (ui.exportStatusEl) ui.exportStatusEl.textContent = `✅ ${exportName}`;
+    } catch (err) {
+      if (ui.exportStatusEl) ui.exportStatusEl.textContent = `❌ ${err.message}`;
+    } finally {
+      if (ui.exportTrainingBtn) ui.exportTrainingBtn.disabled = false;
+    }
   }
 
   // ── Playback-Hilfsfunktionen ───────────────────────────────────────────────
@@ -342,6 +469,7 @@ export function createAudioAnalyseFeature() {
 
     ui.playPauseBtn?.addEventListener('click', () => handlePlayPause(ui));
     ui.stopBtn?.addEventListener('click', () => handleStop(ui));
+    ui.exportTrainingBtn?.addEventListener('click', () => handleTrainingExport(ui));
 
     // Slider: Drag-Flag setzen, damit RAF den Slider nicht überschreibt
     ui.sliderEl?.addEventListener('pointerdown', () => { _sliderDragging = true; });
