@@ -1,6 +1,6 @@
 // SVG score renderer – VexFlow for notation, custom SVG for tab
 
-import { Renderer, Stave, StaveNote, Voice, Formatter } from 'https://cdn.jsdelivr.net/npm/vexflow@4.2.2/+esm';
+import { Renderer, Stave, StaveNote, Voice, Formatter, Accidental } from 'https://cdn.jsdelivr.net/npm/vexflow@4.2.2/+esm';
 import { getTimeSignatureConfig, calcFirstBarWidth } from './sheetMusicLogic.js';
 
 // Fixed virtual canvas – CSS scales this to the actual container width.
@@ -29,6 +29,11 @@ function tabEl(tag, attrs = {}, text) {
   for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, String(v));
   if (text != null) e.textContent = text;
   return e;
+}
+
+function accidentalFromVfKey(vfKey) {
+  const match = /^([a-g])([#b])\//.exec(vfKey ?? '');
+  return match?.[2] ?? null;
 }
 
 function renderTab(tabDiv, bars) {
@@ -177,6 +182,10 @@ function _renderNotation(bars, timeSignature = '4/4') {
     const stave = staves[bi];
     const notes = bars[bi].map(n => {
       const staveNote = new StaveNote({ clef: 'treble', keys: [n.vfKey], duration: vexflowDuration });
+      const accidental = accidentalFromVfKey(n.vfKey);
+      if (accidental) {
+        staveNote.addModifier(new Accidental(accidental), 0);
+      }
       const color = STATUS_COLORS[n.status] ?? null;
       if (color) {
         try {

@@ -30,6 +30,9 @@ Optionaler Aktiv-Modus: Mikrofon-basierte Tonprüfung.
   - `current` → orange
   - `correct` → grün
   - `wrong` → rot
+- Vorzeichen in `vfKey` (`#` und `b`) werden beim VexFlow-Rendering explizit
+  als `Accidental` gesetzt; VexFlow zeigt sie nicht automatisch nur anhand des
+  Key-Strings.
 - Renderingbasis: VexFlow (CDN), viewBox `vw×240`; `vw` is dynamic via `calcFirstBarWidth(tsw, REST_BAR_W, marginW) + 3×REST_BAR_W`
 - `REST_BAR_W=128`; `firstBarW≈208` computed to equalise bar-0 note area with bars 1–3 (no trailing gap)
 

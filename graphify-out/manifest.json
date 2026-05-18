@@ -35,8 +35,8 @@
     "semantic_hash": ""
   },
   "/workspace/GuitarTools/sw.js": {
-    "mtime": 1779079231.3402083,
-    "ast_hash": "0578f94cefa154ad237da5abec38d9ab",
+    "mtime": 1779105176.0602329,
+    "ast_hash": "408f3df2d3817f4c5017cb80a34cc8fb",
     "semantic_hash": ""
   },
   "/workspace/GuitarTools/sfp.sh": {
@@ -887,6 +887,11 @@
   "/workspace/GuitarTools/tests/unit/metronomeLogic.test.js": {
     "mtime": 1779048725.254268,
     "ast_hash": "0365d84549f497df2ef33d0fb504dff7",
+    "semantic_hash": ""
+  },
+  "/workspace/GuitarTools/tests/unit/sheetMusicSVGAccidentals.test.js": {
+    "mtime": 1779105447.0419967,
+    "ast_hash": "07a79c8cb4e7c43fba22aa8d5768e35f",
     "semantic_hash": ""
   },
   "/workspace/GuitarTools/tests/unit/chordRecorderPageSmoke.test.js": {
@@ -1930,8 +1935,8 @@
     "semantic_hash": ""
   },
   "/workspace/GuitarTools/js/games/sheetMusicReading/sheetMusicSVG.js": {
-    "mtime": 1779048724.3596015,
-    "ast_hash": "4a94f48f6545c9fa3532bda42441c28e",
+    "mtime": 1779121055.1734397,
+    "ast_hash": "31702191670191c0851db7ef657503c4",
     "semantic_hash": ""
   },
   "/workspace/GuitarTools/js/games/sheetMusicReading/sheetMusicReading.js": {
@@ -2064,9 +2069,19 @@
     "ast_hash": "2ef11ebc9ba26ede75dcce8b011e44e9",
     "semantic_hash": ""
   },
+  "/workspace/GuitarTools/ml/data/android_firefox/training_data_notenlesen_4-4_132bpm_DGB_sznlg_uxdnio.json": {
+    "mtime": 1779086826.46009,
+    "ast_hash": "71410c2486532d56042d1d6c08793b85",
+    "semantic_hash": ""
+  },
   "/workspace/GuitarTools/ml/data/android_firefox/training_data_notenlesen_4-4_161bpm_EGBD_y18iz_r18usn.json": {
     "mtime": 1779054508.5441875,
     "ast_hash": "44add6912c8b9168767136c9a2e889a2",
+    "semantic_hash": ""
+  },
+  "/workspace/GuitarTools/ml/data/android_firefox/training_data_notenlesen_4-4_240bpm_EBA_77zv6_sae7o9.json": {
+    "mtime": 1779104953.816768,
+    "ast_hash": "2fecdf31595d1916ef405e738f6c8d2d",
     "semantic_hash": ""
   },
   "/workspace/GuitarTools/ml/data/android_firefox/training_data_medium_yekpd8.json": {
@@ -2082,6 +2097,11 @@
   "/workspace/GuitarTools/ml/data/android_firefox/training_data_4-4_91bpm_GBE_lgned_udvqix.json": {
     "mtime": 1779054495.9356716,
     "ast_hash": "dc5ed384ff1f5c1880567681eaee2435",
+    "semantic_hash": ""
+  },
+  "/workspace/GuitarTools/ml/data/android_firefox/training_data_notenlesen_4-4_40bpm_DGB_9s0is_msjsxn.json": {
+    "mtime": 1779086829.9590847,
+    "ast_hash": "e1e4c0efff86d5b0913b3105690bf916",
     "semantic_hash": ""
   },
   "/workspace/GuitarTools/ml/data/android_firefox/training_data_4-4_91bpm_GDAB_q6ntm_dbcips.json": {
@@ -2124,6 +2144,11 @@
     "ast_hash": "fd0484e8ab3b6b23a4daba9874024ee7",
     "semantic_hash": ""
   },
+  "/workspace/GuitarTools/ml/data/android_firefox/training_data_notenlesen_4-4_240bpm_EBA_0lg1o_tmutm3.json": {
+    "mtime": 1779104952.489448,
+    "ast_hash": "9b77d6709d160d74db16cbecc728aee4",
+    "semantic_hash": ""
+  },
   "/workspace/GuitarTools/ml/data/android_firefox/training_data_4-4_91bpm_GEB_u25pb_pev252.json": {
     "mtime": 1779054502.1311893,
     "ast_hash": "dc87169a9983500cc7bae744915b83bd",
@@ -2137,6 +2162,16 @@
   "/workspace/GuitarTools/ml/data/android_firefox/training_data_notenlesen1_fc7wkl.json": {
     "mtime": 1779054505.5741885,
     "ast_hash": "b99e04e32abe654f6fc7e7bbb76c08d1",
+    "semantic_hash": ""
+  },
+  "/workspace/GuitarTools/ml/data/android_firefox/training_data_notenlesen_4-4_78bpm_AEFGDBC_itox9_awfubk.json": {
+    "mtime": 1779104955.7133505,
+    "ast_hash": "b88169342cf02aede1402b8b89fbb8a6",
+    "semantic_hash": ""
+  },
+  "/workspace/GuitarTools/ml/data/android_firefox/training_data_notenlesen_4-4_78bpm_DGB_7h2yd_yp77bg.json": {
+    "mtime": 1779086831.5059135,
+    "ast_hash": "fb69ba8335a2a70cffa8d531a3d4055c",
     "semantic_hash": ""
   },
   "/workspace/GuitarTools/ml/data/android_firefox/training_data_4-4_103bpm_ADG_keomz_l65m0s.json": {
@@ -2410,8 +2445,8 @@
     "semantic_hash": ""
   },
   "/workspace/GuitarTools/test-results/.last-run.json": {
-    "mtime": 1779059331.8357227,
-    "ast_hash": "df5f11fa8b704ef3956f6725a014cdbe",
+    "mtime": 1779105352.8450992,
+    "ast_hash": "a4e921bd276eab12d2c8a4a8a7c98c4f",
     "semantic_hash": ""
   },
   "/workspace/GuitarTools/.claude/settings.json": {
@@ -2420,18 +2455,18 @@
     "semantic_hash": ""
   },
   "/workspace/GuitarTools/models/onset_detector_android_firefox.schema.json": {
-    "mtime": 1779058736.8424208,
-    "ast_hash": "b91b653f0cf430597205a17be1b31d5e",
+    "mtime": 1779086995.71279,
+    "ast_hash": "1cf7e3e9bf3aee27e46ce1ea919ec9f4",
     "semantic_hash": ""
   },
   "/workspace/GuitarTools/models/onset_detector_android_firefox.metrics.json": {
-    "mtime": 1779058736.8424208,
-    "ast_hash": "ebda7835b552e04d75eb2345d8739ddc",
+    "mtime": 1779086995.71279,
+    "ast_hash": "52d6aba91d9e349002d0a669d712538e",
     "semantic_hash": ""
   },
   "/workspace/GuitarTools/version.txt": {
-    "mtime": 1779060047.0151281,
-    "ast_hash": "5232b08478ac1e77672f25a78bd4214a",
+    "mtime": 1779105176.0274544,
+    "ast_hash": "40d8191e21c28b39ada2ef8342557047",
     "semantic_hash": ""
   },
   "/workspace/GuitarTools/copilot.md": {
@@ -2670,8 +2705,8 @@
     "semantic_hash": ""
   },
   "/workspace/GuitarTools/js/games/sheetMusicReading/CLAUDE.md": {
-    "mtime": 1779048724.3596015,
-    "ast_hash": "f6ce6d5c24f6a881d90f6378d8339daf",
+    "mtime": 1779121095.4463842,
+    "ast_hash": "c06f3288c9e59ba166c58af253068248",
     "semantic_hash": ""
   },
   "/workspace/GuitarTools/js/games/sheetMusicReading/AGENTS.md": {
@@ -2849,9 +2884,14 @@
     "ast_hash": "03085501c12e098a2e10ce8bd6cc5909",
     "semantic_hash": ""
   },
-  "/workspace/GuitarTools/test-results/onset-tagger-Onset-Tagger--6476e-t-duplicating-close-markers-chromium/error-context.md": {
-    "mtime": 1779059331.788056,
-    "ast_hash": "ca7546e21eb6bb616cbc61c2d659ca80",
+  "/workspace/GuitarTools/test-results/sheet-music-reading-notati-07571-tton-is-visible-and-enabled-chromium/error-context.md": {
+    "mtime": 1779105352.7957892,
+    "ast_hash": "9d71c6e18d5c5db87d2f3e5c591922bf",
+    "semantic_hash": ""
+  },
+  "/workspace/GuitarTools/test-results/sheet-music-reading-notati-37817--in-score-container-on-load-chromium/error-context.md": {
+    "mtime": 1779105352.1670845,
+    "ast_hash": "491fc620bbf83d467ca51e566148125c",
     "semantic_hash": ""
   },
   "/workspace/GuitarTools/.claude/commands/implementplan.md": {
