@@ -91,7 +91,9 @@ export async function loadXGBoostOnsetModel(modelSource, schemaSource) {
     modelData = await res.arrayBuffer();
   }
 
-  const session = await ort.InferenceSession.create(modelData);
+  const session = await ort.InferenceSession.create(modelData, {
+    executionProviders: ['wasm'],
+  });
 
   // Warmup with zero vector
   const nFeatures = schema.featureOrder?.length ?? 0;

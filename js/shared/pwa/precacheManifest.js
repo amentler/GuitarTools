@@ -6,6 +6,8 @@ const CORE_PRECACHED_URLS = [
   'js/lib/essentia/essentia-wasm.web.wasm',
   'js/lib/essentia/essentia.js-core.umd.js',
   'js/lib/onnxruntime/ort.min.js',
+  'js/lib/onnxruntime/ort-wasm-simd-threaded.jsep.mjs',
+  'js/lib/onnxruntime/ort-wasm-simd-threaded.jsep.wasm',
   'js/lib/onnxruntime/ort-wasm-simd-threaded.mjs',
   'js/lib/onnxruntime/ort-wasm-simd-threaded.wasm',
   'js/shared/globalSettings.js',
