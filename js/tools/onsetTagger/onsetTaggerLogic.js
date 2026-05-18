@@ -77,6 +77,98 @@ export function timeToPixel(tSec, rangeStart, rangeEnd, plotWidth) {
 }
 
 /**
+ * Keeps a visible range inside the recording while preserving a tiny non-zero
+ * window for waveform rendering and loop playback.
+ *
+ * @param {number} startSec
+ * @param {number} endSec
+ * @param {number} durationSec
+ * @param {'start'|'end'|'both'} changedEdge
+ * @param {number} minWindowSec
+ * @returns {{ start: number, end: number }}
+ */
+export function constrainVisibleRange(startSec, endSec, durationSec, changedEdge = 'both', minWindowSec = 0.01) {
+  const duration = Math.max(0, durationSec);
+  if (duration <= 0) return { start: 0, end: 0 };
+  const minWindow = clamp(minWindowSec, Math.min(0.001, duration), duration);
+  let start = clamp(Number.isFinite(startSec) ? startSec : 0, 0, duration);
+  let end = clamp(Number.isFinite(endSec) ? endSec : duration, 0, duration);
+
+  if (end - start >= minWindow) {
+    return { start, end };
+  }
+
+  if (changedEdge === 'start') {
+    if (end - minWindow >= 0) {
+      start = end - minWindow;
+    } else {
+      start = 0;
+      end = minWindow;
+    }
+  } else if (changedEdge === 'end') {
+    if (start + minWindow <= duration) {
+      end = start + minWindow;
+    } else {
+      end = duration;
+      start = duration - minWindow;
+    }
+  } else {
+    const center = clamp((start + end) / 2, minWindow / 2, duration - minWindow / 2);
+    start = center - minWindow / 2;
+    end = center + minWindow / 2;
+  }
+
+  return { start, end };
+}
+
+/**
+ * Computes dynamic slider bounds for the Onset Tagger's independent zoom
+ * handles.
+ *
+ * @param {number} startSec
+ * @param {number} endSec
+ * @param {number} durationSec
+ * @returns {{ start: { min: number, max: number, value: number }, end: { min: number, max: number, value: number } }}
+ */
+export function computeRangeSliderState(startSec, endSec, durationSec) {
+  const duration = Math.max(0, durationSec);
+  const start = clamp(Number.isFinite(startSec) ? startSec : 0, 0, duration);
+  const end = clamp(Number.isFinite(endSec) ? endSec : duration, start, duration);
+  return {
+    start: { min: 0, max: end, value: start },
+    end: { min: start, max: duration, value: end },
+  };
+}
+
+/**
+ * Zooms or unzooms a range by moving each edge by a fraction of the current
+ * visible distance.
+ *
+ * @param {number} startSec
+ * @param {number} endSec
+ * @param {number} durationSec
+ * @param {'in'|'out'} direction
+ * @param {number} stepFraction
+ * @param {number} minWindowSec
+ * @returns {{ start: number, end: number }}
+ */
+export function computeSteppedZoomRange(
+  startSec,
+  endSec,
+  durationSec,
+  direction,
+  stepFraction = 0.1,
+  minWindowSec = 0.01,
+) {
+  const current = constrainVisibleRange(startSec, endSec, durationSec, 'both', minWindowSec);
+  const distance = current.end - current.start;
+  const step = distance * Math.max(0, stepFraction);
+  const nextStart = direction === 'out' ? current.start - step : current.start + step;
+  const nextEnd = direction === 'out' ? current.end + step : current.end - step;
+  return constrainVisibleRange(nextStart, nextEnd, durationSec, 'both', minWindowSec);
+}
+
+/**
  * Adds an onset timestamp (ms) to the list, keeping it sorted ascending.
  * Exact duplicates are ignored.
  *

@@ -44,6 +44,20 @@
       <div id="tagger-step1" class="tagger-section tagger-section--disabled">
         <p class="tagger-section-title">1 — Onset-Tagging</p>
 
+        <!-- Wiedergabe -->
+        <div class="tagger-playback-row">
+          <div class="tagger-playback-panel">
+            <button id="tagger-play" class="btn-play-stop" type="button">▶ Play</button>
+            <button id="tagger-stop" class="btn-play-stop" type="button">■ Stop</button>
+            <div class="tagger-speed-group">
+              <button class="tagger-speed-btn tagger-speed--active" data-speed="1" type="button">100%</button>
+              <button class="tagger-speed-btn" data-speed="0.75" type="button">75%</button>
+              <button class="tagger-speed-btn" data-speed="0.5" type="button">50%</button>
+              <button class="tagger-speed-btn" data-speed="0.25" type="button">25%</button>
+            </div>
+          </div>
+        </div>
+
         <!-- Waveform -->
         <div id="tagger-waveform-wrap" class="tagger-waveform-wrap" aria-label="Wellenform"></div>
 
@@ -72,31 +86,22 @@
           </div>
         </div>
 
-        <!-- Wiedergabe -->
-        <div class="tagger-playback-row">
+        <div class="tagger-onset-actions">
           <button id="tagger-add-onset" class="btn-play-stop" type="button">+ Hinzufügen</button>
-          <div class="tagger-playback-panel">
-            <button id="tagger-play" class="btn-play-stop" type="button">▶ Play</button>
-            <button id="tagger-stop" class="btn-play-stop" type="button">■ Stop</button>
-            <div class="tagger-speed-group">
-              <button class="tagger-speed-btn tagger-speed--active" data-speed="1" type="button">100%</button>
-              <button class="tagger-speed-btn" data-speed="0.75" type="button">75%</button>
-              <button class="tagger-speed-btn" data-speed="0.5" type="button">50%</button>
-              <button class="tagger-speed-btn" data-speed="0.25" type="button">25%</button>
-            </div>
-          </div>
-        </div>
-
-        <div class="tagger-strategy-panel">
-          <p class="tagger-onset-list-title">Strategien hinzufügen</p>
-          <div id="tagger-strategy-list" class="tagger-strategy-list"></div>
-          <span id="tagger-strategy-status" class="tagger-strategy-status"></span>
+          <button id="tagger-zoom-in" class="btn-play-stop tagger-zoom-btn" type="button" aria-label="In den sichtbaren Bereich hineinzoomen">+</button>
+          <button id="tagger-zoom-out" class="btn-play-stop tagger-zoom-btn" type="button" aria-label="Aus dem sichtbaren Bereich herauszoomen">&minus;</button>
         </div>
 
         <!-- Onsets-Liste -->
         <div class="tagger-onset-list-wrap">
           <p class="tagger-onset-list-title">Bestätigte Onsets</p>
           <ul id="tagger-onset-list"></ul>
+        </div>
+
+        <div class="tagger-strategy-panel">
+          <p class="tagger-onset-list-title">Strategien hinzufügen</p>
+          <div id="tagger-strategy-list" class="tagger-strategy-list"></div>
+          <span id="tagger-strategy-status" class="tagger-strategy-status"></span>
         </div>
       </div>
 

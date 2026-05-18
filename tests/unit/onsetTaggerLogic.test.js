@@ -1,7 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import {
   clamp,
+  computeRangeSliderState,
   computeEnvelope,
+  computeSteppedZoomRange,
+  constrainVisibleRange,
   timeToPixel,
   addOnset,
   addOnsetWithIndex,
@@ -90,6 +93,60 @@ describe('timeToPixel', () => {
   });
 });
 
+describe('constrainVisibleRange', () => {
+  it('keeps a valid range unchanged', () => {
+    expect(constrainVisibleRange(2, 8, 10, 'both', 0.01)).toEqual({ start: 2, end: 8 });
+  });
+
+  it('keeps the minimum window when the start handle meets the end handle', () => {
+    expect(constrainVisibleRange(8, 8, 10, 'start', 0.01)).toEqual({ start: 7.99, end: 8 });
+  });
+
+  it('keeps the minimum window when the end handle meets the start handle', () => {
+    expect(constrainVisibleRange(2, 2, 10, 'end', 0.01)).toEqual({ start: 2, end: 2.01 });
+  });
+});
+
+describe('computeRangeSliderState', () => {
+  it('uses the current end as the start slider maximum', () => {
+    const state = computeRangeSliderState(2, 8, 10);
+    expect(state.start).toEqual({ min: 0, max: 8, value: 2 });
+  });
+
+  it('uses the current start as the end slider minimum', () => {
+    const state = computeRangeSliderState(2, 8, 10);
+    expect(state.end).toEqual({ min: 2, max: 10, value: 8 });
+  });
+});
+
+describe('computeSteppedZoomRange', () => {
+  it('zooms in by ten percent of the visible distance on each side', () => {
+    expect(computeSteppedZoomRange(2, 8, 10, 'in', 0.1, 0.01)).toEqual({
+      start: 2.6,
+      end: 7.4,
+    });
+  });
+
+  it('unzooms by ten percent of the visible distance on each side', () => {
+    expect(computeSteppedZoomRange(2, 8, 10, 'out', 0.1, 0.01)).toEqual({
+      start: 1.4,
+      end: 8.6,
+    });
+  });
+
+  it('clamps unzoom to the recording boundaries', () => {
+    expect(computeSteppedZoomRange(0.5, 9.5, 10, 'out', 0.1, 0.01)).toEqual({
+      start: 0,
+      end: 10,
+    });
+  });
+
+  it('does not zoom past the minimum visible window', () => {
+    const range = computeSteppedZoomRange(4.995, 5.005, 10, 'in', 0.1, 0.01);
+    expect(range.end - range.start).toBeCloseTo(0.01);
+  });
+});
+
 describe('addOnset', () => {
   it('adds an onset to an empty list', () => {
     expect(addOnset([], 1000)).toEqual([1000]);
@@ -173,6 +230,10 @@ describe('mergeOnsetsWithMinDistance', () => {
 describe('computeFocusedRange', () => {
   it('centers a one second range around the requested time', () => {
     expect(computeFocusedRange(2, 5, 1)).toEqual({ start: 1.5, end: 2.5 });
+  });
+
+  it('centers a narrower range around the requested time', () => {
+    expect(computeFocusedRange(2, 5, 0.6)).toEqual({ start: 1.7, end: 2.3 });
   });
 
   it('keeps the range inside the recording duration', () => {

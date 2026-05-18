@@ -1,14 +1,10 @@
-/**
- * onsetTagger.js
- *
- * Main controller for the Onset Tagger tool.
- * Factory pattern: export function createOnsetTaggerFeature()
- */
-
 import {
   clamp,
   addOnsetWithIndex,
+  computeRangeSliderState,
   computeFocusedRange,
+  computeSteppedZoomRange,
+  constrainVisibleRange,
   removeOnset,
   mergeOnsetsWithMinDistance,
   moveOnset,
@@ -38,14 +34,12 @@ import {
 } from './onsetTaggerMetaForm.js';
 
 const STRATEGY_IMPORT_MIN_DISTANCE_MS = 50;
-const FOCUS_WINDOW_SEC = 1;
+const FOCUS_WINDOW_SEC = 0.6;
+const MIN_VISIBLE_RANGE_SEC = 0.01;
+const ZOOM_STEP_FRACTION = 0.1;
 
-/**
- * @returns {{ mount(root: Element): void, unmount(): void }}
- */
 export function createOnsetTaggerFeature() {
   const _debugStore = createGlobalDebugStore();
-  // ── State ──────────────────────────────────────────────────────────────────
   let _samples       = null;   // Float32Array
   let _sampleRate    = 44100;
   let _duration      = 0;      // seconds
@@ -64,7 +58,6 @@ export function createOnsetTaggerFeature() {
   let _onsetsMs      = [];
   let _selectedOnsetIndex = -1;
 
-  // Playback
   let _audioCtx      = null;
   let _audioBuffer   = null;
   let _sourceNode    = null;
@@ -116,6 +109,8 @@ export function createOnsetTaggerFeature() {
       cursorEl:      q('tagger-cursor'),
       cursorDisplay: q('tagger-cursor-display'),
       addOnsetBtn:   q('tagger-add-onset'),
+      zoomInBtn:      q('tagger-zoom-in'),
+      zoomOutBtn:     q('tagger-zoom-out'),
       strategyList:   q('tagger-strategy-list'),
       strategyStatus: q('tagger-strategy-status'),
       playBtn:       q('tagger-play'),
@@ -144,27 +139,32 @@ export function createOnsetTaggerFeature() {
     _persistence.schedule(ui);
   }
 
-  // ── Range slider sync ──────────────────────────────────────────────────────
+  function syncRangeSliderBounds(ui) {
+    const sliderState = computeRangeSliderState(_rangeStart, _rangeEnd, _duration);
+    ui.rangeStartEl.min = sliderState.start.min.toFixed(4);
+    ui.rangeStartEl.max = sliderState.start.max.toFixed(4);
+    ui.rangeStartEl.value = sliderState.start.value.toFixed(4);
+    ui.rangeEndEl.min = sliderState.end.min.toFixed(4);
+    ui.rangeEndEl.max = sliderState.end.max.toFixed(4);
+    ui.rangeEndEl.value = sliderState.end.value.toFixed(4);
+  }
 
-  function syncRangeSliders(ui) {
-    const start = parseFloat(ui.rangeStartEl.value);
-    const end   = parseFloat(ui.rangeEndEl.value);
-    // Prevent inversion: start must be < end
-    if (start >= end) {
-      if (document.activeElement === ui.rangeStartEl) {
-        ui.rangeStartEl.value = Math.max(0, end - 0.01).toFixed(4);
-      } else {
-        ui.rangeEndEl.value = Math.min(_duration, start + 0.01).toFixed(4);
-      }
-    }
-    _rangeStart = parseFloat(ui.rangeStartEl.value);
-    _rangeEnd   = parseFloat(ui.rangeEndEl.value);
+  function syncRangeSliders(ui, changedEdge = 'both') {
+    const range = constrainVisibleRange(
+      parseFloat(ui.rangeStartEl.value),
+      parseFloat(ui.rangeEndEl.value),
+      _duration,
+      changedEdge,
+      MIN_VISIBLE_RANGE_SEC,
+    );
+    _rangeStart = range.start;
+    _rangeEnd = range.end;
+    syncRangeSliderBounds(ui);
 
     if (ui.rangeDisplay) {
       ui.rangeDisplay.textContent = `${_rangeStart.toFixed(2)} s – ${_rangeEnd.toFixed(2)} s`;
     }
 
-    // Clamp cursor to new range
     _cursorSec = clamp(_cursorSec, _rangeStart, _rangeEnd);
     ui.cursorEl.min   = 0;
     ui.cursorEl.max   = Math.round((_rangeEnd - _rangeStart) * 1000);
@@ -187,23 +187,32 @@ export function createOnsetTaggerFeature() {
   }
 
   function setVisibleRange(ui, start, end) {
-    _rangeStart = clamp(start, 0, _duration);
-    _rangeEnd = clamp(end, _rangeStart, _duration);
+    const range = constrainVisibleRange(start, end, _duration, 'both', MIN_VISIBLE_RANGE_SEC);
+    _rangeStart = range.start;
+    _rangeEnd = range.end;
     ui.rangeStartEl.value = _rangeStart.toFixed(4);
     ui.rangeEndEl.value = _rangeEnd.toFixed(4);
     syncRangeSliders(ui);
   }
 
   function focusOnTime(ui, sec) {
-    const comfortablyVisible = sec >= _rangeStart && sec <= _rangeEnd
-      && (_rangeEnd - _rangeStart) <= FOCUS_WINDOW_SEC * 1.5;
-    if (!comfortablyVisible) {
-      const range = computeFocusedRange(sec, _duration, FOCUS_WINDOW_SEC);
-      setVisibleRange(ui, range.start, range.end);
-    }
+    const range = computeFocusedRange(sec, _duration, FOCUS_WINDOW_SEC);
+    setVisibleRange(ui, range.start, range.end);
     _cursorSec = clamp(sec, _rangeStart, _rangeEnd);
     syncCursorUI(ui);
     if (_svgEl) updateCursor(_svgEl, _cursorSec, _rangeStart, _rangeEnd);
+  }
+
+  function stepZoom(ui, direction) {
+    const range = computeSteppedZoomRange(
+      _rangeStart,
+      _rangeEnd,
+      _duration,
+      direction,
+      ZOOM_STEP_FRACTION,
+      MIN_VISIBLE_RANGE_SEC,
+    );
+    setVisibleRange(ui, range.start, range.end);
   }
 
   function updateOnsetUI(ui) {
@@ -213,8 +222,6 @@ export function createOnsetTaggerFeature() {
     }
   }
 
-  // ── Waveform ───────────────────────────────────────────────────────────────
-
   function redrawWaveform(ui) {
     if (!_samples) return;
     _svgEl = renderWaveform(
@@ -222,8 +229,6 @@ export function createOnsetTaggerFeature() {
       { onsetsMs: _onsetsMs, cursorSec: _cursorSec, selectedOnsetIndex: _selectedOnsetIndex }
     );
   }
-
-  // ── Playback ───────────────────────────────────────────────────────────────
 
   function getOrCreateAudioCtx() {
     if (!_audioCtx || _audioCtx.state === 'closed') {
@@ -305,8 +310,6 @@ export function createOnsetTaggerFeature() {
   function cancelRAF() {
     if (_rafId !== null) { cancelAnimationFrame(_rafId); _rafId = null; }
   }
-
-  // ── Onset list rendering ───────────────────────────────────────────────────
 
   function renderOnsetList(ui) {
     if (!ui.onsetList) return;
@@ -409,14 +412,9 @@ export function createOnsetTaggerFeature() {
       _onsetsMs   = [];
       _selectedOnsetIndex = -1;
 
-      ui.rangeStartEl.min   = 0;
-      ui.rangeStartEl.max   = _duration.toFixed(4);
       ui.rangeStartEl.step  = '0.001';
-      ui.rangeStartEl.value = '0';
-      ui.rangeEndEl.min     = 0;
-      ui.rangeEndEl.max     = _duration.toFixed(4);
       ui.rangeEndEl.step    = '0.001';
-      ui.rangeEndEl.value   = _duration.toFixed(4);
+      syncRangeSliderBounds(ui);
       ui.cursorEl.min   = 0;
       ui.cursorEl.max   = Math.round(_duration * 1000);
       ui.cursorEl.value = 0;
@@ -557,10 +555,10 @@ export function createOnsetTaggerFeature() {
 
     // Range sliders
     if (ui.rangeStartEl) {
-      ui.rangeStartEl.addEventListener('input', () => syncRangeSliders(ui));
+      ui.rangeStartEl.addEventListener('input', () => syncRangeSliders(ui, 'start'));
     }
     if (ui.rangeEndEl) {
-      ui.rangeEndEl.addEventListener('input', () => syncRangeSliders(ui));
+      ui.rangeEndEl.addEventListener('input', () => syncRangeSliders(ui, 'end'));
     }
 
     // Onset cursor slider (value in ms relative to rangeStart)
@@ -594,10 +592,31 @@ export function createOnsetTaggerFeature() {
         schedulePersist(ui);
       });
     }
+    if (ui.zoomInBtn) {
+      ui.zoomInBtn.addEventListener('click', () => {
+        if (_duration > 0) stepZoom(ui, 'in');
+      });
+    }
+    if (ui.zoomOutBtn) {
+      ui.zoomOutBtn.addEventListener('click', () => {
+        if (_duration > 0) stepZoom(ui, 'out');
+      });
+    }
 
     if (ui.waveformWrap) {
       ui.waveformWrap.addEventListener('click', (e) => {
         if (!_svgEl || !_samples) return;
+        const onsetMarker = e.target.closest?.('[data-onset-index]');
+        if (onsetMarker) {
+          const idx = parseInt(onsetMarker.dataset.onsetIndex, 10);
+          const ms = _onsetsMs[idx];
+          if (Number.isFinite(ms)) {
+            _selectedOnsetIndex = idx;
+            focusOnTime(ui, ms / 1000);
+            updateOnsetUI(ui);
+          }
+          return;
+        }
         const sec = clientXToTime(_svgEl, e.clientX, _rangeStart, _rangeEnd);
         _cursorSec = clamp(sec, _rangeStart, _rangeEnd);
         const result = addOnsetWithIndex(_onsetsMs, Math.round(_cursorSec * 1000));
@@ -686,7 +705,7 @@ export function createOnsetTaggerFeature() {
           _playOffset = 0;
           ui.rangeStartEl.value = '0';
           ui.rangeEndEl.value   = _duration.toFixed(4);
-          syncRangeSliders(ui);
+          syncRangeSliders(ui, 'both');
         }
       });
     }

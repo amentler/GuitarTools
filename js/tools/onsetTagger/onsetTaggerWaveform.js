@@ -9,7 +9,7 @@ import { clamp, computeEnvelope, timeToPixel } from './onsetTaggerLogic.js';
 
 const PAD_L  = 4;
 const PAD_R  = 4;
-const PAD_T  = 6;
+const PAD_T  = 16;
 const PAD_B  = 20;  // space for time axis labels
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
@@ -122,12 +122,33 @@ export function renderWaveform(container, samples, sampleRate, rangeStart, range
     if (sec < rangeStart || sec > rangeEnd) continue;
     const x = PAD_L + timeToPixel(sec, rangeStart, rangeEnd, W);
     const selected = i === selectedOnsetIndex;
+    onsetGroup.appendChild(el('circle', {
+      cx: x, cy: PAD_T / 2, r: '8',
+      fill: 'transparent',
+      'data-onset-index': i,
+      'data-onset-hit': 'dot',
+      'data-onset-sec': sec,
+      style: 'cursor: pointer;',
+    }));
+    onsetGroup.appendChild(el('circle', {
+      cx: x, cy: PAD_T / 2, r: selected ? '4.5' : '4',
+      fill: selected ? '#2ecc71' : '#e74c3c',
+      stroke: 'var(--color-surface, #1a1a2e)',
+      'stroke-width': '1.5',
+      'data-onset-index': i,
+      'data-onset-hit': 'dot',
+      'data-onset-sec': sec,
+      style: 'cursor: pointer;',
+    }));
     onsetGroup.appendChild(el('line', {
       x1: x, y1: PAD_T, x2: x, y2: PAD_T + H,
       stroke: selected ? '#2ecc71' : '#e74c3c',
       'stroke-width': selected ? '3' : '1.5',
+      'data-onset-index': i,
       'data-onset-sec': sec,
       'data-selected': selected ? '1' : '0',
+      'pointer-events': 'stroke',
+      style: 'cursor: pointer;',
     }));
   }
   svg.appendChild(onsetGroup);
@@ -246,11 +267,30 @@ export function updateOnsetMarkers(svgEl, onsetsMs, rangeStart, rangeEnd, select
     if (sec < rangeStart || sec > rangeEnd) continue;
     const x = PAD_L + timeToPixel(sec, rangeStart, rangeEnd, W);
     const selected = i === selectedOnsetIndex;
+    group.appendChild(el('circle', {
+      cx: x, cy: PAD_T / 2, r: '8',
+      fill: 'transparent',
+      'data-onset-index': i,
+      'data-onset-hit': 'dot',
+      style: 'cursor: pointer;',
+    }));
+    group.appendChild(el('circle', {
+      cx: x, cy: PAD_T / 2, r: selected ? '4.5' : '4',
+      fill: selected ? '#2ecc71' : '#e74c3c',
+      stroke: 'var(--color-surface, #1a1a2e)',
+      'stroke-width': '1.5',
+      'data-onset-index': i,
+      'data-onset-hit': 'dot',
+      style: 'cursor: pointer;',
+    }));
     const line = el('line', {
       x1: x, y1: PAD_T, x2: x, y2: PAD_T + H,
       stroke: selected ? '#2ecc71' : '#e74c3c',
       'stroke-width': selected ? '3' : '1.5',
+      'data-onset-index': i,
       'data-selected': selected ? '1' : '0',
+      'pointer-events': 'stroke',
+      style: 'cursor: pointer;',
     });
     group.appendChild(line);
   }

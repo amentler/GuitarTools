@@ -22,17 +22,18 @@ Browser-Werkzeug zur manuellen Annotation von Onset-Zeitstempeln in Gitarren-Auf
 
 1. `Laden` oeffnet den Flyout fuer WAV-, JSON- oder ZIP-Import; WAV-Datei laden → Waveform erscheint, Schritt 1 aktiv
 2. JSON-Sidecar laden → Metadaten-Formular befüllt, Schritt 2 aktiv
-3. Start/Ende-Slider → Bereich einschränken (Waveform zoomt in den Bereich)
-4. Onset-Cursor-Slider → grüner Strich positionieren (Range: Start bis Ende in ms)
-5. „+ Hinzufügen" oder Klick in die Waveform → Onset in Liste
-6. Onset in der Liste anklicken → Marker wird grün, Cursor springt dorthin, sichtbarer Bereich fokussiert den Onset
-7. Ausgewählten Onset mit dem Cursor-Slider verschieben; Entfernen bleibt über das X am Listeneintrag möglich
-8. Strategie-Button anklicken → erkannte Onsets werden additiv importiert, wenn sie mindestens 50 ms Abstand zu bestehenden Markierungen haben
-9. Play/Pause/Stop → Wiedergabe in Schleife über Start–Ende, mit wählbarer Geschwindigkeit
-10. Metadaten editieren (Schritt 2)
-11. Dateiname/BaseName kann im Tagger editiert werden; Export, persistierte Aufnahme und Analyzer-Link verwenden den aktuellen Namen sofort
-12. „Als ZIP exportieren" → WAV + JSON (mit `onsetsMs`-Feld) als ZIP-Download
-13. „Im Analyzer öffnen" speichert die aktuelle WAV+Sidecar direkt und öffnet `audio-analyse` mit `source`/`id`
+3. Play/Pause/Stop und Speed-Auswahl stehen oberhalb der Waveform; Wiedergabe läuft in Schleife über Start–Ende
+4. Start/Ende-Slider → Bereich einschränken (Waveform zoomt in den Bereich). Der Start-Slider läuft von WAV-Start bis zur aktuellen Ende-Position; der Ende-Slider läuft von der aktuellen Start-Position bis zum WAV-Ende.
+5. Kleine Zoom-/Unzoom-Buttons neben „+ Hinzufügen" ziehen Start und Ende je Klick um 10% der aktuellen sichtbaren Distanz zusammen oder auseinander
+6. Onset-Cursor-Slider → grüner Strich positionieren (Range: Start bis Ende in ms)
+7. „+ Hinzufügen" oder Klick in die Waveform → Onset in Liste
+8. Onset in der Liste oder ueber den Punkt vertikal oberhalb der Waveform-Linie anklicken → Marker wird grün, Cursor springt dorthin, sichtbarer Bereich zentriert den Onset in einem 0,6-s-Fenster
+9. Ausgewählten Onset mit dem Cursor-Slider verschieben; Entfernen bleibt über das X am Listeneintrag möglich
+10. Strategie-Button unter der Onset-Liste anklicken → erkannte Onsets werden additiv importiert, wenn sie mindestens 50 ms Abstand zu bestehenden Markierungen haben
+11. Metadaten editieren (Schritt 2)
+12. Dateiname/BaseName kann im Tagger editiert werden; Export, persistierte Aufnahme und Analyzer-Link verwenden den aktuellen Namen sofort
+13. „Als ZIP exportieren" → WAV + JSON (mit `onsetsMs`-Feld) als ZIP-Download
+14. „Im Analyzer öffnen" speichert die aktuelle WAV+Sidecar direkt und öffnet `audio-analyse` mit `source`/`id`
 
 Die Waveform ist rein visuell normalisiert: Der größte Peak im sichtbaren Bereich
 füllt die verfügbare Graphhöhe aus. Das verändert weder Audiodaten noch

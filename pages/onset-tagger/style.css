@@ -179,24 +179,28 @@
       align-items: center;
       gap: 0.5rem;
       flex-wrap: wrap;
-      margin: 0.75rem 0 0.5rem;
+      margin: 0 0 0.5rem;
     }
 
     .tagger-playback-panel {
       display: flex;
       align-items: center;
       gap: 0.25rem;
-      margin-left: auto;
       background: var(--color-surface);
       border: 1px solid var(--color-border);
       border-radius: var(--radius);
       padding: 0.2rem 0.4rem;
+      max-width: 100%;
+      box-sizing: border-box;
     }
 
     .tagger-playback-panel .btn-play-stop {
       border: none;
       background: none;
-      padding: 0.25rem 0.5rem;
+      padding: 0.25rem 0.35rem;
+      min-width: 0;
+      font-size: 0.82rem;
+      white-space: nowrap;
     }
 
     .tagger-playback-panel .btn-play-stop:hover {
@@ -210,22 +214,41 @@
       margin-left: 0.25rem;
       padding-left: 0.35rem;
       border-left: 1px solid var(--color-border);
+      min-width: 0;
     }
 
     .tagger-speed-btn {
-      padding: 0.3rem 0.6rem;
-      font-size: 0.8rem;
+      padding: 0.28rem 0.42rem;
+      font-size: 0.76rem;
       background: var(--color-surface);
       border: 1px solid var(--color-border);
       border-radius: var(--radius);
       color: var(--color-text-muted);
       cursor: pointer;
+      white-space: nowrap;
     }
 
     .tagger-speed--active {
       background: var(--color-accent);
       color: #fff;
       border-color: var(--color-accent);
+    }
+
+    .tagger-onset-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      flex-wrap: wrap;
+      margin: 0.75rem 0 0.5rem;
+    }
+
+    .tagger-zoom-btn {
+      width: 2.1rem;
+      min-width: 2.1rem;
+      padding: 0.35rem 0;
+      text-align: center;
+      font-size: 1rem;
+      line-height: 1;
     }
 
     /* Onset list */
@@ -413,4 +436,40 @@
       flex-wrap: wrap;
       justify-content: flex-end;
       margin-top: 1rem;
+    }
+
+    @media (max-width: 520px) {
+      .tagger-section {
+        padding: 0.75rem;
+      }
+
+      .tagger-playback-panel {
+        width: 100%;
+        justify-content: space-between;
+        gap: 0.15rem;
+        padding: 0.2rem 0.25rem;
+      }
+
+      .tagger-playback-panel .btn-play-stop {
+        padding: 0.24rem 0.25rem;
+        font-size: 0.76rem;
+      }
+
+      .tagger-speed-group {
+        flex: 1;
+        justify-content: flex-end;
+        gap: 0.12rem;
+        margin-left: 0.15rem;
+        padding-left: 0.2rem;
+      }
+
+      .tagger-speed-btn {
+        padding: 0.26rem 0.28rem;
+        font-size: 0.7rem;
+      }
+
+      .tagger-onset-actions .btn-play-stop:not(.tagger-zoom-btn) {
+        flex: 1;
+        min-width: 8.5rem;
+      }
     }

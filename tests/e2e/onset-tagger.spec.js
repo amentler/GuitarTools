@@ -77,6 +77,93 @@ test.describe('Onset Tagger', () => {
     await expect(page.locator('.tagger-onset-select')).toHaveText('1. 100 ms');
   });
 
+  test('zoom buttons shrink and expand the visible range', async ({ page }) => {
+    await page.locator('#tagger-wav-input').setInputFiles(WAV_FIXTURE);
+    await expect(page.locator('#tagger-waveform-wrap svg')).toBeVisible({ timeout: 10_000 });
+
+    const fullRange = await page.locator('#tagger-range-end').evaluate((el) => parseFloat(el.value));
+    await page.locator('#tagger-zoom-in').click();
+    const zoomed = await page.locator('#tagger-range-end').evaluate((endEl) => {
+      const startEl = document.getElementById('tagger-range-start');
+      return parseFloat(endEl.value) - parseFloat(startEl.value);
+    });
+    expect(zoomed).toBeLessThan(fullRange);
+
+    await page.locator('#tagger-zoom-out').click();
+    const unzoomed = await page.locator('#tagger-range-end').evaluate((endEl) => {
+      const startEl = document.getElementById('tagger-range-start');
+      return parseFloat(endEl.value) - parseFloat(startEl.value);
+    });
+    expect(unzoomed).toBeGreaterThan(zoomed);
+  });
+
+  test('selecting an onset centers the waveform on a close focus window', async ({ page }) => {
+    await page.locator('#tagger-wav-input').setInputFiles(WAV_FIXTURE);
+    await expect(page.locator('#tagger-waveform-wrap svg')).toBeVisible({ timeout: 10_000 });
+
+    await page.locator('#tagger-cursor').evaluate((el) => {
+      el.value = '1000';
+      el.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+    await page.locator('#tagger-add-onset').click();
+    await page.locator('.tagger-onset-select').click();
+
+    const range = await page.locator('#tagger-range-end').evaluate((endEl) => {
+      const startEl = document.getElementById('tagger-range-start');
+      return {
+        start: parseFloat(startEl.value),
+        end: parseFloat(endEl.value),
+      };
+    });
+    expect(range.end - range.start).toBeLessThanOrEqual(0.61);
+    expect((range.start + range.end) / 2).toBeCloseTo(1, 1);
+  });
+
+  test('clicking an onset marker centers the waveform', async ({ page }) => {
+    await page.locator('#tagger-wav-input').setInputFiles(WAV_FIXTURE);
+    await expect(page.locator('#tagger-waveform-wrap svg')).toBeVisible({ timeout: 10_000 });
+
+    await page.locator('#tagger-cursor').evaluate((el) => {
+      el.value = '1000';
+      el.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+    await page.locator('#tagger-add-onset').click();
+    const clickPoint = await page.locator('[data-onset-hit="dot"][data-onset-index="0"]').first().evaluate((dot) => {
+      const svg = dot.ownerSVGElement;
+      const rect = svg.getBoundingClientRect();
+      const viewBox = svg.viewBox.baseVal;
+      const x = parseFloat(dot.getAttribute('cx'));
+      const y = parseFloat(dot.getAttribute('cy'));
+      return {
+        x: rect.left + (x / viewBox.width) * rect.width,
+        y: rect.top + (y / viewBox.height) * rect.height,
+      };
+    });
+    await page.mouse.click(clickPoint.x, clickPoint.y);
+
+    await expect(page.locator('.tagger-onset-select')).toHaveText('1. 1000 ms');
+    const range = await page.locator('#tagger-range-end').evaluate((endEl) => {
+      const startEl = document.getElementById('tagger-range-start');
+      return {
+        start: parseFloat(startEl.value),
+        end: parseFloat(endEl.value),
+      };
+    });
+    expect(range.end - range.start).toBeLessThanOrEqual(0.61);
+    expect((range.start + range.end) / 2).toBeCloseTo(1, 1);
+  });
+
+  test('playback controls fit on a narrow mobile viewport', async ({ page }) => {
+    await page.setViewportSize({ width: 360, height: 740 });
+    await page.locator('#tagger-wav-input').setInputFiles(WAV_FIXTURE);
+    await expect(page.locator('#tagger-waveform-wrap svg')).toBeVisible({ timeout: 10_000 });
+
+    const overflow = await page.locator('.tagger-playback-panel').evaluate((el) => (
+      el.scrollWidth - el.clientWidth
+    ));
+    expect(overflow).toBeLessThanOrEqual(1);
+  });
+
   test('filename edit is used for ZIP export', async ({ page }) => {
     await page.locator('#tagger-wav-input').setInputFiles(WAV_FIXTURE);
     await expect(page.locator('#tagger-waveform-wrap svg')).toBeVisible({ timeout: 10_000 });
