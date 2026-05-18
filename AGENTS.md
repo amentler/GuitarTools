@@ -9,6 +9,7 @@ This file is the central hub for all AI agents (Claude, Gemini, Codex, Copilot, 
 - **Feature-specific documentation:** If a module subfolder (e.g. `js/games/myGame/`) does not yet have a `CLAUDE.md`, create one to document its local state.
 - **Automated Versioning:** Do NOT edit `version.txt` manually unless the commit intentionally owns metadata. The `pre-commit` hook (`scripts/auto-update-version.sh`) regenerates and stages it automatically if not already staged. Pure version-counter logic lives in `scripts/autoUpdateVersionCore.mjs`; keep tests focused on that module instead of shell-spawning Bash from Vitest.
 - **Service-Worker Assets:** When adding or renaming local assets (JS, CSS, JSON, Icons, etc.), you MUST update the `ASSETS` list in `sw.js` to ensure proper offline caching and reloads.
+- **Onset Tagger Persistence:** The onset tagger writes edited sidecar data and renamed baseNames directly back to the recording source when possible; local analyzer handoffs are stored as complete sheet-music takes so Audio Analyse can read WAV + sidecar via `source`/`id`.
 - **Sequence ZIP Workflow:** Tagged sheet-music sequence fixtures may live as single ZIP files containing WAV+JSON. Test helpers, sheet fingerprints, and `sfp` must keep ZIP support intact; loose `.wav/.json` pairs are compatibility inputs, not the only accepted format.
 - **XGBoost Onset Assets:** The default sheet-music onset strategy is the offline browser XGBoost detector (`xgboost-android-firefox`). Keep `models/onset_detector_android_firefox.{onnx,schema.json,metrics.json}` and the local ONNX Runtime files under `js/lib/onnxruntime/` cached via `js/shared/pwa/precacheManifest.js`/`sw.js`.
 - **Keep Plans Current:** Update implementation status in `plans/` files immediately after execution. Store new ideas in `plans/ideen.md`.
@@ -89,6 +90,17 @@ graphify gemini install
 Nach der CLI-Integration ruft Codex ueber `.codex/hooks.json` direkt `/home/amentler/.local/bin/graphify hook-check` vor jedem Bash-Call auf. Wenn `graphify` auf dieser Maschine fehlt oder unter einem anderen Pfad liegt, schlagen diese Hooks sichtbar fehl.
 
 Fuer dieses Repo sind ausserdem die Git-Hooks per `graphify hook install` in `.husky/_/post-commit` und `.husky/_/post-checkout` registriert. Damit koennen Graph-Updates nach Checkout/Commit automatisch angestossen werden.
+
+#### Playwright / Chromium System Dependencies
+
+Playwrights Chromium braucht auf Ubuntu mindestens die Systembibliotheken
+`libnspr4.so`, `libnss3.so` und `libasound.so.2`. Wenn E2E-Tests mit
+`error while loading shared libraries: libnspr4.so`, `libnss3.so` oder
+`libasound.so.2` abbrechen, installiere sie einmalig mit:
+
+```bash
+sudo apt-get update && sudo apt-get install -y libnspr4 libnss3 libasound2t64
+```
 
 ### Shortcuts
 - `sfp` -> `npm run sfp` (Short for specific fingerprinting/fixtures tasks).

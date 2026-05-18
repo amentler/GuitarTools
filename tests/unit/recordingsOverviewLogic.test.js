@@ -48,6 +48,22 @@ describe('formatDate', () => {
 });
 
 describe('buildDisplayName', () => {
+  it('prefers baseName for sheet-music recordings', () => {
+    const result = buildDisplayName('sheet-music', 'take-id', {
+      baseName: 'notenlesen_4-4_120bpm_EAD_abc12',
+      savedAt: '2026-05-14T10:00:00Z',
+    });
+    expect(result).toBe('notenlesen_4-4_120bpm_EAD_abc12');
+  });
+
+  it('prefers baseName for chord-recorder recordings', () => {
+    const result = buildDisplayName('chord-recorder', 'take-id', {
+      baseName: 'amoll_finger_laut_single_abc12',
+      chord: 'A-Moll',
+    });
+    expect(result).toBe('amoll_finger_laut_single_abc12');
+  });
+
   it('starts with "Notenlesen" for sheet-music source with metadata', () => {
     const result = buildDisplayName('sheet-music', 'last', { savedAt: '2026-05-14T10:00:00Z' });
     expect(result).toMatch(/^Notenlesen/);

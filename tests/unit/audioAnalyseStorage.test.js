@@ -128,6 +128,26 @@ describe('audioAnalyseStorage sheet-music takes', () => {
     await expect(storage.loadLatestSheetMusicTake()).resolves.toMatchObject({ id: 'newer' });
   });
 
+  it('replaces a take under a new baseName and removes the old key', async () => {
+    const original = await storage.saveSheetMusicTake(
+      new Uint8Array([1, 2]),
+      { category: 'sheet-music-reading', onsetsMs: [100] },
+      { baseName: 'old-name' },
+    );
+
+    const replaced = await storage.replaceSheetMusicTake(original.id, {
+      wav: original.wav,
+      sidecar: { category: 'sheet-music-reading', onsetsMs: [200] },
+    }, { baseName: 'new-name' });
+
+    expect(replaced.id).toBe('new-name');
+    await expect(storage.loadSheetMusicTake('old-name')).resolves.toBeNull();
+    await expect(storage.loadSheetMusicTake('new-name')).resolves.toMatchObject({
+      id: 'new-name',
+      sidecar: { onsetsMs: [200] },
+    });
+  });
+
   it('keeps a valid legacy last entry readable', async () => {
     const store = globalThis.indexedDB._stores.get('gt-audio-analyse-db:recordings')
       ?? new Map();

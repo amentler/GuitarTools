@@ -1,1 +1,1 @@
-Version 0.161 | 2026-05-18 17:06 | b5f1476 | tests/fixtures/sequences/sheet-music-reading/notenlesen_4-4_240bpm_EBA_1m5by-tagged.zip
+Version 0.162 | 2026-05-18 19:03 | de1af83 | AGENTS.md (+29 more)

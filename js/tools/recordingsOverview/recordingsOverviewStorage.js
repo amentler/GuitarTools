@@ -58,7 +58,10 @@ export async function getChordRecordingsMeta() {
     return entries.map(entry => ({
       id: entry.baseName,
       source: 'chord-recorder',
-      name: buildDisplayName('chord-recorder', entry.baseName, entry.sidecar),
+      name: buildDisplayName('chord-recorder', entry.baseName, {
+        ...(entry.sidecar ?? {}),
+        baseName: entry.baseName,
+      }),
       sizeBytes: entry.wavBlob?.size ?? 0,
       date: new Date(entry.sidecar?.recordedAt ?? 0),
       metadata: entry.sidecar,

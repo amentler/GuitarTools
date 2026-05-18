@@ -13,8 +13,13 @@ test.describe('Onset Tagger', () => {
   });
 
   test('page loads with file-load buttons and step sections', async ({ page }) => {
+    await expect(page.locator('#tagger-load-menu-btn')).toBeVisible();
+    await page.locator('#tagger-load-menu-btn').click();
     await expect(page.locator('#tagger-wav-btn')).toBeVisible();
     await expect(page.locator('#tagger-json-btn')).toBeVisible();
+    await expect(page.locator('#tagger-zip-btn')).toBeVisible();
+    await expect(page.locator('#tagger-export-top')).toBeVisible();
+    await expect(page.locator('#tagger-filename-input')).toBeVisible();
     await expect(page.locator('#tagger-step1')).toBeVisible();
     await expect(page.locator('#tagger-step2')).toBeVisible();
   });
@@ -91,6 +96,20 @@ test.describe('Onset Tagger', () => {
     });
 
     await expect(page.locator('.tagger-onset-select')).toContainText('100 ms');
+  });
+
+  test('filename edit is used for ZIP export', async ({ page }) => {
+    await page.locator('#tagger-wav-input').setInputFiles(WAV_FIXTURE);
+    await expect(page.locator('#tagger-waveform-wrap svg')).toBeVisible({ timeout: 10_000 });
+    await page.locator('#tagger-filename-input').fill('custom tagged take');
+    await page.locator('#tagger-filename-input').dispatchEvent('input');
+
+    const [download] = await Promise.all([
+      page.waitForEvent('download'),
+      page.locator('#tagger-export-top').click(),
+    ]);
+
+    expect(download.suggestedFilename()).toBe('custom_tagged_take-tagged.zip');
   });
 
   test('clicking the waveform creates an onset at the clicked position', async ({ page }) => {

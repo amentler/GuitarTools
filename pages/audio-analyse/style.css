@@ -99,6 +99,10 @@
       padding: 0 0.5rem 12rem; /* extra bottom padding for fixed control bar */
     }
 
+    .analyse-charts-wrapper--controls-collapsed {
+      padding-bottom: 4rem;
+    }
+
     .analysis-chart-block {
       width: 100%;
       position: relative;
@@ -160,6 +164,39 @@
       border-top: 1px solid var(--color-border, #4a3a2a);
       box-shadow: 0 -3px 10px rgba(0, 0, 0, 0.4);
       box-sizing: border-box;
+    }
+
+    .analyse-bottom-bar--collapsed {
+      padding: 0.25rem 0.5rem;
+    }
+
+    .analyse-bottom-content {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .analyse-bottom-bar--collapsed .analyse-bottom-content {
+      display: none;
+    }
+
+    .analyse-bottom-toggle {
+      align-self: center;
+      width: 2.4rem;
+      height: 1.6rem;
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius);
+      background: var(--color-surface);
+      color: var(--color-text);
+      cursor: pointer;
+      line-height: 1;
+      margin-bottom: 0.2rem;
+    }
+
+    .analyse-bottom-bar--collapsed .analyse-bottom-toggle {
+      margin-bottom: 0;
+      transform: rotate(180deg);
     }
 
     .analyse-slider-row {
@@ -328,6 +365,10 @@
     @media (max-width: 680px) {
       .analyse-charts-wrapper {
         padding-bottom: 15rem;
+      }
+
+      .analyse-charts-wrapper--controls-collapsed {
+        padding-bottom: 4rem;
       }
 
       .analyse-option-row {

@@ -88,6 +88,7 @@ export function createAudioAnalyseFeature() {
       playPauseBtn:        q('btn-play-pause'),
       stopBtn:             q('btn-stop-audio'),
       bottomBar:           q('analyse-bottom-bar'),
+      bottomToggle:        q('analyse-bottom-toggle'),
       sliderRow:           q('analyse-slider-row'),
       transportRow:        q('analyse-transport-row'),
       sliderEl:            q('analyse-slider'),
@@ -117,6 +118,15 @@ export function createAudioAnalyseFeature() {
 
   function hideStatus(ui) {
     if (ui.statusMsg) ui.statusMsg.classList.add('u-hidden');
+  }
+
+  function setBottomBarCollapsed(ui, collapsed) {
+    ui.bottomBar?.classList.toggle('analyse-bottom-bar--collapsed', collapsed);
+    ui.chartsWrapper?.classList.toggle('analyse-charts-wrapper--controls-collapsed', collapsed);
+    if (ui.bottomToggle) {
+      ui.bottomToggle.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+      ui.bottomToggle.textContent = collapsed ? '⌃' : '⌄';
+    }
   }
 
   function showStats(ui, result, filename) {
@@ -641,6 +651,10 @@ export function createAudioAnalyseFeature() {
     ui.playPauseBtn?.addEventListener('click', () => handlePlayPause(ui));
     ui.stopBtn?.addEventListener('click', () => handleStop(ui));
     ui.exportTrainingBtn?.addEventListener('click', () => handleTrainingExport(ui));
+    ui.bottomToggle?.addEventListener('click', () => {
+      const collapsed = !ui.bottomBar?.classList.contains('analyse-bottom-bar--collapsed');
+      setBottomBarCollapsed(ui, collapsed);
+    });
 
     // Slider: Drag-Flag setzen, damit RAF den Slider nicht überschreibt
     ui.sliderEl?.addEventListener('pointerdown', () => { _sliderDragging = true; });

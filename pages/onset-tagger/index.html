@@ -16,20 +16,27 @@
 
       <!-- ── Datei-Laden ──────────────────────────────────────────────────── -->
       <div class="tagger-load-section">
-        <div class="tagger-load-btn">
-          <button id="tagger-wav-btn" class="btn-play-stop" type="button">WAV laden</button>
+        <div class="tagger-load-menu">
+          <button id="tagger-load-menu-btn" class="btn-play-stop" type="button" aria-expanded="false" aria-controls="tagger-load-menu-panel">Laden</button>
+          <div id="tagger-load-menu-panel" class="tagger-load-menu-panel u-hidden">
+            <button id="tagger-wav-btn" class="btn-play-stop" type="button">WAV laden</button>
+            <button id="tagger-json-btn" class="btn-play-stop" type="button">JSON laden</button>
+            <button id="tagger-zip-btn" class="btn-play-stop" type="button">ZIP laden</button>
+          </div>
           <input id="tagger-wav-input" type="file" accept=".wav,audio/wav" class="u-hidden" />
-          <span id="tagger-wav-label" class="tagger-file-label">keine Datei</span>
-        </div>
-        <div class="tagger-load-btn">
-          <button id="tagger-json-btn" class="btn-play-stop" type="button">JSON laden</button>
           <input id="tagger-json-input" type="file" accept=".json,application/json" class="u-hidden" />
-          <span id="tagger-json-label" class="tagger-file-label">keine Datei</span>
-        </div>
-        <div class="tagger-load-btn">
-          <button id="tagger-zip-btn" class="btn-play-stop" type="button">ZIP laden</button>
           <input id="tagger-zip-input" type="file" accept=".zip,application/zip" class="u-hidden" />
-          <span id="tagger-zip-label" class="tagger-file-label">keine Datei</span>
+        </div>
+        <button id="tagger-export-top" class="btn-play-stop" type="button">📦 Export</button>
+        <label class="tagger-filename-field">
+          <span>Dateiname</span>
+          <input id="tagger-filename-input" class="tagger-filename-input" type="text" value="recording" autocomplete="off" />
+        </label>
+        <div class="tagger-file-status">
+          <span id="tagger-wav-label" class="tagger-file-label">keine WAV</span>
+          <span id="tagger-json-label" class="tagger-file-label">keine JSON</span>
+          <span id="tagger-zip-label" class="tagger-file-label">keine ZIP</span>
+          <span id="tagger-save-status" class="tagger-file-label"></span>
         </div>
       </div>
 
@@ -110,12 +117,6 @@
         </div>
 
         <div class="tagger-xgboost-params-row">
-          <label>Schwelle
-            <input id="tagger-xgboost-threshold" type="number" min="0" max="1" step="0.01" value="0.5" class="tagger-xgboost-input" />
-          </label>
-          <label>Refractory (ms)
-            <input id="tagger-xgboost-refractory" type="number" min="10" max="1000" step="10" value="100" class="tagger-xgboost-input" />
-          </label>
           <button id="tagger-xgboost-run" class="btn-play-stop" type="button" disabled>▶ XGBoost ausführen</button>
         </div>
 
@@ -129,6 +130,7 @@
         <div id="tagger-meta-form" class="tagger-meta-form"></div>
 
         <div class="tagger-export-row">
+          <button id="tagger-open-analyser" class="btn-play-stop" type="button">📊 Im Analyzer öffnen</button>
           <button id="tagger-export" class="btn-play-stop" type="button">📦 Als ZIP exportieren</button>
         </div>
       </div>

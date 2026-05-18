@@ -35,8 +35,8 @@
     "semantic_hash": ""
   },
   "/workspace/GuitarTools/sw.js": {
-    "mtime": 1779105176.0602329,
-    "ast_hash": "408f3df2d3817f4c5017cb80a34cc8fb",
+    "mtime": 1779125822.0858457,
+    "ast_hash": "1b7046491da6bb6e8a851bfc3f66782f",
     "semantic_hash": ""
   },
   "/workspace/GuitarTools/sfp.sh": {
@@ -700,8 +700,8 @@
     "semantic_hash": ""
   },
   "/workspace/GuitarTools/tests/e2e/onset-tagger.spec.js": {
-    "mtime": 1779048724.4476016,
-    "ast_hash": "9208999b391404be84b719835db1a956",
+    "mtime": 1779125558.651094,
+    "ast_hash": "b31e588951b461758fefc0379ac3c746",
     "semantic_hash": ""
   },
   "/workspace/GuitarTools/tests/e2e/sheet-music-reading-active-metronome.spec.js": {
@@ -740,8 +740,8 @@
     "semantic_hash": ""
   },
   "/workspace/GuitarTools/tests/e2e/audio-analyse.spec.js": {
-    "mtime": 1779048724.4439347,
-    "ast_hash": "fa571cc75410a9da2d5735497ad46606",
+    "mtime": 1779125567.0888708,
+    "ast_hash": "8ffa52c986e4a16609e6a3f89294311f",
     "semantic_hash": ""
   },
   "/workspace/GuitarTools/tests/e2e/chord-playing-cdur.spec.js": {
@@ -765,8 +765,8 @@
     "semantic_hash": ""
   },
   "/workspace/GuitarTools/tests/unit/audioAnalyseStorage.test.js": {
-    "mtime": 1779048725.254268,
-    "ast_hash": "fd733a0eaa33a14386a247a7f8c385f0",
+    "mtime": 1779125547.429019,
+    "ast_hash": "bc45315c71095c10f30cb0ac86dbcecf",
     "semantic_hash": ""
   },
   "/workspace/GuitarTools/tests/unit/d3SubharmonicRegression.test.js": {
@@ -840,8 +840,8 @@
     "semantic_hash": ""
   },
   "/workspace/GuitarTools/tests/unit/recordingsOverviewLogic.test.js": {
-    "mtime": 1779048725.2579346,
-    "ast_hash": "b03b7b389b0d1f9829a948aa0b5451a5",
+    "mtime": 1779125524.4893854,
+    "ast_hash": "331cf4f2499f9bdbb92f8088ec32f802",
     "semantic_hash": ""
   },
   "/workspace/GuitarTools/tests/unit/chordRecorderController.test.js": {
@@ -1055,8 +1055,8 @@
     "semantic_hash": ""
   },
   "/workspace/GuitarTools/tests/unit/onsetTaggerLogic.test.js": {
-    "mtime": 1779048725.254268,
-    "ast_hash": "4609e961f22477b432674e67cbef5c6d",
+    "mtime": 1779125517.924993,
+    "ast_hash": "6662a53c468e0a7663e55e0f14e14088",
     "semantic_hash": ""
   },
   "/workspace/GuitarTools/tests/unit/exerciseHeader.test.js": {
@@ -1455,13 +1455,13 @@
     "semantic_hash": ""
   },
   "/workspace/GuitarTools/js/tools/recordingsOverview/recordingsOverviewStorage.js": {
-    "mtime": 1779048724.4256015,
-    "ast_hash": "a028f3f57ddca730d3feee63d18a736b",
+    "mtime": 1779125450.8654606,
+    "ast_hash": "b98377288948d740fdd3055ab68d38fb",
     "semantic_hash": ""
   },
   "/workspace/GuitarTools/js/tools/recordingsOverview/recordingsOverviewLogic.js": {
-    "mtime": 1779048724.4256015,
-    "ast_hash": "e570e1f605cb9f8814840bb0f3edbc16",
+    "mtime": 1779125446.52316,
+    "ast_hash": "6fbe388b80aa3fc0694e23de888142fa",
     "semantic_hash": ""
   },
   "/workspace/GuitarTools/js/tools/recordingsOverview/recordingsOverview.js": {
@@ -1520,8 +1520,8 @@
     "semantic_hash": ""
   },
   "/workspace/GuitarTools/js/tools/audioAnalyse/audioAnalyse.js": {
-    "mtime": 1779048724.4219348,
-    "ast_hash": "41c6ae77690bf5c33adeb4e1b73f6cbd",
+    "mtime": 1779125496.446648,
+    "ast_hash": "27e0e652760f257019a2e97fca5c8729",
     "semantic_hash": ""
   },
   "/workspace/GuitarTools/js/tools/audioAnalyse/audioAnalyseSVG.js": {
@@ -1534,19 +1534,34 @@
     "ast_hash": "8093f2342446dc7801c31529611ed546",
     "semantic_hash": ""
   },
+  "/workspace/GuitarTools/js/tools/onsetTagger/onsetTaggerXGBoost.js": {
+    "mtime": 1779125632.0009856,
+    "ast_hash": "caf76e20d65082d17f48f3cceed765a9",
+    "semantic_hash": ""
+  },
   "/workspace/GuitarTools/js/tools/onsetTagger/onsetTaggerWaveform.js": {
     "mtime": 1779048724.4256015,
     "ast_hash": "fa3bcfdc1db150115b850c35f6ceb983",
     "semantic_hash": ""
   },
   "/workspace/GuitarTools/js/tools/onsetTagger/onsetTaggerLogic.js": {
-    "mtime": 1779048724.4256015,
-    "ast_hash": "691d1f6284b2c7b5f608b0f581493b99",
+    "mtime": 1779125319.4710984,
+    "ast_hash": "ca61f9eb0c2b7bcbb32972e86d98e43e",
+    "semantic_hash": ""
+  },
+  "/workspace/GuitarTools/js/tools/onsetTagger/onsetTaggerLoadMenu.js": {
+    "mtime": 1779125690.5874434,
+    "ast_hash": "eb3e80f2106cf00a6c5a9d12a8aa70aa",
+    "semantic_hash": ""
+  },
+  "/workspace/GuitarTools/js/tools/onsetTagger/onsetTaggerPersistence.js": {
+    "mtime": 1779125723.791003,
+    "ast_hash": "8b20e0e5154665328a143dc913de2ba1",
     "semantic_hash": ""
   },
   "/workspace/GuitarTools/js/tools/onsetTagger/onsetTagger.js": {
-    "mtime": 1779048724.4256015,
-    "ast_hash": "3ebb6063fd8dbd3995104347e055af1d",
+    "mtime": 1779125773.7473183,
+    "ast_hash": "5f41cb1c803a75accc2eb275fde62d34",
     "semantic_hash": ""
   },
   "/workspace/GuitarTools/js/tools/onsetTagger/onsetTaggerMetaForm.js": {
@@ -1640,13 +1655,13 @@
     "semantic_hash": ""
   },
   "/workspace/GuitarTools/js/shared/recordingLoader.js": {
-    "mtime": 1779048724.4182682,
-    "ast_hash": "fa36ba35b82ce0a014d5c8d70588d980",
+    "mtime": 1779125312.6998909,
+    "ast_hash": "3fb16b6127c38c54d7643a0125354e65",
     "semantic_hash": ""
   },
   "/workspace/GuitarTools/js/shared/audioAnalyseStorage.js": {
-    "mtime": 1779048724.4182682,
-    "ast_hash": "df57a638b9c1188fdd6e0f679eb731d2",
+    "mtime": 1779125298.9860833,
+    "ast_hash": "324db3e91920db7833913869ea224925",
     "semantic_hash": ""
   },
   "/workspace/GuitarTools/js/shared/pwa/sw-client.js": {
@@ -1655,8 +1670,8 @@
     "semantic_hash": ""
   },
   "/workspace/GuitarTools/js/shared/pwa/precacheManifest.js": {
-    "mtime": 1779079231.3402083,
-    "ast_hash": "96d3464b3842f469f29d8560a10661ec",
+    "mtime": 1779125818.2629268,
+    "ast_hash": "b978528337c44b4fe8a0841bd336f0be",
     "semantic_hash": ""
   },
   "/workspace/GuitarTools/js/shared/music/sheetMusicLogic.js": {
@@ -2060,7 +2075,7 @@
     "semantic_hash": ""
   },
   "/workspace/GuitarTools/ml/train_onset_detector.py": {
-    "mtime": 1779058663.010159,
+    "mtime": 1779130811.6752257,
     "ast_hash": "18c3218ca91a5d0b206f4a6b8d676038",
     "semantic_hash": ""
   },
@@ -2122,6 +2137,11 @@
   "/workspace/GuitarTools/ml/data/android_firefox/training_data_eeeeaaaaddddgggg_ln0puf.json": {
     "mtime": 1779054503.3595223,
     "ast_hash": "05af0da2b62e3d17d9d4cc2fad79136e",
+    "semantic_hash": ""
+  },
+  "/workspace/GuitarTools/ml/data/android_firefox/training_data_notenlesen_4-4_120bpm_travis_oytwr_yk8f3i.json": {
+    "mtime": 1779126896.7775617,
+    "ast_hash": "c25318ad4c1e7827edd8e8444ed00688",
     "semantic_hash": ""
   },
   "/workspace/GuitarTools/ml/data/android_firefox/training_data_notenlesen_4-4_161bpm_EGBD_tszjn_1v1d3p.json": {
@@ -2445,8 +2465,8 @@
     "semantic_hash": ""
   },
   "/workspace/GuitarTools/test-results/.last-run.json": {
-    "mtime": 1779105352.8450992,
-    "ast_hash": "a4e921bd276eab12d2c8a4a8a7c98c4f",
+    "mtime": 1779127112.0364008,
+    "ast_hash": "f196824657d8858bc7fa44eecbba38b1",
     "semantic_hash": ""
   },
   "/workspace/GuitarTools/.claude/settings.json": {
@@ -2455,18 +2475,18 @@
     "semantic_hash": ""
   },
   "/workspace/GuitarTools/models/onset_detector_android_firefox.schema.json": {
-    "mtime": 1779086995.71279,
+    "mtime": 1779130811.6791446,
     "ast_hash": "1cf7e3e9bf3aee27e46ce1ea919ec9f4",
     "semantic_hash": ""
   },
   "/workspace/GuitarTools/models/onset_detector_android_firefox.metrics.json": {
-    "mtime": 1779086995.71279,
+    "mtime": 1779130811.6791446,
     "ast_hash": "52d6aba91d9e349002d0a669d712538e",
     "semantic_hash": ""
   },
   "/workspace/GuitarTools/version.txt": {
-    "mtime": 1779105176.0274544,
-    "ast_hash": "40d8191e21c28b39ada2ef8342557047",
+    "mtime": 1779123993.1653328,
+    "ast_hash": "1608d87b76497dd9fa05afc5e2ff475e",
     "semantic_hash": ""
   },
   "/workspace/GuitarTools/copilot.md": {
@@ -2495,8 +2515,8 @@
     "semantic_hash": ""
   },
   "/workspace/GuitarTools/AGENTS.md": {
-    "mtime": 1779058756.273913,
-    "ast_hash": "2eab03ae825b87e29a0b05561b812536",
+    "mtime": 1779127104.2549107,
+    "ast_hash": "9d6a39124f6208fcb8687d1d4d2ccc50",
     "semantic_hash": ""
   },
   "/workspace/GuitarTools/index.html": {
@@ -2640,8 +2660,8 @@
     "semantic_hash": ""
   },
   "/workspace/GuitarTools/js/tools/recordingsOverview/CLAUDE.md": {
-    "mtime": 1779048724.4256015,
-    "ast_hash": "2d72d480fd35a35740c666ac53594db5",
+    "mtime": 1779125975.727455,
+    "ast_hash": "8906e4a6597f135463e24d8beaabdc7e",
     "semantic_hash": ""
   },
   "/workspace/GuitarTools/js/tools/recordingsOverview/AGENTS.md": {
@@ -2655,8 +2675,8 @@
     "semantic_hash": ""
   },
   "/workspace/GuitarTools/js/tools/audioAnalyse/CLAUDE.md": {
-    "mtime": 1779048724.4219348,
-    "ast_hash": "df9155d6ea06f29140e385f85d178f31",
+    "mtime": 1779125845.356252,
+    "ast_hash": "3d3ac6400c42df24a610e0076014bdd4",
     "semantic_hash": ""
   },
   "/workspace/GuitarTools/js/tools/audioAnalyse/AGENTS.md": {
@@ -2670,8 +2690,8 @@
     "semantic_hash": ""
   },
   "/workspace/GuitarTools/js/tools/onsetTagger/CLAUDE.md": {
-    "mtime": 1779048724.4256015,
-    "ast_hash": "0fe009cde6d2a124fa7c0fcc84102bf8",
+    "mtime": 1779125834.7513578,
+    "ast_hash": "08f85546fa0b09bbb31e71c49d1f31e5",
     "semantic_hash": ""
   },
   "/workspace/GuitarTools/js/tools/onsetTagger/AGENTS.md": {
@@ -2725,7 +2745,7 @@
     "semantic_hash": ""
   },
   "/workspace/GuitarTools/ml/training_config.yaml": {
-    "mtime": 1779057595.4963467,
+    "mtime": 1779130811.6752257,
     "ast_hash": "3926b314de9363a0bb66525123bd0aa6",
     "semantic_hash": ""
   },
@@ -2800,8 +2820,8 @@
     "semantic_hash": ""
   },
   "/workspace/GuitarTools/pages/onset-tagger/index.html": {
-    "mtime": 1779048724.4329348,
-    "ast_hash": "a0faa27a67064976a27fc450fcee3505",
+    "mtime": 1779125339.7460546,
+    "ast_hash": "e9dcf0676d1a913a8c947c5423f9a5fc",
     "semantic_hash": ""
   },
   "/workspace/GuitarTools/pages/settings/index.html": {
@@ -2810,8 +2830,8 @@
     "semantic_hash": ""
   },
   "/workspace/GuitarTools/pages/audio-analyse/index.html": {
-    "mtime": 1779048724.4292681,
-    "ast_hash": "94fa0e30e317acc9d7d8c41d7d2f54d2",
+    "mtime": 1779125477.6881742,
+    "ast_hash": "4272ae679681a62dc1c577e4f2b08dbd",
     "semantic_hash": ""
   },
   "/workspace/GuitarTools/pages/metronome/index.html": {
@@ -2882,16 +2902,6 @@
   "/workspace/GuitarTools/.github/agents/default.agent.md": {
     "mtime": 1779048724.2459347,
     "ast_hash": "03085501c12e098a2e10ce8bd6cc5909",
-    "semantic_hash": ""
-  },
-  "/workspace/GuitarTools/test-results/sheet-music-reading-notati-07571-tton-is-visible-and-enabled-chromium/error-context.md": {
-    "mtime": 1779105352.7957892,
-    "ast_hash": "9d71c6e18d5c5db87d2f3e5c591922bf",
-    "semantic_hash": ""
-  },
-  "/workspace/GuitarTools/test-results/sheet-music-reading-notati-37817--in-score-container-on-load-chromium/error-context.md": {
-    "mtime": 1779105352.1670845,
-    "ast_hash": "491fc620bbf83d467ca51e566148125c",
     "semantic_hash": ""
   },
   "/workspace/GuitarTools/.claude/commands/implementplan.md": {

@@ -18,10 +18,60 @@
       padding: 0.75rem 0;
     }
 
-    .tagger-load-btn {
+    .tagger-load-menu {
+      position: relative;
       display: flex;
       align-items: center;
       gap: 0.5rem;
+    }
+
+    .tagger-load-menu-panel {
+      position: absolute;
+      top: calc(100% + 0.35rem);
+      left: 0;
+      z-index: 20;
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+      min-width: 10rem;
+      padding: 0.45rem;
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius);
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+    }
+
+    .tagger-load-menu-panel .btn-play-stop {
+      width: 100%;
+      text-align: left;
+    }
+
+    .tagger-filename-field {
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      min-width: min(100%, 320px);
+      font-size: 0.78rem;
+      color: var(--color-text-muted);
+    }
+
+    .tagger-filename-input {
+      flex: 1;
+      min-width: 0;
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius);
+      color: var(--color-text);
+      padding: 0.35rem 0.5rem;
+      font-size: 0.85rem;
+      box-sizing: border-box;
+    }
+
+    .tagger-file-status {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.45rem;
+      min-width: 0;
     }
 
     .tagger-file-label {
@@ -359,6 +409,8 @@
     /* Export */
     .tagger-export-row {
       display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
       justify-content: flex-end;
       margin-top: 1rem;
     }

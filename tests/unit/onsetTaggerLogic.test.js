@@ -11,6 +11,7 @@ import {
   moveOnset,
   buildSidecarWithOnsets,
   computePlayheadPosition,
+  normalizeRecordingBaseName,
   resolveRecordingFileBaseName,
 } from '../../js/tools/onsetTagger/onsetTaggerLogic.js';
 
@@ -230,6 +231,20 @@ describe('buildSidecarWithOnsets', () => {
     const formValues = { category: 'open-strings' };
     buildSidecarWithOnsets(formValues, [100]);
     expect(formValues).toEqual({ category: 'open-strings' });
+  });
+});
+
+describe('normalizeRecordingBaseName', () => {
+  it('strips supported file extensions and path separators', () => {
+    expect(normalizeRecordingBaseName('../take one.wav')).toBe('take_one');
+  });
+
+  it('replaces unsafe characters', () => {
+    expect(normalizeRecordingBaseName('a#m/down up.json')).toBe('a_m_down_up');
+  });
+
+  it('falls back when the input is empty', () => {
+    expect(normalizeRecordingBaseName('', 'fallback.wav')).toBe('fallback');
   });
 });
 

@@ -205,6 +205,19 @@ export function buildSidecarWithOnsets(formValues, onsetsMs) {
   return { ...formValues, onsetsMs };
 }
 
+export function normalizeRecordingBaseName(input, fallback = 'recording') {
+  const raw = String(input ?? '').trim()
+    .replace(/\.(wav|json|zip)$/i, '')
+    .replace(/[\\/]+/g, '_')
+    .replace(/\s+/g, '_')
+    .replace(/[^a-zA-Z0-9._-]/g, '_')
+    .replace(/_+/g, '_')
+    .replace(/^[._-]+|[._-]+$/g, '');
+  if (raw) return raw;
+  const fallbackName = String(fallback ?? '').trim().replace(/\.(wav|json|zip)$/i, '');
+  return fallbackName || 'recording';
+}
+
 export function resolveRecordingFileBaseName(source, id, entry = {}) {
   if (source === 'sheet-music') {
     return entry.baseName ?? entry.id ?? id ?? 'notenlesen';

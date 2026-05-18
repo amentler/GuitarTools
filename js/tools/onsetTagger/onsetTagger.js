@@ -12,18 +12,17 @@ import {
   removeOnset,
   mergeOnsetsWithMinDistance,
   moveOnset,
-  buildSidecarWithOnsets,
   computePlayheadPosition,
+  normalizeRecordingBaseName,
   resolveRecordingFileBaseName,
 } from './onsetTaggerLogic.js';
 import { loadRecordingFromSource } from '../../shared/recordingLoader.js';
 import { detectOnsetsOffline } from '../../shared/audio/offlineOnsetDetection.js';
 import { getGuitarOnsetStrategies } from '../../shared/audio/guitarOnsetStrategies.js';
-import {
-  loadXGBoostOnsetModel,
-  detectOnsetsOfflineXGBoost,
-} from '../../shared/audio/offlineOnsetDetectionXGBoost.js';
 import { createGlobalDebugStore } from '../../shared/debug/index.js';
+import { closeLoadMenu, wireLoadMenu } from './onsetTaggerLoadMenu.js';
+import { createOnsetTaggerPersistenceController } from './onsetTaggerPersistence.js';
+import { createOnsetTaggerXGBoostController } from './onsetTaggerXGBoost.js';
 
 import {
   clientXToTime,
@@ -37,7 +36,6 @@ import { buildRecordingZip, readZip, downloadBlob } from '../../shared/zip.js';
 import {
   DEFAULT_SIDECAR_FIELDS,
   renderMetaForm,
-  readMetaForm,
 } from './onsetTaggerMetaForm.js';
 
 const STRATEGY_IMPORT_MIN_DISTANCE_MS = 50;
@@ -54,9 +52,12 @@ export function createOnsetTaggerFeature() {
   let _duration      = 0;      // seconds
   let _wavArrayBuffer = null;  // original for ZIP export
   let _wavFilename   = '';
+  let _fileBaseName  = 'recording';
 
   let _sidecarData   = null;   // parsed JSON object
   let _sidecarFilename = '';
+  let _recordingSource = '';
+  let _recordingId = '';
 
   let _rangeStart    = 0;
   let _rangeEnd      = 0;
@@ -74,19 +75,47 @@ export function createOnsetTaggerFeature() {
   let _playbackRate  = 1.0;
   let _rafId         = null;
 
-  let _onnxModel     = null;   // { session, schema }
-  let _xgboostSchema = null;   // JSON schema from model_schema.json
-
   let _root = null;
   let _svgEl = null;
-
-  // ── UI helpers ─────────────────────────────────────────────────────────────
+  const _xgboostController = createOnsetTaggerXGBoostController({
+    getSamples: () => _samples,
+    getSampleRate: () => _sampleRate,
+    getOnsets: () => _onsetsMs,
+    setOnsets: (onsetsMs) => {
+      _onsetsMs = onsetsMs;
+      _selectedOnsetIndex = -1;
+    },
+    mergeOnsets: (existing, incoming) => mergeOnsetsWithMinDistance(
+      existing,
+      incoming,
+      STRATEGY_IMPORT_MIN_DISTANCE_MS,
+    ),
+    updateOnsetUI,
+    schedulePersist,
+  });
+  const _persistence = createOnsetTaggerPersistenceController({
+    getWavArrayBuffer: () => _wavArrayBuffer,
+    getSamples: () => _samples,
+    getSource: () => _recordingSource,
+    getId: () => _recordingId,
+    getBaseName: () => _fileBaseName,
+    getOnsets: () => _onsetsMs,
+    getSidecarData: () => _sidecarData,
+    setSavedRecording: (saved, sidecar) => {
+      _recordingSource = saved.source;
+      _recordingId = saved.id;
+      _sidecarData = sidecar;
+      setBaseName(resolveUI(), saved.baseName);
+    },
+  });
 
   function q(id) { return _root.querySelector(`#${id}`); }
 
   function resolveUI() {
     return {
       wavBtn:        q('tagger-wav-btn'),
+      loadMenuBtn:   q('tagger-load-menu-btn'),
+      loadMenuPanel: q('tagger-load-menu-panel'),
       wavInput:      q('tagger-wav-input'),
       wavLabel:      q('tagger-wav-label'),
       jsonBtn:       q('tagger-json-btn'),
@@ -112,6 +141,10 @@ export function createOnsetTaggerFeature() {
       onsetList:     q('tagger-onset-list'),
       metaForm:      q('tagger-meta-form'),
       exportBtn:     q('tagger-export'),
+      exportTopBtn:  q('tagger-export-top'),
+      filenameInput: q('tagger-filename-input'),
+      saveStatus:    q('tagger-save-status'),
+      openAnalyserBtn: q('tagger-open-analyser'),
       xgboostSection:   q('tagger-xgboost-section'),
       onnxBtn:          q('tagger-onnx-btn'),
       onnxInput:        q('tagger-onnx-input'),
@@ -119,11 +152,22 @@ export function createOnsetTaggerFeature() {
       schemaBtn:        q('tagger-schema-btn'),
       schemaInput:      q('tagger-schema-input'),
       schemaLabel:      q('tagger-schema-label'),
-      xgboostThreshold: q('tagger-xgboost-threshold'),
-      xgboostRefractory:q('tagger-xgboost-refractory'),
       xgboostRunBtn:    q('tagger-xgboost-run'),
       xgboostStatus:    q('tagger-xgboost-status'),
     };
+  }
+
+  function setBaseName(ui, value) {
+    _fileBaseName = normalizeRecordingBaseName(value, _fileBaseName || 'recording');
+    _wavFilename = `${_fileBaseName}.wav`;
+    _sidecarFilename = `${_fileBaseName}.json`;
+    if (ui.filenameInput && ui.filenameInput.value !== _fileBaseName) {
+      ui.filenameInput.value = _fileBaseName;
+    }
+  }
+
+  function schedulePersist(ui) {
+    _persistence.schedule(ui);
   }
 
   // ── Range slider sync ──────────────────────────────────────────────────────
@@ -310,7 +354,7 @@ export function createOnsetTaggerFeature() {
       selectBtn.type = 'button';
       selectBtn.setAttribute('data-select-index', i);
       selectBtn.setAttribute('aria-pressed', i === _selectedOnsetIndex ? 'true' : 'false');
-      selectBtn.textContent = `${i + 1}. ${ms} ms`;
+      selectBtn.textContent = `${i + 1}. ${(ms / 1000).toFixed(3)} s (${Math.round(ms)} ms)`;
       const btn = document.createElement('button');
       btn.className = 'tagger-onset-remove';
       btn.setAttribute('data-index', i);
@@ -344,12 +388,24 @@ export function createOnsetTaggerFeature() {
 
   function handleExport(ui) {
     if (!_wavArrayBuffer) return;
-    const formValues = readMetaForm(ui);
-    const sidecar    = buildSidecarWithOnsets(formValues, _onsetsMs);
+    const sidecar    = _persistence.getCurrentSidecar(ui);
     const jsonBytes  = new TextEncoder().encode(JSON.stringify(sidecar, null, 2));
-    const wavName    = _wavFilename || 'recording.wav';
-    const base       = wavName.replace(/\.wav$/i, '');
+    const base       = normalizeRecordingBaseName(_fileBaseName, 'recording');
     downloadBlob(buildRecordingZip(base, new Uint8Array(_wavArrayBuffer), jsonBytes), `${base}-tagged.zip`, 'application/zip');
+  }
+
+  async function handleOpenAnalyser(ui) {
+    if (!_wavArrayBuffer || !_samples) return;
+    _persistence.setSaveStatus(ui, 'Speichert ...');
+    try {
+      const saved = await _persistence.persist(ui);
+      if (!saved) return;
+      _persistence.setSaveStatus(ui, 'Gespeichert');
+      window.location.href =
+        `../audio-analyse/index.html?source=${encodeURIComponent(saved.source)}&id=${encodeURIComponent(saved.id)}`;
+    } catch {
+      _persistence.setSaveStatus(ui, 'Speichern fehlgeschlagen');
+    }
   }
 
   // ── File loading ───────────────────────────────────────────────────────────
@@ -357,6 +413,7 @@ export function createOnsetTaggerFeature() {
   async function applyWavBuffer(arrayBuffer, filename, ui) {
     _wavArrayBuffer = arrayBuffer;
     _wavFilename    = filename;
+    setBaseName(ui, filename);
     if (ui.wavLabel) ui.wavLabel.textContent = filename + ' ✓';
     try {
       const ctx = getOrCreateAudioCtx();
@@ -419,11 +476,16 @@ export function createOnsetTaggerFeature() {
     }
     renderMetaForm(ui, _sidecarData);
     enableStep2(ui);
+    schedulePersist(ui);
   }
 
   function loadWav(file, ui) {
     const reader = new FileReader();
-    reader.onload = async (e) => applyWavBuffer(e.target.result, file.name, ui);
+    reader.onload = async (e) => {
+      _recordingSource = '';
+      _recordingId = '';
+      await applyWavBuffer(e.target.result, file.name, ui);
+    };
     reader.readAsArrayBuffer(file);
   }
 
@@ -440,6 +502,8 @@ export function createOnsetTaggerFeature() {
   }
 
   async function loadZip(file, ui) {
+    _recordingSource = '';
+    _recordingId = '';
     const buf     = await file.arrayBuffer();
     const entries = readZip(new Uint8Array(buf));
     const wavEntry  = entries.find(e => e.name.toLowerCase().endsWith('.wav'));
@@ -474,9 +538,14 @@ export function createOnsetTaggerFeature() {
     const ui = resolveUI();
     renderStrategyButtons(ui);
 
+    wireLoadMenu(ui);
+
     // WAV file button
     if (ui.wavBtn && ui.wavInput) {
-      ui.wavBtn.addEventListener('click', () => ui.wavInput.click());
+      ui.wavBtn.addEventListener('click', () => {
+        closeLoadMenu(ui);
+        ui.wavInput.click();
+      });
     }
     if (ui.wavInput) {
       ui.wavInput.addEventListener('change', (e) => {
@@ -487,7 +556,10 @@ export function createOnsetTaggerFeature() {
 
     // JSON file button
     if (ui.jsonBtn && ui.jsonInput) {
-      ui.jsonBtn.addEventListener('click', () => ui.jsonInput.click());
+      ui.jsonBtn.addEventListener('click', () => {
+        closeLoadMenu(ui);
+        ui.jsonInput.click();
+      });
     }
     if (ui.jsonInput) {
       ui.jsonInput.addEventListener('change', (e) => {
@@ -498,7 +570,10 @@ export function createOnsetTaggerFeature() {
 
     // ZIP file button
     if (ui.zipBtn && ui.zipInput) {
-      ui.zipBtn.addEventListener('click', () => ui.zipInput.click());
+      ui.zipBtn.addEventListener('click', () => {
+        closeLoadMenu(ui);
+        ui.zipInput.click();
+      });
     }
     if (ui.zipInput) {
       ui.zipInput.addEventListener('change', (e) => {
@@ -525,6 +600,7 @@ export function createOnsetTaggerFeature() {
           const moved = moveOnset(_onsetsMs, _selectedOnsetIndex, ms);
           _onsetsMs = moved.onsetsMs;
           _selectedOnsetIndex = moved.index;
+          schedulePersist(ui);
         }
         if (ui.cursorDisplay) {
           ui.cursorDisplay.textContent = `${_cursorSec.toFixed(3)} s`;
@@ -542,6 +618,7 @@ export function createOnsetTaggerFeature() {
         _onsetsMs = result.onsetsMs;
         _selectedOnsetIndex = result.index;
         updateOnsetUI(ui);
+        schedulePersist(ui);
       });
     }
 
@@ -556,6 +633,7 @@ export function createOnsetTaggerFeature() {
         syncCursorUI(ui);
         updateOnsetUI(ui);
         if (_svgEl) updateCursor(_svgEl, _cursorSec, _rangeStart, _rangeEnd);
+        schedulePersist(ui);
       });
     }
 
@@ -572,6 +650,7 @@ export function createOnsetTaggerFeature() {
             _selectedOnsetIndex--;
           }
           updateOnsetUI(ui);
+          schedulePersist(ui);
           return;
         }
 
@@ -602,6 +681,7 @@ export function createOnsetTaggerFeature() {
             _onsetsMs = merged.onsetsMs;
             _selectedOnsetIndex = -1;
             updateOnsetUI(ui);
+            schedulePersist(ui);
             setStrategyStatus(ui, `${merged.added} hinzugefügt, ${merged.skipped} übersprungen.`);
           })
           .catch(err => setStrategyStatus(ui, `Fehler: ${err.message}`))
@@ -654,72 +734,33 @@ export function createOnsetTaggerFeature() {
     if (ui.exportBtn) {
       ui.exportBtn.addEventListener('click', () => handleExport(ui));
     }
+    if (ui.exportTopBtn) {
+      ui.exportTopBtn.addEventListener('click', () => handleExport(ui));
+    }
+    if (ui.openAnalyserBtn) {
+      ui.openAnalyserBtn.addEventListener('click', () => void handleOpenAnalyser(ui));
+    }
+    if (ui.filenameInput) {
+      ui.filenameInput.addEventListener('input', () => {
+        _fileBaseName = normalizeRecordingBaseName(ui.filenameInput.value, _fileBaseName || 'recording');
+        _wavFilename = `${_fileBaseName}.wav`;
+        _sidecarFilename = `${_fileBaseName}.json`;
+        schedulePersist(ui);
+      });
+      ui.filenameInput.addEventListener('change', () => {
+        setBaseName(ui, ui.filenameInput.value);
+        schedulePersist(ui);
+      });
+      ui.filenameInput.addEventListener('blur', () => setBaseName(ui, ui.filenameInput.value));
+    }
+    if (ui.metaForm) {
+      ui.metaForm.addEventListener('change', () => schedulePersist(ui));
+      ui.metaForm.addEventListener('input', (e) => {
+        if (e.target?.tagName === 'TEXTAREA') schedulePersist(ui);
+      });
+    }
 
-    // ── XGBoost ONNX ──────────────────────────────────────────────────────────
-    if (ui.onnxBtn) {
-      ui.onnxBtn.addEventListener('click', () => ui.onnxInput?.click());
-    }
-    if (ui.onnxInput) {
-      ui.onnxInput.addEventListener('change', async (e) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
-        e.target.value = '';
-        if (ui.onnxLabel) ui.onnxLabel.textContent = `⏳ ${file.name}…`;
-        if (!_xgboostSchema) {
-          // Schema not yet loaded — just mark label and wait
-          if (ui.onnxLabel) ui.onnxLabel.textContent = `${file.name} (Schema fehlt noch)`;
-          // Store pending model file via state — re-use existing onnxInput label
-          _onnxModel = { pendingModelFile: file, session: null, schema: null };
-          updateXGBoostRunBtn(ui);
-          return;
-        }
-        if (ui.xgboostStatus) ui.xgboostStatus.textContent = 'Lade Modell…';
-        try {
-          _onnxModel = await loadXGBoostOnsetModel(file, _xgboostSchema);
-          if (ui.onnxLabel) ui.onnxLabel.textContent = `${file.name} ✓`;
-          if (ui.xgboostStatus) ui.xgboostStatus.textContent = '';
-          updateXGBoostRunBtn(ui);
-        } catch (err) {
-          if (ui.onnxLabel) ui.onnxLabel.textContent = `Fehler: ${err.message}`;
-          if (ui.xgboostStatus) ui.xgboostStatus.textContent = `❌ ${err.message}`;
-        }
-      });
-    }
-    if (ui.schemaBtn) {
-      ui.schemaBtn.addEventListener('click', () => ui.schemaInput?.click());
-    }
-    if (ui.schemaInput) {
-      ui.schemaInput.addEventListener('change', async (e) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
-        e.target.value = '';
-        if (ui.schemaLabel) ui.schemaLabel.textContent = `⏳ ${file.name}…`;
-        try {
-          const text = await file.text();
-          _xgboostSchema = JSON.parse(text);
-          if (ui.schemaLabel) ui.schemaLabel.textContent = `${file.name} ✓`;
-          // If model file is pending, complete the load now
-          if (_onnxModel?.pendingModelFile) {
-            const modelFile = _onnxModel.pendingModelFile;
-            _onnxModel = null;
-            if (ui.xgboostStatus) ui.xgboostStatus.textContent = 'Lade Modell…';
-            try {
-              _onnxModel = await loadXGBoostOnsetModel(modelFile, _xgboostSchema);
-              if (ui.onnxLabel) ui.onnxLabel.textContent = `${modelFile.name} ✓`;
-              if (ui.xgboostStatus) ui.xgboostStatus.textContent = '';
-            } catch (err2) {
-              if (ui.xgboostStatus) ui.xgboostStatus.textContent = `❌ ${err2.message}`;
-            }
-          }
-          updateXGBoostRunBtn(ui);
-        } catch (err) {
-          if (ui.schemaLabel) ui.schemaLabel.textContent = `Fehler: ${err.message}`;
-        }
-      });
-    }
-    if (ui.xgboostRunBtn) {
-      ui.xgboostRunBtn.addEventListener('click', () => handleXGBoostRun(ui));
-    }
+    _xgboostController.wire(ui);
 
     // Auto-load from recordings overview via URL params
     const params = new URLSearchParams(window.location.search);
@@ -728,6 +769,8 @@ export function createOnsetTaggerFeature() {
     if (source) {
       loadRecordingFromSource(source, id).then(entry => {
         if (!entry) return;
+        _recordingSource = source;
+        _recordingId = entry.id ?? id;
         const baseName = resolveRecordingFileBaseName(source, id, entry);
         const filename = `${baseName}.wav`;
         const sidecarFilename = `${baseName}.json`;
@@ -735,47 +778,6 @@ export function createOnsetTaggerFeature() {
           if (entry.manifest) applySidecarData(entry.manifest, sidecarFilename, ui);
         });
       }).catch(() => {});
-    }
-  }
-
-  function updateXGBoostRunBtn(ui) {
-    if (!ui.xgboostRunBtn) return;
-    const ready = _samples && _onnxModel && _onnxModel.session && _xgboostSchema;
-    ui.xgboostRunBtn.disabled = !ready;
-  }
-
-  async function handleXGBoostRun(ui) {
-    if (!_samples || !_onnxModel || !_onnxModel.session || !_xgboostSchema) return;
-    if (ui.xgboostRunBtn) ui.xgboostRunBtn.disabled = true;
-    if (ui.xgboostStatus) ui.xgboostStatus.textContent = '⏳ XGBoost läuft…';
-
-    try {
-      const threshold   = parseFloat(ui.xgboostThreshold?.value ?? '0.5');
-      const refractoryMs = parseFloat(ui.xgboostRefractory?.value ?? '100');
-
-      const result = await detectOnsetsOfflineXGBoost(
-        _samples,
-        _sampleRate,
-        _onnxModel,
-        { threshold, refractoryMs },
-      );
-
-      const merged = mergeOnsetsWithMinDistance(
-        _onsetsMs,
-        result.onsetsMs,
-        STRATEGY_IMPORT_MIN_DISTANCE_MS,
-      );
-      _onsetsMs = merged.onsetsMs;
-      _selectedOnsetIndex = -1;
-      updateOnsetUI(ui);
-      if (ui.xgboostStatus) {
-        ui.xgboostStatus.textContent =
-          `✅ ${result.onsetsMs.length} erkannt, ${merged.added} hinzugefügt, ${merged.skipped} übersprungen.`;
-      }
-    } catch (err) {
-      if (ui.xgboostStatus) ui.xgboostStatus.textContent = `❌ ${err.message}`;
-    } finally {
-      updateXGBoostRunBtn(ui);
     }
   }
 

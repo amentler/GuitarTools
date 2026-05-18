@@ -3,6 +3,8 @@
 Zeigt alle gespeicherten Aufnahmen aus beiden IndexedDB-Quellen in einer Mehrfachauswahl-Liste an.
 Der Nutzer kann einzelne oder mehrere Aufnahmen per Checkbox auswählen, als ZIP herunterladen oder löschen.
 Bulk-Aktionen erlauben Download und Löschen nach Quelle (Noten lesen / Akkord-Recorder).
+Der sichtbare Primaername ist der gespeicherte `baseName`/Dateiname; fachliche
+Metadaten bleiben Zusatzinformationen.
 
 ## Dateien
 
@@ -50,5 +52,5 @@ Verwendet `js/shared/zip.js` (`buildRecordingZip`, `buildCollectionZip`, `downlo
 
 ## Tests
 
-- Unit: `tests/unit/recordingsOverviewLogic.test.js` — 28 Tests (inkl. `buildZipEntryName`)
+- Unit: `tests/unit/recordingsOverviewLogic.test.js` — inkl. Dateiname/BaseName und `buildZipEntryName`
 - E2E: `tests/e2e/recordings-overview.spec.js` — 5 Playwright-Tests (Seite, Seeding, Checkbox, ZIP-Download)

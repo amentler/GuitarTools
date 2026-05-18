@@ -172,6 +172,23 @@ test.describe('Audio-Analyse Werkzeug', () => {
     expect(styles.backgroundColor).toBe('rgb(255, 255, 255)');
   });
 
+  test('Bottom-Bar ist als Flyout einklappbar und wieder sichtbar', async ({ page }) => {
+    const bar = page.locator('#analyse-bottom-bar');
+    const toggle = page.locator('#analyse-bottom-toggle');
+    await expect(bar).toBeVisible();
+    await expect(page.locator('#analyse-bottom-content')).toBeVisible();
+
+    await toggle.click();
+    await expect(bar).toHaveClass(/analyse-bottom-bar--collapsed/);
+    await expect(toggle).toHaveAttribute('aria-expanded', 'false');
+    await expect(page.locator('#analyse-bottom-content')).toBeHidden();
+
+    await toggle.click();
+    await expect(bar).not.toHaveClass(/analyse-bottom-bar--collapsed/);
+    await expect(toggle).toHaveAttribute('aria-expanded', 'true');
+    await expect(page.locator('#analyse-bottom-content')).toBeVisible();
+  });
+
   test('Spektralfluss-Chart hat sichtbare Linie (nicht konstant 0)', async ({ page }) => {
     await page.locator('#input-wav-file').setInputFiles(FIXTURE_ZIP);
     await expect(page.locator('#analyse-charts-wrapper')).toBeVisible({ timeout: 30_000 });

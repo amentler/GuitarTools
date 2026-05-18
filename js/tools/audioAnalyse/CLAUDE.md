@@ -69,9 +69,10 @@ Marker: erkannte Onsets rot gestrichelt (`#e74c3c`), getaggte Onsets gruen
 gestrichelt (`#1f8b4c`) auf allen Charts. Getaggte Onsets kommen aus
 Sidecar/Manifest `onsetsMs`.
 
-Die Bottom-Bar bietet Start-/Ende-Range-Slider, eine standardmaessig aktive
-vertikale Normalisierung fuer numerische Kurven und Checkboxen fuer erkannte
-und getaggte Onset-Marker. Frequenz-, Noten- und Gate-Charts behalten ihre
+Die Bottom-Bar ist ein Flyout: initial sichtbar, per Toggle einklappbar. Sie
+bietet Start-/Ende-Range-Slider, eine standardmaessig aktive vertikale
+Normalisierung fuer numerische Kurven und Checkboxen fuer erkannte und
+getaggte Onset-Marker. Frequenz-, Noten- und Gate-Charts behalten ihre
 fachliche Skala.
 
 ### Layout-Konstanten

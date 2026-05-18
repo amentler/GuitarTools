@@ -179,6 +179,24 @@ export async function deleteSheetMusicTake(id) {
 }
 
 /**
+ * Saves an updated sheet-music take and optionally removes a previous key.
+ * This is used by tools that edit a recording's sidecar or baseName after the
+ * original take was created.
+ * @param {string} previousId
+ * @param {{ wav: Uint8Array, sidecar?: object, manifest?: object, savedAt?: string }} entry
+ * @param {{ baseName: string }} options
+ * @returns {Promise<{id: string, baseName: string, wav: Uint8Array, sidecar: object, manifest: object, savedAt: string}|null>}
+ */
+export async function replaceSheetMusicTake(previousId, entry, options) {
+  const sidecar = entry?.sidecar ?? entry?.manifest ?? null;
+  const next = await saveSheetMusicTake(entry?.wav, sidecar, { baseName: options?.baseName });
+  if (next && previousId && previousId !== next.id) {
+    await deleteSheetMusicTake(previousId);
+  }
+  return next;
+}
+
+/**
  * Löscht die gespeicherte Legacy-Aufnahme aus IndexedDB.
  * @returns {Promise<boolean>}
  */

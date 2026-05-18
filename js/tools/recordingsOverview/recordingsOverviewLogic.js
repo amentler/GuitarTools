@@ -12,6 +12,8 @@ export function formatDate(isoString) {
 }
 
 export function buildDisplayName(source, id, metadata) {
+  const baseName = metadata?.baseName ?? metadata?.fileName ?? metadata?.filename;
+  if (baseName) return baseName;
   if (source === 'sheet-music') {
     const date = metadata?.savedAt ? ` · ${formatDate(metadata.savedAt)}` : '';
     return `Notenlesen-Aufnahme${date}`;

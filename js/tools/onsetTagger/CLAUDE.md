@@ -7,6 +7,9 @@ Browser-Werkzeug zur manuellen Annotation von Onset-Zeitstempeln in Gitarren-Auf
 | Datei | Zweck |
 |---|---|
 | `onsetTagger.js` | Haupt-Controller (`createOnsetTaggerFeature`): Datei-Laden, Playback, Slider-Logik, ZIP-Export |
+| `onsetTaggerLoadMenu.js` | Verdrahtet den kompakten Laden-Flyout fuer WAV/JSON/ZIP |
+| `onsetTaggerPersistence.js` | Speichert bearbeitete WAV+Sidecar-Takes direkt in die jeweilige IndexedDB-Quelle oder als Analyse-Handoff |
+| `onsetTaggerXGBoost.js` | Verdrahtet ONNX/Schema-Laden und XGBoost-Ausfuehrung mit festen Default-Parametern |
 | `onsetTaggerWaveform.js` | SVG-Waveform-Rendering: normalisierte Envelope, Zeitachse, Cursor (grün), Onset-Marker (rot/grün), Playhead (orange) |
 | `onsetTaggerLogic.js` | Pure Functions: Envelope-Berechnung, Zeit-Pixel, Onset-Liste, Sidecar-Builder, Auswahl-/Merge-Helfer |
 | `../../shared/audio/offlineOnsetDetection.js` | Offline-Ausführung der registrierten Gitarren-Onset-Strategien für Strategie-Importe |
@@ -18,7 +21,7 @@ Browser-Werkzeug zur manuellen Annotation von Onset-Zeitstempeln in Gitarren-Auf
 
 ## Workflow
 
-1. WAV-Datei laden → Waveform erscheint, Schritt 1 aktiv
+1. `Laden` oeffnet den Flyout fuer WAV-, JSON- oder ZIP-Import; WAV-Datei laden → Waveform erscheint, Schritt 1 aktiv
 2. JSON-Sidecar laden → Metadaten-Formular befüllt, Schritt 2 aktiv
 3. Start/Ende-Slider → Bereich einschränken (Waveform zoomt in den Bereich)
 4. Onset-Cursor-Slider → grüner Strich positionieren (Range: Start bis Ende in ms)
@@ -28,7 +31,9 @@ Browser-Werkzeug zur manuellen Annotation von Onset-Zeitstempeln in Gitarren-Auf
 8. Strategie-Button anklicken → erkannte Onsets werden additiv importiert, wenn sie mindestens 50 ms Abstand zu bestehenden Markierungen haben
 9. Play/Pause/Stop → Wiedergabe in Schleife über Start–Ende, mit wählbarer Geschwindigkeit
 10. Metadaten editieren (Schritt 2)
-11. „Als ZIP exportieren" → WAV + JSON (mit `onsetsMs`-Feld) als ZIP-Download
+11. Dateiname/BaseName kann im Tagger editiert werden; Export, persistierte Aufnahme und Analyzer-Link verwenden den aktuellen Namen sofort
+12. „Als ZIP exportieren" → WAV + JSON (mit `onsetsMs`-Feld) als ZIP-Download
+13. „Im Analyzer öffnen" speichert die aktuelle WAV+Sidecar direkt und öffnet `audio-analyse` mit `source`/`id`
 
 Die Waveform ist rein visuell normalisiert: Der größte Peak im sichtbaren Bereich
 füllt die verfügbare Graphhöhe aus. Das verändert weder Audiodaten noch
@@ -40,6 +45,10 @@ insbesondere fuer Notenlesen-Aufnahmen nach dem Schema
 `notenlesen_<takt>_<bpm>bpm_<noten>_<random5>`; der Dateiname darf im Tagger
 nicht auf statische Namen wie `notenlesen.wav` oder `manifest.json`
 zurueckfallen, solange ein BaseName vorhanden ist.
+
+Onset- und Metadaten-Aenderungen werden debounced direkt in die Sidecar der
+geladenen Aufnahme geschrieben. Lokal geladene WAV/JSON/ZIP-Dateien werden beim
+Analyzer-Handoff als vollstaendiger Sheet-Music-Take in IndexedDB gespeichert.
 
 ## Sidecar-Format
 
