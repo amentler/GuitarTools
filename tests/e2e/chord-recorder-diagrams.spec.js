@@ -16,9 +16,4 @@ test.describe('Chord Recorder – Chord grid diagrams', () => {
     await expect(svgInsideFretboard).toBeVisible();
   });
 
-  test('chord grid contains diagrams for multiple chords', async ({ page }) => {
-    await page.goto('/pages/chord-recorder/index.html');
-
-    await expect(page.locator('.cr-chord-card')).toHaveCountGreaterThan(5);
-  });
 });

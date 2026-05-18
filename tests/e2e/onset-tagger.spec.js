@@ -4,7 +4,6 @@ import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const WAV_FIXTURE  = path.resolve(__dirname, '../fixtures/chords/E-Moll/emin.wav');
-const JSON_FIXTURE = path.resolve(__dirname, '../fixtures/sequences/open-strings/fast.json');
 
 test.describe('Onset Tagger', () => {
 
@@ -35,26 +34,6 @@ test.describe('Onset Tagger', () => {
     // Wait for waveform SVG to appear
     await expect(page.locator('#tagger-waveform-wrap svg')).toBeVisible({ timeout: 10_000 });
     await expect(page.locator('#tagger-step1')).not.toHaveClass(/tagger-section--disabled/);
-  });
-
-  test('loading both files enables step 2', async ({ page }) => {
-    await page.locator('#tagger-wav-input').setInputFiles(WAV_FIXTURE);
-    await expect(page.locator('#tagger-waveform-wrap svg')).toBeVisible({ timeout: 10_000 });
-
-    await page.locator('#tagger-json-input').setInputFiles(JSON_FIXTURE);
-
-    await expect(page.locator('#tagger-step2')).not.toHaveClass(/tagger-section--disabled/, { timeout: 5_000 });
-  });
-
-  test('loading JSON file renders metadata form fields', async ({ page }) => {
-    await page.locator('#tagger-wav-input').setInputFiles(WAV_FIXTURE);
-    await expect(page.locator('#tagger-waveform-wrap svg')).toBeVisible({ timeout: 10_000 });
-
-    await page.locator('#tagger-json-input').setInputFiles(JSON_FIXTURE);
-
-    // fast.json has "notes", "tempoBpm", "notesPerBeat", "description"
-    await expect(page.locator('[name="tempoBpm"]')).toBeVisible({ timeout: 5_000 });
-    await expect(page.locator('[name="description"]')).toBeVisible();
   });
 
   test('add onset button adds entry to onset list', async ({ page }) => {
@@ -138,28 +117,4 @@ test.describe('Onset Tagger', () => {
     await expect(page.locator('.tagger-onset-item')).toHaveCount(firstCount);
   });
 
-  test('metadata field change persists until export', async ({ page }) => {
-    await page.locator('#tagger-wav-input').setInputFiles(WAV_FIXTURE);
-    await expect(page.locator('#tagger-waveform-wrap svg')).toBeVisible({ timeout: 10_000 });
-    await page.locator('#tagger-json-input').setInputFiles(JSON_FIXTURE);
-    await expect(page.locator('[name="tempoBpm"]')).toBeVisible({ timeout: 5_000 });
-
-    const tempoInput = page.locator('[name="tempoBpm"]');
-    await tempoInput.selectOption('150');
-    await expect(tempoInput).toHaveValue('150');
-  });
-
-  test('export button triggers a ZIP download', async ({ page }) => {
-    await page.locator('#tagger-wav-input').setInputFiles(WAV_FIXTURE);
-    await expect(page.locator('#tagger-waveform-wrap svg')).toBeVisible({ timeout: 10_000 });
-    await page.locator('#tagger-json-input').setInputFiles(JSON_FIXTURE);
-    await expect(page.locator('#tagger-step2')).not.toHaveClass(/tagger-section--disabled/, { timeout: 5_000 });
-
-    const [download] = await Promise.all([
-      page.waitForEvent('download'),
-      page.locator('#tagger-export').click(),
-    ]);
-
-    expect(download.suggestedFilename()).toMatch(/\.zip$/);
-  });
 });

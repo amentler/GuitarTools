@@ -91,6 +91,10 @@ Nach der CLI-Integration ruft Codex ueber `.codex/hooks.json` direkt `/home/amen
 
 Fuer dieses Repo sind ausserdem die Git-Hooks per `graphify hook install` in `.husky/_/post-commit` und `.husky/_/post-checkout` registriert. Damit koennen Graph-Updates nach Checkout/Commit automatisch angestossen werden.
 
+#### Playwright Version
+
+Required: **Playwright 1.59.1** (`@playwright/test` + `playwright` in package.json). Do not upgrade without verifying all E2E tests still pass — matcher APIs differ between minor versions (`toHaveCountGreaterThan` does not exist in 1.x).
+
 #### Playwright / Chromium System Dependencies
 
 Playwrights Chromium braucht auf Ubuntu mindestens die Systembibliotheken

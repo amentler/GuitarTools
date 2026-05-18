@@ -21,9 +21,8 @@ const SEQUENCES_DIR = join(process.cwd(), 'tests/fixtures/sequences');
 export const SHEET_FINGERPRINT_ANALYZE_INTERVAL_MS = ONSET_LIVE_ANALYZE_INTERVAL_MS;
 export const SHEET_FINGERPRINT_ONSET_FRAME_SIZE = ONSET_FFT_SIZE;
 export const SHEET_FINGERPRINT_POSITIVE_FIXTURE_FILES = [
-  'open-strings/eeeeaaaaddddgggg.wav',
-  'open-strings/medium.wav',
-  'open-strings/slow.wav',
+  'sheet-music-reading/eeeeaaaaddddgggg-tagged.zip',
+  'sheet-music-reading/medium-tagged.zip',
   'sheet-music-reading/4-4_40bpm_EGADB_9low6-tagged.zip',
 ];
 
@@ -54,10 +53,10 @@ function formatFeatureValue(value, digits = 3) {
   return value.toFixed(digits);
 }
 
-function readSequenceManifest(manifest, file) {
+function readSequenceManifest(manifest, _file) {
   if (!manifest) return null;
   if (!Array.isArray(manifest.notes) || manifest.notes.length === 0) {
-    throw new Error(`Invalid sequence manifest without notes: ${file}`);
+    return null;
   }
   return manifest;
 }

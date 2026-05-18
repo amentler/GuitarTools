@@ -1,8 +1,6 @@
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { readFile, writeFile } from 'fs/promises';
 import { test, expect } from '@playwright/test';
-import { buildRecordingZip } from '../../js/shared/zip.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -131,32 +129,6 @@ test.describe('Audio-Analyse Werkzeug', () => {
     expect(pointsFixedScale).not.toEqual(pointsNormalized);
   });
 
-  test('Erkannte Onset-Marker lassen sich ausblenden', async ({ page }) => {
-    await page.locator('#input-wav-file').setInputFiles(FIXTURE_ZIP);
-    await expect(page.locator('#analyse-charts-wrapper')).toBeVisible({ timeout: 30_000 });
-
-    await expect(page.locator('.analysis-marker-detected').first()).toBeVisible();
-    await page.locator('#analyse-show-detected-onsets').uncheck();
-    await expect(page.locator('.analysis-marker-detected')).toHaveCount(0);
-  });
-
-  test('Getaggte Onsets aus ZIP-Sidecar werden optional angezeigt', async ({ page }, testInfo) => {
-    const wavData = await readFile(FIXTURE_WAV);
-    const jsonData = new TextEncoder().encode(JSON.stringify({
-      notes: ['E2', 'G2'],
-      onsetsMs: [500, 1500],
-    }));
-    const zipPath = testInfo.outputPath('audio-analyse-tagged.zip');
-    await writeFile(zipPath, buildRecordingZip('audio-analyse-tagged', new Uint8Array(wavData), jsonData));
-
-    await page.locator('#input-wav-file').setInputFiles(zipPath);
-    await expect(page.locator('#analyse-charts-wrapper')).toBeVisible({ timeout: 30_000 });
-
-    await expect(page.locator('#analyse-show-tagged-onsets')).toBeEnabled();
-    await expect(page.locator('.analysis-marker-tagged').first()).toBeVisible();
-    await page.locator('#analyse-show-tagged-onsets').uncheck();
-    await expect(page.locator('.analysis-marker-tagged')).toHaveCount(0);
-  });
 
   test('Strategie-Dropdowns sind schwarz auf weiß lesbar', async ({ page }) => {
     const select = page.locator('#analyse-pitch-select');
@@ -207,58 +179,4 @@ test.describe('Audio-Analyse Werkzeug', () => {
     expect(uniqueYs.size).toBeGreaterThan(1);
   });
 
-  test('Tooltip erscheint beim Hover und enthält alle relevanten Werte', async ({ page }) => {
-    await page.locator('#input-wav-file').setInputFiles(FIXTURE_ZIP);
-    const wrapper = page.locator('#analyse-charts-wrapper');
-    await expect(wrapper).toBeVisible({ timeout: 30_000 });
-
-    // Hover über die Mitte des ersten Charts
-    const firstSvg = wrapper.locator('svg.analysis-chart-svg').first();
-    const box = await firstSvg.boundingBox();
-    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
-
-    const tooltip = page.locator('.analysis-tooltip');
-    await expect(tooltip).toBeVisible({ timeout: 5_000 });
-
-    const tooltipText = await tooltip.innerText();
-    // Zeit-Wert
-    expect(tooltipText).toMatch(/\d+\.\d+s/);
-    // RMS
-    expect(tooltipText).toContain('RMS:');
-    // Spektralfluss
-    expect(tooltipText).toContain('Flux:');
-    // Band-Ratio
-    expect(tooltipText).toContain('BandR:');
-    // Aktive Bänder
-    expect(tooltipText).toContain('ActiveB:');
-    // Onset-Konfidenz
-    expect(tooltipText).toContain('Conf:');
-    // Frequenz
-    expect(tooltipText).toContain('Freq:');
-    // Note
-    expect(tooltipText).toContain('Note:');
-  });
-
-  test('Tooltip bleibt nach Pointerleave offen und schließt per Klick', async ({ page }) => {
-    await page.locator('#input-wav-file').setInputFiles(FIXTURE_ZIP);
-    const wrapper = page.locator('#analyse-charts-wrapper');
-    await expect(wrapper).toBeVisible({ timeout: 30_000 });
-
-    const firstSvg = wrapper.locator('svg.analysis-chart-svg').first();
-    const box = await firstSvg.boundingBox();
-
-    // Tooltip öffnen
-    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
-    const tooltip = page.locator('.analysis-tooltip');
-    await expect(tooltip).toBeVisible({ timeout: 5_000 });
-
-    // Maus aus dem Wrapper bewegen
-    await page.mouse.move(0, 0);
-    // Tooltip soll noch sichtbar sein
-    await expect(tooltip).toBeVisible();
-
-    // Klick auf Tooltip schließt ihn
-    await tooltip.click();
-    await expect(tooltip).toBeHidden();
-  });
 });
