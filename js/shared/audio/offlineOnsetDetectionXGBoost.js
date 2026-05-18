@@ -19,7 +19,7 @@ import {
 import { collectFrameData } from './collectFrameData.js';
 import {
   GUITAR_ONSET_STRATEGY_KEYS,
-  resolveGuitarOnsetStrategy,
+  resolveGuitarOnsetBaseStrategy,
 } from './guitarOnsetStrategies.js';
 
 const ONNX_RUNTIME_URL = new URL('../../lib/onnxruntime/ort.min.js', import.meta.url).href;
@@ -222,7 +222,7 @@ export async function detectOnsetsOfflineXGBoost(samples, sampleRate, model, opt
   const outputName = schema.outputName ?? session.outputNames[0];
 
   // Prepare onset strategy for base feature extraction
-  const onsetStrategy = resolveGuitarOnsetStrategy(
+  const onsetStrategy = resolveGuitarOnsetBaseStrategy(
     options.onsetStrategyKey ?? GUITAR_ONSET_STRATEGY_KEYS.SWEEP_STANDARD,
   );
   let onsetState = onsetStrategy.createState();

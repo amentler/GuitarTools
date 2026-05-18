@@ -6,7 +6,10 @@ import {
   SHEET_MUSIC_CENTS_TOLERANCE,
   updateSheetMusicMatchState,
 } from './sheetMusicRecognition.js';
-import { resolveGuitarOnsetStrategy } from '../../shared/audio/guitarOnsetStrategies.js';
+import {
+  resolveGuitarOnsetBaseStrategy,
+  resolveGuitarOnsetStrategy,
+} from '../../shared/audio/guitarOnsetStrategies.js';
 import {
   createLiveXGBoostOnsetState,
   updateLiveXGBoostOnsetDetector,
@@ -110,7 +113,7 @@ export function createNoteHandler({
         memory: readBrowserMemory(),
       }, { source: 'sheetMusicReading' });
     } catch (err) {
-      const fallback = resolveGuitarOnsetStrategy(onsetStrategy.baseStrategyKey);
+      const fallback = resolveGuitarOnsetBaseStrategy(onsetStrategy.baseStrategyKey);
       state.onsetState = fallback.createState();
       debugStore.addEntry('live-xgboost:init-failed', {
         message: err?.message ?? String(err),
@@ -245,7 +248,7 @@ export function createNoteHandler({
         sampleRate: audioSession.audioCtx.sampleRate,
       });
     } else {
-      const fallbackStrategy = resolveGuitarOnsetStrategy(onsetStrategy.baseStrategyKey ?? onsetStrategy.key);
+      const fallbackStrategy = resolveGuitarOnsetBaseStrategy(onsetStrategy.baseStrategyKey ?? onsetStrategy.key);
       onset = fallbackStrategy.update(state.onsetState, { frequencyData, samples: buffer });
     }
     state.onsetState = onset.nextState;

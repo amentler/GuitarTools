@@ -1,6 +1,6 @@
 import {
   GUITAR_ONSET_STRATEGY_KEYS,
-  resolveGuitarOnsetStrategy,
+  resolveGuitarOnsetBaseStrategy,
 } from './guitarOnsetStrategies.js';
 import { buildContextFeatures, extractXGBoostFrameFeatures } from './xgboostFeatureExtractor.js';
 import { loadDefaultXGBoostOnsetModel } from './offlineOnsetDetectionXGBoost.js';
@@ -29,7 +29,7 @@ function resolveOutput(results, outputName) {
 export async function createLiveXGBoostOnsetState(options = {}) {
   const model = options.model ?? await loadDefaultXGBoostOnsetModel();
   const schema = model.schema;
-  const baseStrategy = resolveGuitarOnsetStrategy(
+  const baseStrategy = resolveGuitarOnsetBaseStrategy(
     options.baseStrategyKey
       ?? schema.decision?.baseStrategyKey
       ?? GUITAR_ONSET_STRATEGY_KEYS.SWEEP_STANDARD,

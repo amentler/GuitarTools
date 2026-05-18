@@ -12,7 +12,10 @@
  *   4. AnalysisResult zurückgeben
  */
 
-import { resolveGuitarOnsetStrategy } from '../../shared/audio/guitarOnsetStrategies.js';
+import {
+  resolveGuitarOnsetBaseStrategy,
+  resolveGuitarOnsetStrategy,
+} from '../../shared/audio/guitarOnsetStrategies.js';
 import {
   detectOnsetsOfflineXGBoost,
   loadDefaultXGBoostOnsetModel,
@@ -173,18 +176,14 @@ export async function analyzeAudio(samples, sampleRate, options = {}) {
 
   // ── Onset analysis on onset frames ─────────────────────────────────────────
   const selectedOnsetStrategy = resolveGuitarOnsetStrategy(options.onsetStrategyKey);
-  const onsetStrategy = selectedOnsetStrategy.offlineDetector === 'xgboost'
-    ? resolveGuitarOnsetStrategy(selectedOnsetStrategy.baseStrategyKey)
-    : selectedOnsetStrategy;
-  const xgboostOnsets = selectedOnsetStrategy.offlineDetector === 'xgboost'
-    ? await detectOnsetsOfflineXGBoost(
-      samples,
-      sampleRate,
-      await loadDefaultXGBoostOnsetModel(),
-      { onsetStrategyKey: selectedOnsetStrategy.baseStrategyKey },
-    )
-    : null;
-  const xgboostOnsetSet = new Set((xgboostOnsets?.onsetsSec ?? []).map(sec => Math.round(sec * 1000)));
+  const onsetStrategy = resolveGuitarOnsetBaseStrategy(selectedOnsetStrategy.baseStrategyKey);
+  const xgboostOnsets = await detectOnsetsOfflineXGBoost(
+    samples,
+    sampleRate,
+    await loadDefaultXGBoostOnsetModel(),
+    { onsetStrategyKey: selectedOnsetStrategy.baseStrategyKey },
+  );
+  const xgboostOnsetSet = new Set(xgboostOnsets.onsetsSec.map(sec => Math.round(sec * 1000)));
   let onsetState = onsetStrategy.createState();
   let lastOnsetResult = null;
 
@@ -204,11 +203,9 @@ export async function analyzeAudio(samples, sampleRate, options = {}) {
     lastOnsetResult = onsetResult;
 
     const frameOnsetMs = Math.round((i * onsetHopSize) / sampleRate * 1000);
-    const isOnset = xgboostOnsets
-      ? xgboostOnsetSet.has(frameOnsetMs)
-      : onsetResult.event === 'onset';
+    const isOnset = xgboostOnsetSet.has(frameOnsetMs);
     if (isOnset) {
-      onsets.push(xgboostOnsets ? frameOnsetMs / 1000 : tCenter);
+      onsets.push(frameOnsetMs / 1000);
     }
 
     // Map nearest pitch data to this onset frame

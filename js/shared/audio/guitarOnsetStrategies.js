@@ -1,7 +1,7 @@
 /**
  * guitarOnsetStrategies.js
  *
- * Registry of onset-detection strategies for the sheet-music reading exercise.
+ * Registry of selectable onset-detection strategies for sheet-music reading.
  *
  * Each strategy wraps an onset-detection algorithm behind a uniform interface:
  *
@@ -12,32 +12,21 @@
  *   - update(state, { frequencyData, samples, rms? }, options?) → { nextState, event, ... }
  *     `event` is 'onset' or null (same contract as guitarOnsetDetector).
  *
- * Usage:
- *   import { resolveGuitarOnsetStrategy } from './guitarOnsetStrategies.js';
- *   const strategy = resolveGuitarOnsetStrategy('guitar-onset');
- *   let state = strategy.createState();
- *   const { nextState, event } = strategy.update(state, { frequencyData, samples });
- *   state = nextState;
+ * The app exposes XGBoost as the only selectable detector. The sweep-standard
+ * strategy remains available through resolveGuitarOnsetBaseStrategy() as an
+ * internal feature source for the XGBoost model.
  */
 
 import {
   createGuitarOnsetState,
   normalizeGuitarOnsetOptions,
-  updateGuitarOnsetDetector,
   updateGuitarOnsetDetectorNormalized,
 } from './guitarOnsetDetector.js';
-import { applyGuitarBandpass } from './guitarPitchDetection.js';
-import {
-  ONSET_SWEEP_STANDARD_COOLDOWN_FRAMES,
-  ONSET_BROADBAND_OR_COOLDOWN_FRAMES,
-} from './onsetPipelineConfig.js';
+import { ONSET_SWEEP_STANDARD_COOLDOWN_FRAMES } from './onsetPipelineConfig.js';
 
 export const GUITAR_ONSET_STRATEGY_KEYS = {
   XGBOOST_ANDROID_FIREFOX: 'xgboost-android-firefox',
   SWEEP_STANDARD: 'guitar-onset-sweep-standard',
-  GUITAR_ONSET: 'guitar-onset',
-  BROADBAND_OR: 'guitar-onset-broadband-or',
-  LEGACY_BANDPASS: 'guitar-onset-legacy-bandpass',
 };
 
 export const DEFAULT_GUITAR_ONSET_STRATEGY_KEY = GUITAR_ONSET_STRATEGY_KEYS.XGBOOST_ANDROID_FIREFOX;
@@ -62,17 +51,6 @@ export const SWEEP_STANDARD_GUITAR_ONSET_OPTIONS = Object.freeze({
 
 const SWEEP_STANDARD_NORMALIZED_OPTIONS = normalizeGuitarOnsetOptions(SWEEP_STANDARD_GUITAR_ONSET_OPTIONS);
 
-export const BROADBAND_OR_GUITAR_ONSET_OPTIONS = Object.freeze({
-  broadbandOrMinBins: 10,
-  cooldownFrames: ONSET_BROADBAND_OR_COOLDOWN_FRAMES,
-  relativeReattackFactor: null,
-  relativeFluxFactor: null,
-  confirmedRmsFactor: null,
-  cooldownOverrideFactor: null,
-});
-
-const BROADBAND_OR_NORMALIZED_OPTIONS = normalizeGuitarOnsetOptions(BROADBAND_OR_GUITAR_ONSET_OPTIONS);
-
 function makeStrategyUpdate(baseNormalized, baseRaw) {
   return (state, input, options = {}) => {
     const normalizedOptions = options && Object.keys(options).length > 0
@@ -81,6 +59,14 @@ function makeStrategyUpdate(baseNormalized, baseRaw) {
     return updateGuitarOnsetDetectorNormalized(state, input, normalizedOptions);
   };
 }
+
+const SWEEP_STANDARD_BASE_STRATEGY = {
+  key: GUITAR_ONSET_STRATEGY_KEYS.SWEEP_STANDARD,
+  label: 'XGBoost Base Strategy',
+  description: 'Interne Sweep-Feature-Basis fuer XGBoost. Nicht als eigener Detektor auswaehlbar.',
+  createState: createGuitarOnsetState,
+  update: makeStrategyUpdate(SWEEP_STANDARD_NORMALIZED_OPTIONS, SWEEP_STANDARD_GUITAR_ONSET_OPTIONS),
+};
 
 export const GUITAR_ONSET_STRATEGIES = [
   {
@@ -91,37 +77,6 @@ export const GUITAR_ONSET_STRATEGIES = [
     baseStrategyKey: GUITAR_ONSET_STRATEGY_KEYS.SWEEP_STANDARD,
     createState: createGuitarOnsetState,
     update: makeStrategyUpdate(SWEEP_STANDARD_NORMALIZED_OPTIONS, SWEEP_STANDARD_GUITAR_ONSET_OPTIONS),
-  },
-  {
-    key: GUITAR_ONSET_STRATEGY_KEYS.SWEEP_STANDARD,
-    label: 'Guitar Onset Detector (Sweep Standard)',
-    description: 'Sweep-optimierte Standard-Erkennung mit RMS/Flux-Reattack-Bestaetigung.',
-    createState: createGuitarOnsetState,
-    update: makeStrategyUpdate(SWEEP_STANDARD_NORMALIZED_OPTIONS, SWEEP_STANDARD_GUITAR_ONSET_OPTIONS),
-  },
-  {
-    key: GUITAR_ONSET_STRATEGY_KEYS.GUITAR_ONSET,
-    label: 'Guitar Onset Detector (Legacy)',
-    description: 'Bisherige Breitband-Spektralfluss + RMS-Spike-Erkennung fuer Gitarren-Anschlaege.',
-    createState: createGuitarOnsetState,
-    update: updateGuitarOnsetDetector,
-  },
-  {
-    key: GUITAR_ONSET_STRATEGY_KEYS.BROADBAND_OR,
-    label: 'Guitar Onset Detector (Broadband OR)',
-    description: 'Feuert wenn Flux ODER BandRatio ODER SpectralNoveltyBins einen Schwellenwert überschreiten. Geeignet für schnelle Notenfolgen und Wiederholungen.',
-    createState: createGuitarOnsetState,
-    update: makeStrategyUpdate(BROADBAND_OR_NORMALIZED_OPTIONS, BROADBAND_OR_GUITAR_ONSET_OPTIONS),
-  },
-  {
-    key: GUITAR_ONSET_STRATEGY_KEYS.LEGACY_BANDPASS,
-    label: 'Guitar Onset Detector (Legacy + Bandpass)',
-    description: 'Legacy-Erkennung mit Bandpass-Filter (150–450 Hz) vor der RMS-Berechnung. Fokussiert auf den Attack-Bereich, reduziert Tieffrequenz-Rumpeln der Sympathiesaiten.',
-    createState: createGuitarOnsetState,
-    update: (state, { frequencyData, samples, rms, sampleRate = 44100 }, options = {}) => {
-      const filteredSamples = samples ? applyGuitarBandpass(samples, sampleRate, 150, 450) : null;
-      return updateGuitarOnsetDetector(state, { frequencyData, samples: filteredSamples, rms }, options);
-    },
   },
 ];
 
@@ -134,6 +89,17 @@ export function resolveGuitarOnsetStrategy(key) {
   return GUITAR_ONSET_STRATEGIES.find(s => s.key === key)
     ?? GUITAR_ONSET_STRATEGIES.find(s => s.key === DEFAULT_GUITAR_ONSET_STRATEGY_KEY)
     ?? GUITAR_ONSET_STRATEGIES[0];
+}
+
+/**
+ * Returns the internal onset strategy used for XGBoost context features.
+ * These base strategies are not user-selectable detectors.
+ * @param {string} [key]
+ * @returns {object} strategy object
+ */
+export function resolveGuitarOnsetBaseStrategy(key) {
+  if (key === GUITAR_ONSET_STRATEGY_KEYS.SWEEP_STANDARD) return SWEEP_STANDARD_BASE_STRATEGY;
+  return SWEEP_STANDARD_BASE_STRATEGY;
 }
 
 /**

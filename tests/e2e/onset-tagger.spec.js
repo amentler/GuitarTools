@@ -95,7 +95,7 @@ test.describe('Onset Tagger', () => {
       el.dispatchEvent(new Event('input', { bubbles: true }));
     });
 
-    await expect(page.locator('.tagger-onset-select')).toContainText('100 ms');
+    await expect(page.locator('.tagger-onset-select')).toHaveText('1. 100 ms');
   });
 
   test('filename edit is used for ZIP export', async ({ page }) => {

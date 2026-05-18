@@ -26,15 +26,15 @@ function hitsWithinWindow(tagged, detected) {
 }
 
 test.describe('Onset-Tagger – getaggte Onset-Genauigkeit', () => {
-  test('broadband-or erkennt alle getaggten Onsets in medium.wav im [-30ms, +90ms]-Fenster', async ({ page }) => {
+  test('XGBoost erkennt alle getaggten Onsets in medium.wav im [-30ms, +90ms]-Fenster', async ({ page }) => {
     await page.goto('/pages/onset-tagger/index.html');
 
     // Nur WAV laden – ohne JSON, damit die Liste leer startet
     await page.locator('#tagger-wav-input').setInputFiles(MEDIUM_WAV);
     await expect(page.locator('#tagger-waveform-wrap svg')).toBeVisible({ timeout: 15_000 });
 
-    // broadband-or Strategie-Button klicken
-    const stratBtn = page.locator('[data-strategy-key="guitar-onset-broadband-or"]');
+    // XGBoost-Strategie-Button klicken
+    const stratBtn = page.locator('[data-strategy-key="xgboost-android-firefox"]');
     await expect(stratBtn).toBeVisible();
     await stratBtn.click();
 

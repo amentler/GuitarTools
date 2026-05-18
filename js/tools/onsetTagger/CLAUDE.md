@@ -9,7 +9,6 @@ Browser-Werkzeug zur manuellen Annotation von Onset-Zeitstempeln in Gitarren-Auf
 | `onsetTagger.js` | Haupt-Controller (`createOnsetTaggerFeature`): Datei-Laden, Playback, Slider-Logik, ZIP-Export |
 | `onsetTaggerLoadMenu.js` | Verdrahtet den kompakten Laden-Flyout fuer WAV/JSON/ZIP |
 | `onsetTaggerPersistence.js` | Speichert bearbeitete WAV+Sidecar-Takes direkt in die jeweilige IndexedDB-Quelle oder als Analyse-Handoff |
-| `onsetTaggerXGBoost.js` | Verdrahtet ONNX/Schema-Laden und XGBoost-Ausfuehrung mit festen Default-Parametern |
 | `onsetTaggerWaveform.js` | SVG-Waveform-Rendering: normalisierte Envelope, Zeitachse, Cursor (grün), Onset-Marker (rot/grün), Playhead (orange) |
 | `onsetTaggerLogic.js` | Pure Functions: Envelope-Berechnung, Zeit-Pixel, Onset-Liste, Sidecar-Builder, Auswahl-/Merge-Helfer |
 | `../../shared/audio/offlineOnsetDetection.js` | Offline-Ausführung der registrierten Gitarren-Onset-Strategien für Strategie-Importe |

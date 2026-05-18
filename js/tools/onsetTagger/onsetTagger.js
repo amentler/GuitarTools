@@ -22,7 +22,6 @@ import { getGuitarOnsetStrategies } from '../../shared/audio/guitarOnsetStrategi
 import { createGlobalDebugStore } from '../../shared/debug/index.js';
 import { closeLoadMenu, wireLoadMenu } from './onsetTaggerLoadMenu.js';
 import { createOnsetTaggerPersistenceController } from './onsetTaggerPersistence.js';
-import { createOnsetTaggerXGBoostController } from './onsetTaggerXGBoost.js';
 
 import {
   clientXToTime,
@@ -77,22 +76,6 @@ export function createOnsetTaggerFeature() {
 
   let _root = null;
   let _svgEl = null;
-  const _xgboostController = createOnsetTaggerXGBoostController({
-    getSamples: () => _samples,
-    getSampleRate: () => _sampleRate,
-    getOnsets: () => _onsetsMs,
-    setOnsets: (onsetsMs) => {
-      _onsetsMs = onsetsMs;
-      _selectedOnsetIndex = -1;
-    },
-    mergeOnsets: (existing, incoming) => mergeOnsetsWithMinDistance(
-      existing,
-      incoming,
-      STRATEGY_IMPORT_MIN_DISTANCE_MS,
-    ),
-    updateOnsetUI,
-    schedulePersist,
-  });
   const _persistence = createOnsetTaggerPersistenceController({
     getWavArrayBuffer: () => _wavArrayBuffer,
     getSamples: () => _samples,
@@ -145,15 +128,6 @@ export function createOnsetTaggerFeature() {
       filenameInput: q('tagger-filename-input'),
       saveStatus:    q('tagger-save-status'),
       openAnalyserBtn: q('tagger-open-analyser'),
-      xgboostSection:   q('tagger-xgboost-section'),
-      onnxBtn:          q('tagger-onnx-btn'),
-      onnxInput:        q('tagger-onnx-input'),
-      onnxLabel:        q('tagger-onnx-label'),
-      schemaBtn:        q('tagger-schema-btn'),
-      schemaInput:      q('tagger-schema-input'),
-      schemaLabel:      q('tagger-schema-label'),
-      xgboostRunBtn:    q('tagger-xgboost-run'),
-      xgboostStatus:    q('tagger-xgboost-status'),
     };
   }
 
@@ -354,7 +328,7 @@ export function createOnsetTaggerFeature() {
       selectBtn.type = 'button';
       selectBtn.setAttribute('data-select-index', i);
       selectBtn.setAttribute('aria-pressed', i === _selectedOnsetIndex ? 'true' : 'false');
-      selectBtn.textContent = `${i + 1}. ${(ms / 1000).toFixed(3)} s (${Math.round(ms)} ms)`;
+      selectBtn.textContent = `${i + 1}. ${Math.round(ms)} ms`;
       const btn = document.createElement('button');
       btn.className = 'tagger-onset-remove';
       btn.setAttribute('data-index', i);
@@ -455,7 +429,6 @@ export function createOnsetTaggerFeature() {
       }
 
       ui.step1.classList.remove('tagger-section--disabled');
-      if (ui.xgboostSection) ui.xgboostSection.classList.remove('tagger-section--disabled');
       redrawWaveform(ui);
       renderOnsetList(ui);
       enableStep2(ui);
@@ -759,8 +732,6 @@ export function createOnsetTaggerFeature() {
         if (e.target?.tagName === 'TEXTAREA') schedulePersist(ui);
       });
     }
-
-    _xgboostController.wire(ui);
 
     // Auto-load from recordings overview via URL params
     const params = new URLSearchParams(window.location.search);

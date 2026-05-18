@@ -17,5 +17,4 @@ export const ONSET_LIVE_ANALYZE_INTERVAL_MS = 5;
 
 // Cooldown in frames, calibrated for hopSize = ONSET_FFT_SIZE / ONSET_HOP_DIVISOR.
 export const ONSET_SWEEP_STANDARD_COOLDOWN_FRAMES = 19;
-export const ONSET_BROADBAND_OR_COOLDOWN_FRAMES = 12;
 export const ONSET_DEFAULT_COOLDOWN_FRAMES = 12;

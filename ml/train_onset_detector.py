@@ -18,6 +18,7 @@ import os
 import sys
 import uuid
 import warnings
+from copy import deepcopy
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -88,6 +89,8 @@ def load_training_files(data_dir: str, feature_names: list[str], positive_window
     file_features = []
     file_labels = []
     file_names = []
+    file_times_ms = []
+    file_onsets_ms = []
     audio_config_sample = None
     n_skipped = 0
 
@@ -144,6 +147,7 @@ def load_training_files(data_dir: str, feature_names: list[str], positive_window
 
         # Build feature matrix
         rows = []
+        times_ms = []
         missing_features = set()
         for frame in frames:
             feats = frame.get("features", {})
@@ -155,6 +159,7 @@ def load_training_files(data_dir: str, feature_names: list[str], positive_window
                 else:
                     row.append(float(feats[feat_name]))
             rows.append(row)
+            times_ms.append(frame.get("t", 0) * 1000)
 
         if missing_features:
             sys.exit(
@@ -180,6 +185,8 @@ def load_training_files(data_dir: str, feature_names: list[str], positive_window
         file_features.append(X)
         file_labels.append(y)
         file_names.append(path.name)
+        file_times_ms.append(np.array(times_ms, dtype=np.float32))
+        file_onsets_ms.append([float(onset) for onset in onsets_ms])
         print(
             f"  Loaded {path.name}: {len(frames)} frames, "
             f"{y.sum()} positives ({100 * y.mean():.1f}%)"
@@ -190,7 +197,7 @@ def load_training_files(data_dir: str, feature_names: list[str], positive_window
     if not file_features:
         sys.exit("ERROR: No usable training files after filtering.")
 
-    return file_features, file_labels, file_names, audio_config_sample
+    return file_features, file_labels, file_names, file_times_ms, file_onsets_ms, audio_config_sample
 
 
 # ---------------------------------------------------------------------------
@@ -241,7 +248,7 @@ def split_by_file(
         f"val={len(val_idx)} files ({len(y_val)} frames), "
         f"test={len(test_idx)} files ({len(y_test)} frames)"
     )
-    return X_train, y_train, X_val, y_val, X_test, y_test
+    return X_train, y_train, X_val, y_val, X_test, y_test, val_idx, test_idx
 
 
 # ---------------------------------------------------------------------------
@@ -356,12 +363,448 @@ def train_model(
 
 
 # ---------------------------------------------------------------------------
+# Tuning
+# ---------------------------------------------------------------------------
+
+def predict_probabilities(model: xgb.XGBClassifier, X: np.ndarray) -> np.ndarray:
+    return model.predict_proba(X)[:, 1]
+
+
+def safe_divide(numerator: float, denominator: float) -> float:
+    return numerator / denominator if denominator else 0.0
+
+
+def build_eval_files(
+    indices: np.ndarray,
+    file_features: list[np.ndarray],
+    file_labels: list[np.ndarray],
+    file_names: list[str],
+    file_times_ms: list[np.ndarray],
+    file_onsets_ms: list[list[float]],
+) -> list[dict]:
+    return [
+        {
+            "name": file_names[i],
+            "X": file_features[i],
+            "y": file_labels[i],
+            "times_ms": file_times_ms[i],
+            "onsets_ms": file_onsets_ms[i],
+        }
+        for i in indices
+    ]
+
+
+def predict_eval_files(model: xgb.XGBClassifier, eval_files: list[dict]) -> list[dict]:
+    return [
+        {
+            **entry,
+            "probabilities": predict_probabilities(model, entry["X"]),
+        }
+        for entry in eval_files
+    ]
+
+
+def apply_app_peak_picking(
+    probabilities: np.ndarray,
+    threshold: float,
+    frame_ms: float,
+    lookahead_frames: int,
+    refractory_ms: float,
+) -> list[float]:
+    detected_ms = []
+    last_onset_ms = -float("inf")
+    lookahead = max(0, int(lookahead_frames))
+
+    for frame_index in range(lookahead, len(probabilities) - lookahead):
+        probability = float(probabilities[frame_index])
+        if probability <= threshold:
+            continue
+
+        is_max = True
+        for delta in range(1, lookahead + 1):
+            if probabilities[frame_index - delta] >= probability or probabilities[frame_index + delta] > probability:
+                is_max = False
+                break
+        if not is_max:
+            continue
+
+        onset_ms = frame_index * frame_ms
+        if onset_ms - last_onset_ms < refractory_ms:
+            continue
+
+        last_onset_ms = onset_ms
+        detected_ms.append(onset_ms)
+
+    return detected_ms
+
+
+def match_detected_onsets(
+    detected_ms: list[float],
+    expected_ms: list[float],
+    tolerance_ms: float,
+) -> dict:
+    matched_expected = [False] * len(expected_ms)
+    true_positives = 0
+
+    for detected in detected_ms:
+        best_index = None
+        best_distance = float("inf")
+        for index, expected in enumerate(expected_ms):
+            if matched_expected[index]:
+                continue
+            distance = abs(detected - expected)
+            if distance <= tolerance_ms and distance < best_distance:
+                best_index = index
+                best_distance = distance
+        if best_index is not None:
+            matched_expected[best_index] = True
+            true_positives += 1
+
+    false_positives = len(detected_ms) - true_positives
+    false_negatives = len(expected_ms) - true_positives
+    precision = safe_divide(true_positives, true_positives + false_positives)
+    recall = safe_divide(true_positives, true_positives + false_negatives)
+    f1 = safe_divide(2 * precision * recall, precision + recall)
+    return {
+        "tp": true_positives,
+        "fp": false_positives,
+        "fn": false_negatives,
+        "precision": precision,
+        "recall": recall,
+        "f1": f1,
+    }
+
+
+def evaluate_app_peak_picking(
+    model: xgb.XGBClassifier,
+    eval_files: list[dict],
+    threshold: float,
+    cfg: dict,
+    audio_config: dict,
+) -> dict:
+    decision_cfg = cfg.get("decision", {})
+    labels_cfg = cfg.get("labels", {})
+    sample_rate = audio_config.get("sampleRate", 48000)
+    hop_size = audio_config.get("hopSize", 256)
+    frame_ms = (hop_size / sample_rate) * 1000
+    lookahead_frames = int(decision_cfg.get("lookahead_frames", 1))
+    refractory_ms = float(labels_cfg.get("onset_tolerance_ms", 100))
+    tolerance_ms = float(labels_cfg.get("onset_tolerance_ms", 30))
+
+    totals = {
+        "tp": 0,
+        "fp": 0,
+        "fn": 0,
+    }
+    per_file = []
+    for entry in eval_files:
+        probabilities = entry.get("probabilities")
+        if probabilities is None:
+            probabilities = predict_probabilities(model, entry["X"])
+        detected_ms = apply_app_peak_picking(
+            probabilities,
+            threshold,
+            frame_ms,
+            lookahead_frames,
+            refractory_ms,
+        )
+        counts = match_detected_onsets(detected_ms, entry["onsets_ms"], tolerance_ms)
+        totals["tp"] += counts["tp"]
+        totals["fp"] += counts["fp"]
+        totals["fn"] += counts["fn"]
+        per_file.append({
+            "file": entry["name"],
+            "expected": len(entry["onsets_ms"]),
+            "detected": len(detected_ms),
+            "tp": counts["tp"],
+            "fp": counts["fp"],
+            "fn": counts["fn"],
+        })
+
+    precision = safe_divide(totals["tp"], totals["tp"] + totals["fp"])
+    recall = safe_divide(totals["tp"], totals["tp"] + totals["fn"])
+    f1 = safe_divide(2 * precision * recall, precision + recall)
+    return {
+        "threshold": float(threshold),
+        "lookahead_frames": lookahead_frames,
+        "refractory_ms": refractory_ms,
+        "tolerance_ms": tolerance_ms,
+        "frame_ms": frame_ms,
+        "confusion_matrix": {
+            "true_positives": totals["tp"],
+            "false_positives": totals["fp"],
+            "false_negatives": totals["fn"],
+            "true_negatives": None,
+        },
+        "precision": precision,
+        "recall": recall,
+        "f1": f1,
+        "per_file": per_file,
+    }
+
+
+def score_peak_threshold(
+    model: xgb.XGBClassifier,
+    eval_files: list[dict],
+    threshold: float,
+    cfg: dict,
+    audio_config: dict,
+    beta: float,
+) -> dict:
+    metrics = evaluate_app_peak_picking(model, eval_files, threshold, cfg, audio_config)
+    precision = metrics["precision"]
+    recall = metrics["recall"]
+    beta_sq = beta * beta
+    f_beta = safe_divide((1 + beta_sq) * precision * recall, (beta_sq * precision) + recall)
+    return {
+        "threshold": float(threshold),
+        "precision": precision,
+        "recall": recall,
+        "f_beta": f_beta,
+        "tp": metrics["confusion_matrix"]["true_positives"],
+        "fp": metrics["confusion_matrix"]["false_positives"],
+        "fn": metrics["confusion_matrix"]["false_negatives"],
+    }
+
+
+def score_threshold(y_true: np.ndarray, y_prob: np.ndarray, threshold: float, beta: float) -> dict:
+    y_pred = (y_prob >= threshold).astype(int)
+    tp = int(((y_true == 1) & (y_pred == 1)).sum())
+    fp = int(((y_true == 0) & (y_pred == 1)).sum())
+    fn = int(((y_true == 1) & (y_pred == 0)).sum())
+    precision = safe_divide(tp, tp + fp)
+    recall = safe_divide(tp, tp + fn)
+    beta_sq = beta * beta
+    f_beta = safe_divide((1 + beta_sq) * precision * recall, (beta_sq * precision) + recall)
+    return {
+        "threshold": float(threshold),
+        "precision": precision,
+        "recall": recall,
+        "f_beta": f_beta,
+        "tp": tp,
+        "fp": fp,
+        "fn": fn,
+    }
+
+
+def select_threshold(y_true: np.ndarray, y_prob: np.ndarray, cfg: dict) -> dict:
+    decision_cfg = cfg.get("decision", {})
+    selection_cfg = decision_cfg.get("threshold_selection", {})
+    configured_threshold = float(decision_cfg.get("probability_threshold", 0.5))
+    beta = float(selection_cfg.get("beta", 2.0))
+    target_recall = float(selection_cfg.get("target_recall", 0.98))
+    min_precision = float(selection_cfg.get("min_precision", 0.5))
+
+    if not selection_cfg.get("enabled", False):
+        result = score_threshold(y_true, y_prob, configured_threshold, beta)
+        result["mode"] = "configured"
+        result["target_recall"] = target_recall
+        result["min_precision"] = min_precision
+        return result
+
+    candidates = np.unique(np.concatenate((
+        np.linspace(0.001, 0.999, 999),
+        y_prob,
+    )))
+    scored = [score_threshold(y_true, y_prob, threshold, beta) for threshold in candidates]
+
+    recall_ok = [
+        row for row in scored
+        if row["recall"] >= target_recall and row["precision"] >= min_precision
+    ]
+    if recall_ok:
+        best = min(recall_ok, key=lambda row: row["threshold"])
+        mode = "target_recall"
+    else:
+        precision_ok = [row for row in scored if row["precision"] >= min_precision]
+        pool = precision_ok or scored
+        best = max(pool, key=lambda row: (row["f_beta"], row["recall"], row["precision"]))
+        mode = "best_f_beta"
+
+    best = dict(best)
+    best["mode"] = mode
+    best["target_recall"] = target_recall
+    best["min_precision"] = min_precision
+    return best
+
+
+def select_peak_threshold(
+    model: xgb.XGBClassifier,
+    eval_files: list[dict],
+    cfg: dict,
+    audio_config: dict,
+) -> dict:
+    decision_cfg = cfg.get("decision", {})
+    selection_cfg = decision_cfg.get("threshold_selection", {})
+    configured_threshold = float(decision_cfg.get("probability_threshold", 0.5))
+    beta = float(selection_cfg.get("beta", 2.0))
+    target_recall = float(selection_cfg.get("target_recall", 0.98))
+    min_precision = float(selection_cfg.get("min_precision", 0.5))
+
+    if not selection_cfg.get("enabled", False):
+        result = score_peak_threshold(model, eval_files, configured_threshold, cfg, audio_config, beta)
+        result["mode"] = "configured"
+        result["target_recall"] = target_recall
+        result["min_precision"] = min_precision
+        return result
+
+    eval_files_with_probabilities = predict_eval_files(model, eval_files)
+    candidates = np.linspace(0.001, 0.999, int(selection_cfg.get("steps", 999)))
+    scored = [
+        score_peak_threshold(model, eval_files_with_probabilities, threshold, cfg, audio_config, beta)
+        for threshold in candidates
+    ]
+
+    recall_ok = [
+        row for row in scored
+        if row["recall"] >= target_recall and row["precision"] >= min_precision
+    ]
+    if recall_ok:
+        best = min(recall_ok, key=lambda row: row["threshold"])
+        mode = "target_recall_peak_picking"
+    else:
+        precision_ok = [row for row in scored if row["precision"] >= min_precision]
+        pool = precision_ok or scored
+        best = max(pool, key=lambda row: (row["f_beta"], row["recall"], row["precision"]))
+        mode = "best_f_beta_peak_picking"
+
+    best = dict(best)
+    best["mode"] = mode
+    best["target_recall"] = target_recall
+    best["min_precision"] = min_precision
+    return best
+
+
+def generate_tuning_candidates(cfg: dict, random_state: int) -> list[dict]:
+    tuning_cfg = cfg.get("training", {}).get("hyperparameter_tuning", {})
+    if not tuning_cfg.get("enabled", False):
+        return []
+
+    xgb_cfg = cfg.get("xgboost", {})
+    n_iter = int(tuning_cfg.get("n_iter", 8))
+    rng = np.random.RandomState(random_state)
+    search_space = {
+        "max_depth": tuning_cfg.get("max_depth", [4, 5, 6, 7]),
+        "min_child_weight": tuning_cfg.get("min_child_weight", [3, 5, 7]),
+        "learning_rate": tuning_cfg.get("learning_rate", [0.02, 0.03, 0.05]),
+        "n_estimators": tuning_cfg.get("n_estimators", [200, 300, 450]),
+        "subsample": tuning_cfg.get("subsample", [0.75, 0.85, 0.95]),
+        "colsample_bytree": tuning_cfg.get("colsample_bytree", [0.75, 0.85, 0.95]),
+        "gamma": tuning_cfg.get("gamma", [0.1, 0.3, 0.6]),
+        "reg_alpha": tuning_cfg.get("reg_alpha", [0.0, 0.05, 0.15]),
+        "reg_lambda": tuning_cfg.get("reg_lambda", [1.0, 1.5, 2.5]),
+    }
+
+    base = {
+        key: xgb_cfg.get(key)
+        for key in search_space
+        if key in xgb_cfg
+    }
+    candidates = [base]
+    seen = {tuple(sorted(base.items()))}
+    attempts = 0
+    while len(candidates) < n_iter and attempts < n_iter * 20:
+        attempts += 1
+        candidate = {key: values[int(rng.randint(0, len(values)))] for key, values in search_space.items()}
+        signature = tuple(sorted(candidate.items()))
+        if signature in seen:
+            continue
+        seen.add(signature)
+        candidates.append(candidate)
+    return candidates[:n_iter]
+
+
+def tune_hyperparameters(
+    X_train: np.ndarray,
+    y_train: np.ndarray,
+    X_val: np.ndarray,
+    y_val: np.ndarray,
+    val_files: list[dict],
+    cfg: dict,
+    audio_config: dict,
+    feature_names: list[str],
+    random_state: int,
+) -> tuple[xgb.XGBClassifier | None, dict]:
+    candidates = generate_tuning_candidates(cfg, random_state)
+    if not candidates:
+        return None, {}
+
+    print(f"\n--- Hyperparameter tuning ({len(candidates)} candidate(s)) ---")
+    beta = float(cfg.get("decision", {}).get("threshold_selection", {}).get("beta", 2.0))
+    best_model = None
+    best_result = None
+
+    for index, candidate in enumerate(candidates, start=1):
+        trial_cfg = deepcopy(cfg)
+        trial_cfg.setdefault("xgboost", {}).update(candidate)
+        print(f"  Candidate {index}/{len(candidates)}: {candidate}")
+        model = train_model(X_train, y_train, X_val, y_val, trial_cfg, feature_names, random_state)
+        threshold_result = select_peak_threshold(model, val_files, trial_cfg, audio_config)
+        result = {
+            "params": candidate,
+            "threshold": round(float(threshold_result["threshold"]), 6),
+            "precision": threshold_result["precision"],
+            "recall": threshold_result["recall"],
+            "f_beta": threshold_result["f_beta"],
+            "mode": threshold_result["mode"],
+        }
+        print(
+            "    Validation: "
+            f"threshold={result['threshold']:.6f} "
+            f"peak_precision={result['precision']:.4f} "
+            f"peak_recall={result['recall']:.4f} "
+            f"f_beta={result['f_beta']:.4f}"
+        )
+
+        rank = (
+            result["recall"],
+            -result["threshold"],
+            result["f_beta"],
+            result["precision"],
+        )
+        if best_result is None or rank > best_result["rank"]:
+            best_model = model
+            best_result = {
+                **result,
+                "rank": rank,
+            }
+
+    cfg.setdefault("xgboost", {}).update(best_result["params"])
+    best_result.pop("rank", None)
+    print(f"  Selected hyperparameters: {best_result}")
+    return best_model, best_result
+
+
+# ---------------------------------------------------------------------------
 # Metrics
 # ---------------------------------------------------------------------------
 
-def compute_metrics(model, X_test, y_test, threshold: float = 0.5) -> dict:
-    y_prob = model.predict_proba(X_test)[:, 1]
+def summarize_probabilities(y_prob: np.ndarray) -> dict:
+    percentiles = np.percentile(y_prob, [50, 75, 90, 95, 99, 100])
+    return {
+        "min": round(float(np.min(y_prob)), 6),
+        "p50": round(float(percentiles[0]), 6),
+        "p75": round(float(percentiles[1]), 6),
+        "p90": round(float(percentiles[2]), 6),
+        "p95": round(float(percentiles[3]), 6),
+        "p99": round(float(percentiles[4]), 6),
+        "max": round(float(percentiles[5]), 6),
+    }
+
+
+def compute_metrics(
+    model,
+    X_test,
+    y_test,
+    test_files: list[dict],
+    cfg: dict,
+    audio_config: dict,
+    threshold: float = 0.5,
+    threshold_selection: dict | None = None,
+) -> dict:
+    y_prob = predict_probabilities(model, X_test)
     y_pred = (y_prob >= threshold).astype(int)
+    peak_metrics = evaluate_app_peak_picking(model, test_files, threshold, cfg, audio_config)
 
     prec  = precision_score(y_test, y_pred, zero_division=0)
     rec   = recall_score(y_test, y_pred, zero_division=0)
@@ -371,7 +814,7 @@ def compute_metrics(model, X_test, y_test, threshold: float = 0.5) -> dict:
     cm    = confusion_matrix(y_test, y_pred).tolist()
 
     metrics = {
-        "threshold":   threshold,
+        "threshold":   round(float(threshold), 6),
         "precision":   round(prec, 4),
         "recall":      round(rec, 4),
         "f1":          round(f1, 4),
@@ -380,12 +823,26 @@ def compute_metrics(model, X_test, y_test, threshold: float = 0.5) -> dict:
         "confusion_matrix": cm,
         "test_positives":   int(y_test.sum()),
         "test_negatives":   int((y_test == 0).sum()),
+        "probability_summary": summarize_probabilities(y_prob),
+        "peak_picking": {
+            **peak_metrics,
+            "precision": round(float(peak_metrics["precision"]), 4),
+            "recall": round(float(peak_metrics["recall"]), 4),
+            "f1": round(float(peak_metrics["f1"]), 4),
+            "threshold": round(float(peak_metrics["threshold"]), 6),
+            "frame_ms": round(float(peak_metrics["frame_ms"]), 4),
+        },
     }
+    if threshold_selection:
+        metrics["threshold_selection"] = threshold_selection
     print(
-        f"\n  Test metrics (threshold={threshold}):\n"
-        f"    Precision={prec:.4f}  Recall={rec:.4f}  F1={f1:.4f}\n"
-        f"    ROC-AUC={roc:.4f}  PR-AUC={pr:.4f}\n"
-        f"    Confusion Matrix: {cm}"
+        f"\n  Test metrics after app peak picking (threshold={threshold}):\n"
+        f"    Precision={peak_metrics['precision']:.4f}  Recall={peak_metrics['recall']:.4f} "
+        f"F1={peak_metrics['f1']:.4f}\n"
+        f"    Confusion Matrix: {peak_metrics['confusion_matrix']}\n"
+        f"    Frame diagnostics: Precision={prec:.4f} Recall={rec:.4f} F1={f1:.4f} "
+        f"ROC-AUC={roc:.4f} PR-AUC={pr:.4f}\n"
+        f"    Probability summary: {metrics['probability_summary']}"
     )
     return metrics
 
@@ -428,6 +885,10 @@ def save_schema(
 ):
     model_id = f"onset_xgb_{datetime.now().strftime('%Y_%m_%d')}_{uuid.uuid4().hex[:6]}"
     decision_cfg = cfg.get("decision", {})
+    selection_cfg = decision_cfg.get("threshold_selection", {})
+    decision_threshold = metrics.get("threshold", decision_cfg.get("probability_threshold", 0.5)) \
+        if selection_cfg.get("enabled", False) \
+        else decision_cfg.get("probability_threshold", metrics.get("threshold", 0.5))
 
     normalization = {"enabled": False}
     if scaler is not None:
@@ -457,7 +918,7 @@ def save_schema(
         "normalization": normalization,
         "missingValue": 0.0,
         "decision": {
-            "probabilityThreshold": decision_cfg.get("probability_threshold", metrics.get("threshold", 0.5)),
+            "probabilityThreshold": decision_threshold,
             "refractoryMs":         cfg.get("labels", {}).get("onset_tolerance_ms", 100),
             "lookaheadFrames":      decision_cfg.get("lookahead_frames", 1),
         },
@@ -499,17 +960,17 @@ def main():
     output_model   = paths_cfg.get("output_model",   "./models/onset_detector.onnx")
     output_schema  = paths_cfg.get("output_schema",  "./models/onset_detector.schema.json")
     output_metrics = paths_cfg.get("output_metrics", "./models/onset_detector.metrics.json")
-    threshold      = decision_cfg.get("probability_threshold", 0.5)
+    configured_threshold = decision_cfg.get("probability_threshold", 0.5)
 
     # Load data
     print("--- Loading training data ---")
-    file_features, file_labels, file_names, audio_config = load_training_files(
+    file_features, file_labels, file_names, file_times_ms, file_onsets_ms, audio_config = load_training_files(
         data_dir, feature_names, positive_window
     )
 
     # Split
     print("\n--- Splitting by file ---")
-    X_train, y_train, X_val, y_val, X_test, y_test = split_by_file(
+    X_train, y_train, X_val, y_val, X_test, y_test, val_idx, test_idx = split_by_file(
         file_features, file_labels, file_names, test_split, val_split, random_state
     )
 
@@ -525,14 +986,60 @@ def main():
         X_train = scaler.fit_transform(X_train)
         X_val   = scaler.transform(X_val)
         X_test  = scaler.transform(X_test)
+        file_features_for_eval = [scaler.transform(X) for X in file_features]
+    else:
+        file_features_for_eval = file_features
 
-    # Train
-    print("\n--- Training XGBoost ---")
-    model = train_model(X_train, y_train, X_val, y_val, cfg, feature_names, random_state)
+    val_files = build_eval_files(
+        val_idx,
+        file_features_for_eval,
+        file_labels,
+        file_names,
+        file_times_ms,
+        file_onsets_ms,
+    )
+    test_files = build_eval_files(
+        test_idx,
+        file_features_for_eval,
+        file_labels,
+        file_names,
+        file_times_ms,
+        file_onsets_ms,
+    )
+
+    tuned_model, tuning_result = tune_hyperparameters(
+        X_train, y_train, X_val, y_val, val_files, cfg, audio_config or {}, feature_names, random_state
+    )
+
+    if tuned_model is None:
+        print("\n--- Training XGBoost ---")
+        model = train_model(X_train, y_train, X_val, y_val, cfg, feature_names, random_state)
+    else:
+        model = tuned_model
+
+    print("\n--- Selecting threshold on validation set after app peak picking ---")
+    threshold_selection = select_peak_threshold(model, val_files, cfg, audio_config or {})
+    threshold = threshold_selection["threshold"]
+    threshold_selection = {
+        "mode": threshold_selection["mode"],
+        "configured_threshold": round(float(configured_threshold), 6),
+        "selected_threshold": round(float(threshold), 6),
+        "validation_peak_precision": round(float(threshold_selection["precision"]), 4),
+        "validation_peak_recall": round(float(threshold_selection["recall"]), 4),
+        "validation_peak_f_beta": round(float(threshold_selection["f_beta"]), 4),
+        "validation_peak_tp": int(threshold_selection["tp"]),
+        "validation_peak_fp": int(threshold_selection["fp"]),
+        "validation_peak_fn": int(threshold_selection["fn"]),
+        "target_recall": round(float(threshold_selection["target_recall"]), 4),
+        "min_precision": round(float(threshold_selection["min_precision"]), 4),
+    }
+    if tuning_result:
+        threshold_selection["hyperparameter_tuning"] = tuning_result
+    print(f"  Threshold selection: {threshold_selection}")
 
     # Metrics
     print("\n--- Evaluating on test set ---")
-    metrics = compute_metrics(model, X_test, y_test, threshold)
+    metrics = compute_metrics(model, X_test, y_test, test_files, cfg, audio_config or {}, threshold, threshold_selection)
 
     # ONNX export
     print("\n--- Exporting ONNX ---")
