@@ -7,6 +7,8 @@ import {
 export function createOnsetTaggerAnalysisFlyout({
   getSamples,
   getSampleRate,
+  getRangeStart,
+  getRangeEnd,
   getCursorSec,
   getTaggedOnsetsSec,
 }) {
@@ -32,12 +34,21 @@ export function createOnsetTaggerAnalysisFlyout({
     const samples = getSamples();
     if (!ui.analysisChartsWrapper || !samples || !analysisResult) return;
     renderAllCharts(ui.analysisChartsWrapper, samples, analysisResult, {
+      rangeStart: getRangeStart(),
+      rangeEnd: getRangeEnd(),
       normalizeY,
       showDetectedOnsets,
       showTaggedOnsets,
       taggedOnsets: getTaggedOnsetsSec(),
       currentOnsetSec: getCursorSec(),
     });
+    for (const wrap of ui.analysisChartsWrapper.querySelectorAll('.analysis-chart-svg-wrap')) {
+      const aspect = wrap.style.getPropertyValue('--chart-aspect').trim();
+      const match = aspect.match(/^([0-9.]+)\s*\/\s*([0-9.]+)$/);
+      if (match) {
+        wrap.style.setProperty('--chart-aspect', `${match[1]} / ${Number(match[2]) * 2}`);
+      }
+    }
     initCrosshair(ui.analysisChartsWrapper);
     ui.analysisChartsWrapper.classList.remove('u-hidden');
   }

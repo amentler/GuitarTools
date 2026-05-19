@@ -65,6 +65,22 @@ test.describe('Onset Tagger', () => {
     expect(scrollState.maxHeight).not.toBe('none');
   });
 
+  test('analysis flyout charts are tall and follow waveform zoom', async ({ page }) => {
+    await page.locator('#tagger-wav-input').setInputFiles(WAV_FIXTURE);
+    const wrapper = page.locator('#tagger-analysis-charts-wrapper');
+    await expect(wrapper).toBeVisible({ timeout: 30_000 });
+
+    const firstChartWrap = wrapper.locator('.analysis-chart-svg-wrap').first();
+    const height = await firstChartWrap.evaluate(el => el.getBoundingClientRect().height);
+    expect(height).toBeGreaterThan(180);
+
+    const firstSvg = wrapper.locator('svg.analysis-chart-svg').first();
+    const beforeText = await firstSvg.evaluate(el => el.textContent);
+    await page.locator('#tagger-zoom-in').click();
+    const afterText = await firstSvg.evaluate(el => el.textContent);
+    expect(afterText).not.toEqual(beforeText);
+  });
+
   test('current onset marker appears in all analyzer charts and follows cursor', async ({ page }) => {
     await page.locator('#tagger-wav-input').setInputFiles(WAV_FIXTURE);
     const wrapper = page.locator('#tagger-analysis-charts-wrapper');

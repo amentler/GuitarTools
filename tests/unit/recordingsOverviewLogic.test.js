@@ -5,7 +5,10 @@ import {
   buildDisplayName,
   buildAudioAnalyseUrl,
   buildOnsetTaggerUrl,
+  buildTrainingDataOnsetTaggerUrl,
   sortByDate,
+  sortTrainingReviewEntries,
+  getTrainingReviewIssueCount,
   buildZipEntryName,
 } from '../../js/tools/recordingsOverview/recordingsOverviewLogic.js';
 
@@ -112,6 +115,13 @@ describe('buildOnsetTaggerUrl', () => {
   });
 });
 
+describe('buildTrainingDataOnsetTaggerUrl', () => {
+  it('builds a training-data Onset Tagger URL', () => {
+    expect(buildTrainingDataOnsetTaggerUrl('take zip'))
+      .toBe('../onset-tagger/index.html?source=training-data&id=take%20zip');
+  });
+});
+
 describe('sortByDate', () => {
   it('sorts recordings descending by date (newest first)', () => {
     const recordings = [
@@ -134,6 +144,34 @@ describe('sortByDate', () => {
     ];
     sortByDate(recordings);
     expect(recordings[0].id).toBe('a');
+  });
+});
+
+describe('training review sorting', () => {
+  it('counts false positives and false negatives as issues', () => {
+    expect(getTrainingReviewIssueCount({ metrics: { fp: 3, fn: 2 } })).toBe(5);
+    expect(getTrainingReviewIssueCount({ metrics: { fp: null, fn: 2 } })).toBe(2);
+  });
+
+  it('sorts by issues descending by default', () => {
+    const entries = [
+      { name: 'clean', metrics: { fp: 0, fn: 0 } },
+      { name: 'noisy', metrics: { fp: 5, fn: 1 } },
+      { name: 'missed', metrics: { fp: 0, fn: 4 } },
+    ];
+    expect(sortTrainingReviewEntries(entries).map(entry => entry.name))
+      .toEqual(['noisy', 'missed', 'clean']);
+  });
+
+  it('sorts named columns in the requested direction', () => {
+    const entries = [
+      { name: 'b', metrics: { fp: 1 } },
+      { name: 'a', metrics: { fp: 3 } },
+    ];
+    expect(sortTrainingReviewEntries(entries, 'name', 'asc').map(entry => entry.name))
+      .toEqual(['a', 'b']);
+    expect(sortTrainingReviewEntries(entries, 'fp', 'asc').map(entry => entry.name))
+      .toEqual(['b', 'a']);
   });
 });
 

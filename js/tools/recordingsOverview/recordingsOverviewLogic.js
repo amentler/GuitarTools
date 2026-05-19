@@ -35,8 +35,50 @@ export function buildOnsetTaggerUrl(source, id) {
   return `../onset-tagger/index.html?source=${encodeURIComponent(source)}&id=${encodeURIComponent(id)}`;
 }
 
+export function buildTrainingDataOnsetTaggerUrl(id) {
+  return buildOnsetTaggerUrl('training-data', id);
+}
+
 export function sortByDate(recordings) {
   return [...recordings].sort((a, b) => b.date - a.date);
+}
+
+function numberOrZero(value) {
+  return Number.isFinite(value) ? value : 0;
+}
+
+export function getTrainingReviewIssueCount(entry) {
+  const metrics = entry?.metrics ?? {};
+  return numberOrZero(metrics.fp) + numberOrZero(metrics.fn);
+}
+
+export function compareTrainingReviewEntries(a, b, sortKey = 'issues', direction = 'desc') {
+  const factor = direction === 'asc' ? 1 : -1;
+  const metricValue = (entry, key) => {
+    if (key === 'issues') return getTrainingReviewIssueCount(entry);
+    if (key === 'name') return String(entry?.name ?? '').toLocaleLowerCase('de-DE');
+    if (key === 'kind') return String(entry?.kind ?? '');
+    if (key === 'match') return String(entry?.match?.status ?? '');
+    return numberOrZero(entry?.metrics?.[key]);
+  };
+
+  const av = metricValue(a, sortKey);
+  const bv = metricValue(b, sortKey);
+  if (typeof av === 'string' || typeof bv === 'string') {
+    const compared = String(av).localeCompare(String(bv), 'de-DE');
+    if (compared !== 0) return compared * factor;
+  } else if (av !== bv) {
+    return (av - bv) * factor;
+  }
+
+  const ai = getTrainingReviewIssueCount(a);
+  const bi = getTrainingReviewIssueCount(b);
+  if (ai !== bi) return bi - ai;
+  return String(a?.name ?? '').localeCompare(String(b?.name ?? ''), 'de-DE');
+}
+
+export function sortTrainingReviewEntries(entries, sortKey = 'issues', direction = 'desc') {
+  return [...entries].sort((a, b) => compareTrainingReviewEntries(a, b, sortKey, direction));
 }
 
 /**

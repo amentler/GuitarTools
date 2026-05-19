@@ -11,13 +11,20 @@ import {
   formatDate,
   buildAudioAnalyseUrl,
   buildOnsetTaggerUrl,
+  buildTrainingDataOnsetTaggerUrl,
+  getTrainingReviewIssueCount,
+  sortTrainingReviewEntries,
 } from './recordingsOverviewLogic.js';
+import { getTrainingReviewEntries } from '../../shared/trainingDataReviewCatalog.js';
 
 export function createRecordingsOverviewFeature() {
   let _root       = null;
   /** @type {Set<string>} keys are `${source}:${id}` */
   let _selectedKeys = new Set();
   let _recordings   = [];
+  let _trainingEntries = [];
+  let _trainingSortKey = 'issues';
+  let _trainingSortDirection = 'desc';
 
   function recKey(rec) { return `${rec.source}:${rec.id}`; }
 
@@ -38,6 +45,10 @@ export function createRecordingsOverviewFeature() {
       delAllBtn:         q('btn-del-all'),
       delSheetBtn:       q('btn-del-sheet'),
       delChordBtn:       q('btn-del-chord'),
+      trainingList:      q('training-review-list'),
+      trainingSummary:   q('training-review-summary'),
+      trainingRefreshBtn: q('btn-refresh-training-review'),
+      trainingSortBtns:  _root.querySelectorAll?.('[data-training-sort]') ?? [],
     };
   }
 
@@ -110,6 +121,81 @@ export function createRecordingsOverviewFeature() {
       if (!validKeys.has(k)) _selectedKeys.delete(k);
     }
     renderList(ui);
+  }
+
+  function formatMetric(value) {
+    return Number.isFinite(value) ? value.toFixed(2).replace(/\.?0+$/, '') : '–';
+  }
+
+  function formatCount(value) {
+    return Number.isFinite(value) ? String(value) : '–';
+  }
+
+  function setCell(row, text, className = '') {
+    const cell = document.createElement('td');
+    cell.textContent = text;
+    if (className) cell.className = className;
+    row.appendChild(cell);
+    return cell;
+  }
+
+  function renderTrainingReview(ui) {
+    if (!ui.trainingList) return;
+    ui.trainingList.innerHTML = '';
+    const sorted = sortTrainingReviewEntries(_trainingEntries, _trainingSortKey, _trainingSortDirection);
+    if (ui.trainingSummary) {
+      const issueCount = _trainingEntries.filter(entry => getTrainingReviewIssueCount(entry) > 0).length;
+      const metricCount = _trainingEntries.filter(entry => entry.metrics).length;
+      ui.trainingSummary.textContent =
+        `${_trainingEntries.length} Audioquellen, ${metricCount} mit Metrics, ${issueCount} mit FP/FN.`;
+    }
+
+    for (const entry of sorted) {
+      const metrics = entry.metrics ?? {};
+      const issueCount = getTrainingReviewIssueCount(entry);
+      const row = document.createElement('tr');
+      if (issueCount > 0) row.classList.add('recordings-training-table__problem');
+      if (!entry.metrics) row.classList.add('recordings-training-table__missing');
+
+      setCell(row, entry.name ?? entry.id ?? '–');
+      setCell(row, entry.kind ?? '–');
+      setCell(row, entry.match?.status ?? '–');
+      setCell(row, formatCount(metrics.expected));
+      setCell(row, formatCount(metrics.detected));
+      setCell(row, formatCount(metrics.tp));
+      setCell(row, formatCount(metrics.fp));
+      setCell(row, formatCount(metrics.fn));
+      setCell(row, formatMetric(metrics.precision));
+      setCell(row, formatMetric(metrics.recall));
+
+      const actionCell = setCell(row, '', 'recordings-training-table__action');
+      const openBtn = document.createElement('button');
+      openBtn.className = 'btn-play-stop';
+      openBtn.type = 'button';
+      openBtn.textContent = 'Tagger';
+      openBtn.disabled = !entry.url || !['zip', 'wav'].includes(entry.kind);
+      openBtn.addEventListener('click', () => {
+        window.location.href = buildTrainingDataOnsetTaggerUrl(entry.id);
+      });
+      actionCell.appendChild(openBtn);
+
+      ui.trainingList.appendChild(row);
+    }
+  }
+
+  async function refreshTrainingReview(ui) {
+    if (ui.trainingSummary) ui.trainingSummary.textContent = 'Lade Trainingsdaten ...';
+    if (ui.trainingRefreshBtn) ui.trainingRefreshBtn.disabled = true;
+    try {
+      _trainingEntries = await getTrainingReviewEntries();
+      renderTrainingReview(ui);
+    } catch {
+      _trainingEntries = [];
+      if (ui.trainingList) ui.trainingList.innerHTML = '';
+      if (ui.trainingSummary) ui.trainingSummary.textContent = 'Trainingsdaten konnten nicht geladen werden.';
+    } finally {
+      if (ui.trainingRefreshBtn) ui.trainingRefreshBtn.disabled = false;
+    }
   }
 
   function getSelectedRecordings() {
@@ -207,6 +293,19 @@ export function createRecordingsOverviewFeature() {
     ui.delAllBtn?.addEventListener('click',   () => void handleBulkDelete(ui, ui.delAllBtn,   deleteAllRecordings,           'alle'));
     ui.delSheetBtn?.addEventListener('click', () => void handleBulkDelete(ui, ui.delSheetBtn, deleteAllSheetMusicRecordings, 'Noten-lesen'));
     ui.delChordBtn?.addEventListener('click', () => void handleBulkDelete(ui, ui.delChordBtn, deleteAllChordRecordings,      'Akkord-Recorder'));
+    ui.trainingRefreshBtn?.addEventListener('click', () => void refreshTrainingReview(ui));
+    ui.trainingSortBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const key = btn.dataset.trainingSort;
+        if (_trainingSortKey === key) {
+          _trainingSortDirection = _trainingSortDirection === 'desc' ? 'asc' : 'desc';
+        } else {
+          _trainingSortKey = key;
+          _trainingSortDirection = key === 'name' || key === 'kind' || key === 'match' ? 'asc' : 'desc';
+        }
+        renderTrainingReview(ui);
+      });
+    });
 
     refreshList(ui).catch(() => {
       if (ui.emptyMsg) {
@@ -214,6 +313,7 @@ export function createRecordingsOverviewFeature() {
         ui.emptyMsg.classList.remove('u-hidden');
       }
     });
+    refreshTrainingReview(ui).catch(() => {});
   }
 
   function unmount() {

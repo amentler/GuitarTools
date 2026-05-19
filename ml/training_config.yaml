@@ -121,10 +121,10 @@ sampling:
 
 decision:
   probability_threshold: 0.85
-  lookahead_frames: 2
+  lookahead_frames: 4
   threshold_selection:
     enabled: true
-    target_recall: 0.98
+    target_recall: 0.9
     min_precision: 0.35
     beta: 2.0
     steps: 999
@@ -139,6 +139,7 @@ training:
   hyperparameter_tuning:
     enabled: true
     n_iter: 8
+    max_depth: [6]
 
 paths:
   training_data_dir: "./training_data"

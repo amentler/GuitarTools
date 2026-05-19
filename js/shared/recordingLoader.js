@@ -4,6 +4,11 @@ import {
   replaceSheetMusicTake,
   saveSheetMusicTake,
 } from './audioAnalyseStorage.js';
+import {
+  getTrainingReviewEntry,
+  normalizeTrainingDataSidecar,
+} from './trainingDataReviewCatalog.js';
+import { readZip } from './zip.js';
 
 const CHORD_DB_NAME = 'chord-recorder';
 const CHORD_STORE   = 'recordings';
@@ -50,6 +55,68 @@ async function saveChordRecording(previousId, entry, nextBaseName) {
   });
 }
 
+function lastPathSegment(url) {
+  return String(url ?? '').split('/').pop() || '';
+}
+
+async function fetchBytes(url) {
+  const response = await fetch(url);
+  if (!response.ok) throw new Error(`HTTP ${response.status}: ${url}`);
+  return new Uint8Array(await response.arrayBuffer());
+}
+
+async function fetchJson(url) {
+  const response = await fetch(url);
+  if (!response.ok) throw new Error(`HTTP ${response.status}: ${url}`);
+  return response.json();
+}
+
+function findZipEntry(entries, extension) {
+  const suffix = extension.toLowerCase();
+  return entries.find(entry => entry.name.toLowerCase().endsWith(suffix)) ?? null;
+}
+
+async function loadTrainingDataReviewEntry(id) {
+  const entry = await getTrainingReviewEntry(id);
+  if (!entry?.url) return null;
+
+  if (entry.kind === 'zip') {
+    const zipBytes = await fetchBytes(entry.url);
+    const entries = readZip(zipBytes);
+    const wavEntry = findZipEntry(entries, '.wav');
+    if (!wavEntry) return null;
+    const jsonEntry = findZipEntry(entries, '.json');
+    const sidecar = jsonEntry
+      ? normalizeTrainingDataSidecar(JSON.parse(new TextDecoder().decode(jsonEntry.data)))
+      : null;
+    return {
+      wav: wavEntry.data,
+      manifest: sidecar,
+      sidecar,
+      id: entry.id,
+      baseName: entry.baseName ?? entry.name ?? lastPathSegment(entry.url).replace(/\.zip$/i, ''),
+      readOnly: true,
+    };
+  }
+
+  if (entry.kind === 'wav') {
+    const wav = await fetchBytes(entry.url);
+    const sidecar = entry.jsonUrl
+      ? normalizeTrainingDataSidecar(await fetchJson(entry.jsonUrl))
+      : null;
+    return {
+      wav,
+      manifest: sidecar,
+      sidecar,
+      id: entry.id,
+      baseName: entry.baseName ?? entry.name ?? lastPathSegment(entry.url).replace(/\.wav$/i, ''),
+      readOnly: true,
+    };
+  }
+
+  return null;
+}
+
 /**
  * Loads WAV bytes + manifest from any recording source.
  * @param {'sheet-music'|'chord-recorder'} source
@@ -57,6 +124,9 @@ async function saveChordRecording(previousId, entry, nextBaseName) {
  * @returns {Promise<{wav: Uint8Array, manifest: object|null}|null>}
  */
 export async function loadRecordingFromSource(source, id) {
+  if (source === 'training-data') {
+    return loadTrainingDataReviewEntry(id);
+  }
   if (source === 'sheet-music') {
     const entry = id ? await loadSheetMusicTake(id) : await loadLatestSheetMusicTake();
     if (!entry) return null;
@@ -88,6 +158,10 @@ export async function loadRecordingFromSource(source, id) {
  */
 export async function saveRecordingToSource(source, id, entry) {
   if (!entry?.wav || !entry?.sidecar || !entry?.baseName) return null;
+  if (source === 'training-data') {
+    const saved = await saveSheetMusicTake(entry.wav, entry.sidecar, { baseName: entry.baseName });
+    return saved ? { source: 'sheet-music', id: saved.id, baseName: saved.baseName } : null;
+  }
   if (source === 'chord-recorder') {
     const saved = await saveChordRecording(id, entry, entry.baseName);
     return saved ? { source, id: saved.baseName, baseName: saved.baseName } : null;

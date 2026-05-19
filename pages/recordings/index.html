@@ -40,6 +40,36 @@
           <button id="btn-del-chord" class="btn-play-stop recordings-actions__delete">🗑 Alle Akkord</button>
         </div>
       </div>
+
+      <section class="recordings-training-review" aria-labelledby="training-review-title">
+        <div class="recordings-training-review__header">
+          <div>
+            <h2 id="training-review-title">Trainingsdaten Review</h2>
+            <p id="training-review-summary">Lade Trainingsdaten ...</p>
+          </div>
+          <button id="btn-refresh-training-review" class="btn-play-stop" type="button">Aktualisieren</button>
+        </div>
+        <div class="recordings-training-review__table-wrap">
+          <table class="recordings-training-table">
+            <thead>
+              <tr>
+                <th><button type="button" data-training-sort="name">Datei</button></th>
+                <th><button type="button" data-training-sort="kind">Typ</button></th>
+                <th><button type="button" data-training-sort="match">Match</button></th>
+                <th><button type="button" data-training-sort="expected">Exp</button></th>
+                <th><button type="button" data-training-sort="detected">Det</button></th>
+                <th><button type="button" data-training-sort="tp">TP</button></th>
+                <th><button type="button" data-training-sort="fp">FP</button></th>
+                <th><button type="button" data-training-sort="fn">FN</button></th>
+                <th><button type="button" data-training-sort="precision">Prec</button></th>
+                <th><button type="button" data-training-sort="recall">Rec</button></th>
+                <th>Aktion</th>
+              </tr>
+            </thead>
+            <tbody id="training-review-list"></tbody>
+          </table>
+        </div>
+      </section>
     </div>
   </section>
 

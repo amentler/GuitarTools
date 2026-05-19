@@ -73,6 +73,8 @@ export function createOnsetTaggerFeature() {
   const _analysisFlyout = createOnsetTaggerAnalysisFlyout({
     getSamples: () => _samples,
     getSampleRate: () => _sampleRate,
+    getRangeStart: () => _rangeStart,
+    getRangeEnd: () => _rangeEnd,
     getCursorSec: () => _cursorSec,
     getTaggedOnsetsSec: () => _onsetsMs
       .filter(ms => Number.isFinite(ms))

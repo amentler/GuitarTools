@@ -107,7 +107,7 @@ body {
 .analysis-flyout-scroll {
   overflow-y: auto;
   overscroll-behavior: contain;
-  max-height: min(58vh, 34rem);
+  max-height: min(43.5vh, 25.5rem);
 }
 
 .analysis-chart-block {

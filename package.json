@@ -24,6 +24,7 @@
     "sfp": "node scripts/sheet-and-note-fingerprint.mjs",
     "onsetsweep": "node scripts/sheet-onset-sweep.mjs",
     "sheetfingerprint": "node scripts/sheet-music-sequence-fingerprint.mjs",
+    "review:android-firefox": "node scripts/build-android-firefox-review-catalog.mjs",
     "lint": "eslint .",
     "prepare": "husky && git config core.hooksPath .husky/_ && git config merge.ours.driver true"
   },

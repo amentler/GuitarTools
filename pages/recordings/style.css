@@ -122,3 +122,97 @@
       gap: 0.5rem;
       flex-wrap: wrap;
     }
+
+    .recordings-training-review {
+      border-top: 1px solid var(--color-border);
+      padding-top: 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .recordings-training-review__header {
+      display: flex;
+      justify-content: space-between;
+      gap: 1rem;
+      align-items: flex-start;
+    }
+
+    .recordings-training-review h2 {
+      margin: 0;
+      font-size: 1rem;
+      color: var(--color-text);
+      letter-spacing: 0;
+    }
+
+    .recordings-training-review p {
+      margin: 0.2rem 0 0;
+      font-size: 0.82rem;
+      color: var(--color-text-muted);
+    }
+
+    .recordings-training-review__table-wrap {
+      overflow-x: auto;
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius);
+      background: var(--color-surface);
+    }
+
+    .recordings-training-table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 860px;
+      font-size: 0.78rem;
+    }
+
+    .recordings-training-table th,
+    .recordings-training-table td {
+      padding: 0.5rem;
+      border-bottom: 1px solid var(--color-border);
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    .recordings-training-table th:first-child,
+    .recordings-training-table td:first-child {
+      text-align: left;
+      white-space: normal;
+      min-width: 16rem;
+      word-break: break-word;
+    }
+
+    .recordings-training-table th {
+      background: color-mix(in srgb, var(--color-surface) 88%, var(--color-border));
+      color: var(--color-text-muted);
+      font-weight: 600;
+    }
+
+    .recordings-training-table th button {
+      border: 0;
+      padding: 0;
+      background: transparent;
+      color: inherit;
+      font: inherit;
+      cursor: pointer;
+    }
+
+    .recordings-training-table tbody tr:last-child td {
+      border-bottom: 0;
+    }
+
+    .recordings-training-table__problem {
+      background: color-mix(in srgb, #f7c948 12%, var(--color-surface));
+    }
+
+    .recordings-training-table__missing {
+      color: var(--color-text-muted);
+    }
+
+    .recordings-training-table__action {
+      text-align: center;
+    }
+
+    .recordings-training-table__action .btn-play-stop {
+      padding: 0.35rem 0.55rem;
+      font-size: 0.75rem;
+    }

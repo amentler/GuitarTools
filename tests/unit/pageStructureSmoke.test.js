@@ -57,5 +57,7 @@ describe('Page structure smoke', () => {
     expect(html).toContain('id="btn-download-selected"');
     expect(html).toContain('id="btn-dl-all"');
     expect(html).toContain('id="btn-del-all"');
+    expect(html).toContain('id="training-review-list"');
+    expect(html).toContain('data-training-sort="fp"');
   });
 });
