@@ -24,3 +24,6 @@ GuitarSet/
 # Local ML training data is too large for the repo.
 training_data/
 ml/data/
+
+# Local onset detector candidates are promoted explicitly after review.
+models/onset_detector_android_firefox_candidate.*

@@ -7,12 +7,20 @@ if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
   cat <<'EOF'
 Usage: ./train_android_firefox.sh
 
+Trains the Android-Firefox onset detector from:
+  ml/data/android_firefox
+
+Candidate outputs:
+  models/onset_detector_android_firefox_candidate.onnx
+  models/onset_detector_android_firefox_candidate.schema.json
+  models/onset_detector_android_firefox_candidate.metrics.json
+
 Environment overrides:
   PYTHON=...       Python executable to use, e.g. .venv/bin/python
-  DATA_DIR=...     Training JSON directory. If unset, choose from the menu.
   BASE_CONFIG=...  Base YAML config, default: ml/training_config.yaml
-  PATHS_TEMPLATE=... Paths template, default: ml/training_config.android_firefox.paths.template.yaml
-  RUN_NAME=...     Output filename suffix, default: android_firefox
+  PATHS_TEMPLATE=...
+                  Paths template, default:
+                  ml/training_config.android_firefox.paths.template.yaml
   OUT_DIR=...      Output directory, default: models
 
 The base config requests XGBoost CUDA training and falls back to CPU if the
@@ -34,17 +42,103 @@ resolve_python() {
   fi
 }
 
-TRAINING_DATA_DIRS=(
-  "ml/data/android_firefox"
-  "training_data/android_firefox"
-)
+print_section() {
+  printf '\n== %s ==\n' "$1"
+}
 
+print_kv() {
+  printf '  %-16s %s\n' "$1:" "$2"
+}
+
+print_metrics_summary() {
+  local metrics_file="$1"
+  "$PYTHON" - "$metrics_file" <<'PY'
+import json
+import sys
+
+metrics_path = sys.argv[1]
+
+with open(metrics_path, "r", encoding="utf-8") as handle:
+    metrics = json.load(handle)
+
+
+def value(path, default=None):
+    current = metrics
+    for part in path:
+        if not isinstance(current, dict) or part not in current:
+            return default
+        current = current[part]
+    return current
+
+
+def fmt_number(raw):
+    if raw is None:
+        return "n/a"
+    if isinstance(raw, int):
+        return str(raw)
+    if isinstance(raw, float):
+        return f"{raw:.4f}".rstrip("0").rstrip(".")
+    return str(raw)
+
+
+def line(label, raw):
+    print(f"  {label + ':':<16} {fmt_number(raw)}")
+
+
+peak_cm = value(["peak_picking", "confusion_matrix"], {}) or {}
+selection = value(["threshold_selection"], {}) or {}
+tuning = selection.get("hyperparameter_tuning") if isinstance(selection, dict) else None
+params = tuning.get("params", {}) if isinstance(tuning, dict) else {}
+
+line("threshold", metrics.get("threshold"))
+line("frame precision", metrics.get("precision"))
+line("frame recall", metrics.get("recall"))
+line("frame f1", metrics.get("f1"))
+line("roc auc", metrics.get("roc_auc"))
+line("pr auc", metrics.get("pr_auc"))
+print()
+line("peak threshold", value(["peak_picking", "threshold"]))
+line("peak precision", value(["peak_picking", "precision"]))
+line("peak recall", value(["peak_picking", "recall"]))
+line("peak f1", value(["peak_picking", "f1"]))
+line("peak tp", peak_cm.get("true_positives"))
+line("peak fp", peak_cm.get("false_positives"))
+line("peak fn", peak_cm.get("false_negatives"))
+print()
+line("val mode", selection.get("mode"))
+line("val threshold", selection.get("selected_threshold"))
+line("val precision", selection.get("validation_peak_precision"))
+line("val recall", selection.get("validation_peak_recall"))
+line("val f beta", selection.get("validation_peak_f_beta"))
+
+if params:
+    print()
+    for key in (
+        "max_depth",
+        "min_child_weight",
+        "learning_rate",
+        "n_estimators",
+        "subsample",
+        "colsample_bytree",
+        "gamma",
+        "reg_alpha",
+        "reg_lambda",
+    ):
+        if key in params:
+            line(key.replace("_", " "), params[key])
+PY
+}
+
+DATA_DIR="ml/data/android_firefox"
 BASE_CONFIG="${BASE_CONFIG:-ml/training_config.yaml}"
 PATHS_TEMPLATE="${PATHS_TEMPLATE:-ml/training_config.android_firefox.paths.template.yaml}"
-RUN_NAME="${RUN_NAME:-android_firefox}"
 OUT_DIR="${OUT_DIR:-models}"
+RUN_NAME="android_firefox_candidate"
 PYTHON="$(resolve_python)"
-SELECTED_DATA_DIR=""
+CANDIDATE_PREFIX="$OUT_DIR/onset_detector_${RUN_NAME}"
+CANDIDATE_MODEL="$CANDIDATE_PREFIX.onnx"
+CANDIDATE_SCHEMA="$CANDIDATE_PREFIX.schema.json"
+CANDIDATE_METRICS="$CANDIDATE_PREFIX.metrics.json"
 TRAINING_PIP_PACKAGES=(
   "numpy"
   "pyyaml"
@@ -54,32 +148,6 @@ TRAINING_PIP_PACKAGES=(
   "onnx"
   "packaging"
 )
-
-select_training_data_dir() {
-  if [[ -n "${DATA_DIR:-}" ]]; then
-    SELECTED_DATA_DIR="$DATA_DIR"
-    return
-  fi
-
-  echo "Training data directories:"
-  local index
-  for index in "${!TRAINING_DATA_DIRS[@]}"; do
-    printf '  %d) %s\n' "$((index + 1))" "${TRAINING_DATA_DIRS[$index]}"
-  done
-
-  local choice
-  while true; do
-    read -r -p "Select training data directory [1-${#TRAINING_DATA_DIRS[@]}]: " choice
-    if [[ "$choice" =~ ^[0-9]+$ ]] && (( choice >= 1 && choice <= ${#TRAINING_DATA_DIRS[@]} )); then
-      SELECTED_DATA_DIR="${TRAINING_DATA_DIRS[$((choice - 1))]}"
-      return
-    fi
-    echo "Please enter a number from 1 to ${#TRAINING_DATA_DIRS[@]}." >&2
-  done
-}
-
-select_training_data_dir
-DATA_DIR="$SELECTED_DATA_DIR"
 
 if [[ ! -d "$DATA_DIR" ]]; then
   echo "ERROR: training data directory not found: $DATA_DIR" >&2
@@ -96,27 +164,21 @@ if [[ ! -f "$PATHS_TEMPLATE" ]]; then
   exit 1
 fi
 
-echo
-echo "Selected training data directory: $DATA_DIR"
-echo "Directory content:"
-find "$DATA_DIR" -maxdepth 1 -mindepth 1 -printf '  %f\n' | sort
-echo
-
 if ! compgen -G "$DATA_DIR/training_data_*.json" >/dev/null; then
   echo "ERROR: no training_data_*.json files found in $DATA_DIR" >&2
   exit 1
 fi
 
-read -r -p "Use only this directory for training and continue? [y/N]: " confirm
-case "$confirm" in
-  [yY]|[yY][eE][sS]|[jJ]|[jJ][aA]) ;;
-  *)
-    echo "Training aborted."
-    exit 0
-    ;;
-esac
+JSON_FILE_COUNT="$(find "$DATA_DIR" -maxdepth 1 -name 'training_data_*.json' | wc -l | tr -d ' ')"
 
-echo "Python:        $PYTHON"
+print_section "Android-Firefox onset training"
+print_kv "data" "$DATA_DIR"
+print_kv "python" "$PYTHON"
+print_kv "config" "$BASE_CONFIG"
+print_kv "model" "$CANDIDATE_MODEL"
+print_kv "schema" "$CANDIDATE_SCHEMA"
+print_kv "metrics" "$CANDIDATE_METRICS"
+print_kv "json files" "$JSON_FILE_COUNT"
 
 check_training_dependencies() {
   "$PYTHON" - <<'PY'
@@ -153,12 +215,14 @@ PY
 }
 
 if ! check_training_dependencies; then
-  echo "Installing missing Python training dependencies into: $PYTHON"
+  print_section "Installing dependencies"
+  print_kv "target" "$PYTHON"
   "$PYTHON" -m pip install "${TRAINING_PIP_PACKAGES[@]}"
   check_training_dependencies
 fi
 
 tmp_config="$(mktemp)"
+training_log="$(mktemp "${TMPDIR:-/tmp}/android-firefox-training.XXXXXX.log")"
 cleanup() {
   rm -f "$tmp_config"
 }
@@ -196,9 +260,41 @@ with open(output_config, "w", encoding="utf-8") as handle:
     yaml.safe_dump(cfg, handle, sort_keys=False)
 PY
 
-echo "Training data: $DATA_DIR"
-echo "Run name:      $RUN_NAME"
-echo "Outputs:       $OUT_DIR/onset_detector_${RUN_NAME}.{onnx,schema.json,metrics.json}"
-echo
+print_section "Training"
+print_kv "log" "$training_log"
 
-"$PYTHON" ml/train_onset_detector.py --config "$tmp_config"
+if ! "$PYTHON" ml/train_onset_detector.py --config "$tmp_config" >"$training_log" 2>&1; then
+  echo "ERROR: training failed. Last log lines:" >&2
+  tail -n 40 "$training_log" >&2
+  echo "Full log: $training_log" >&2
+  exit 1
+fi
+
+if [[ ! -s "$CANDIDATE_MODEL" || ! -s "$CANDIDATE_SCHEMA" || ! -s "$CANDIDATE_METRICS" ]]; then
+  echo "ERROR: training did not write all candidate outputs." >&2
+  echo "Expected prefix: $CANDIDATE_PREFIX" >&2
+  echo "Full log: $training_log" >&2
+  exit 1
+fi
+
+rm -f "$training_log"
+
+print_section "Candidate outputs"
+print_kv "model" "$CANDIDATE_MODEL"
+print_kv "schema" "$CANDIDATE_SCHEMA"
+print_kv "metrics" "$CANDIDATE_METRICS"
+
+print_section "Best values"
+print_metrics_summary "$CANDIDATE_METRICS"
+
+printf '\nApply candidate to production? [y/N]: '
+read -r apply_candidate
+case "$apply_candidate" in
+  [yY]|[yY][eE][sS]|[jJ]|[jJ][aA])
+    ./apply_android_firefox_onset_detector.sh
+    ;;
+  *)
+    print_section "Done"
+    print_kv "status" "candidate kept, production unchanged"
+    ;;
+esac
