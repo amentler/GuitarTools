@@ -70,6 +70,8 @@ vi.mock('../../js/utils/settings.js', () => ({
   syncStringToggles: vi.fn(),
   wireFretSlider: vi.fn(),
   syncFretSlider: vi.fn(),
+  wireMinFretSlider: vi.fn(),
+  syncMinFretSlider: vi.fn(),
 }));
 
 vi.mock('../../js/shared/audio/microphoneService.js', () => ({
@@ -162,6 +164,7 @@ function buildDom() {
         <option value="3/4">3/4</option>
       </select>
       <input id="sheet-music-fret-range-slider" />
+      <input id="sheet-music-min-fret-slider" />
       <span id="sheet-music-fret-range-label"></span>
       <div id="sheet-music-string-toggles">
         <button class="btn-string"></button>

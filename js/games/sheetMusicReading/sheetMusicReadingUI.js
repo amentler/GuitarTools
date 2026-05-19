@@ -125,6 +125,7 @@ export function resolveSheetMusicUI(root = document) {
     timeSigSelect: root.getElementById?.('sheet-music-time-sig') ?? document.getElementById('sheet-music-time-sig'),
     fretSlider: root.getElementById?.('sheet-music-fret-range-slider') ?? document.getElementById('sheet-music-fret-range-slider'),
     fretLabel: root.getElementById?.('sheet-music-fret-range-label') ?? document.getElementById('sheet-music-fret-range-label'),
+    minFretSlider: root.getElementById?.('sheet-music-min-fret-slider') ?? document.getElementById('sheet-music-min-fret-slider'),
     stringButtons: document.querySelectorAll('#sheet-music-string-toggles .btn-string'),
     recordBtn:       root.getElementById?.('btn-record') ?? document.getElementById('btn-record'),
     recordStopBtn:   root.getElementById?.('btn-record-stop') ?? document.getElementById('btn-record-stop'),
@@ -138,8 +139,9 @@ export function resolveSheetMusicUI(root = document) {
   };
 }
 
-export function syncSheetMusicUI(ui, state, syncFretSlider, syncStringToggles, updatePoolWarning) {
-  syncFretSlider(ui.fretSlider, ui.fretLabel, state.settings.maxFret);
+export function syncSheetMusicUI(ui, state, syncFretSlider, syncStringToggles, syncMinFretSlider) {
+  syncFretSlider(ui.fretSlider, ui.fretLabel, state.settings.maxFret, state.settings.minFret);
+  if (syncMinFretSlider && ui.minFretSlider) syncMinFretSlider(ui.minFretSlider, state.settings.minFret);
   syncStringToggles(ui.stringButtons, state.settings.activeStrings);
 
   if (ui.bpmSlider) ui.bpmSlider.value = String(state.bpm);
@@ -148,8 +150,6 @@ export function syncSheetMusicUI(ui, state, syncFretSlider, syncStringToggles, u
   if (ui.activeBtn) ui.activeBtn.classList.toggle('active', Boolean(state.active));
   if (ui.showTabBtn) ui.showTabBtn.classList.toggle('active', state.showTab);
   if (ui.endlessBtn) ui.endlessBtn.classList.toggle('active', state.endless);
-
-  updatePoolWarning();
 }
 
 export function setPlaybackButtonState(button, isPlaying) {

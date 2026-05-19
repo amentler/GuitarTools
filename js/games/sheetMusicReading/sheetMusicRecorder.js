@@ -80,7 +80,55 @@ function encodeWav(channelData, sampleRate, numChannels) {
 }
 
 /**
- * Factory for a MediaRecorder-based WAV recorder.
+ * Trims leading and trailing silence from multi-channel audio data.
+ * Preserves up to `maxSilenceSeconds` of silence on each side.
+ * Samples whose absolute value exceeds `threshold` are considered non-silent.
+ *
+ * @param {Float32Array[]} channelData  One Float32Array per channel (in-place sliced).
+ * @param {number} sampleRate
+ * @param {{ maxSilenceSeconds?: number, threshold?: number }} [opts]
+ * @returns {Float32Array[]}  New (sliced) channel data arrays.
+ */
+export function trimSilence(channelData, sampleRate, { maxSilenceSeconds = 1, threshold = 0.01 } = {}) {
+  if (!channelData || channelData.length === 0) return channelData;
+
+  const len = channelData[0].length;
+  const maxSilenceSamples = Math.round(maxSilenceSeconds * sampleRate);
+
+  // Find first non-silent sample (any channel).
+  let firstActive = len;
+  outer_start:
+  for (let i = 0; i < len; i++) {
+    for (let c = 0; c < channelData.length; c++) {
+      if (Math.abs(channelData[c][i]) > threshold) {
+        firstActive = i;
+        break outer_start;
+      }
+    }
+  }
+
+  // Find last non-silent sample (any channel).
+  let lastActive = -1;
+  outer_end:
+  for (let i = len - 1; i >= 0; i--) {
+    for (let c = 0; c < channelData.length; c++) {
+      if (Math.abs(channelData[c][i]) > threshold) {
+        lastActive = i;
+        break outer_end;
+      }
+    }
+  }
+
+  // Fully silent recording – keep as is.
+  if (lastActive < 0) return channelData;
+
+  const start = Math.max(0, firstActive - maxSilenceSamples);
+  const end   = Math.min(len, lastActive + maxSilenceSamples + 1);
+
+  return channelData.map(ch => ch.slice(start, end));
+}
+
+/**
  *
  * @returns {{
  *   start(existingStream?: MediaStream|null): Promise<void>,
@@ -197,10 +245,11 @@ export function createRecorder() {
             await decodeCtx.close();
 
             const numChannels = Math.min(2, audioBuffer.numberOfChannels);
-            const channelData = [];
+            let channelData = [];
             for (let c = 0; c < numChannels; c++) {
               channelData.push(audioBuffer.getChannelData(c));
             }
+            channelData = trimSilence(channelData, audioBuffer.sampleRate);
             resolve(encodeWav(channelData, audioBuffer.sampleRate, numChannels));
           } catch {
             decodeCtx.close().catch(() => {});

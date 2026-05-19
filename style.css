@@ -524,6 +524,18 @@ input[type="range"] {
   cursor: pointer;
 }
 
+.range-dual {
+  display: flex;
+  flex: 1;
+  gap: 4px;
+  align-items: center;
+}
+
+.range-dual input[type="range"] {
+  flex: 1;
+  min-width: 60px;
+}
+
 .settings-checkbox {
   width: 18px;
   height: 18px;

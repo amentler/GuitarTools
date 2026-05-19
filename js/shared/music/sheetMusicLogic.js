@@ -1,40 +1,51 @@
-// Notes in C major, standard tuning, frets 0–5, all 6 strings.
+// Notes in chromatic/C-major mix, standard tuning, frets 0–8, all 6 strings.
 // Guitar is a transposing instrument: sounding pitch is one octave below written.
 // vfKey uses written pitch (sounding + octave) in VexFlow format 'note/octave'.
-// Array is sorted LOW → HIGH so index distance maps to diatonic interval distance.
+// Array is sorted LOW → HIGH so index distance maps to approximate interval distance.
 // Frets 4–5 introduce same-pitch alternatives on adjacent strings (e.g. str6/fret5 = str5/fret0 = A2).
+// Accidental notes (sharps/flats) are included so they appear during the exercise.
 
 export const NOTES = [
-  { name: 'E', octave: 2, vfKey: 'e/3', string: 6, fret: 0 },
-  { name: 'F', octave: 2, vfKey: 'f/3', string: 6, fret: 1 },
-  { name: 'G', octave: 2, vfKey: 'g/3', string: 6, fret: 3 },
-  { name: 'A', octave: 2, vfKey: 'a/3', string: 5, fret: 0 },
-  { name: 'A', octave: 2, vfKey: 'a/3', string: 6, fret: 5 },
-  { name: 'B', octave: 2, vfKey: 'b/3', string: 5, fret: 2 },
-  { name: 'C', octave: 3, vfKey: 'c/4', string: 5, fret: 3 },
-  { name: 'D', octave: 3, vfKey: 'd/4', string: 4, fret: 0 },
-  { name: 'D', octave: 3, vfKey: 'd/4', string: 5, fret: 5 },
-  { name: 'E', octave: 3, vfKey: 'e/4', string: 4, fret: 2 },
-  { name: 'F', octave: 3, vfKey: 'f/4', string: 4, fret: 3 },
-  { name: 'G', octave: 3, vfKey: 'g/4', string: 3, fret: 0 },
-  { name: 'G', octave: 3, vfKey: 'g/4', string: 4, fret: 5 },
-  { name: 'A', octave: 3, vfKey: 'a/4', string: 3, fret: 2 },
-  { name: 'B', octave: 3, vfKey: 'b/4', string: 2, fret: 0 },
-  { name: 'B', octave: 3, vfKey: 'b/4', string: 3, fret: 4 },
-  { name: 'C', octave: 4, vfKey: 'c/5', string: 2, fret: 1 },
-  { name: 'C', octave: 4, vfKey: 'c/5', string: 3, fret: 5 },
-  { name: 'D', octave: 4, vfKey: 'd/5', string: 2, fret: 3 },
-  { name: 'E', octave: 4, vfKey: 'e/5', string: 1, fret: 0 },
-  { name: 'E', octave: 4, vfKey: 'e/5', string: 2, fret: 5 },
-  { name: 'F', octave: 4, vfKey: 'f/5', string: 1, fret: 1 },
-  { name: 'G', octave: 4, vfKey: 'g/5', string: 1, fret: 3 },
-  { name: 'A', octave: 4, vfKey: 'a/5', string: 1, fret: 5 },
+  { name: 'E',  octave: 2, vfKey: 'e/3',  string: 6, fret: 0 },
+  { name: 'F',  octave: 2, vfKey: 'f/3',  string: 6, fret: 1 },
+  { name: 'F#', octave: 2, vfKey: 'f#/3', string: 6, fret: 2 },
+  { name: 'G',  octave: 2, vfKey: 'g/3',  string: 6, fret: 3 },
+  { name: 'A',  octave: 2, vfKey: 'a/3',  string: 5, fret: 0 },
+  { name: 'A',  octave: 2, vfKey: 'a/3',  string: 6, fret: 5 },
+  { name: 'Bb', octave: 2, vfKey: 'bb/3', string: 5, fret: 1 },
+  { name: 'B',  octave: 2, vfKey: 'b/3',  string: 5, fret: 2 },
+  { name: 'C',  octave: 3, vfKey: 'c/4',  string: 5, fret: 3 },
+  { name: 'D',  octave: 3, vfKey: 'd/4',  string: 4, fret: 0 },
+  { name: 'D',  octave: 3, vfKey: 'd/4',  string: 5, fret: 5 },
+  { name: 'Eb', octave: 3, vfKey: 'eb/4', string: 4, fret: 1 },
+  { name: 'E',  octave: 3, vfKey: 'e/4',  string: 4, fret: 2 },
+  { name: 'F',  octave: 3, vfKey: 'f/4',  string: 4, fret: 3 },
+  { name: 'G',  octave: 3, vfKey: 'g/4',  string: 3, fret: 0 },
+  { name: 'G',  octave: 3, vfKey: 'g/4',  string: 4, fret: 5 },
+  { name: 'Ab', octave: 3, vfKey: 'ab/4', string: 3, fret: 1 },
+  { name: 'A',  octave: 3, vfKey: 'a/4',  string: 3, fret: 2 },
+  { name: 'Bb', octave: 3, vfKey: 'bb/4', string: 3, fret: 3 },
+  { name: 'B',  octave: 3, vfKey: 'b/4',  string: 2, fret: 0 },
+  { name: 'B',  octave: 3, vfKey: 'b/4',  string: 3, fret: 4 },
+  { name: 'C',  octave: 4, vfKey: 'c/5',  string: 2, fret: 1 },
+  { name: 'C',  octave: 4, vfKey: 'c/5',  string: 3, fret: 5 },
+  { name: 'C#', octave: 4, vfKey: 'c#/5', string: 2, fret: 2 },
+  { name: 'D',  octave: 4, vfKey: 'd/5',  string: 2, fret: 3 },
+  { name: 'E',  octave: 4, vfKey: 'e/5',  string: 1, fret: 0 },
+  { name: 'E',  octave: 4, vfKey: 'e/5',  string: 2, fret: 5 },
+  { name: 'F',  octave: 4, vfKey: 'f/5',  string: 1, fret: 1 },
+  { name: 'F#', octave: 4, vfKey: 'f#/5', string: 1, fret: 2 },
+  { name: 'G',  octave: 4, vfKey: 'g/5',  string: 1, fret: 3 },
+  { name: 'A',  octave: 4, vfKey: 'a/5',  string: 1, fret: 5 },
+  { name: 'Bb', octave: 4, vfKey: 'bb/5', string: 1, fret: 6 },
+  { name: 'B',  octave: 4, vfKey: 'b/5',  string: 1, fret: 7 },
+  { name: 'C',  octave: 5, vfKey: 'c/6',  string: 1, fret: 8 },
 ];
 
-export function getFilteredNotes(maxFret, activeStrings) {
+export function getFilteredNotes(maxFret, activeStrings, minFret = 0) {
   return NOTES.filter(note => {
     const stringIndex = 6 - note.string;
-    return note.fret <= maxFret && activeStrings.includes(stringIndex);
+    return note.fret >= minFret && note.fret <= maxFret && activeStrings.includes(stringIndex);
   });
 }
 

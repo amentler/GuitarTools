@@ -26,10 +26,10 @@ describe('MetronomeLogic.setBpm', () => {
     expect(metro.bpm).toBe(40);
   });
 
-  it('clamps BPM to the maximum of 240', () => {
+  it('clamps BPM to the maximum of 150', () => {
     const metro = new MetronomeLogic();
     metro.setBpm(300);
-    expect(metro.bpm).toBe(240);
+    expect(metro.bpm).toBe(150);
   });
 
   it('accepts the boundary value 40', () => {
@@ -38,10 +38,16 @@ describe('MetronomeLogic.setBpm', () => {
     expect(metro.bpm).toBe(40);
   });
 
-  it('accepts the boundary value 240', () => {
+  it('accepts the boundary value 150', () => {
     const metro = new MetronomeLogic();
-    metro.setBpm(240);
-    expect(metro.bpm).toBe(240);
+    metro.setBpm(150);
+    expect(metro.bpm).toBe(150);
+  });
+
+  it('clamps BPM above 150 down to 150', () => {
+    const metro = new MetronomeLogic();
+    metro.setBpm(151);
+    expect(metro.bpm).toBe(150);
   });
 });
 

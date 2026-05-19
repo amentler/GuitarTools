@@ -4,7 +4,7 @@ import {
 import { renderScore } from './sheetMusicSVG.js';
 import { PlaybackController } from './playbackController.js';
 import { PlaybackBar } from './playbackBar.js';
-import { wireStringToggles, syncStringToggles, wireFretSlider, syncFretSlider } from '../../utils/settings.js';
+import { wireStringToggles, syncStringToggles, wireFretSlider, syncFretSlider, wireMinFretSlider, syncMinFretSlider } from '../../utils/settings.js';
 import {
   loadSheetMusicPrefs,
   saveSheetMusicActive,
@@ -37,8 +37,6 @@ import { createPlaybackControl } from './sheetMusicPlaybackControl.js';
 const BARS_PER_ROW = 4;
 const ENDLESS_SCROLL_TARGET_FRACTION = 0.33;
 const ENDLESS_SCROLL_SHIFT_DELAY_MS = 420;
-// Minimum notes in the pool before showing the "too few notes" warning.
-const MIN_POOL_SIZE = 3;
 
 // Preload Essentia WASM in the background so it is ready when the user starts.
 getEssentia().then(ess => {
@@ -77,6 +75,7 @@ export function createSheetMusicReadingFeature() {
     selectedMicDeviceId: null,
     settings: {
       maxFret: 3,
+      minFret: 0,
       activeStrings: [0, 1, 2, 3, 4, 5],
     },
   };
@@ -99,7 +98,7 @@ export function createSheetMusicReadingFeature() {
     createEndlessHelpers(endlessS, () => state, () => ui, BARS_PER_ROW, ENDLESS_SCROLL_TARGET_FRACTION, ENDLESS_SCROLL_SHIFT_DELAY_MS);
 
   function getNotesPool() {
-    return getFilteredNotes(state.settings.maxFret, state.settings.activeStrings);
+    return getFilteredNotes(state.settings.maxFret, state.settings.activeStrings, state.settings.minFret);
   }
 
   function getTimeSigConfig() {
@@ -162,15 +161,8 @@ export function createSheetMusicReadingFeature() {
     }
   }
 
-  // ── Pool warning ────────────────────────────────────────────────────────
-  function updatePoolWarning() {
-    const el = ui?.poolWarning;
-    if (el) el.hidden = getNotesPool().length >= MIN_POOL_SIZE;
-  }
-
   // ── Score/bars management ───────────────────────────────────────────────
   function regenerate() {
-    updatePoolWarning();
     const config = getTimeSigConfig();
     const injectedBars = resolveInjectedBars();
     state.bars = Array.isArray(injectedBars)
@@ -186,7 +178,7 @@ export function createSheetMusicReadingFeature() {
 
   // ── Settings sync ───────────────────────────────────────────────────────
   function syncSettingsUI() {
-    syncSheetMusicUI(ui, state, syncFretSlider, syncStringToggles, updatePoolWarning);
+    syncSheetMusicUI(ui, state, syncFretSlider, syncStringToggles, syncMinFretSlider);
     syncActiveUiVisibility(ui, state);
     updateCurrentNoteDisplay(ui, state, noteHandler.getCurrentNote());
   }
@@ -287,6 +279,15 @@ export function createSheetMusicReadingFeature() {
         if (state.endless) cleanupEndlessState();
         regenerate();
         updateFeedback(ui, state);
+        syncSettingsUI();
+      }, ui.minFretSlider);
+
+      wireMinFretSlider(ui.minFretSlider, ui.fretLabel, state.settings, ui.fretSlider, () => {
+        playbackControl.stopPlayback();
+        if (state.endless) cleanupEndlessState();
+        regenerate();
+        updateFeedback(ui, state);
+        syncSettingsUI();
       });
 
       wireStringToggles(

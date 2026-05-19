@@ -47,8 +47,8 @@ export function createMetronomeFeature({
       });
       if (savedBpm !== null) {
         logic.setBpm(savedBpm);
-        bpmSlider.value = String(savedBpm);
-        bpmDisplay.textContent = String(savedBpm);
+        bpmSlider.value = String(logic.bpm);
+        bpmDisplay.textContent = String(logic.bpm);
       }
 
       const savedBeats = storageService.getNumber(METRONOME_BEATS_KEY, {

@@ -91,7 +91,7 @@ export class MetronomeLogic {
   }
 
   setBpm(bpm) {
-    this.bpm = Math.max(40, Math.min(240, bpm));
+    this.bpm = Math.max(40, Math.min(150, bpm));
   }
 
   setBeatsPerMeasure(beats) {

@@ -169,10 +169,10 @@ describe('PlaybackController.setBpm', () => {
     expect(pc._metronome.bpm).toBe(40);
   });
 
-  it('clamps BPM to maximum 240 (via metronome)', () => {
+  it('clamps BPM to maximum 150 (via metronome)', () => {
     const pc = new PlaybackController();
     pc.setBpm(999);
-    expect(pc._metronome.bpm).toBe(240);
+    expect(pc._metronome.bpm).toBe(150);
   });
 
   it('accepts boundary value 40', () => {
@@ -181,10 +181,10 @@ describe('PlaybackController.setBpm', () => {
     expect(pc._metronome.bpm).toBe(40);
   });
 
-  it('accepts boundary value 240', () => {
+  it('accepts boundary value 150', () => {
     const pc = new PlaybackController();
-    pc.setBpm(240);
-    expect(pc._metronome.bpm).toBe(240);
+    pc.setBpm(150);
+    expect(pc._metronome.bpm).toBe(150);
   });
 });
 

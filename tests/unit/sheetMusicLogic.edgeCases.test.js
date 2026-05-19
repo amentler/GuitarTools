@@ -65,8 +65,8 @@ describe('getFilteredNotes – edge cases', () => {
     expect(notes[0].name).toBe('E');
   });
 
-  it('all strings + maxFret 3 returns all 17 NOTES', () => {
-    expect(getFilteredNotes(3, [0, 1, 2, 3, 4, 5])).toHaveLength(17);
+  it('all strings + maxFret 3 returns 24 NOTES', () => {
+    expect(getFilteredNotes(3, [0, 1, 2, 3, 4, 5])).toHaveLength(24);
   });
 });
 

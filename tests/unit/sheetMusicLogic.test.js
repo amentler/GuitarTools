@@ -71,19 +71,42 @@ describe('generateBars', () => {
 });
 
 describe('getFilteredNotes', () => {
-  it('returns all notes when maxFret is 3 and all strings are active', () => {
+  it('returns 24 notes when maxFret is 3 and all strings are active', () => {
     const result = getFilteredNotes(3, [0, 1, 2, 3, 4, 5]);
-    expect(result).toHaveLength(17);
-  });
-
-  it('returns 18 notes when maxFret is 4 and all strings are active', () => {
-    const result = getFilteredNotes(4, [0, 1, 2, 3, 4, 5]);
-    expect(result).toHaveLength(18);
-  });
-
-  it('returns 24 notes when maxFret is 5 and all strings are active', () => {
-    const result = getFilteredNotes(5, [0, 1, 2, 3, 4, 5]);
     expect(result).toHaveLength(24);
+  });
+
+  it('returns 25 notes when maxFret is 4 and all strings are active', () => {
+    const result = getFilteredNotes(4, [0, 1, 2, 3, 4, 5]);
+    expect(result).toHaveLength(25);
+  });
+
+  it('returns 31 notes when maxFret is 5 and all strings are active', () => {
+    const result = getFilteredNotes(5, [0, 1, 2, 3, 4, 5]);
+    expect(result).toHaveLength(31);
+  });
+
+  it('returns 34 notes when maxFret is 8 and all strings are active', () => {
+    const result = getFilteredNotes(8, [0, 1, 2, 3, 4, 5]);
+    expect(result).toHaveLength(34);
+  });
+
+  it('returns notes at fret 8 when maxFret is 8', () => {
+    const result = getFilteredNotes(8, [0, 1, 2, 3, 4, 5]);
+    const fret8Notes = result.filter(n => n.fret === 8);
+    expect(fret8Notes.length).toBeGreaterThan(0);
+  });
+
+  it('includes at least one note with a sharp (#) accidental in the pool', () => {
+    const result = getFilteredNotes(8, [0, 1, 2, 3, 4, 5]);
+    const sharpNote = result.find(n => n.vfKey.includes('#'));
+    expect(sharpNote).toBeDefined();
+  });
+
+  it('includes at least one note with a flat (b) accidental in the pool', () => {
+    const result = getFilteredNotes(8, [0, 1, 2, 3, 4, 5]);
+    const flatNote = result.find(n => /[a-g]b\//.test(n.vfKey));
+    expect(flatNote).toBeDefined();
   });
 
   it('includes A4 on high E at fret 5', () => {
@@ -111,6 +134,23 @@ describe('getFilteredNotes', () => {
       const stringIndex = 6 - note.string;
       expect([0, 5]).toContain(stringIndex);
     }
+  });
+
+  it('filters by minFret (third parameter)', () => {
+    const result = getFilteredNotes(5, [0, 1, 2, 3, 4, 5], 3);
+    expect(result.every(n => n.fret >= 3)).toBe(true);
+  });
+
+  it('returns only notes between minFret and maxFret inclusive', () => {
+    const result = getFilteredNotes(5, [0, 1, 2, 3, 4, 5], 3);
+    expect(result.every(n => n.fret >= 3 && n.fret <= 5)).toBe(true);
+    expect(result.length).toBeGreaterThan(0);
+  });
+
+  it('defaults minFret to 0 when not provided (backwards compatible)', () => {
+    const withDefault = getFilteredNotes(3, [0, 1, 2, 3, 4, 5]);
+    const withExplicit = getFilteredNotes(3, [0, 1, 2, 3, 4, 5], 0);
+    expect(withDefault).toHaveLength(withExplicit.length);
   });
 
   it('returns empty array when no notes match', () => {
