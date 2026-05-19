@@ -379,9 +379,8 @@ export function createAudioAnalyseFeature() {
         trainingFrames.push({ t, features: contextFeatures });
       }
 
-      const randomStr = Math.random().toString(36).slice(2, 8);
       const baseName = (_cachedFilename || 'audio').replace(/\.[^.]+$/, '');
-      const exportName = `training_data_${baseName}_${randomStr}.json`;
+      const exportName = `training_data_${baseName}.json`;
 
       const exportObj = {
         schemaVersion: 1,

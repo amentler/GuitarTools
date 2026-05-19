@@ -94,6 +94,13 @@ PLOT_W = 930
 
 `handleFileInput` erkennt `.zip`-Dateien (Endung oder `application/zip` MIME-Type) und extrahiert via `readZip` (`js/shared/zip.js`) die erste WAV-Datei und – falls vorhanden – die JSON-Sidecar daraus. Das Datei-Input akzeptiert `.wav,audio/wav,.zip,application/zip`; das Drop-Label lautet „WAV- oder ZIP-Datei wählen". Import ohne Sidecar bleibt möglich.
 
+## Training-Export
+
+Der Training-Data-Export verwendet den geladenen Dateinamen ohne Erweiterung
+direkt: `training_data_<baseName>.json`. Es wird kein weiterer Zufallsstring
+angehängt, weil tagged ZIPs bereits über ihren BaseName eindeutig und
+zuordenbar sind.
+
 ## IndexedDB-Schema
 
 - **Database**: `gt-audio-analyse-db`
