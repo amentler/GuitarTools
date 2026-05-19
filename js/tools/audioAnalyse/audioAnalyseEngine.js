@@ -18,7 +18,7 @@ import {
 } from '../../shared/audio/guitarOnsetStrategies.js';
 import {
   detectOnsetsOfflineXGBoost,
-  loadDefaultXGBoostOnsetModel,
+  loadXGBoostModelForStrategy,
 } from '../../shared/audio/offlineOnsetDetectionXGBoost.js';
 import { analyzeInputLevel } from '../../shared/audio/inputLevel.js';
 import { createMatchState } from '../../shared/audio/fastNoteMatcher.js';
@@ -180,7 +180,7 @@ export async function analyzeAudio(samples, sampleRate, options = {}) {
   const xgboostOnsets = await detectOnsetsOfflineXGBoost(
     samples,
     sampleRate,
-    await loadDefaultXGBoostOnsetModel(),
+    await loadXGBoostModelForStrategy(selectedOnsetStrategy),
     { onsetStrategyKey: selectedOnsetStrategy.baseStrategyKey },
   );
   const xgboostOnsetSet = new Set(xgboostOnsets.onsetsSec.map(sec => Math.round(sec * 1000)));

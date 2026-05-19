@@ -12,9 +12,16 @@
  *   - update(state, { frequencyData, samples, rms? }, options?) → { nextState, event, ... }
  *     `event` is 'onset' or null (same contract as guitarOnsetDetector).
  *
- * The app exposes XGBoost as the only selectable detector. The sweep-standard
- * strategy remains available through resolveGuitarOnsetBaseStrategy() as an
- * internal feature source for the XGBoost model.
+ * XGBoost strategies can optionally carry `modelUrl`/`schemaUrl` fields that
+ * point to a specific ONNX model file instead of the production default.
+ *
+ * The sweep-standard strategy remains available through
+ * resolveGuitarOnsetBaseStrategy() as an internal feature source for the
+ * XGBoost model.
+ *
+ * Dynamic strategies are loaded from models/strategies/registry.json via
+ * loadGuitarOnsetStrategiesFromRegistry(). Until that resolves, the static
+ * GUITAR_ONSET_STRATEGIES array acts as a fallback.
  */
 
 import {
@@ -82,13 +89,15 @@ export const GUITAR_ONSET_STRATEGIES = [
 
 /**
  * Returns the onset strategy for the given key, falling back to the default.
+ * Searches registry-loaded strategies first (if loaded), then the static array.
  * @param {string} [key]
  * @returns {object} strategy object
  */
 export function resolveGuitarOnsetStrategy(key) {
-  return GUITAR_ONSET_STRATEGIES.find(s => s.key === key)
-    ?? GUITAR_ONSET_STRATEGIES.find(s => s.key === DEFAULT_GUITAR_ONSET_STRATEGY_KEY)
-    ?? GUITAR_ONSET_STRATEGIES[0];
+  const all = getGuitarOnsetStrategies();
+  return all.find(s => s.key === key)
+    ?? all.find(s => s.key === DEFAULT_GUITAR_ONSET_STRATEGY_KEY)
+    ?? all[0];
 }
 
 /**
@@ -103,9 +112,73 @@ export function resolveGuitarOnsetBaseStrategy(key) {
 }
 
 /**
- * Returns all registered onset strategies.
+ * Returns all currently registered onset strategies.
+ * If the registry has been loaded, returns registry strategies (which replace
+ * the static fallback). Otherwise returns the static GUITAR_ONSET_STRATEGIES.
  * @returns {object[]}
  */
 export function getGuitarOnsetStrategies() {
+  if (_registryStrategies !== null && _registryStrategies.length > 0) {
+    return _registryStrategies;
+  }
   return GUITAR_ONSET_STRATEGIES;
+}
+
+const REGISTRY_URL = new URL('../../../models/strategies/registry.json', import.meta.url).href;
+const MODELS_BASE_URL = new URL('../../../models/', import.meta.url).href;
+
+/** Cached result of the last successful registry load (null = not yet loaded). */
+let _registryStrategies = null;
+/** In-flight or completed promise for the registry fetch. */
+let _registryPromise = null;
+
+/**
+ * Loads strategies from models/strategies/registry.json.
+ *
+ * - Returns registry strategies on success (up to 7 entries, newest first).
+ * - Falls back silently to [] on 404 (no registry yet).
+ * - Falls back silently to [] on any network/parse error (logs a warning).
+ * - Caches the promise; subsequent calls return the same promise.
+ *
+ * After this resolves, getGuitarOnsetStrategies() and resolveGuitarOnsetStrategy()
+ * automatically use the registry strategies instead of the static fallback.
+ *
+ * @returns {Promise<object[]>} Array of strategy objects built from the registry.
+ */
+export function loadGuitarOnsetStrategiesFromRegistry() {
+  if (_registryPromise) return _registryPromise;
+  _registryPromise = _fetchRegistry();
+  return _registryPromise;
+}
+
+async function _fetchRegistry() {
+  try {
+    const res = await fetch(REGISTRY_URL, { cache: 'no-store' });
+    if (!res.ok) {
+      _registryStrategies = [];
+      return [];
+    }
+    const registry = await res.json();
+    const entries = Array.isArray(registry.strategies) ? registry.strategies : [];
+    _registryStrategies = entries.map(entry => _buildStrategyFromEntry(entry));
+    return _registryStrategies;
+  } catch (err) {
+    console.warn('[guitarOnsetStrategies] registry load failed, using static fallback:', err);
+    _registryStrategies = [];
+    return [];
+  }
+}
+
+function _buildStrategyFromEntry(entry) {
+  return {
+    key: entry.key,
+    label: entry.label,
+    description: entry.description,
+    offlineDetector: 'xgboost',
+    baseStrategyKey: GUITAR_ONSET_STRATEGY_KEYS.SWEEP_STANDARD,
+    modelUrl: new URL(entry.modelFile, MODELS_BASE_URL).href,
+    schemaUrl: new URL(entry.schemaFile, MODELS_BASE_URL).href,
+    createState: createGuitarOnsetState,
+    update: makeStrategyUpdate(SWEEP_STANDARD_NORMALIZED_OPTIONS, SWEEP_STANDARD_GUITAR_ONSET_OPTIONS),
+  };
 }

@@ -25,6 +25,7 @@ import {
 import {
   resolveGuitarOnsetStrategy,
   getGuitarOnsetStrategies,
+  loadGuitarOnsetStrategiesFromRegistry,
 } from '../../shared/audio/guitarOnsetStrategies.js';
 import {
   setEssentiaSheetMusicStrategyInstance,
@@ -633,6 +634,17 @@ export function createAudioAnalyseFeature() {
         .map(s => `<option value="${s.key}"${s.key === defaultOnset ? ' selected' : ''}>${s.label}</option>`)
         .join('');
     }
+
+    // Async: replace onset select with registry strategies once loaded.
+    loadGuitarOnsetStrategiesFromRegistry().then(() => {
+      if (!ui.onsetStrategySelect) return;
+      const currentKey = ui.onsetStrategySelect.value;
+      const strategies = getGuitarOnsetStrategies();
+      ui.onsetStrategySelect.innerHTML = strategies
+        .map(s => `<option value="${s.key}"${s.key === (currentKey || defaultOnset) ? ' selected' : ''}>${s.label}</option>`)
+        .join('');
+      updateStrategyLabels(ui);
+    });
 
     ui.pitchStrategySelect?.addEventListener('change', () => {
       updateStrategyLabels(ui);

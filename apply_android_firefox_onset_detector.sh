@@ -163,3 +163,132 @@ print_kv "metrics" "$TARGET_METRICS"
 
 print_section "Production values"
 print_metrics_summary "$TARGET_METRICS"
+
+print_section "Registering strategy"
+
+STRATEGIES_DIR="$(dirname "$TARGET_MODEL")/strategies"
+mkdir -p "$STRATEGIES_DIR"
+
+"$PYTHON" - "$TARGET_SCHEMA" "$TARGET_METRICS" "$STRATEGIES_DIR" <<'PY'
+import json
+import re
+import sys
+from datetime import datetime, timezone
+from pathlib import Path
+
+schema_path, metrics_path, strategies_dir = sys.argv[1:]
+
+with open(schema_path, "r", encoding="utf-8") as f:
+    schema = json.load(f)
+with open(metrics_path, "r", encoding="utf-8") as f:
+    metrics = json.load(f)
+
+trained_on = schema.get("trainedOn", "")
+model_id = schema.get("modelId", "")
+training_files = schema.get("trainingDataFiles", [])
+training_file_count = len(training_files)
+
+# Timestamp from trainedOn
+try:
+    dt = datetime.fromisoformat(trained_on.replace("Z", "+00:00")).astimezone(timezone.utc)
+    date_label = dt.strftime("%Y-%m-%d %H:%M")
+    date_key = dt.strftime("%Y%m%d-%H%M%S")
+    file_ts = dt.strftime("%Y%m%d_%H%M%S")
+except Exception:
+    date_label = trained_on[:16] if trained_on else "unbekannt"
+    date_key = re.sub(r"[^0-9]", "", trained_on[:15]) if trained_on else "0"
+    file_ts = date_key
+
+# Short id suffix from modelId (last 6 hex chars)
+suffix_match = re.search(r"([0-9a-f]{6})$", model_id)
+suffix = suffix_match.group(1) if suffix_match else model_id[-6:] if len(model_id) >= 6 else model_id
+
+file_base = f"xgb_{file_ts}_{suffix}"
+model_file_rel = f"strategies/{file_base}.onnx"
+schema_file_rel = f"strategies/{file_base}.schema.json"
+strategy_model = str(Path(strategies_dir) / f"{file_base}.onnx")
+strategy_schema = str(Path(strategies_dir) / f"{file_base}.schema.json")
+
+# Copy model + schema into strategies/
+import shutil
+shutil.copy2(schema_path, strategy_schema)
+# onnx path: replace .schema.json with .onnx in source path
+onnx_src = schema_path.replace(".schema.json", ".onnx")
+shutil.copy2(onnx_src, strategy_model)
+
+# Metrics
+pp = metrics.get("peak_picking") or {}
+ts_sel = metrics.get("threshold_selection") or {}
+hp = (ts_sel.get("hyperparameter_tuning") or {}).get("params", {}) if isinstance(ts_sel, dict) else {}
+
+def fnum(v, digits=4):
+    if v is None:
+        return "?"
+    if isinstance(v, int):
+        return str(v)
+    return f"{v:.{digits}f}".rstrip("0").rstrip(".")
+
+peak_f1 = round(pp.get("f1") or 0, 4)
+peak_prec = round(pp.get("precision") or 0, 4)
+peak_rec = round(pp.get("recall") or 0, 4)
+threshold = round(metrics.get("threshold") or 0, 4)
+depth = hp.get("max_depth", "?")
+lr = hp.get("learning_rate", "?")
+est = hp.get("n_estimators", "?")
+
+key = f"xgboost-{date_key}"
+label = f"XGB {date_label}"
+description = (
+    f"XGBoost Android-Firefox, trainiert {date_label}. "
+    f"Peak F1 {fnum(peak_f1)}, Precision {fnum(peak_prec)}, Recall {fnum(peak_rec)}. "
+    f"Threshold {fnum(threshold)}. {training_file_count} Trainingsdateien. "
+    f"depth={depth} lr={fnum(lr)} est={est}."
+)
+
+registry_path = Path(strategies_dir) / "registry.json"
+if registry_path.exists():
+    with open(registry_path, "r", encoding="utf-8") as f:
+        registry = json.load(f)
+else:
+    registry = {"version": 1, "strategies": []}
+
+# Deduplicate by key
+if any(s["key"] == key for s in registry["strategies"]):
+    print(f"  Strategie {key!r} bereits in Registry, kein Duplikat.")
+    sys.exit(0)
+
+new_entry = {
+    "key": key,
+    "label": label,
+    "description": description,
+    "modelFile": model_file_rel,
+    "schemaFile": schema_file_rel,
+    "trainedOn": trained_on,
+    "trainingFileCount": training_file_count,
+    "peakF1": peak_f1,
+    "peakPrecision": peak_prec,
+    "peakRecall": peak_rec,
+    "threshold": threshold,
+}
+
+registry["strategies"].append(new_entry)
+
+MAX_STRATEGIES = 7
+while len(registry["strategies"]) > MAX_STRATEGIES:
+    removed = registry["strategies"].pop(0)
+    # Also remove the model files of the evicted strategy
+    for field in ("modelFile", "schemaFile"):
+        old_file = Path(strategies_dir).parent / removed.get(field, "")
+        if old_file.exists():
+            old_file.unlink()
+    print(f"  Aelteste Strategie entfernt: {removed['key']}")
+
+with open(registry_path, "w", encoding="utf-8") as f:
+    json.dump(registry, f, indent=2, ensure_ascii=False)
+    f.write("\n")
+
+print(f"  Strategie registriert: {key!r}")
+print(f"  Label:                 {label}")
+print(f"  Registry:              {len(registry['strategies'])}/{MAX_STRATEGIES} Strategien")
+print(f"  Modell:                {strategy_model}")
+PY

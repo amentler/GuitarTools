@@ -116,6 +116,34 @@ export function loadDefaultXGBoostOnsetModel() {
   return _defaultModelPromise;
 }
 
+/** Cache of per-strategy model load promises, keyed by "modelUrl::schemaUrl". */
+const _strategyModelCache = new Map();
+
+/**
+ * Loads the ONNX model for the given strategy.
+ *
+ * - If the strategy has `modelUrl` + `schemaUrl` fields (registry-backed strategies),
+ *   those are loaded and cached per URL pair.  Failures are NOT silently swallowed:
+ *   the returned promise rejects so the caller surfaces the error.
+ * - If the strategy has no model URLs, falls back to the production default model.
+ *
+ * @param {object} strategy  Strategy object (from guitarOnsetStrategies.js)
+ * @returns {Promise<{ session: object, schema: object }>}
+ */
+export function loadXGBoostModelForStrategy(strategy) {
+  if (strategy?.modelUrl && strategy?.schemaUrl) {
+    const cacheKey = `${strategy.modelUrl}::${strategy.schemaUrl}`;
+    if (!_strategyModelCache.has(cacheKey)) {
+      const p = loadXGBoostOnsetModel(strategy.modelUrl, strategy.schemaUrl);
+      _strategyModelCache.set(cacheKey, p);
+      // Remove on failure so the next attempt retries instead of re-using a rejected promise.
+      p.catch(() => _strategyModelCache.delete(cacheKey));
+    }
+    return _strategyModelCache.get(cacheKey);
+  }
+  return loadDefaultXGBoostOnsetModel();
+}
+
 /**
  * Validates that the audio config matches the schema.
  * Warns on mismatch, does not throw.
