@@ -120,6 +120,27 @@
     </div>
   </section>
 
+  <gt-analysis-flyout id="tagger-analysis-flyout" class="tagger-analysis-flyout" toggle-id="tagger-analysis-toggle" content-id="tagger-analysis-content">
+    <div id="tagger-analysis-content" class="tagger-analysis-content analysis-flyout-scroll">
+      <p id="tagger-analysis-status" class="tagger-analysis-status">Noch keine Analyse.</p>
+      <div class="tagger-analysis-options">
+        <label class="tagger-analysis-option">
+          <input id="tagger-analysis-normalize-y" type="checkbox" checked />
+          Vertikal normalisieren
+        </label>
+        <label class="tagger-analysis-option">
+          <input id="tagger-analysis-show-detected-onsets" type="checkbox" checked />
+          Erkannte Onsets
+        </label>
+        <label class="tagger-analysis-option">
+          <input id="tagger-analysis-show-tagged-onsets" type="checkbox" checked />
+          Getaggte Onsets
+        </label>
+      </div>
+      <div id="tagger-analysis-charts-wrapper" class="tagger-analysis-charts-wrapper u-hidden"></div>
+    </div>
+  </gt-analysis-flyout>
+
   <script type="module" src="./bootstrap.js"></script>
 </body>
 </html>

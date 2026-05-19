@@ -148,6 +148,7 @@ test.describe('Audio-Analyse Werkzeug', () => {
     const bar = page.locator('#analyse-bottom-bar');
     const toggle = page.locator('#analyse-bottom-toggle');
     await expect(bar).toBeVisible();
+    await expect(bar).toHaveJSProperty('tagName', 'GT-ANALYSIS-FLYOUT');
     await expect(page.locator('#analyse-bottom-content')).toBeVisible();
 
     await toggle.click();

@@ -4,3 +4,4 @@
 import './fretboard/gt-fretboard.js';
 import './gt-menu-card.js';
 import './gt-exercise-header.js';
+import './gt-analysis-flyout.js';

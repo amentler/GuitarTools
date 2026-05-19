@@ -18,6 +18,7 @@ const PLOT_W = CHART_W - PAD_L - PAD_R;
 
 const COLOR_ONSET    = '#e74c3c';
 const COLOR_TAGGED_ONSET = '#1f8b4c';
+const COLOR_CURRENT_ONSET = '#f39c12';
 const COLOR_INVALID  = '#bbbbbb'; // Farbe für Frames mit isValid=false
 const COLOR_GRID     = '#e8d8c0';
 const COLOR_AXIS     = '#8a7a6a';
@@ -109,6 +110,15 @@ function makeMarkerSets(onsets, options = {}) {
       dasharray: '2 2',
       strokeWidth: '1.5',
       opacity: '0.82',
+    },
+    {
+      onsets: Number.isFinite(options.currentOnsetSec) ? [options.currentOnsetSec] : [],
+      visible: Number.isFinite(options.currentOnsetSec),
+      color: COLOR_CURRENT_ONSET,
+      className: 'analysis-marker-current',
+      dasharray: '',
+      strokeWidth: '2',
+      opacity: '0.92',
     },
   ];
 }
@@ -681,7 +691,7 @@ export function renderGateChart(container, frames, onsets, duration, options = {
  * @param {HTMLElement} container
  * @param {Float32Array} samples
  * @param {import('./audioAnalyseEngine.js').AnalysisResult} result
- * @param {{ rangeStart?: number, rangeEnd?: number, normalizeY?: boolean, showDetectedOnsets?: boolean, showTaggedOnsets?: boolean, taggedOnsets?: number[] }} [options]
+ * @param {{ rangeStart?: number, rangeEnd?: number, normalizeY?: boolean, showDetectedOnsets?: boolean, showTaggedOnsets?: boolean, taggedOnsets?: number[], currentOnsetSec?: number }} [options]
  */
 export function renderAllCharts(container, samples, result, options = {}) {
   const { frames, onsets, duration, sampleRate, onsetOptions } = result;

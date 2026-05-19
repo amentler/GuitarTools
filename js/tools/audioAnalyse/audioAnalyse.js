@@ -121,7 +121,11 @@ export function createAudioAnalyseFeature() {
   }
 
   function setBottomBarCollapsed(ui, collapsed) {
-    ui.bottomBar?.classList.toggle('analyse-bottom-bar--collapsed', collapsed);
+    if (ui.bottomBar && 'collapsed' in ui.bottomBar) {
+      ui.bottomBar.collapsed = collapsed;
+    } else {
+      ui.bottomBar?.classList.toggle('analyse-bottom-bar--collapsed', collapsed);
+    }
     ui.chartsWrapper?.classList.toggle('analyse-charts-wrapper--controls-collapsed', collapsed);
     if (ui.bottomToggle) {
       ui.bottomToggle.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
@@ -651,9 +655,8 @@ export function createAudioAnalyseFeature() {
     ui.playPauseBtn?.addEventListener('click', () => handlePlayPause(ui));
     ui.stopBtn?.addEventListener('click', () => handleStop(ui));
     ui.exportTrainingBtn?.addEventListener('click', () => handleTrainingExport(ui));
-    ui.bottomToggle?.addEventListener('click', () => {
-      const collapsed = !ui.bottomBar?.classList.contains('analyse-bottom-bar--collapsed');
-      setBottomBarCollapsed(ui, collapsed);
+    ui.bottomBar?.addEventListener('analysis-flyout-toggle', (event) => {
+      setBottomBarCollapsed(ui, Boolean(event.detail?.collapsed));
     });
 
     // Slider: Drag-Flag setzen, damit RAF den Slider nicht überschreibt

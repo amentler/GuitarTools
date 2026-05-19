@@ -36,6 +36,55 @@ test.describe('Onset Tagger', () => {
     await expect(page.locator('#tagger-step1')).not.toHaveClass(/tagger-section--disabled/);
   });
 
+  test('analysis flyout renders analyzer charts after WAV load', async ({ page }) => {
+    await page.locator('#tagger-wav-input').setInputFiles(WAV_FIXTURE);
+
+    await expect(page.locator('#tagger-analysis-flyout')).toBeVisible();
+    await expect(page.locator('#tagger-analysis-status')).toContainText(/Frames|Analyse läuft/, { timeout: 30_000 });
+    await expect(page.locator('#tagger-analysis-charts-wrapper')).toBeVisible({ timeout: 30_000 });
+    await expect(page.locator('#tagger-analysis-charts-wrapper svg.analysis-chart-svg').first()).toBeVisible();
+  });
+
+  test('analysis flyout contains only analyzer display options', async ({ page }) => {
+    const flyout = page.locator('#tagger-analysis-flyout');
+    await expect(flyout.locator('input[type="checkbox"]')).toHaveCount(3);
+    await expect(flyout.locator('input[type="range"]')).toHaveCount(0);
+    await expect(flyout.locator('select')).toHaveCount(0);
+    await expect(flyout.locator('#tagger-play, #tagger-stop, #btn-play-pause, #btn-stop-audio')).toHaveCount(0);
+  });
+
+  test('analysis flyout scrolls internally', async ({ page }) => {
+    const scrollState = await page.locator('#tagger-analysis-content').evaluate((el) => {
+      const computed = window.getComputedStyle(el);
+      return {
+        overflowY: computed.overflowY,
+        maxHeight: computed.maxHeight,
+      };
+    });
+    expect(scrollState.overflowY).toBe('auto');
+    expect(scrollState.maxHeight).not.toBe('none');
+  });
+
+  test('current onset marker appears in all analyzer charts and follows cursor', async ({ page }) => {
+    await page.locator('#tagger-wav-input').setInputFiles(WAV_FIXTURE);
+    const wrapper = page.locator('#tagger-analysis-charts-wrapper');
+    await expect(wrapper).toBeVisible({ timeout: 30_000 });
+
+    const chartCount = await wrapper.locator('svg.analysis-chart-svg').count();
+    const markerCount = await wrapper.locator('.analysis-marker-current').count();
+    expect(markerCount).toBe(chartCount);
+
+    const firstMarker = wrapper.locator('.analysis-marker-current').first();
+    const beforeX = await firstMarker.getAttribute('x1');
+    await page.locator('#tagger-cursor').evaluate((el) => {
+      el.value = '100';
+      el.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+    await expect(page.locator('#tagger-cursor-display')).toHaveText('0.100 s');
+    const afterX = await wrapper.locator('.analysis-marker-current').first().getAttribute('x1');
+    expect(afterX).not.toEqual(beforeX);
+  });
+
   test('add onset button adds entry to onset list', async ({ page }) => {
     await page.locator('#tagger-wav-input').setInputFiles(WAV_FIXTURE);
     await expect(page.locator('#tagger-waveform-wrap svg')).toBeVisible({ timeout: 10_000 });

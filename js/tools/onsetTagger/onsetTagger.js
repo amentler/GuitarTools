@@ -18,6 +18,7 @@ import { getGuitarOnsetStrategies } from '../../shared/audio/guitarOnsetStrategi
 import { createGlobalDebugStore } from '../../shared/debug/index.js';
 import { closeLoadMenu, wireLoadMenu } from './onsetTaggerLoadMenu.js';
 import { createOnsetTaggerPersistenceController } from './onsetTaggerPersistence.js';
+import { createOnsetTaggerAnalysisFlyout } from './onsetTaggerAnalysisFlyout.js';
 
 import {
   clientXToTime,
@@ -69,6 +70,15 @@ export function createOnsetTaggerFeature() {
 
   let _root = null;
   let _svgEl = null;
+  const _analysisFlyout = createOnsetTaggerAnalysisFlyout({
+    getSamples: () => _samples,
+    getSampleRate: () => _sampleRate,
+    getCursorSec: () => _cursorSec,
+    getTaggedOnsetsSec: () => _onsetsMs
+      .filter(ms => Number.isFinite(ms))
+      .map(ms => ms / 1000)
+      .sort((a, b) => a - b),
+  });
   const _persistence = createOnsetTaggerPersistenceController({
     getWavArrayBuffer: () => _wavArrayBuffer,
     getSamples: () => _samples,
@@ -85,7 +95,9 @@ export function createOnsetTaggerFeature() {
     },
   });
 
-  function q(id) { return _root.querySelector(`#${id}`); }
+  function q(id) {
+    return _root.querySelector(`#${id}`) ?? document.getElementById(id);
+  }
 
   function resolveUI() {
     return {
@@ -123,6 +135,11 @@ export function createOnsetTaggerFeature() {
       filenameInput: q('tagger-filename-input'),
       saveStatus:    q('tagger-save-status'),
       openAnalyserBtn: q('tagger-open-analyser'),
+      analysisStatus: q('tagger-analysis-status'),
+      analysisChartsWrapper: q('tagger-analysis-charts-wrapper'),
+      analysisNormalizeYEl: q('tagger-analysis-normalize-y'),
+      analysisShowDetectedOnsetsEl: q('tagger-analysis-show-detected-onsets'),
+      analysisShowTaggedOnsetsEl: q('tagger-analysis-show-tagged-onsets'),
     };
   }
 
@@ -174,6 +191,7 @@ export function createOnsetTaggerFeature() {
     }
 
     redrawWaveform(ui);
+    _analysisFlyout.render(ui);
   }
 
   function syncCursorUI(ui) {
@@ -184,6 +202,7 @@ export function createOnsetTaggerFeature() {
     if (ui.cursorDisplay) {
       ui.cursorDisplay.textContent = `${_cursorSec.toFixed(3)} s`;
     }
+    _analysisFlyout.render(ui);
   }
 
   function setVisibleRange(ui, start, end) {
@@ -220,6 +239,7 @@ export function createOnsetTaggerFeature() {
     if (_svgEl) {
       updateOnsetMarkers(_svgEl, _onsetsMs, _rangeStart, _rangeEnd, _selectedOnsetIndex);
     }
+    _analysisFlyout.render(ui);
   }
 
   function redrawWaveform(ui) {
@@ -361,8 +381,6 @@ export function createOnsetTaggerFeature() {
     if (ui.strategyStatus) ui.strategyStatus.textContent = text;
   }
 
-  // ── ZIP export ─────────────────────────────────────────────────────────────
-
   function handleExport(ui) {
     if (!_wavArrayBuffer) return;
     const sidecar    = _persistence.getCurrentSidecar(ui);
@@ -384,8 +402,6 @@ export function createOnsetTaggerFeature() {
       _persistence.setSaveStatus(ui, 'Speichern fehlgeschlagen');
     }
   }
-
-  // ── File loading ───────────────────────────────────────────────────────────
 
   async function applyWavBuffer(arrayBuffer, filename, ui) {
     _wavArrayBuffer = arrayBuffer;
@@ -430,8 +446,10 @@ export function createOnsetTaggerFeature() {
       redrawWaveform(ui);
       renderOnsetList(ui);
       enableStep2(ui);
+      void _analysisFlyout.run(ui);
     } catch (err) {
       if (ui.wavLabel) ui.wavLabel.textContent = `Fehler: ${err.message}`;
+      _analysisFlyout.setStatus(ui, `Analyse-Fehler: ${err.message}`, true);
     }
   }
 
@@ -447,6 +465,7 @@ export function createOnsetTaggerFeature() {
     }
     renderMetaForm(ui, _sidecarData);
     enableStep2(ui);
+    _analysisFlyout.render(ui);
     schedulePersist(ui);
   }
 
@@ -502,16 +521,14 @@ export function createOnsetTaggerFeature() {
     }
   }
 
-  // ── mount / unmount ────────────────────────────────────────────────────────
-
   function mount(root = document) {
     _root = root;
     const ui = resolveUI();
     renderStrategyButtons(ui);
+    _analysisFlyout.wire(ui);
 
     wireLoadMenu(ui);
 
-    // WAV file button
     if (ui.wavBtn && ui.wavInput) {
       ui.wavBtn.addEventListener('click', () => {
         closeLoadMenu(ui);
@@ -525,7 +542,6 @@ export function createOnsetTaggerFeature() {
       });
     }
 
-    // JSON file button
     if (ui.jsonBtn && ui.jsonInput) {
       ui.jsonBtn.addEventListener('click', () => {
         closeLoadMenu(ui);
@@ -539,7 +555,6 @@ export function createOnsetTaggerFeature() {
       });
     }
 
-    // ZIP file button
     if (ui.zipBtn && ui.zipInput) {
       ui.zipBtn.addEventListener('click', () => {
         closeLoadMenu(ui);
@@ -553,7 +568,6 @@ export function createOnsetTaggerFeature() {
       });
     }
 
-    // Range sliders
     if (ui.rangeStartEl) {
       ui.rangeStartEl.addEventListener('input', () => syncRangeSliders(ui, 'start'));
     }
@@ -561,7 +575,6 @@ export function createOnsetTaggerFeature() {
       ui.rangeEndEl.addEventListener('input', () => syncRangeSliders(ui, 'end'));
     }
 
-    // Onset cursor slider (value in ms relative to rangeStart)
     if (ui.cursorEl) {
       ui.cursorEl.addEventListener('input', () => {
         const relMs = parseFloat(ui.cursorEl.value);
@@ -581,7 +594,6 @@ export function createOnsetTaggerFeature() {
       });
     }
 
-    // Add onset button
     if (ui.addOnsetBtn) {
       ui.addOnsetBtn.addEventListener('click', () => {
         const ms = Math.round(_cursorSec * 1000);
@@ -629,7 +641,6 @@ export function createOnsetTaggerFeature() {
       });
     }
 
-    // Onset list remove buttons (delegated)
     if (ui.onsetList) {
       ui.onsetList.addEventListener('click', (e) => {
         const removeBtn = e.target.closest('[data-index]');
@@ -681,7 +692,6 @@ export function createOnsetTaggerFeature() {
       });
     }
 
-    // Play/Pause button
     if (ui.playBtn) {
       ui.playBtn.addEventListener('click', () => {
         if (_isPlaying) {
@@ -694,7 +704,6 @@ export function createOnsetTaggerFeature() {
       });
     }
 
-    // Stop button
     if (ui.stopBtn) {
       ui.stopBtn.addEventListener('click', () => {
         stopPlayback(ui, true);
@@ -710,7 +719,6 @@ export function createOnsetTaggerFeature() {
       });
     }
 
-    // Speed buttons
     ui.speedBtns.forEach(btn => {
       btn.addEventListener('click', () => {
         ui.speedBtns.forEach(b => b.classList.remove('tagger-speed--active'));
@@ -722,7 +730,6 @@ export function createOnsetTaggerFeature() {
       });
     });
 
-    // Export button
     if (ui.exportBtn) {
       ui.exportBtn.addEventListener('click', () => handleExport(ui));
     }
@@ -752,7 +759,6 @@ export function createOnsetTaggerFeature() {
       });
     }
 
-    // Auto-load from recordings overview via URL params
     const params = new URLSearchParams(window.location.search);
     const source = params.get('source');
     const id     = params.get('id') ?? '';
