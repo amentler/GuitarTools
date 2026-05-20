@@ -1,0 +1,87 @@
+/* === Fretboard Exercise === */
+#view-fretboard {
+  padding: 1rem;
+  gap: 1.25rem;
+  max-width: 660px;
+  width: 100%;
+  margin: 0 auto;
+
+/* === Note Buttons === */
+.note-buttons {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.btn-note {
+  padding: 0.75rem 0.25rem;
+  min-height: 48px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  color: var(--color-text);
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, transform 0.1s;
+}
+
+.btn-note:hover:not(:disabled) {
+  background: var(--color-card);
+  border-color: var(--color-accent-alt);
+}
+
+.btn-note:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+.btn-note:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.btn-note.correct {
+  background: var(--color-correct);
+  border-color: var(--color-correct);
+  color: #fff;
+}
+
+.btn-note.wrong {
+  background: var(--color-wrong);
+  border-color: var(--color-wrong);
+  color: #fff;
+}
+
+
+/* === Chances Display === */
+.chances-display {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.chance-icon {
+  color: var(--color-accent-alt);
+  transition: opacity 0.3s, color 0.3s;
+}
+
+.chance-icon.used {
+  color: var(--color-text-muted);
+  opacity: 0.3;
+}
+
+
+/* === Responsive === */
+@media (max-width: 400px) {
+  .note-buttons {
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  #view-fretboard {
+    padding: 0.75rem;
+    gap: 1rem;
+  }
+}

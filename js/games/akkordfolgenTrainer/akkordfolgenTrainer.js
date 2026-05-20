@@ -114,16 +114,11 @@ export function createAkkordfolgenTrainerFeature() {
       ui.bpmLabel.textContent = state.bpm;
     });
 
-    for (const [btn, delta] of [
-      [ui.bpmMinus5, -5], [ui.bpmMinus1, -1],
-      [ui.bpmPlus1,  +1], [ui.bpmPlus5, +5],
-    ]) {
-      btn.addEventListener('click', () => {
-        state.bpm = Math.max(40, Math.min(200, state.bpm + delta));
-        ui.bpmSlider.value = state.bpm;
-        ui.bpmLabel.textContent = state.bpm;
-      });
-    }
+    document.getElementById('aft-bpm-buttons').addEventListener('bpm-delta', ({ detail }) => {
+      state.bpm = Math.max(40, Math.min(200, state.bpm + detail.delta));
+      ui.bpmSlider.value = state.bpm;
+      ui.bpmLabel.textContent = state.bpm;
+    });
 
     ui.beatsSelect.addEventListener('change', () => {
       state.beatsPerChord = parseInt(ui.beatsSelect.value, 10);

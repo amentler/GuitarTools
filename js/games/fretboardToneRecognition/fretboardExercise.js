@@ -3,7 +3,7 @@
 
 import { CHROMATIC_NOTES, getNoteAtPosition, getRandomPosition } from '../../domain/fretboard/fretboardLogic.js';
 import { initGameState, evaluateAnswer } from './fretboardLogic.js';
-import { wireStringToggles, syncStringToggles, wireFretSlider, syncFretSlider } from '../../utils/settings.js';
+import { wireFretSlider, syncFretSlider } from '../../utils/settings.js';
 import { getSetting, SETTING_KEYS } from '../../shared/globalSettings.js';
 import { createSrsStore, pickNextItem, recordResult } from '../../shared/learning/srsLogic.js';
 
@@ -148,11 +148,10 @@ export function createFretboardToneRecognitionFeature() {
 
     wireFretSlider(slider, rangeLabel, state.settings, resetAndAdvance);
 
-    wireStringToggles(
-      rootElement.querySelectorAll('.btn-string'),
-      state.settings.activeStrings,
-      resetAndAdvance,
-    );
+    rootElement.querySelector('#string-toggles').addEventListener('string-change', ({ detail }) => {
+      state.settings.activeStrings = detail.activeStrings;
+      resetAndAdvance();
+    });
 
     const shuffleCheckbox = query('#shuffle-notes-checkbox');
     shuffleCheckbox.addEventListener('change', () => {
@@ -168,7 +167,7 @@ export function createFretboardToneRecognitionFeature() {
     const slider     = query('#fret-range-slider');
     const rangeLabel = query('#fret-range-label');
     syncFretSlider(slider, rangeLabel, state.settings.maxFret);
-    syncStringToggles(rootElement.querySelectorAll('.btn-string'), state.settings.activeStrings);
+    rootElement.querySelector('#string-toggles').activeStrings = state.settings.activeStrings;
     query('#shuffle-notes-checkbox').checked = state.settings.shuffleNotes;
   }
 

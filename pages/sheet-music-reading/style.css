@@ -1,0 +1,179 @@
+/* === Sheet Music Reading === */
+#view-sheet-music {
+  padding: 1rem;
+  gap: 1rem;
+  max-width: 900px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.score-container {
+  width: 100%;
+}
+
+.score-container svg {
+  width: 100%;
+  height: auto;
+  display: block;
+  border-radius: var(--radius);
+}
+
+.btn-new-bars {
+  padding: 0.6rem 1.6rem;
+  background: var(--color-accent);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius);
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.1s;
+}
+
+.btn-new-bars:hover  { background: #e55a20; }
+.btn-new-bars:active { transform: scale(0.97); }
+
+/* --- Playback controls (BPM · time sig · play button) --- */
+.playback-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1.25rem;
+}
+
+
+.sheet-music-actions {
+  display: flex;
+  justify-content: center;
+  gap: 0.75rem;
+  width: 100%;
+  flex-wrap: wrap;
+}
+
+.playback-bpm,
+.playback-timesig {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.playback-bpm input[type="range"] {
+  width: 8rem;
+}
+
+#sheet-music-time-sig {
+  padding: 0.3rem 0.5rem;
+  background: var(--color-surface-2, #f0e8d8);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+/* --- Beat indicator dots (sheet music reading) --- */
+.beat-indicator {
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+.beat-dot {
+  width: 0.65rem;
+  height: 0.65rem;
+  border-radius: 50%;
+  background: var(--color-border);
+  transition: background 0.06s;
+}
+
+.beat-dot--active {
+  background: #4caf50;
+}
+
+/* --- Playback bar SVG overlay --- */
+.notation-wrapper {
+  position: relative; /* needed so the overlay is positioned inside it */
+}
+
+.playback-bar-svg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  pointer-events: none; /* clicks pass through to VexFlow SVG */
+  display: block;
+}
+
+.playback-bar-hidden {
+  display: none !important;
+}
+
+/* CSS transition on the SVG rect's x attribute (Chrome 83+, Firefox 72+) */
+.playback-rect {
+  transition: x 0.4s linear;
+}
+
+/* --- Endless mode scroll container --- */
+.score-container--endless {
+  max-height: 60vh;
+  overflow-y: scroll;
+  overflow-x: hidden;
+  scroll-behavior: smooth;
+  scrollbar-width: none; /* Firefox */
+}
+
+.score-container--endless::-webkit-scrollbar {
+  display: none; /* Chrome/Safari */
+}
+
+.score-row {
+  border-bottom: 1px solid var(--color-border);
+}
+
+.pool-warning {
+  color: #f59e0b;
+  font-size: 0.85rem;
+  text-align: center;
+  padding: 0.4rem 0;
+  margin: 0;
+}
+
+/* === Sheet Music Mic Status === */
+.sheet-music-status {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  min-height: 2rem;
+}
+
+/* === Strategy Status Bar === */
+/* ── Strategy Status Bar ─────────────────────────────────────────── */
+.strategy-status {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  margin-top: 1.5rem;
+  padding: 0.5rem 1rem;
+  border-top: 1px solid var(--color-border);
+  font-size: 0.78rem;
+  color: var(--color-text-muted);
+}
+
+.strategy-status__label {
+  font-weight: 600;
+  opacity: 0.7;
+}
+
+.strategy-status__value {
+  font-family: monospace;
+  color: var(--color-text);
+  opacity: 0.85;
+}
+
+.strategy-status__sep {
+  margin: 0 0.4rem;
+  opacity: 0.4;
+}

@@ -1,0 +1,208 @@
+/* === Tuner View === */
+#view-tuner {
+  padding: 1rem;
+  gap: 1.25rem;
+  max-width: 460px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.tuner-container {
+  width: 100%;
+}
+
+.tuner-container svg {
+  width: 100%;
+  height: auto;
+  display: block;
+  border-radius: var(--radius);
+}
+
+.tuner-permission {
+  text-align: center;
+  padding: 1.5rem;
+  color: var(--color-text-muted);
+  font-size: 0.95rem;
+}
+
+.tuner-mode-toggle-container {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  margin-bottom: 0.5rem;
+}
+
+.tuner-mode-toggle {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.btn-mode {
+  padding: 0.35rem 0.8rem;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.btn-mode.active {
+  background: var(--color-card);
+  border-color: var(--color-accent-alt);
+  color: var(--color-accent-alt);
+}
+
+/* === Guided Tuner === */
+
+.guided-tuner-section {
+  margin-top: 1rem;
+  border-top: 1px solid var(--color-border);
+  padding-top: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.btn-start-guided {
+  width: 100%;
+  padding: 0.7rem 1rem;
+  background: var(--color-card);
+  border: 1px solid var(--color-accent-alt);
+  border-radius: var(--radius);
+  color: var(--color-accent-alt);
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+  text-align: center;
+}
+
+.btn-start-guided:hover {
+  background: #f0e0c8;
+}
+
+.btn-guided-next {
+  padding: 0.5rem 1.4rem;
+  background: var(--color-card);
+  border: 1px solid var(--color-accent-alt);
+  border-radius: var(--radius);
+  color: var(--color-accent-alt);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.btn-guided-next:hover {
+  background: #f0e0c8;
+}
+
+.guided-step-header {
+  text-align: center;
+}
+
+.guided-step-info {
+  font-size: 1.1rem;
+  color: var(--color-text);
+  margin-bottom: 0.5rem;
+}
+
+.guided-target-note {
+  color: var(--color-accent-alt);
+  font-size: 1.3rem;
+}
+
+.guided-step-progress {
+  display: flex;
+  justify-content: center;
+  gap: 0.4rem;
+  margin-top: 0.4rem;
+}
+
+.guided-progress-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--color-border);
+  display: inline-block;
+  transition: background 0.15s;
+}
+
+.guided-progress-dot.active {
+  background: var(--color-accent-alt);
+}
+
+.guided-progress-dot.done {
+  background: var(--color-correct);
+}
+
+.guided-feedback {
+  min-height: 90px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+}
+
+.guided-warning {
+  color: var(--color-wrong);
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.guided-arrow {
+  font-size: 3.5rem;
+  line-height: 1;
+  font-weight: 700;
+}
+
+.guided-arrow.orange {
+  color: var(--color-accent-alt);
+}
+
+.guided-arrow.red {
+  color: var(--color-wrong);
+}
+
+.guided-ok {
+  font-size: 3.5rem;
+  line-height: 1;
+  color: var(--color-correct);
+}
+
+.guided-hint {
+  font-size: 0.9rem;
+  color: var(--color-text-muted);
+}
+
+.guided-hint--ok {
+  color: var(--color-correct);
+  font-weight: 600;
+}
+
+.guided-actions {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+}
+
+.guided-finished {
+  text-align: center;
+  padding: 0.75rem 0;
+}
+
+.guided-done-icon {
+  font-size: 3rem;
+  margin-bottom: 0.4rem;
+}
+
+.guided-done-text {
+  font-size: 1.1rem;
+  color: var(--color-correct);
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+}
+

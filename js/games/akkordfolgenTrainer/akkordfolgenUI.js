@@ -10,10 +10,6 @@ export function resolveAkkordfolgenUI() {
     randomBtn: document.getElementById('aft-random-btn'),
     bpmSlider: document.getElementById('aft-bpm-slider'),
     bpmLabel: document.getElementById('aft-bpm-label'),
-    bpmMinus5: document.getElementById('aft-bpm-minus5'),
-    bpmMinus1: document.getElementById('aft-bpm-minus1'),
-    bpmPlus1: document.getElementById('aft-bpm-plus1'),
-    bpmPlus5: document.getElementById('aft-bpm-plus5'),
     beatsSelect: document.getElementById('aft-beats-select'),
     startBtn: document.getElementById('aft-start-btn'),
 

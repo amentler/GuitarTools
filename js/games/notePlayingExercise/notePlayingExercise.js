@@ -14,7 +14,7 @@ import {
 } from '../../shared/audio/guitarOnsetDetector.js';
 import { getRandomPitch, getPositionsForPitch } from './notePlayingLogic.js';
 import { renderNoteOnStaff, renderNotePositionsTab } from './notePlayingSVG.js';
-import { wireStringToggles, syncStringToggles, wireFretSlider, syncFretSlider } from '../../utils/settings.js';
+import { wireFretSlider, syncFretSlider } from '../../utils/settings.js';
 import { resolveNotePlayingUI } from './notePlayingUI.js';
 import {
   createNotePlayingAudioSession,
@@ -161,11 +161,10 @@ export function createNotePlayingExerciseFeature() {
   function wireSettings() {
     wireFretSlider(ui.slider, ui.sliderLabel, state.settings, resetTargetNote);
 
-    wireStringToggles(
-      rootElement.querySelectorAll('#note-play-string-toggles .btn-string'),
-      state.settings.activeStrings,
-      resetTargetNote,
-    );
+    rootElement.querySelector('#note-play-string-toggles').addEventListener('string-change', ({ detail }) => {
+      state.settings.activeStrings = detail.activeStrings;
+      resetTargetNote();
+    });
 
     ui.hint1Btn.addEventListener('click', () => {
       if (state.hintLevel < 1) {
@@ -188,10 +187,7 @@ export function createNotePlayingExerciseFeature() {
 
   function syncSettingsUI() {
     syncFretSlider(ui.slider, ui.sliderLabel, state.settings.maxFret);
-    syncStringToggles(
-      ui.stringButtons,
-      state.settings.activeStrings,
-    );
+    rootElement.querySelector('#note-play-string-toggles').activeStrings = state.settings.activeStrings;
   }
 
   function resetTargetNote() {

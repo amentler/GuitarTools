@@ -6,6 +6,7 @@
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval' 'unsafe-eval'; style-src 'self' 'unsafe-inline';" />
   <title>Akkordfolgen-Trainer - Gitarren-Lerntools</title>
   <link rel="stylesheet" href="../../style.css" />
+  <link rel="stylesheet" href="./style.css" />
 </head>
 <body>
   <section id="view-akkordfolgen-trainer" class="view active">
@@ -35,12 +36,7 @@
           <label class="settings-label">BPM: <span id="aft-bpm-label">80</span></label>
           <input type="range" id="aft-bpm-slider" min="40" max="200" value="80" />
         </div>
-        <div class="bpm-buttons">
-          <button id="aft-bpm-minus5" class="btn-bpm">-5</button>
-          <button id="aft-bpm-minus1" class="btn-bpm">-1</button>
-          <button id="aft-bpm-plus1"  class="btn-bpm">+1</button>
-          <button id="aft-bpm-plus5"  class="btn-bpm">+5</button>
-        </div>
+        <gt-bpm-buttons id="aft-bpm-buttons"></gt-bpm-buttons>
 
         <div class="settings-row">
           <label for="aft-beats-select" class="settings-label">Schläge/Akkord:</label>

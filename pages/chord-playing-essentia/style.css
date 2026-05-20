@@ -1,0 +1,11 @@
+/* === Chord Playing Essentia === */
+.ece-status {
+  font-size: 0.8rem;
+  color: var(--color-text-muted, #888);
+  min-height: 1.2em;
+  text-align: center;
+}
+
+.ece-status-error {
+  color: var(--color-wrong, #e55);
+}

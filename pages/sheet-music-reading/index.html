@@ -6,6 +6,7 @@
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval' 'unsafe-eval' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline';" />
   <title>Noten lesen - Gitarren-Lerntools</title>
   <link rel="stylesheet" href="../../style.css" />
+  <link rel="stylesheet" href="./style.css" />
 </head>
 <body>
   <section id="view-sheet-music" class="view active">
@@ -88,14 +89,7 @@
 
       <div class="settings-row">
         <span class="settings-label">Saiten:</span>
-        <div id="sheet-music-string-toggles" class="string-toggles">
-          <button class="btn-string active" data-string="0">E2</button>
-          <button class="btn-string active" data-string="1">A2</button>
-          <button class="btn-string active" data-string="2">D3</button>
-          <button class="btn-string active" data-string="3">G3</button>
-          <button class="btn-string active" data-string="4">B3</button>
-          <button class="btn-string active" data-string="5">E4</button>
-        </div>
+        <gt-string-toggles id="sheet-music-string-toggles"></gt-string-toggles>
       </div>
     </div>
     <div class="sheet-music-actions">

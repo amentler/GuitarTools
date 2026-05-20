@@ -55,10 +55,7 @@ function buildDom() {
       <button id="aft-random-btn">Random</button>
       <input id="aft-bpm-slider" value="80" />
       <span id="aft-bpm-label">80</span>
-      <button id="aft-bpm-minus5"></button>
-      <button id="aft-bpm-minus1"></button>
-      <button id="aft-bpm-plus1"></button>
-      <button id="aft-bpm-plus5"></button>
+      <gt-bpm-buttons id="aft-bpm-buttons"></gt-bpm-buttons>
       <select id="aft-beats-select"><option value="4">4</option></select>
       <button id="aft-start-btn">Start</button>
 

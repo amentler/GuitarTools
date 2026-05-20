@@ -127,7 +127,7 @@ export function resolveSheetMusicUI(root = document) {
     fretSlider: root.getElementById?.('sheet-music-fret-range-slider') ?? document.getElementById('sheet-music-fret-range-slider'),
     fretLabel: root.getElementById?.('sheet-music-fret-range-label') ?? document.getElementById('sheet-music-fret-range-label'),
     minFretSlider: root.getElementById?.('sheet-music-min-fret-slider') ?? document.getElementById('sheet-music-min-fret-slider'),
-    stringButtons: document.querySelectorAll('#sheet-music-string-toggles .btn-string'),
+    stringTogglesEl: document.getElementById('sheet-music-string-toggles'),
     recordBtn:       root.getElementById?.('btn-record') ?? document.getElementById('btn-record'),
     recordStopBtn:   root.getElementById?.('btn-record-stop') ?? document.getElementById('btn-record-stop'),
     recordCancelBtn: root.getElementById?.('btn-record-cancel') ?? document.getElementById('btn-record-cancel'),
@@ -140,10 +140,10 @@ export function resolveSheetMusicUI(root = document) {
   };
 }
 
-export function syncSheetMusicUI(ui, state, syncFretSlider, syncStringToggles, syncMinFretSlider) {
+export function syncSheetMusicUI(ui, state, syncFretSlider, syncMinFretSlider) {
   syncFretSlider(ui.fretSlider, ui.fretLabel, state.settings.maxFret, state.settings.minFret);
   if (syncMinFretSlider && ui.minFretSlider) syncMinFretSlider(ui.minFretSlider, state.settings.minFret);
-  syncStringToggles(ui.stringButtons, state.settings.activeStrings);
+  if (ui.stringTogglesEl) ui.stringTogglesEl.activeStrings = state.settings.activeStrings;
 
   if (ui.bpmSlider) ui.bpmSlider.value = String(state.bpm);
   if (ui.bpmLabel) ui.bpmLabel.textContent = String(state.bpm);

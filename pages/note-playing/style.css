@@ -1,0 +1,108 @@
+/* === Note Playing Exercise === */
+#view-note-play {
+  padding: 0.5rem 1rem 0.85rem;
+  gap: 0.7rem;
+  max-width: 460px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.note-play-display {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.38rem;
+  width: 100%;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 0.8rem 0.82rem 0.55rem;
+}
+
+.note-play-display .question-prompt {
+  font-size: 0.95rem;
+  margin-top: -0.1rem;
+  margin-bottom: -0.02rem;
+}
+
+.note-play-notation {
+  width: 100%;
+  /* Keep enough headroom/footroom for high/low notes while reducing overall height. */
+  max-width: 212px;
+}
+
+.note-play-target-note {
+  font-size: 1.95rem;
+  font-weight: 800;
+  color: var(--color-accent-alt);
+  line-height: 1;
+  text-align: center;
+  min-height: 1.45rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: -0.22rem;
+}
+
+.note-play-hints {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.35rem;
+  width: 100%;
+  max-width: 332px;
+  margin-top: -0.1rem;
+}
+
+.note-play-hints .btn-hint,
+.note-play-hints .btn-mode {
+  width: 100%;
+  padding: 0.38rem 0.45rem;
+  font-size: 0.78rem;
+  line-height: 1.2;
+}
+
+.btn-hint {
+  padding: 0.4rem 0.9rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  background: var(--color-bg);
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.btn-hint:hover:not(:disabled) {
+  background: var(--color-surface-2, var(--color-surface));
+  color: var(--color-text);
+}
+
+.btn-hint:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.note-play-tab {
+  width: 100%;
+  max-width: 280px;
+  margin-bottom: -0.1rem;
+}
+
+.note-play-detected-label {
+  font-size: 0.78rem;
+  color: var(--color-text-muted);
+  text-align: center;
+  margin-top: -0.03rem;
+  margin-bottom: -0.08rem;
+}
+
+.note-play-detected-notation {
+  width: 100%;
+  max-width: 158px;
+  opacity: 0.65;
+}
+
+#note-play-feedback {
+  min-height: 0.8rem;
+}
+

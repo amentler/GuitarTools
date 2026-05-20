@@ -6,6 +6,7 @@
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline';" />
   <title>Metronom - Gitarren-Lerntools</title>
   <link rel="stylesheet" href="../../style.css" />
+  <link rel="stylesheet" href="./style.css" />
 </head>
 <body>
   <section id="view-metronome" class="view active">
@@ -21,12 +22,7 @@
 
       <input type="range" id="metronome-bpm-slider" min="40" max="150" value="120" class="bpm-slider" />
 
-      <div class="bpm-buttons">
-        <button id="btn-metronome-minus-5" class="btn-bpm">-5</button>
-        <button id="btn-metronome-minus-1" class="btn-bpm">-1</button>
-        <button id="btn-metronome-plus-1" class="btn-bpm">+1</button>
-        <button id="btn-metronome-plus-5" class="btn-bpm">+5</button>
-      </div>
+      <gt-bpm-buttons id="metronome-bpm-buttons"></gt-bpm-buttons>
     </div>
 
     <div class="metronome-settings">

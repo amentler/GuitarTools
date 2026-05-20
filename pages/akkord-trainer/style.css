@@ -1,0 +1,8 @@
+/* === Akkord-Trainer View === */
+#view-akkord-trainer {
+  padding: 0.5rem;
+  gap: 0.5rem;
+  max-width: 460px;
+  width: 100%;
+  margin: 0 auto;
+}

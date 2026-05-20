@@ -89,10 +89,7 @@ export function createMetronomeFeature({
     });
 
     // BPM Buttons
-    rootElement.querySelector('#btn-metronome-minus-5').addEventListener('click', () => adjustBpm(-5));
-    rootElement.querySelector('#btn-metronome-minus-1').addEventListener('click', () => adjustBpm(-1));
-    rootElement.querySelector('#btn-metronome-plus-1').addEventListener('click', () => adjustBpm(1));
-    rootElement.querySelector('#btn-metronome-plus-5').addEventListener('click', () => adjustBpm(5));
+    rootElement.querySelector('#metronome-bpm-buttons').addEventListener('bpm-delta', ({ detail }) => adjustBpm(detail.delta));
 
     // Start/Stop
     startStopBtn.addEventListener('click', () => toggleMetronome());

@@ -55,10 +55,7 @@ function buildDom() {
         <option value="3">3</option>
         <option value="4">4</option>
       </select>
-      <button id="btn-metronome-minus-5">-5</button>
-      <button id="btn-metronome-minus-1">-1</button>
-      <button id="btn-metronome-plus-1">+1</button>
-      <button id="btn-metronome-plus-5">+5</button>
+      <gt-bpm-buttons id="metronome-bpm-buttons"></gt-bpm-buttons>
     </section>
   `;
 }

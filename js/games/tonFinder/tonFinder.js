@@ -1,5 +1,5 @@
 import { getAllPositions, getNotePool, evaluateRound, positionKey } from './tonFinderLogic.js';
-import { wireStringToggles, syncStringToggles, wireFretSlider, syncFretSlider } from '../../utils/settings.js';
+import { wireFretSlider, syncFretSlider } from '../../utils/settings.js';
 import { getSetting, SETTING_KEYS } from '../../shared/globalSettings.js';
 import { createSrsStore, pickNextItem, recordResult } from '../../shared/learning/srsLogic.js';
 
@@ -70,11 +70,11 @@ export function createTonFinderFeature() {
   function wireSettings() {
     wireFretSlider(ui.slider, ui.sliderLabel, state.settings, startNextRound);
 
-    wireStringToggles(
-      rootElement.querySelectorAll('#ton-finder-string-toggles .btn-string'),
-      state.settings.activeStrings,
-      () => { syncSettingsUI(); startNextRound(); },
-    );
+    rootElement.querySelector('#ton-finder-string-toggles').addEventListener('string-change', ({ detail }) => {
+      state.settings.activeStrings = detail.activeStrings;
+      syncSettingsUI();
+      startNextRound();
+    });
 
     ui.difficulty.addEventListener('change', () => {
       state.settings.difficulty = ui.difficulty.value;
@@ -93,10 +93,7 @@ export function createTonFinderFeature() {
   function syncSettingsUI() {
     syncFretSlider(ui.slider, ui.sliderLabel, state.settings.maxFret);
     ui.difficulty.value = state.settings.difficulty;
-    syncStringToggles(
-      rootElement.querySelectorAll('#ton-finder-string-toggles .btn-string'),
-      state.settings.activeStrings,
-    );
+    rootElement.querySelector('#ton-finder-string-toggles').activeStrings = state.settings.activeStrings;
   }
 
   function startNextRound() {

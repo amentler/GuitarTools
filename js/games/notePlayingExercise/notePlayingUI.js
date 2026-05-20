@@ -12,6 +12,5 @@ export function resolveNotePlayingUI(rootElement) {
     score: rootElement?.querySelector('#score-value'),
     slider: rootElement?.querySelector('#note-play-fret-slider'),
     sliderLabel: rootElement?.querySelector('#note-play-fret-label'),
-    stringButtons: rootElement?.querySelectorAll('#note-play-string-toggles .btn-string'),
   };
 }

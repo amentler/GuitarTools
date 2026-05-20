@@ -4,7 +4,7 @@ import {
 import { renderScore } from './sheetMusicSVG.js';
 import { PlaybackController } from './playbackController.js';
 import { PlaybackBar } from './playbackBar.js';
-import { wireStringToggles, syncStringToggles, wireFretSlider, syncFretSlider, wireMinFretSlider, syncMinFretSlider } from '../../utils/settings.js';
+import { wireFretSlider, syncFretSlider, wireMinFretSlider, syncMinFretSlider } from '../../utils/settings.js';
 import {
   loadSheetMusicPrefs,
   saveSheetMusicActive,
@@ -188,7 +188,7 @@ export function createSheetMusicReadingFeature() {
 
   // ── Settings sync ───────────────────────────────────────────────────────
   function syncSettingsUI() {
-    syncSheetMusicUI(ui, state, syncFretSlider, syncStringToggles, syncMinFretSlider);
+    syncSheetMusicUI(ui, state, syncFretSlider, syncMinFretSlider);
     syncActiveUiVisibility(ui, state);
     updateCurrentNoteDisplay(ui, state, noteHandler.getCurrentNote());
   }
@@ -310,17 +310,14 @@ export function createSheetMusicReadingFeature() {
         syncSettingsUI();
       });
 
-      wireStringToggles(
-        ui.stringButtons,
-        state.settings.activeStrings,
-        () => {
-          syncSettingsUI();
-          playbackControl.stopPlayback();
-          if (state.endless) cleanupEndlessState();
-          regenerate();
-          updateFeedback(ui, state);
-        },
-      );
+      document.querySelector('#sheet-music-string-toggles').addEventListener('string-change', ({ detail }) => {
+        state.settings.activeStrings = detail.activeStrings;
+        syncSettingsUI();
+        playbackControl.stopPlayback();
+        if (state.endless) cleanupEndlessState();
+        regenerate();
+        updateFeedback(ui, state);
+      });
 
       document.addEventListener('keydown', e => {
         if (!ui.view?.classList.contains('active')) return;
