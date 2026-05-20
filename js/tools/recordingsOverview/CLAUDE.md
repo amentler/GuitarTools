@@ -6,7 +6,7 @@ Bulk-Aktionen erlauben Download und Löschen nach Quelle (Noten lesen / Akkord-R
 Der sichtbare Primaername ist der gespeicherte `baseName`/Dateiname; fachliche
 Metadaten bleiben Zusatzinformationen.
 Am Seitenende zeigt die Trainingsdaten-Review einen statisch erzeugten Android-Firefox-Katalog
-mit WAV- und ZIP(WAV+JSON)-Fixtures, Match-Status und Confusion-Matrix-Kennzahlen.
+mit tagged ZIP/WAV-Quellen und den Confusion-Matrix-Kennzahlen aus den aktiven Produktionsmetrics.
 
 ## Dateien
 
@@ -50,10 +50,13 @@ Verwendet `js/shared/zip.js` (`buildRecordingZip`, `buildCollectionZip`, `downlo
 
 ## Trainingsdaten-Review
 
-Der Katalog wird mit `npm run review:android-firefox` aus `ml/data/android_firefox/`,
-`tests/fixtures/sequences/` und `tests/fixtures/dropsequence/` erzeugt. Die Tabelle ist nach
-Name, Typ, Match-Status sowie TP/FP/FN/Precision/Recall sortierbar. Server-Fixtures sind im
-Onset Tagger read-only; Speichern legt eine lokale Sheet-Music-Aufnahme an.
+Der Katalog wird mit `npm run review:android-firefox` aus den tagged ZIP/WAV-Quellen unter
+`tests/fixtures/sequences/sheet-music-reading/` erzeugt und mit
+`models/onset_detector_android_firefox.metrics.json` angereichert. Dauerhaft gepflegte
+Trainings-JSONs sind dafuer nicht mehr noetig; der virtuelle Trainingsdateiname bleibt
+`training_data_<baseName>.json`, weil das Training temporär dieselbe Benennung nutzt. Die
+Tabelle ist nach Name, Quelle sowie TP/FP/FN/Precision/Recall sortierbar. Server-Fixtures sind
+im Onset Tagger read-only; Speichern legt eine lokale Sheet-Music-Aufnahme an.
 
 ## Seite
 

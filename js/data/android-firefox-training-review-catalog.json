@@ -1,6 +1,9 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-05-19T20:18:04.259Z",
+  "generatedAt": "2026-05-20T14:32:34.578Z",
+  "mediaRoots": [
+    "tests/fixtures/sequences/sheet-music-reading"
+  ],
   "metricsSource": "models/onset_detector_android_firefox.metrics.json",
   "entries": [
     {
@@ -11,11 +14,11 @@
       "url": "../../tests/fixtures/sequences/sheet-music-reading/4-4_103bpm_ADG_keomz-tagged.zip",
       "jsonUrl": null,
       "sidecarInZip": true,
-      "trainingFile": "ml/data/android_firefox/training_data_4-4_103bpm_ADG_keomz_l65m0s.json",
-      "trainingJsonUrl": "../../ml/data/android_firefox/training_data_4-4_103bpm_ADG_keomz_l65m0s.json",
+      "trainingFile": "training_data_4-4_103bpm_ADG_keomz.json",
+      "trainingJsonUrl": null,
       "match": {
-        "status": "fuzzy",
-        "score": 69
+        "status": "tagged-zip",
+        "score": 1000
       },
       "metrics": {
         "expected": 16,
@@ -36,11 +39,11 @@
       "url": "../../tests/fixtures/sequences/sheet-music-reading/4-4_120bpm_AGD_r5c07-tagged.zip",
       "jsonUrl": null,
       "sidecarInZip": true,
-      "trainingFile": "ml/data/android_firefox/training_data_4-4_120bpm_AGD_r5c07_sk2y5f.json",
-      "trainingJsonUrl": "../../ml/data/android_firefox/training_data_4-4_120bpm_AGD_r5c07_sk2y5f.json",
+      "trainingFile": "training_data_4-4_120bpm_AGD_r5c07.json",
+      "trainingJsonUrl": null,
       "match": {
-        "status": "fuzzy",
-        "score": 69
+        "status": "tagged-zip",
+        "score": 1000
       },
       "metrics": {
         "expected": 16,
@@ -61,11 +64,11 @@
       "url": "../../tests/fixtures/sequences/sheet-music-reading/4-4_40bpm_EGADB_9low6-tagged.zip",
       "jsonUrl": null,
       "sidecarInZip": true,
-      "trainingFile": "ml/data/android_firefox/training_data_4-4_40bpm_EGADB_9low6_h4z0xk.json",
-      "trainingJsonUrl": "../../ml/data/android_firefox/training_data_4-4_40bpm_EGADB_9low6_h4z0xk.json",
+      "trainingFile": "training_data_4-4_40bpm_EGADB_9low6.json",
+      "trainingJsonUrl": null,
       "match": {
-        "status": "fuzzy",
-        "score": 74
+        "status": "tagged-zip",
+        "score": 1000
       },
       "metrics": {
         "expected": 16,
@@ -86,11 +89,11 @@
       "url": "../../tests/fixtures/sequences/sheet-music-reading/4-4_91bpm_GBE_jmkkc-tagged.zip",
       "jsonUrl": null,
       "sidecarInZip": true,
-      "trainingFile": "ml/data/android_firefox/training_data_4-4_91bpm_GBE_jmkkc_2rvqip.json",
-      "trainingJsonUrl": "../../ml/data/android_firefox/training_data_4-4_91bpm_GBE_jmkkc_2rvqip.json",
+      "trainingFile": "training_data_4-4_91bpm_GBE_jmkkc.json",
+      "trainingJsonUrl": null,
       "match": {
-        "status": "fuzzy",
-        "score": 69
+        "status": "tagged-zip",
+        "score": 1000
       },
       "metrics": {
         "expected": 16,
@@ -111,11 +114,11 @@
       "url": "../../tests/fixtures/sequences/sheet-music-reading/4-4_91bpm_GBE_lgned-tagged.zip",
       "jsonUrl": null,
       "sidecarInZip": true,
-      "trainingFile": "ml/data/android_firefox/training_data_4-4_91bpm_GBE_lgned_udvqix.json",
-      "trainingJsonUrl": "../../ml/data/android_firefox/training_data_4-4_91bpm_GBE_lgned_udvqix.json",
+      "trainingFile": "training_data_4-4_91bpm_GBE_lgned.json",
+      "trainingJsonUrl": null,
       "match": {
-        "status": "fuzzy",
-        "score": 69
+        "status": "tagged-zip",
+        "score": 1000
       },
       "metrics": {
         "expected": 16,
@@ -136,11 +139,11 @@
       "url": "../../tests/fixtures/sequences/sheet-music-reading/4-4_91bpm_GDAB_bsr80-tagged.zip",
       "jsonUrl": null,
       "sidecarInZip": true,
-      "trainingFile": "ml/data/android_firefox/training_data_4-4_91bpm_GDAB_bsr80_t54f6y.json",
-      "trainingJsonUrl": "../../ml/data/android_firefox/training_data_4-4_91bpm_GDAB_bsr80_t54f6y.json",
+      "trainingFile": "training_data_4-4_91bpm_GDAB_bsr80.json",
+      "trainingJsonUrl": null,
       "match": {
-        "status": "fuzzy",
-        "score": 69
+        "status": "tagged-zip",
+        "score": 1000
       },
       "metrics": {
         "expected": 16,
@@ -161,21 +164,21 @@
       "url": "../../tests/fixtures/sequences/sheet-music-reading/4-4_91bpm_GDAB_q6ntm-tagged.zip",
       "jsonUrl": null,
       "sidecarInZip": true,
-      "trainingFile": "ml/data/android_firefox/training_data_4-4_91bpm_GDAB_q6ntm_dbcips.json",
-      "trainingJsonUrl": "../../ml/data/android_firefox/training_data_4-4_91bpm_GDAB_q6ntm_dbcips.json",
+      "trainingFile": "training_data_4-4_91bpm_GDAB_q6ntm.json",
+      "trainingJsonUrl": null,
       "match": {
-        "status": "fuzzy",
-        "score": 69
+        "status": "tagged-zip",
+        "score": 1000
       },
       "metrics": {
         "expected": 16,
         "detected": 20,
-        "tp": 16,
-        "fp": 4,
-        "fn": 0,
-        "precision": 0.8,
-        "recall": 1,
-        "f1": 0.888888888888889
+        "tp": 15,
+        "fp": 5,
+        "fn": 1,
+        "precision": 0.75,
+        "recall": 0.9375,
+        "f1": 0.8333333333333334
       }
     },
     {
@@ -186,21 +189,21 @@
       "url": "../../tests/fixtures/sequences/sheet-music-reading/4-4_91bpm_GEB_u25pb-tagged.zip",
       "jsonUrl": null,
       "sidecarInZip": true,
-      "trainingFile": "ml/data/android_firefox/training_data_4-4_91bpm_GEB_u25pb_pev252.json",
-      "trainingJsonUrl": "../../ml/data/android_firefox/training_data_4-4_91bpm_GEB_u25pb_pev252.json",
+      "trainingFile": "training_data_4-4_91bpm_GEB_u25pb.json",
+      "trainingJsonUrl": null,
       "match": {
-        "status": "fuzzy",
-        "score": 69
+        "status": "tagged-zip",
+        "score": 1000
       },
       "metrics": {
         "expected": 16,
-        "detected": 19,
+        "detected": 16,
         "tp": 16,
-        "fp": 3,
+        "fp": 0,
         "fn": 0,
-        "precision": 0.8421052631578947,
+        "precision": 1,
         "recall": 1,
-        "f1": 0.9142857142857143
+        "f1": 1
       }
     },
     {
@@ -211,11 +214,11 @@
       "url": "../../tests/fixtures/sequences/sheet-music-reading/4-4_99bpm_travis_cmaj_amin_cmaj_amin-tagged.zip",
       "jsonUrl": null,
       "sidecarInZip": true,
-      "trainingFile": "ml/data/android_firefox/training_data_4-4_99bpm_travis_cmaj_amin_cmaj_amin_9fs7jm.json",
-      "trainingJsonUrl": "../../ml/data/android_firefox/training_data_4-4_99bpm_travis_cmaj_amin_cmaj_amin_9fs7jm.json",
+      "trainingFile": "training_data_4-4_99bpm_travis_cmaj_amin_cmaj_amin.json",
+      "trainingJsonUrl": null,
       "match": {
-        "status": "fuzzy",
-        "score": 78
+        "status": "tagged-zip",
+        "score": 1000
       },
       "metrics": {
         "expected": 16,
@@ -236,11 +239,11 @@
       "url": "../../tests/fixtures/sequences/sheet-music-reading/eeeeaaaaddddgggg-tagged.zip",
       "jsonUrl": null,
       "sidecarInZip": true,
-      "trainingFile": "ml/data/android_firefox/training_data_eeeeaaaaddddgggg_ln0puf.json",
-      "trainingJsonUrl": "../../ml/data/android_firefox/training_data_eeeeaaaaddddgggg_ln0puf.json",
+      "trainingFile": "training_data_eeeeaaaaddddgggg.json",
+      "trainingJsonUrl": null,
       "match": {
-        "status": "fuzzy",
-        "score": 58
+        "status": "tagged-zip",
+        "score": 1000
       },
       "metrics": {
         "expected": 16,
@@ -261,21 +264,21 @@
       "url": "../../tests/fixtures/sequences/sheet-music-reading/fast-tagged.zip",
       "jsonUrl": null,
       "sidecarInZip": true,
-      "trainingFile": "ml/data/android_firefox/training_data_fast_ild7kz.json",
-      "trainingJsonUrl": "../../ml/data/android_firefox/training_data_fast_ild7kz.json",
+      "trainingFile": "training_data_fast.json",
+      "trainingJsonUrl": null,
       "match": {
-        "status": "fuzzy",
-        "score": 53
+        "status": "tagged-zip",
+        "score": 1000
       },
       "metrics": {
         "expected": 17,
-        "detected": 13,
-        "tp": 8,
-        "fp": 5,
-        "fn": 9,
-        "precision": 0.6153846153846154,
-        "recall": 0.47058823529411764,
-        "f1": 0.5333333333333333
+        "detected": null,
+        "tp": null,
+        "fp": null,
+        "fn": null,
+        "precision": null,
+        "recall": null,
+        "f1": null
       }
     },
     {
@@ -286,11 +289,11 @@
       "url": "../../tests/fixtures/sequences/sheet-music-reading/medium-tagged.zip",
       "jsonUrl": null,
       "sidecarInZip": true,
-      "trainingFile": "ml/data/android_firefox/training_data_medium_yekpd8.json",
-      "trainingJsonUrl": "../../ml/data/android_firefox/training_data_medium_yekpd8.json",
+      "trainingFile": "training_data_medium.json",
+      "trainingJsonUrl": null,
       "match": {
-        "status": "fuzzy",
-        "score": 58
+        "status": "tagged-zip",
+        "score": 1000
       },
       "metrics": {
         "expected": 16,
@@ -311,21 +314,21 @@
       "url": "../../tests/fixtures/sequences/sheet-music-reading/notenlesen_4-4_120bpm_travis_oytwr-tagged.zip",
       "jsonUrl": null,
       "sidecarInZip": true,
-      "trainingFile": "ml/data/android_firefox/training_data_notenlesen_4-4_120bpm_travis_oytwr_yk8f3i.json",
-      "trainingJsonUrl": "../../ml/data/android_firefox/training_data_notenlesen_4-4_120bpm_travis_oytwr_yk8f3i.json",
+      "trainingFile": "training_data_notenlesen_4-4_120bpm_travis_oytwr.json",
+      "trainingJsonUrl": null,
       "match": {
-        "status": "fuzzy",
-        "score": 74
+        "status": "tagged-zip",
+        "score": 1000
       },
       "metrics": {
         "expected": 16,
         "detected": 15,
-        "tp": 14,
-        "fp": 1,
-        "fn": 2,
-        "precision": 0.9333333333333333,
-        "recall": 0.875,
-        "f1": 0.9032258064516129
+        "tp": 15,
+        "fp": 0,
+        "fn": 1,
+        "precision": 1,
+        "recall": 0.9375,
+        "f1": 0.967741935483871
       }
     },
     {
@@ -336,14 +339,14 @@
       "url": "../../tests/fixtures/sequences/sheet-music-reading/notenlesen_4-4_120bpm_travisEADG_0lg1o-tagged.zip",
       "jsonUrl": null,
       "sidecarInZip": true,
-      "trainingFile": "ml/data/android_firefox/training_data_4-4_120bpm_AGD_r5c07_sk2y5f.json",
-      "trainingJsonUrl": "../../ml/data/android_firefox/training_data_4-4_120bpm_AGD_r5c07_sk2y5f.json",
+      "trainingFile": "training_data_notenlesen_4-4_120bpm_travisEADG_0lg1o.json",
+      "trainingJsonUrl": null,
       "match": {
-        "status": "ambiguous",
-        "score": 8
+        "status": "tagged-zip",
+        "score": 1000
       },
       "metrics": {
-        "expected": 16,
+        "expected": 25,
         "detected": null,
         "tp": null,
         "fp": null,
@@ -361,14 +364,14 @@
       "url": "../../tests/fixtures/sequences/sheet-music-reading/notenlesen_4-4_120bpm_travisueberc_77zv6-tagged.zip",
       "jsonUrl": null,
       "sidecarInZip": true,
-      "trainingFile": "ml/data/android_firefox/training_data_4-4_120bpm_AGD_r5c07_sk2y5f.json",
-      "trainingJsonUrl": "../../ml/data/android_firefox/training_data_4-4_120bpm_AGD_r5c07_sk2y5f.json",
+      "trainingFile": "training_data_notenlesen_4-4_120bpm_travisueberc_77zv6.json",
+      "trainingJsonUrl": null,
       "match": {
-        "status": "ambiguous",
-        "score": 8
+        "status": "tagged-zip",
+        "score": 1000
       },
       "metrics": {
-        "expected": 16,
+        "expected": 25,
         "detected": null,
         "tp": null,
         "fp": null,
@@ -386,11 +389,11 @@
       "url": "../../tests/fixtures/sequences/sheet-music-reading/notenlesen_4-4_132bpm_DGB_sznlg-tagged.zip",
       "jsonUrl": null,
       "sidecarInZip": true,
-      "trainingFile": "ml/data/android_firefox/training_data_notenlesen_4-4_132bpm_DGB_sznlg_uxdnio.json",
-      "trainingJsonUrl": "../../ml/data/android_firefox/training_data_notenlesen_4-4_132bpm_DGB_sznlg_uxdnio.json",
+      "trainingFile": "training_data_notenlesen_4-4_132bpm_DGB_sznlg.json",
+      "trainingJsonUrl": null,
       "match": {
-        "status": "fuzzy",
-        "score": 69
+        "status": "tagged-zip",
+        "score": 1000
       },
       "metrics": {
         "expected": 16,
@@ -404,6 +407,131 @@
       }
     },
     {
+      "id": "notenlesen_4-4_134bpm_ed_gyjfv-135nzok",
+      "name": "notenlesen_4-4_134bpm_ED_gyjfv-tagged",
+      "baseName": "notenlesen_4-4_134bpm_ED_gyjfv",
+      "kind": "zip",
+      "url": "../../tests/fixtures/sequences/sheet-music-reading/notenlesen_4-4_134bpm_ED_gyjfv-tagged.zip",
+      "jsonUrl": null,
+      "sidecarInZip": true,
+      "trainingFile": "training_data_notenlesen_4-4_134bpm_ED_gyjfv.json",
+      "trainingJsonUrl": null,
+      "match": {
+        "status": "tagged-zip",
+        "score": 1000
+      },
+      "metrics": {
+        "expected": 10,
+        "detected": null,
+        "tp": null,
+        "fp": null,
+        "fn": null,
+        "precision": null,
+        "recall": null,
+        "f1": null
+      }
+    },
+    {
+      "id": "notenlesen_4-4_134bpm_ed_oeems-1ldas7f",
+      "name": "notenlesen_4-4_134bpm_ED_oeems-tagged",
+      "baseName": "notenlesen_4-4_134bpm_ED_oeems",
+      "kind": "zip",
+      "url": "../../tests/fixtures/sequences/sheet-music-reading/notenlesen_4-4_134bpm_ED_oeems-tagged.zip",
+      "jsonUrl": null,
+      "sidecarInZip": true,
+      "trainingFile": "training_data_notenlesen_4-4_134bpm_ED_oeems.json",
+      "trainingJsonUrl": null,
+      "match": {
+        "status": "tagged-zip",
+        "score": 1000
+      },
+      "metrics": {
+        "expected": 21,
+        "detected": null,
+        "tp": null,
+        "fp": null,
+        "fn": null,
+        "precision": null,
+        "recall": null,
+        "f1": null
+      }
+    },
+    {
+      "id": "notenlesen_4-4_134bpm_ed_u83jq-1clp3z",
+      "name": "notenlesen_4-4_134bpm_ED_u83jq-tagged",
+      "baseName": "notenlesen_4-4_134bpm_ED_u83jq",
+      "kind": "zip",
+      "url": "../../tests/fixtures/sequences/sheet-music-reading/notenlesen_4-4_134bpm_ED_u83jq-tagged.zip",
+      "jsonUrl": null,
+      "sidecarInZip": true,
+      "trainingFile": "training_data_notenlesen_4-4_134bpm_ED_u83jq.json",
+      "trainingJsonUrl": null,
+      "match": {
+        "status": "tagged-zip",
+        "score": 1000
+      },
+      "metrics": {
+        "expected": 30,
+        "detected": 29,
+        "tp": 28,
+        "fp": 1,
+        "fn": 2,
+        "precision": 0.9655172413793104,
+        "recall": 0.9333333333333333,
+        "f1": 0.9491525423728815
+      }
+    },
+    {
+      "id": "notenlesen_4-4_134bpm_kaxua-go1eci",
+      "name": "notenlesen_4-4_134bpm_kaxua-tagged",
+      "baseName": "notenlesen_4-4_134bpm_kaxua",
+      "kind": "zip",
+      "url": "../../tests/fixtures/sequences/sheet-music-reading/notenlesen_4-4_134bpm_kaxua-tagged.zip",
+      "jsonUrl": null,
+      "sidecarInZip": true,
+      "trainingFile": "training_data_notenlesen_4-4_134bpm_kaxua.json",
+      "trainingJsonUrl": null,
+      "match": {
+        "status": "tagged-zip",
+        "score": 1000
+      },
+      "metrics": {
+        "expected": 22,
+        "detected": null,
+        "tp": null,
+        "fp": null,
+        "fn": null,
+        "precision": null,
+        "recall": null,
+        "f1": null
+      }
+    },
+    {
+      "id": "notenlesen_4-4_134bpm_vad9j-1xll2wg",
+      "name": "notenlesen_4-4_134bpm_vad9j-tagged",
+      "baseName": "notenlesen_4-4_134bpm_vad9j",
+      "kind": "zip",
+      "url": "../../tests/fixtures/sequences/sheet-music-reading/notenlesen_4-4_134bpm_vad9j-tagged.zip",
+      "jsonUrl": null,
+      "sidecarInZip": true,
+      "trainingFile": "training_data_notenlesen_4-4_134bpm_vad9j.json",
+      "trainingJsonUrl": null,
+      "match": {
+        "status": "tagged-zip",
+        "score": 1000
+      },
+      "metrics": {
+        "expected": 22,
+        "detected": 25,
+        "tp": 22,
+        "fp": 3,
+        "fn": 0,
+        "precision": 0.88,
+        "recall": 1,
+        "f1": 0.9361702127659575
+      }
+    },
+    {
       "id": "notenlesen_4-4_161bpm_dga_px4kc-1l79f1p",
       "name": "notenlesen_4-4_161bpm_DGA_px4kc-tagged",
       "baseName": "notenlesen_4-4_161bpm_DGA_px4kc",
@@ -411,11 +539,11 @@
       "url": "../../tests/fixtures/sequences/sheet-music-reading/notenlesen_4-4_161bpm_DGA_px4kc-tagged.zip",
       "jsonUrl": null,
       "sidecarInZip": true,
-      "trainingFile": "ml/data/android_firefox/training_data_notenlesen_4-4_161bpm_DGA_px4kc_f8x2cg.json",
-      "trainingJsonUrl": "../../ml/data/android_firefox/training_data_notenlesen_4-4_161bpm_DGA_px4kc_f8x2cg.json",
+      "trainingFile": "training_data_notenlesen_4-4_161bpm_DGA_px4kc.json",
+      "trainingJsonUrl": null,
       "match": {
-        "status": "fuzzy",
-        "score": 69
+        "status": "tagged-zip",
+        "score": 1000
       },
       "metrics": {
         "expected": 16,
@@ -436,11 +564,11 @@
       "url": "../../tests/fixtures/sequences/sheet-music-reading/notenlesen_4-4_161bpm_DGA_w7e7b-tagged.zip",
       "jsonUrl": null,
       "sidecarInZip": true,
-      "trainingFile": "ml/data/android_firefox/training_data_notenlesen_4-4_161bpm_DGA_w7e7b_bubiub.json",
-      "trainingJsonUrl": "../../ml/data/android_firefox/training_data_notenlesen_4-4_161bpm_DGA_w7e7b_bubiub.json",
+      "trainingFile": "training_data_notenlesen_4-4_161bpm_DGA_w7e7b.json",
+      "trainingJsonUrl": null,
       "match": {
-        "status": "fuzzy",
-        "score": 69
+        "status": "tagged-zip",
+        "score": 1000
       },
       "metrics": {
         "expected": 16,
@@ -461,11 +589,11 @@
       "url": "../../tests/fixtures/sequences/sheet-music-reading/notenlesen_4-4_161bpm_EGBD_tszjn-tagged.zip",
       "jsonUrl": null,
       "sidecarInZip": true,
-      "trainingFile": "ml/data/android_firefox/training_data_notenlesen_4-4_161bpm_EGBD_tszjn_1v1d3p.json",
-      "trainingJsonUrl": "../../ml/data/android_firefox/training_data_notenlesen_4-4_161bpm_EGBD_tszjn_1v1d3p.json",
+      "trainingFile": "training_data_notenlesen_4-4_161bpm_EGBD_tszjn.json",
+      "trainingJsonUrl": null,
       "match": {
-        "status": "fuzzy",
-        "score": 69
+        "status": "tagged-zip",
+        "score": 1000
       },
       "metrics": {
         "expected": 16,
@@ -486,21 +614,21 @@
       "url": "../../tests/fixtures/sequences/sheet-music-reading/notenlesen_4-4_161bpm_EGBD_y18iz-tagged.zip",
       "jsonUrl": null,
       "sidecarInZip": true,
-      "trainingFile": "ml/data/android_firefox/training_data_notenlesen_4-4_161bpm_EGBD_y18iz_r18usn.json",
-      "trainingJsonUrl": "../../ml/data/android_firefox/training_data_notenlesen_4-4_161bpm_EGBD_y18iz_r18usn.json",
+      "trainingFile": "training_data_notenlesen_4-4_161bpm_EGBD_y18iz.json",
+      "trainingJsonUrl": null,
       "match": {
-        "status": "fuzzy",
-        "score": 69
+        "status": "tagged-zip",
+        "score": 1000
       },
       "metrics": {
         "expected": 16,
-        "detected": 18,
-        "tp": 12,
-        "fp": 6,
-        "fn": 4,
-        "precision": 0.6666666666666666,
-        "recall": 0.75,
-        "f1": 0.7058823529411765
+        "detected": null,
+        "tp": null,
+        "fp": null,
+        "fn": null,
+        "precision": null,
+        "recall": null,
+        "f1": null
       }
     },
     {
@@ -511,14 +639,14 @@
       "url": "../../tests/fixtures/sequences/sheet-music-reading/notenlesen_4-4_240bpm_EBA_1m5by-tagged.zip",
       "jsonUrl": null,
       "sidecarInZip": true,
-      "trainingFile": "ml/data/android_firefox/training_data_notenlesen_4-4_240bpm_EBA_0lg1o_tmutm3.json",
-      "trainingJsonUrl": "../../ml/data/android_firefox/training_data_notenlesen_4-4_240bpm_EBA_0lg1o_tmutm3.json",
+      "trainingFile": "training_data_notenlesen_4-4_240bpm_EBA_1m5by.json",
+      "trainingJsonUrl": null,
       "match": {
-        "status": "ambiguous",
-        "score": 11
+        "status": "tagged-zip",
+        "score": 1000
       },
       "metrics": {
-        "expected": 25,
+        "expected": 17,
         "detected": null,
         "tp": null,
         "fp": null,
@@ -536,21 +664,21 @@
       "url": "../../tests/fixtures/sequences/sheet-music-reading/notenlesen_4-4_240bpm_EBA_oytwr-tagged.zip",
       "jsonUrl": null,
       "sidecarInZip": true,
-      "trainingFile": "ml/data/android_firefox/training_data_notenlesen_4-4_240bpm_EBA_0lg1o_tmutm3.json",
-      "trainingJsonUrl": "../../ml/data/android_firefox/training_data_notenlesen_4-4_240bpm_EBA_0lg1o_tmutm3.json",
+      "trainingFile": "training_data_notenlesen_4-4_240bpm_EBA_oytwr.json",
+      "trainingJsonUrl": null,
       "match": {
-        "status": "ambiguous",
-        "score": 11
+        "status": "tagged-zip",
+        "score": 1000
       },
       "metrics": {
-        "expected": 25,
-        "detected": null,
-        "tp": null,
-        "fp": null,
-        "fn": null,
-        "precision": null,
-        "recall": null,
-        "f1": null
+        "expected": 16,
+        "detected": 15,
+        "tp": 15,
+        "fp": 0,
+        "fn": 1,
+        "precision": 1,
+        "recall": 0.9375,
+        "f1": 0.967741935483871
       }
     },
     {
@@ -561,11 +689,11 @@
       "url": "../../tests/fixtures/sequences/sheet-music-reading/notenlesen_4-4_40bpm_DGB_9s0is-tagged.zip",
       "jsonUrl": null,
       "sidecarInZip": true,
-      "trainingFile": "ml/data/android_firefox/training_data_notenlesen_4-4_40bpm_DGB_9s0is_msjsxn.json",
-      "trainingJsonUrl": "../../ml/data/android_firefox/training_data_notenlesen_4-4_40bpm_DGB_9s0is_msjsxn.json",
+      "trainingFile": "training_data_notenlesen_4-4_40bpm_DGB_9s0is.json",
+      "trainingJsonUrl": null,
       "match": {
-        "status": "fuzzy",
-        "score": 69
+        "status": "tagged-zip",
+        "score": 1000
       },
       "metrics": {
         "expected": 16,
@@ -586,11 +714,11 @@
       "url": "../../tests/fixtures/sequences/sheet-music-reading/notenlesen_4-4_78bpm_AEFGDBC_itox9-tagged.zip",
       "jsonUrl": null,
       "sidecarInZip": true,
-      "trainingFile": "ml/data/android_firefox/training_data_notenlesen_4-4_78bpm_AEFGDBC_itox9_awfubk.json",
-      "trainingJsonUrl": "../../ml/data/android_firefox/training_data_notenlesen_4-4_78bpm_AEFGDBC_itox9_awfubk.json",
+      "trainingFile": "training_data_notenlesen_4-4_78bpm_AEFGDBC_itox9.json",
+      "trainingJsonUrl": null,
       "match": {
-        "status": "fuzzy",
-        "score": 74
+        "status": "tagged-zip",
+        "score": 1000
       },
       "metrics": {
         "expected": 16,
@@ -611,11 +739,61 @@
       "url": "../../tests/fixtures/sequences/sheet-music-reading/notenlesen_4-4_78bpm_DGB_7h2yd-tagged.zip",
       "jsonUrl": null,
       "sidecarInZip": true,
-      "trainingFile": "ml/data/android_firefox/training_data_notenlesen_4-4_78bpm_DGB_7h2yd_yp77bg.json",
-      "trainingJsonUrl": "../../ml/data/android_firefox/training_data_notenlesen_4-4_78bpm_DGB_7h2yd_yp77bg.json",
+      "trainingFile": "training_data_notenlesen_4-4_78bpm_DGB_7h2yd.json",
+      "trainingJsonUrl": null,
       "match": {
-        "status": "fuzzy",
-        "score": 69
+        "status": "tagged-zip",
+        "score": 1000
+      },
+      "metrics": {
+        "expected": 16,
+        "detected": null,
+        "tp": null,
+        "fp": null,
+        "fn": null,
+        "precision": null,
+        "recall": null,
+        "f1": null
+      }
+    },
+    {
+      "id": "notenlesen_4-4_99bpm_agdb_aga93-iadyk0",
+      "name": "notenlesen_4-4_99bpm_AGDB_aga93-tagged",
+      "baseName": "notenlesen_4-4_99bpm_AGDB_aga93",
+      "kind": "zip",
+      "url": "../../tests/fixtures/sequences/sheet-music-reading/notenlesen_4-4_99bpm_AGDB_aga93-tagged.zip",
+      "jsonUrl": null,
+      "sidecarInZip": true,
+      "trainingFile": "training_data_notenlesen_4-4_99bpm_AGDB_aga93.json",
+      "trainingJsonUrl": null,
+      "match": {
+        "status": "tagged-zip",
+        "score": 1000
+      },
+      "metrics": {
+        "expected": 16,
+        "detected": null,
+        "tp": null,
+        "fp": null,
+        "fn": null,
+        "precision": null,
+        "recall": null,
+        "f1": null
+      }
+    },
+    {
+      "id": "notenlesen_4-4_99bpm_ed_chstz-h07whq",
+      "name": "notenlesen_4-4_99bpm_ED_chstz-tagged",
+      "baseName": "notenlesen_4-4_99bpm_ED_chstz",
+      "kind": "zip",
+      "url": "../../tests/fixtures/sequences/sheet-music-reading/notenlesen_4-4_99bpm_ED_chstz-tagged.zip",
+      "jsonUrl": null,
+      "sidecarInZip": true,
+      "trainingFile": "training_data_notenlesen_4-4_99bpm_ED_chstz.json",
+      "trainingJsonUrl": null,
+      "match": {
+        "status": "tagged-zip",
+        "score": 1000
       },
       "metrics": {
         "expected": 16,
@@ -636,11 +814,11 @@
       "url": "../../tests/fixtures/sequences/sheet-music-reading/notenlesen_4-4_99bpm_travis_cmajdmaj_147kdtra-tagged.zip",
       "jsonUrl": null,
       "sidecarInZip": true,
-      "trainingFile": "ml/data/android_firefox/training_data_notenlesen_4-4_99bpm_travis_cmajdmaj_147kdtra_2s5w96.json",
-      "trainingJsonUrl": "../../ml/data/android_firefox/training_data_notenlesen_4-4_99bpm_travis_cmajdmaj_147kdtra_2s5w96.json",
+      "trainingFile": "training_data_notenlesen_4-4_99bpm_travis_cmajdmaj_147kdtra.json",
+      "trainingJsonUrl": null,
       "match": {
-        "status": "fuzzy",
-        "score": 82
+        "status": "tagged-zip",
+        "score": 1000
       },
       "metrics": {
         "expected": 16,
@@ -661,11 +839,11 @@
       "url": "../../tests/fixtures/sequences/sheet-music-reading/notenlesen1-tagged.zip",
       "jsonUrl": null,
       "sidecarInZip": true,
-      "trainingFile": "ml/data/android_firefox/training_data_notenlesen1_fc7wkl.json",
-      "trainingJsonUrl": "../../ml/data/android_firefox/training_data_notenlesen1_fc7wkl.json",
+      "trainingFile": "training_data_notenlesen1.json",
+      "trainingJsonUrl": null,
       "match": {
-        "status": "fuzzy",
-        "score": 58
+        "status": "tagged-zip",
+        "score": 1000
       },
       "metrics": {
         "expected": 16,
@@ -686,11 +864,11 @@
       "url": "../../tests/fixtures/sequences/sheet-music-reading/notenlesen2-tagged.zip",
       "jsonUrl": null,
       "sidecarInZip": true,
-      "trainingFile": "ml/data/android_firefox/training_data_notenlesen2_xbgmba.json",
-      "trainingJsonUrl": "../../ml/data/android_firefox/training_data_notenlesen2_xbgmba.json",
+      "trainingFile": "training_data_notenlesen2.json",
+      "trainingJsonUrl": null,
       "match": {
-        "status": "fuzzy",
-        "score": 58
+        "status": "tagged-zip",
+        "score": 1000
       },
       "metrics": {
         "expected": 16,
@@ -711,11 +889,11 @@
       "url": "../../tests/fixtures/sequences/sheet-music-reading/read_my_mind_d8pnf-tagged.zip",
       "jsonUrl": null,
       "sidecarInZip": true,
-      "trainingFile": "ml/data/android_firefox/training_data_read_my_mind_d8pnf_pdqoor.json",
-      "trainingJsonUrl": "../../ml/data/android_firefox/training_data_read_my_mind_d8pnf_pdqoor.json",
+      "trainingFile": "training_data_read_my_mind_d8pnf.json",
+      "trainingJsonUrl": null,
       "match": {
-        "status": "fuzzy",
-        "score": 64
+        "status": "tagged-zip",
+        "score": 1000
       },
       "metrics": {
         "expected": 15,
@@ -727,22 +905,6 @@
         "recall": null,
         "f1": null
       }
-    },
-    {
-      "id": "notenlesen_4-4_240bpm_eba_77zv6_sae7o9-xy6iwu",
-      "name": "training_data_notenlesen_4-4_240bpm_EBA_77zv6_sae7o9",
-      "baseName": "notenlesen_4-4_240bpm_EBA_77zv6_sae7o9",
-      "kind": "json",
-      "url": null,
-      "jsonUrl": "../../ml/data/android_firefox/training_data_notenlesen_4-4_240bpm_EBA_77zv6_sae7o9.json",
-      "sidecarInZip": false,
-      "trainingFile": "ml/data/android_firefox/training_data_notenlesen_4-4_240bpm_EBA_77zv6_sae7o9.json",
-      "trainingJsonUrl": "../../ml/data/android_firefox/training_data_notenlesen_4-4_240bpm_EBA_77zv6_sae7o9.json",
-      "match": {
-        "status": "json-only",
-        "score": 0
-      },
-      "metrics": null
     }
   ]
 }

@@ -1,25 +1,16 @@
 import { existsSync, readdirSync, readFileSync, writeFileSync } from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { readZip } from '../js/shared/zip.js';
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const TRAINING_DIR = 'ml/data/android_firefox';
 const OUTPUT_FILE = 'js/data/android-firefox-training-review-catalog.json';
 const DEFAULT_METRICS_FILE = 'models/onset_detector_android_firefox.metrics.json';
-const MEDIA_ROOTS = [
-  'tests/fixtures/sequences',
-  'tests/fixtures/dropsequence',
-  TRAINING_DIR,
-];
-const STOP_TOKENS = new Set([
-  'training',
-  'data',
-  'tagged',
-  'json',
-  'wav',
-  'zip',
-  'notenlesen',
-]);
+const DEFAULT_MEDIA_ROOT = 'tests/fixtures/sequences/sheet-music-reading';
+const MEDIA_ROOTS = (process.env.TRAINING_MEDIA_DIRS ?? process.env.TRAINING_MEDIA_DIR ?? DEFAULT_MEDIA_ROOT)
+  .split(path.delimiter)
+  .map(value => value.trim())
+  .filter(Boolean);
 
 function repoPath(relativePath) {
   return path.join(REPO_ROOT, relativePath);
@@ -55,7 +46,7 @@ function stem(filePath) {
   return path.basename(filePath).replace(/\.[^.]+$/, '');
 }
 
-function normalizeStem(value) {
+function normalizeBaseName(value) {
   return String(value ?? '')
     .replace(/^training_data_/i, '')
     .replace(/-tagged$/i, '')
@@ -63,10 +54,11 @@ function normalizeStem(value) {
     .toLowerCase();
 }
 
-function tokensFor(value) {
-  return normalizeStem(value)
-    .split(/[^a-z0-9]+/i)
-    .filter(token => token.length >= 3 && !STOP_TOKENS.has(token));
+function displayBaseName(value) {
+  return String(value ?? '')
+    .replace(/^training_data_/i, '')
+    .replace(/-tagged$/i, '')
+    .replace(/_tagged$/i, '');
 }
 
 function hashString(value) {
@@ -78,74 +70,86 @@ function hashString(value) {
   return (hash >>> 0).toString(36);
 }
 
-function scoreMatch(mediaStem, trainingStem) {
-  const mediaNorm = normalizeStem(mediaStem);
-  const trainingNorm = normalizeStem(trainingStem);
-  if (mediaNorm === trainingNorm) return 1000;
-  let score = 0;
-  if (mediaNorm && trainingNorm && (mediaNorm.startsWith(trainingNorm) || trainingNorm.startsWith(mediaNorm))) {
-    score += 50;
-  }
-  const mediaTokens = new Set(tokensFor(mediaStem));
-  for (const token of tokensFor(trainingStem)) {
-    if (!mediaTokens.has(token)) continue;
-    score += token.length >= 5 ? 8 : 3;
-  }
-  return score;
+function countExpectedOnsets(sidecar) {
+  const candidates = [
+    sidecar?.onsetsMs,
+    sidecar?.annotations?.onsetsMs,
+    sidecar?.metadata?.onsetsMs,
+  ];
+  const onsets = candidates.find(Array.isArray);
+  return onsets ? onsets.length : null;
 }
 
-function loadTrainingFiles() {
-  return walkFiles(TRAINING_DIR, ['.json'])
-    .filter(file => path.basename(file).startsWith('training_data_'))
-    .map(file => {
-      let metadata = {};
-      let expected = null;
-      try {
-        const data = readJson(file);
-        metadata = data.metadata ?? {};
-        expected = Array.isArray(data.annotations?.onsetsMs) ? data.annotations.onsetsMs.length : null;
-      } catch {
-        // Keep the file in the catalog matching pool even if it is malformed.
-      }
-      return {
-        file: toPosix(file),
-        stem: stem(file),
-        url: urlFor(file),
-        metadata,
-        expected,
-      };
-    });
+function metricFromRow(row) {
+  const precision = row.detected > 0 ? row.tp / row.detected : null;
+  const recall = row.expected > 0 ? row.tp / row.expected : null;
+  const f1 = precision !== null && recall !== null && precision + recall > 0
+    ? (2 * precision * recall) / (precision + recall)
+    : null;
+  return {
+    expected: row.expected,
+    detected: row.detected,
+    tp: row.tp,
+    fp: row.fp,
+    fn: row.fn,
+    precision,
+    recall,
+    f1,
+  };
 }
 
 function loadMetrics() {
   const metricsFile = process.env.METRICS_FILE || DEFAULT_METRICS_FILE;
-  if (!existsSync(repoPath(metricsFile))) return { source: null, byFile: new Map() };
+  if (!existsSync(repoPath(metricsFile))) return { source: null, byBaseName: new Map() };
   const metrics = readJson(metricsFile);
-  const byFile = new Map();
+  const byBaseName = new Map();
   for (const row of metrics.peak_picking?.per_file ?? []) {
     if (!row?.file) continue;
-    const precision = row.detected > 0 ? row.tp / row.detected : null;
-    const recall = row.expected > 0 ? row.tp / row.expected : null;
-    const f1 = precision !== null && recall !== null && precision + recall > 0
-      ? (2 * precision * recall) / (precision + recall)
-      : null;
-    byFile.set(row.file, {
-      expected: row.expected,
-      detected: row.detected,
-      tp: row.tp,
-      fp: row.fp,
-      fn: row.fn,
-      precision,
-      recall,
-      f1,
-    });
+    const metricBaseName = normalizeBaseName(stem(row.file));
+    if (!metricBaseName) continue;
+    byBaseName.set(metricBaseName, metricFromRow(row));
   }
-  return { source: toPosix(metricsFile), byFile };
+  return { source: toPosix(metricsFile), byBaseName };
 }
 
 function findLooseJsonForWav(wavPath) {
   const candidate = wavPath.replace(/\.wav$/i, '.json');
   return existsSync(repoPath(candidate)) ? toPosix(candidate) : null;
+}
+
+function loadZipSidecar(zipPath) {
+  try {
+    const entries = readZip(new Uint8Array(readFileSync(repoPath(zipPath))));
+    const jsonEntry = entries.find(entry => entry.name.toLowerCase().endsWith('.json'));
+    if (!jsonEntry) return { sidecarInZip: false, expected: null };
+    const sidecar = JSON.parse(new TextDecoder().decode(jsonEntry.data));
+    return { sidecarInZip: true, expected: countExpectedOnsets(sidecar) };
+  } catch {
+    return { sidecarInZip: false, expected: null };
+  }
+}
+
+function loadLooseSidecar(jsonPath) {
+  if (!jsonPath) return { expected: null };
+  try {
+    return { expected: countExpectedOnsets(readJson(jsonPath)) };
+  } catch {
+    return { expected: null };
+  }
+}
+
+function fallbackMetrics(expected) {
+  if (!Number.isFinite(expected)) return null;
+  return {
+    expected,
+    detected: null,
+    tp: null,
+    fp: null,
+    fn: null,
+    precision: null,
+    recall: null,
+    f1: null,
+  };
 }
 
 function loadMediaFiles() {
@@ -154,6 +158,8 @@ function loadMediaFiles() {
   for (const root of MEDIA_ROOTS) {
     for (const file of walkFiles(root, ['.zip', '.wav'])) {
       const rel = toPosix(file);
+      const lower = rel.toLowerCase();
+      if (!lower.endsWith('-tagged.zip') && !lower.endsWith('.wav')) continue;
       if (seen.has(rel)) continue;
       seen.add(rel);
       files.push(file);
@@ -162,92 +168,45 @@ function loadMediaFiles() {
   return files.sort((a, b) => toPosix(a).localeCompare(toPosix(b), 'de-DE'));
 }
 
-function bestTrainingMatch(mediaStem, trainingFiles) {
-  let best = null;
-  let secondScore = 0;
-  for (const training of trainingFiles) {
-    const score = scoreMatch(mediaStem, training.stem);
-    if (!best || score > best.score) {
-      secondScore = best?.score ?? 0;
-      best = { training, score };
-    } else if (score > secondScore) {
-      secondScore = score;
-    }
-  }
-  if (!best || best.score < 5) return { status: 'none', training: null, score: 0 };
-  if (best.score === secondScore) return { status: 'ambiguous', training: best.training, score: best.score };
+function buildEntry(file, metricsByBaseName) {
+  const rel = toPosix(file);
+  const kind = rel.toLowerCase().endsWith('.zip') ? 'zip' : 'wav';
+  const name = stem(file);
+  const baseName = displayBaseName(name);
+  const normalizedBaseName = normalizeBaseName(baseName);
+  const jsonPath = kind === 'wav' ? findLooseJsonForWav(rel) : null;
+  const sidecar = kind === 'zip' ? loadZipSidecar(rel) : loadLooseSidecar(jsonPath);
+  const metrics = metricsByBaseName.get(normalizedBaseName) ?? fallbackMetrics(sidecar.expected);
+  const sidecarStatus = kind === 'zip'
+    ? (sidecar.sidecarInZip ? 'tagged-zip' : 'missing-sidecar')
+    : (jsonPath ? 'wav-json' : 'missing-sidecar');
+
   return {
-    status: best.score >= 1000 ? 'exact' : 'fuzzy',
-    training: best.training,
-    score: best.score,
+    id: `${normalizedBaseName}-${hashString(rel)}`,
+    name,
+    baseName,
+    kind,
+    url: urlFor(rel),
+    jsonUrl: jsonPath ? urlFor(jsonPath) : null,
+    sidecarInZip: kind === 'zip' ? sidecar.sidecarInZip : false,
+    trainingFile: `training_data_${baseName}.json`,
+    trainingJsonUrl: null,
+    match: {
+      status: sidecarStatus,
+      score: sidecarStatus === 'missing-sidecar' ? 0 : 1000,
+    },
+    metrics,
   };
 }
 
 function buildCatalog() {
-  const trainingFiles = loadTrainingFiles();
-  const { source: metricsSource, byFile } = loadMetrics();
-  const matchedTrainingFiles = new Set();
-  const entries = loadMediaFiles().map(file => {
-    const rel = toPosix(file);
-    const kind = rel.toLowerCase().endsWith('.zip') ? 'zip' : 'wav';
-    const mediaStem = stem(file);
-    const match = bestTrainingMatch(mediaStem, trainingFiles);
-    const training = match.training;
-    if (training) matchedTrainingFiles.add(training.file);
-    const metrics = training ? byFile.get(path.basename(training.file)) ?? null : null;
-    const fallbackExpected = training?.expected ?? null;
-    const jsonPath = kind === 'wav' ? findLooseJsonForWav(rel) : null;
-    return {
-      id: `${normalizeStem(mediaStem)}-${hashString(rel)}`,
-      name: mediaStem,
-      baseName: mediaStem.replace(/-tagged$/i, ''),
-      kind,
-      url: urlFor(rel),
-      jsonUrl: jsonPath ? urlFor(jsonPath) : null,
-      sidecarInZip: kind === 'zip',
-      trainingFile: training?.file ?? null,
-      trainingJsonUrl: training?.url ?? null,
-      match: {
-        status: match.status,
-        score: match.score,
-      },
-      metrics: metrics ?? (fallbackExpected !== null ? {
-        expected: fallbackExpected,
-        detected: null,
-        tp: null,
-        fp: null,
-        fn: null,
-        precision: null,
-        recall: null,
-        f1: null,
-      } : null),
-    };
-  });
-
-  for (const training of trainingFiles) {
-    if (matchedTrainingFiles.has(training.file)) continue;
-    const metrics = byFile.get(path.basename(training.file)) ?? null;
-    entries.push({
-      id: `${normalizeStem(training.stem)}-${hashString(training.file)}`,
-      name: training.stem,
-      baseName: training.stem.replace(/^training_data_/i, ''),
-      kind: 'json',
-      url: null,
-      jsonUrl: training.url,
-      sidecarInZip: false,
-      trainingFile: training.file,
-      trainingJsonUrl: training.url,
-      match: {
-        status: 'json-only',
-        score: 0,
-      },
-      metrics,
-    });
-  }
+  const { source: metricsSource, byBaseName } = loadMetrics();
+  const entries = loadMediaFiles().map(file => buildEntry(file, byBaseName));
 
   return {
     schemaVersion: 1,
     generatedAt: new Date().toISOString(),
+    mediaRoots: MEDIA_ROOTS.map(toPosix),
     metricsSource,
     entries,
   };
@@ -256,4 +215,4 @@ function buildCatalog() {
 const catalog = buildCatalog();
 const outputPath = repoPath(OUTPUT_FILE);
 writeFileSync(outputPath, `${JSON.stringify(catalog, null, 2)}\n`);
-console.log(`Wrote ${OUTPUT_FILE} with ${catalog.entries.length} entries.`);
+console.log(`Wrote ${OUTPUT_FILE} with ${catalog.entries.length} tagged media entries.`);

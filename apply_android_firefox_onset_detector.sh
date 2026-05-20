@@ -296,3 +296,6 @@ print(f"  Label:                 {label}")
 print(f"  Registry:              {len(registry['strategies'])}/{MAX_STRATEGIES} Strategien")
 print(f"  Modell:                {strategy_model}")
 PY
+
+print_section "Refreshing training review catalog"
+npm run review:android-firefox

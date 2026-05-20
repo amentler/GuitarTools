@@ -131,6 +131,11 @@ export function createRecordingsOverviewFeature() {
     return Number.isFinite(value) ? String(value) : '–';
   }
 
+  function hasTrainingMetrics(entry) {
+    const metrics = entry?.metrics ?? {};
+    return Number.isFinite(metrics.detected) || Number.isFinite(metrics.tp);
+  }
+
   function setCell(row, text, className = '') {
     const cell = document.createElement('td');
     cell.textContent = text;
@@ -145,9 +150,9 @@ export function createRecordingsOverviewFeature() {
     const sorted = sortTrainingReviewEntries(_trainingEntries, _trainingSortKey, _trainingSortDirection);
     if (ui.trainingSummary) {
       const issueCount = _trainingEntries.filter(entry => getTrainingReviewIssueCount(entry) > 0).length;
-      const metricCount = _trainingEntries.filter(entry => entry.metrics).length;
+      const metricCount = _trainingEntries.filter(hasTrainingMetrics).length;
       ui.trainingSummary.textContent =
-        `${_trainingEntries.length} Audioquellen, ${metricCount} mit Metrics, ${issueCount} mit FP/FN.`;
+        `${_trainingEntries.length} tagged Quellen, ${metricCount} mit Trainingsergebnis, ${issueCount} mit FP/FN.`;
     }
 
     for (const entry of sorted) {
@@ -155,11 +160,10 @@ export function createRecordingsOverviewFeature() {
       const issueCount = getTrainingReviewIssueCount(entry);
       const row = document.createElement('tr');
       if (issueCount > 0) row.classList.add('recordings-training-table__problem');
-      if (!entry.metrics) row.classList.add('recordings-training-table__missing');
+      if (!hasTrainingMetrics(entry)) row.classList.add('recordings-training-table__missing');
 
       setCell(row, entry.name ?? entry.id ?? '–');
       setCell(row, entry.kind ?? '–');
-      setCell(row, entry.match?.status ?? '–');
       setCell(row, formatCount(metrics.expected));
       setCell(row, formatCount(metrics.detected));
       setCell(row, formatCount(metrics.tp));
@@ -184,7 +188,7 @@ export function createRecordingsOverviewFeature() {
   }
 
   async function refreshTrainingReview(ui) {
-    if (ui.trainingSummary) ui.trainingSummary.textContent = 'Lade Trainingsdaten ...';
+    if (ui.trainingSummary) ui.trainingSummary.textContent = 'Lade tagged Quellen ...';
     if (ui.trainingRefreshBtn) ui.trainingRefreshBtn.disabled = true;
     try {
       _trainingEntries = await getTrainingReviewEntries();
@@ -192,7 +196,7 @@ export function createRecordingsOverviewFeature() {
     } catch {
       _trainingEntries = [];
       if (ui.trainingList) ui.trainingList.innerHTML = '';
-      if (ui.trainingSummary) ui.trainingSummary.textContent = 'Trainingsdaten konnten nicht geladen werden.';
+      if (ui.trainingSummary) ui.trainingSummary.textContent = 'Tagged Quellen konnten nicht geladen werden.';
     } finally {
       if (ui.trainingRefreshBtn) ui.trainingRefreshBtn.disabled = false;
     }
