@@ -8,7 +8,7 @@ if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
 Usage: ./train_android_firefox.sh
 
 Trains the Android-Firefox onset detector from:
-  ml/data/android_firefox
+  tagged WAV/JSON ZIPs in tests/fixtures/sequences/sheet-music-reading
 
 Candidate outputs:
   models/onset_detector_android_firefox_candidate.onnx
@@ -17,6 +17,9 @@ Candidate outputs:
 
 Environment overrides:
   PYTHON=...       Python executable to use, e.g. .venv/bin/python
+  TRAINING_MEDIA_DIR=...
+                  Tagged ZIP/WAV source directory, default:
+                  tests/fixtures/sequences/sheet-music-reading
   BASE_CONFIG=...  Base YAML config, default: ml/training_config.yaml
   PATHS_TEMPLATE=...
                   Paths template, default:
@@ -133,7 +136,17 @@ if params:
 PY
 }
 
-DATA_DIR="ml/data/android_firefox"
+TRAINING_MEDIA_DIR="${TRAINING_MEDIA_DIR:-tests/fixtures/sequences/sheet-music-reading}"
+DATA_DIR="$(mktemp -d "${TMPDIR:-/tmp}/android-firefox-training-data.XXXXXX")"
+generation_log=""
+tmp_config=""
+training_log=""
+cleanup() {
+  [[ -n "$generation_log" ]] && rm -f "$generation_log"
+  [[ -n "$tmp_config" ]] && rm -f "$tmp_config"
+  rm -rf "$DATA_DIR"
+}
+trap cleanup EXIT
 BASE_CONFIG="${BASE_CONFIG:-ml/training_config.yaml}"
 PATHS_TEMPLATE="${PATHS_TEMPLATE:-ml/training_config.android_firefox.paths.template.yaml}"
 OUT_DIR="${OUT_DIR:-models}"
@@ -153,8 +166,8 @@ TRAINING_PIP_PACKAGES=(
   "packaging"
 )
 
-if [[ ! -d "$DATA_DIR" ]]; then
-  echo "ERROR: training data directory not found: $DATA_DIR" >&2
+if [[ ! -d "$TRAINING_MEDIA_DIR" ]]; then
+  echo "ERROR: training media directory not found: $TRAINING_MEDIA_DIR" >&2
   exit 1
 fi
 
@@ -168,14 +181,35 @@ if [[ ! -f "$PATHS_TEMPLATE" ]]; then
   exit 1
 fi
 
-if ! compgen -G "$DATA_DIR/training_data_*.json" >/dev/null; then
-  echo "ERROR: no training_data_*.json files found in $DATA_DIR" >&2
+print_section "Generating training data"
+print_kv "media" "$TRAINING_MEDIA_DIR"
+print_kv "target" "$DATA_DIR"
+
+generation_log="$(mktemp "${TMPDIR:-/tmp}/android-firefox-training-data.XXXXXX.log")"
+if ! node scripts/generate-xgboost-training-data-from-media.mjs \
+  --media-dir "$TRAINING_MEDIA_DIR" \
+  --output-dir "$DATA_DIR" \
+  --clean >"$generation_log" 2>&1; then
+  echo "ERROR: training data generation failed. Last log lines:" >&2
+  tail -n 40 "$generation_log" >&2
+  echo "Full log: $generation_log" >&2
   exit 1
 fi
+
+if ! compgen -G "$DATA_DIR/training_data_*.json" >/dev/null; then
+  echo "ERROR: no generated training_data_*.json files found in $DATA_DIR" >&2
+  echo "Generation log: $generation_log" >&2
+  exit 1
+fi
+
+tail -n 1 "$generation_log"
+rm -f "$generation_log"
+generation_log=""
 
 JSON_FILE_COUNT="$(find "$DATA_DIR" -maxdepth 1 -name 'training_data_*.json' | wc -l | tr -d ' ')"
 
 print_section "Android-Firefox onset training"
+print_kv "media" "$TRAINING_MEDIA_DIR"
 print_kv "data" "$DATA_DIR"
 print_kv "python" "$PYTHON"
 print_kv "config" "$BASE_CONFIG"
@@ -227,42 +261,17 @@ fi
 
 tmp_config="$(mktemp)"
 training_log="$(mktemp "${TMPDIR:-/tmp}/android-firefox-training.XXXXXX.log")"
-cleanup() {
-  rm -f "$tmp_config"
-}
-trap cleanup EXIT
 
-"$PYTHON" - "$BASE_CONFIG" "$PATHS_TEMPLATE" "$tmp_config" "$DATA_DIR" "$OUT_DIR" "$RUN_NAME" <<'PY'
-import json
-import sys
-from pathlib import Path
-
-import yaml
-
-base_config, paths_template, output_config, data_dir, out_dir, run_name = sys.argv[1:]
-
-with open(base_config, "r", encoding="utf-8") as handle:
-    cfg = yaml.safe_load(handle)
-
-with open(paths_template, "r", encoding="utf-8") as handle:
-    rendered_paths = handle.read()
-
-template_values = {
-    "DATA_DIR": data_dir,
-    "OUTPUT_MODEL": str(Path(out_dir) / f"onset_detector_{run_name}.onnx"),
-    "OUTPUT_SCHEMA": str(Path(out_dir) / f"onset_detector_{run_name}.schema.json"),
-    "OUTPUT_METRICS": str(Path(out_dir) / f"onset_detector_{run_name}.metrics.json"),
-}
-
-for key, value in template_values.items():
-    rendered_paths = rendered_paths.replace(f"{{{{{key}}}}}", json.dumps(value))
-
-paths_cfg = yaml.safe_load(rendered_paths)
-cfg["paths"] = paths_cfg["paths"]
-
-with open(output_config, "w", encoding="utf-8") as handle:
-    yaml.safe_dump(cfg, handle, sort_keys=False)
-PY
+awk '
+  /^paths:/ { skip = 1 }
+  skip == 0 { print }
+' "$BASE_CONFIG" >"$tmp_config"
+sed \
+  -e "s|{{DATA_DIR}}|\"$DATA_DIR\"|g" \
+  -e "s|{{OUTPUT_MODEL}}|\"$CANDIDATE_MODEL\"|g" \
+  -e "s|{{OUTPUT_SCHEMA}}|\"$CANDIDATE_SCHEMA\"|g" \
+  -e "s|{{OUTPUT_METRICS}}|\"$CANDIDATE_METRICS\"|g" \
+  "$PATHS_TEMPLATE" >>"$tmp_config"
 
 print_section "Training"
 print_kv "log" "$training_log"

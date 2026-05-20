@@ -15,8 +15,8 @@
     "semantic_hash": ""
   },
   "/workspace/GuitarTools/train_android_firefox.sh": {
-    "mtime": 1779275566.4665623,
-    "ast_hash": "2581486262d94504f3c0e8fd504db1f8",
+    "mtime": 1779277080.4449577,
+    "ast_hash": "2ce5f9d4ac85c0bb4279f910dd62670f",
     "semantic_hash": ""
   },
   "/workspace/GuitarTools/apply_android_firefox_onset_detector.sh": {
@@ -25,7 +25,7 @@
     "semantic_hash": ""
   },
   "/workspace/GuitarTools/package.json": {
-    "mtime": 1779220275.930745,
+    "mtime": 1779277085.513043,
     "ast_hash": "6bd68cb9f2445aea6fceebcb87c11f1c",
     "semantic_hash": ""
   },
@@ -40,8 +40,8 @@
     "semantic_hash": ""
   },
   "/workspace/GuitarTools/sw.js": {
-    "mtime": 1779258204.069565,
-    "ast_hash": "b9848f4cc619d53a39520d33c221ec93",
+    "mtime": 1779275933.4402251,
+    "ast_hash": "3e0bb462e4e2c4e4102e78c39ccc3523",
     "semantic_hash": ""
   },
   "/workspace/GuitarTools/sfp.sh": {
@@ -2439,6 +2439,11 @@
     "ast_hash": "e5fb3ee3a51d52afab7e5aa51c237db7",
     "semantic_hash": ""
   },
+  "/workspace/GuitarTools/scripts/compare-xgboost-training-data.mjs": {
+    "mtime": 1779276586.3912926,
+    "ast_hash": "08b9d6e3502915d9c7f7402784d5c39f",
+    "semantic_hash": ""
+  },
   "/workspace/GuitarTools/scripts/sfp-worker.mjs": {
     "mtime": 1779048724.4439347,
     "ast_hash": "fdf5d0680372695b7e16f2c8ed0220b0",
@@ -2457,6 +2462,11 @@
   "/workspace/GuitarTools/scripts/sheetMusicOnsetConfig.mjs": {
     "mtime": 1779048724.4439347,
     "ast_hash": "6dbeb3c08edbdd9bddfa31a859333c64",
+    "semantic_hash": ""
+  },
+  "/workspace/GuitarTools/scripts/generate-xgboost-training-data-from-media.mjs": {
+    "mtime": 1779276935.4071407,
+    "ast_hash": "bc73abb45e446ba791b4600792f7e755",
     "semantic_hash": ""
   },
   "/workspace/GuitarTools/scripts/taggedOnsetScoring.mjs": {
@@ -2530,13 +2540,13 @@
     "semantic_hash": ""
   },
   "/workspace/GuitarTools/models/onset_detector_android_firefox_candidate.metrics.json": {
-    "mtime": 1779274782.320228,
-    "ast_hash": "2d56e5cee4c946ac9f04b2c6255b9e0f",
+    "mtime": 1779276688.5762806,
+    "ast_hash": "bd173e207071d513e3e7c5aa43915261",
     "semantic_hash": ""
   },
   "/workspace/GuitarTools/models/onset_detector_android_firefox_candidate.schema.json": {
-    "mtime": 1779274782.320228,
-    "ast_hash": "ea79539f212a0229d1c954c2aa3d1065",
+    "mtime": 1779276688.5762806,
+    "ast_hash": "ba9f1e0f83f73a4086fbfe26f5e5d1a9",
     "semantic_hash": ""
   },
   "/workspace/GuitarTools/models/onset_detector_android_firefox.metrics.json": {
@@ -2560,8 +2570,8 @@
     "semantic_hash": ""
   },
   "/workspace/GuitarTools/version.txt": {
-    "mtime": 1779258204.0454588,
-    "ast_hash": "ba0a21a597222feac17f48d443e30743",
+    "mtime": 1779275933.4118967,
+    "ast_hash": "a774b25f14aa5e1be60efb07e5112f5e",
     "semantic_hash": ""
   },
   "/workspace/GuitarTools/copilot.md": {
@@ -2590,8 +2600,8 @@
     "semantic_hash": ""
   },
   "/workspace/GuitarTools/AGENTS.md": {
-    "mtime": 1779275601.440876,
-    "ast_hash": "7d57fe0f82ed6b19403a1b8c25984254",
+    "mtime": 1779277201.0716298,
+    "ast_hash": "a9f29d52359b4bf8ff21928e6102d010",
     "semantic_hash": ""
   },
   "/workspace/GuitarTools/index.html": {
