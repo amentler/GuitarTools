@@ -306,6 +306,7 @@ def train_model(
         n_neg = int((y_train == 0).sum())
         n_pos = int((y_train == 1).sum())
         spw = n_neg / max(n_pos, 1)
+        spw *= float(xgb_cfg.get("scale_pos_weight_multiplier", 1.0))
         print(f"  scale_pos_weight (auto): {spw:.2f}")
 
     model_params = {
@@ -319,6 +320,7 @@ def train_model(
         "reg_alpha":           xgb_cfg.get("reg_alpha", 0.05),
         "reg_lambda":          xgb_cfg.get("reg_lambda", 1.5),
         "scale_pos_weight":    spw,
+        "max_delta_step":      xgb_cfg.get("max_delta_step", 0),
         "objective":           "binary:logistic",
         "eval_metric":         "aucpr",
         "random_state":        random_state,
@@ -587,6 +589,15 @@ def score_threshold(y_true: np.ndarray, y_prob: np.ndarray, threshold: float, be
     }
 
 
+def recall_priority_rank(row: dict) -> tuple:
+    return (
+        row["recall"],
+        row["precision"],
+        row["f_beta"],
+        row["threshold"],
+    )
+
+
 def select_threshold(y_true: np.ndarray, y_prob: np.ndarray, cfg: dict) -> dict:
     decision_cfg = cfg.get("decision", {})
     selection_cfg = decision_cfg.get("threshold_selection", {})
@@ -613,13 +624,13 @@ def select_threshold(y_true: np.ndarray, y_prob: np.ndarray, cfg: dict) -> dict:
         if row["recall"] >= target_recall and row["precision"] >= min_precision
     ]
     if recall_ok:
-        best = min(recall_ok, key=lambda row: row["threshold"])
+        best = max(recall_ok, key=recall_priority_rank)
         mode = "target_recall"
     else:
         precision_ok = [row for row in scored if row["precision"] >= min_precision]
         pool = precision_ok or scored
-        best = max(pool, key=lambda row: (row["f_beta"], row["recall"], row["precision"]))
-        mode = "best_f_beta"
+        best = max(pool, key=recall_priority_rank)
+        mode = "recall_priority"
 
     best = dict(best)
     best["mode"] = mode
@@ -660,13 +671,13 @@ def select_peak_threshold(
         if row["recall"] >= target_recall and row["precision"] >= min_precision
     ]
     if recall_ok:
-        best = min(recall_ok, key=lambda row: row["threshold"])
+        best = max(recall_ok, key=recall_priority_rank)
         mode = "target_recall_peak_picking"
     else:
         precision_ok = [row for row in scored if row["precision"] >= min_precision]
         pool = precision_ok or scored
-        best = max(pool, key=lambda row: (row["f_beta"], row["recall"], row["precision"]))
-        mode = "best_f_beta_peak_picking"
+        best = max(pool, key=recall_priority_rank)
+        mode = "recall_priority_peak_picking"
 
     best = dict(best)
     best["mode"] = mode
@@ -681,9 +692,11 @@ def generate_tuning_candidates(cfg: dict, random_state: int) -> list[dict]:
         return []
 
     xgb_cfg = cfg.get("xgboost", {})
+    sampling_cfg = cfg.get("sampling", {})
+    decision_cfg = cfg.get("decision", {})
     n_iter = int(tuning_cfg.get("n_iter", 8))
     rng = np.random.RandomState(random_state)
-    search_space = {
+    xgb_search_space = {
         "max_depth": tuning_cfg.get("max_depth", [4, 5, 6, 7]),
         "min_child_weight": tuning_cfg.get("min_child_weight", [3, 5, 7]),
         "learning_rate": tuning_cfg.get("learning_rate", [0.02, 0.03, 0.05]),
@@ -693,15 +706,45 @@ def generate_tuning_candidates(cfg: dict, random_state: int) -> list[dict]:
         "gamma": tuning_cfg.get("gamma", [0.1, 0.3, 0.6]),
         "reg_alpha": tuning_cfg.get("reg_alpha", [0.0, 0.05, 0.15]),
         "reg_lambda": tuning_cfg.get("reg_lambda", [1.0, 1.5, 2.5]),
+        "scale_pos_weight_multiplier": tuning_cfg.get("scale_pos_weight_multiplier", [0.5, 0.75, 1.0, 1.25]),
+        "max_delta_step": tuning_cfg.get("max_delta_step", [0, 1, 3]),
     }
+    sampling_search_space = {
+        "negative_sampling_ratio": tuning_cfg.get("negative_sampling_ratio", [5.0, 10.0, 15.0]),
+    }
+    decision_search_space = {
+        "lookahead_frames": tuning_cfg.get("lookahead_frames", [2, 3, 4, 5]),
+    }
+    search_space = {**xgb_search_space, **sampling_search_space, **decision_search_space}
 
     base = {
         key: xgb_cfg.get(key)
-        for key in search_space
+        for key in xgb_search_space
         if key in xgb_cfg
     }
+    base.update({
+        key: sampling_cfg.get(key)
+        for key in sampling_search_space
+        if key in sampling_cfg
+    })
+    base.update({
+        key: decision_cfg.get(key)
+        for key in decision_search_space
+        if key in decision_cfg
+    })
     candidates = [base]
     seen = {tuple(sorted(base.items()))}
+
+    for ratio in sampling_search_space["negative_sampling_ratio"]:
+        candidate = {**base, "negative_sampling_ratio": ratio}
+        signature = tuple(sorted(candidate.items()))
+        if signature in seen:
+            continue
+        seen.add(signature)
+        candidates.append(candidate)
+        if len(candidates) >= n_iter:
+            return candidates[:n_iter]
+
     attempts = 0
     while len(candidates) < n_iter and attempts < n_iter * 20:
         attempts += 1
@@ -715,31 +758,68 @@ def generate_tuning_candidates(cfg: dict, random_state: int) -> list[dict]:
 
 
 def tune_hyperparameters(
-    X_train: np.ndarray,
-    y_train: np.ndarray,
+    X_train_full: np.ndarray,
+    y_train_full: np.ndarray,
     X_val: np.ndarray,
     y_val: np.ndarray,
+    val_idx: np.ndarray,
+    file_features: list[np.ndarray],
+    file_labels: list[np.ndarray],
+    file_names: list[str],
+    file_times_ms: list[np.ndarray],
+    file_onsets_ms: list[list[float]],
     val_files: list[dict],
     cfg: dict,
     audio_config: dict,
     feature_names: list[str],
     random_state: int,
-) -> tuple[xgb.XGBClassifier | None, dict]:
+    normalize: bool,
+) -> tuple[xgb.XGBClassifier | None, dict, StandardScaler | None]:
     candidates = generate_tuning_candidates(cfg, random_state)
     if not candidates:
-        return None, {}
+        return None, {}, None
 
     print(f"\n--- Hyperparameter tuning ({len(candidates)} candidate(s)) ---")
-    beta = float(cfg.get("decision", {}).get("threshold_selection", {}).get("beta", 2.0))
     best_model = None
     best_result = None
+    best_scaler = None
+    best_val_files = val_files
 
     for index, candidate in enumerate(candidates, start=1):
         trial_cfg = deepcopy(cfg)
-        trial_cfg.setdefault("xgboost", {}).update(candidate)
+        xgb_keys = set(trial_cfg.get("xgboost", {}).keys())
+        trial_cfg.setdefault("xgboost", {}).update({
+            key: value for key, value in candidate.items()
+            if key in xgb_keys
+        })
+        if "negative_sampling_ratio" in candidate:
+            trial_cfg.setdefault("sampling", {})["negative_sampling_ratio"] = candidate["negative_sampling_ratio"]
+        if "lookahead_frames" in candidate:
+            trial_cfg.setdefault("decision", {})["lookahead_frames"] = candidate["lookahead_frames"]
+
         print(f"  Candidate {index}/{len(candidates)}: {candidate}")
-        model = train_model(X_train, y_train, X_val, y_val, trial_cfg, feature_names, random_state)
-        threshold_result = select_peak_threshold(model, val_files, trial_cfg, audio_config)
+        sampling_ratio = trial_cfg.get("sampling", {}).get("negative_sampling_ratio", 5.0)
+        X_train, y_train = apply_negative_sampling(X_train_full, y_train_full, sampling_ratio, random_state)
+
+        scaler = None
+        trial_X_val = X_val
+        trial_file_features = file_features
+        if normalize:
+            scaler = StandardScaler()
+            X_train = scaler.fit_transform(X_train)
+            trial_X_val = scaler.transform(X_val)
+            trial_file_features = [scaler.transform(X) for X in file_features]
+
+        trial_val_files = build_eval_files(
+            val_idx,
+            trial_file_features,
+            file_labels,
+            file_names,
+            file_times_ms,
+            file_onsets_ms,
+        )
+        model = train_model(X_train, y_train, trial_X_val, y_val, trial_cfg, feature_names, random_state)
+        threshold_result = select_peak_threshold(model, trial_val_files, trial_cfg, audio_config)
         result = {
             "params": candidate,
             "threshold": round(float(threshold_result["threshold"]), 6),
@@ -756,23 +836,28 @@ def tune_hyperparameters(
             f"f_beta={result['f_beta']:.4f}"
         )
 
-        rank = (
-            result["recall"],
-            -result["threshold"],
-            result["f_beta"],
-            result["precision"],
-        )
+        rank = recall_priority_rank(result)
         if best_result is None or rank > best_result["rank"]:
             best_model = model
+            best_scaler = scaler
+            best_val_files = trial_val_files
             best_result = {
                 **result,
                 "rank": rank,
             }
 
-    cfg.setdefault("xgboost", {}).update(best_result["params"])
+    cfg.setdefault("xgboost", {}).update({
+        key: value for key, value in best_result["params"].items()
+        if key in cfg.get("xgboost", {})
+    })
+    if "negative_sampling_ratio" in best_result["params"]:
+        cfg.setdefault("sampling", {})["negative_sampling_ratio"] = best_result["params"]["negative_sampling_ratio"]
+    if "lookahead_frames" in best_result["params"]:
+        cfg.setdefault("decision", {})["lookahead_frames"] = best_result["params"]["lookahead_frames"]
+    val_files[:] = best_val_files
     best_result.pop("rank", None)
     print(f"  Selected hyperparameters: {best_result}")
-    return best_model, best_result
+    return best_model, best_result, best_scaler
 
 
 # ---------------------------------------------------------------------------
@@ -974,30 +1059,62 @@ def main():
         file_features, file_labels, file_names, test_split, val_split, random_state
     )
 
-    # Negative sampling on train set only
-    print("\n--- Negative sampling (train set) ---")
-    X_train, y_train = apply_negative_sampling(X_train, y_train, neg_ratio, random_state)
-
-    # Optional normalization
+    val_files = []
     scaler = None
-    if normalize:
-        print("\n--- Normalizing features (StandardScaler) ---")
-        scaler = StandardScaler()
-        X_train = scaler.fit_transform(X_train)
-        X_val   = scaler.transform(X_val)
-        X_test  = scaler.transform(X_test)
-        file_features_for_eval = [scaler.transform(X) for X in file_features]
-    else:
-        file_features_for_eval = file_features
-
-    val_files = build_eval_files(
+    tuned_model, tuning_result, tuned_scaler = tune_hyperparameters(
+        X_train,
+        y_train,
+        X_val,
+        y_val,
         val_idx,
-        file_features_for_eval,
+        file_features,
         file_labels,
         file_names,
         file_times_ms,
         file_onsets_ms,
+        val_files,
+        cfg,
+        audio_config or {},
+        feature_names,
+        random_state,
+        normalize,
     )
+
+    if tuned_model is None:
+        # Negative sampling on train set only
+        print("\n--- Negative sampling (train set) ---")
+        X_train, y_train = apply_negative_sampling(X_train, y_train, neg_ratio, random_state)
+
+        # Optional normalization
+        if normalize:
+            print("\n--- Normalizing features (StandardScaler) ---")
+            scaler = StandardScaler()
+            X_train = scaler.fit_transform(X_train)
+            X_val   = scaler.transform(X_val)
+            X_test  = scaler.transform(X_test)
+            file_features_for_eval = [scaler.transform(X) for X in file_features]
+        else:
+            file_features_for_eval = file_features
+
+        val_files = build_eval_files(
+            val_idx,
+            file_features_for_eval,
+            file_labels,
+            file_names,
+            file_times_ms,
+            file_onsets_ms,
+        )
+        print("\n--- Training XGBoost ---")
+        model = train_model(X_train, y_train, X_val, y_val, cfg, feature_names, random_state)
+    else:
+        model = tuned_model
+        scaler = tuned_scaler
+        if scaler is not None:
+            X_test = scaler.transform(X_test)
+            file_features_for_eval = [scaler.transform(X) for X in file_features]
+        else:
+            file_features_for_eval = file_features
+
     test_files = build_eval_files(
         test_idx,
         file_features_for_eval,
@@ -1006,16 +1123,6 @@ def main():
         file_times_ms,
         file_onsets_ms,
     )
-
-    tuned_model, tuning_result = tune_hyperparameters(
-        X_train, y_train, X_val, y_val, val_files, cfg, audio_config or {}, feature_names, random_state
-    )
-
-    if tuned_model is None:
-        print("\n--- Training XGBoost ---")
-        model = train_model(X_train, y_train, X_val, y_val, cfg, feature_names, random_state)
-    else:
-        model = tuned_model
 
     print("\n--- Selecting threshold on validation set after app peak picking ---")
     threshold_selection = select_peak_threshold(model, val_files, cfg, audio_config or {})

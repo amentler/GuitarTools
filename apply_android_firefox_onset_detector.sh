@@ -110,6 +110,10 @@ if params:
         "gamma",
         "reg_alpha",
         "reg_lambda",
+        "scale_pos_weight_multiplier",
+        "max_delta_step",
+        "negative_sampling_ratio",
+        "lookahead_frames",
     ):
         if key in params:
             line(key.replace("_", " "), params[key])
