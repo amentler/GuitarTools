@@ -76,7 +76,9 @@ Feature-local `*Logic.js` files (e.g., `js/games/akkordfolgenTrainer/akkordfolge
 
 **Games (7):** `tonFinder`, `fretboardToneRecognition`, `akkordTrainer`, `akkordfolgenTrainer`, `chordExerciseEssentia`, `sheetMusicReading`, `notePlayingExercise`
 
-**Tools (8):** `guitarTuner`, `metronome`, `audioAnalyse`, `onsetTagger`, `chordRecorder`, `recordingsOverview`, `akkordUebersicht`, `settings`
+**Tools (7):** `guitarTuner`, `metronome`, `audioAnalyse`, `onsetTagger`, `chordRecorder`, `recordingsOverview`, `akkordUebersicht`
+
+> Note: `settings` lives as a standalone page (`pages/settings/`) without a corresponding `js/tools/` controller module — it is wired directly in its `bootstrap.js`.
 
 ## 7. Directory Structure
 
