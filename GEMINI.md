@@ -4,9 +4,9 @@ This file tracks the current state, architecture, and feature status of GuitarTo
 
 > **Operational Mandates:** All AI agents MUST follow the rules in [AGENTS.md](AGENTS.md).
 
-## Current Architecture (Phase 1 Web Components)
+## Current Architecture
 
-The project uses a four-layer architecture:
+The project uses a four-layer architecture (all Web Component migration phases 1–5 complete):
 1. **Navigation** (HTML Files) – `index.html` <-> `pages/[feature]/index.html`.
 2. **Games/Tools** (`js/games/*`, `js/tools/*`) – State + flow control.
 3. **UI Components** (`js/components/*`) – Reusable Web Components (e.g., `<gt-fretboard>`).

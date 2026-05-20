@@ -39,11 +39,8 @@ Pitch sagt "richtige Note".
 Die Registry liegt in `js/shared/audio/guitarOnsetStrategies.js`.
 Aktuelle Strategien:
 
-- `guitar-onset-sweep-standard`: Standard-Strategie mit den besten
-  Sweep-Werten als eingebrannte Basisoptionen.
-- `guitar-onset-broadband-or`: Feuert, wenn Flux ODER BandRatio ODER SpectralNoveltyBins einen Schwellenwert überschreiten. Diese Strategie ist weniger streng und eignet sich für schnelle Notenfolgen oder Wiederholungen.
-- `guitar-onset`: Legacy-Strategie mit den Detector-Defaults ohne
-  Sweep-Override.
+- `xgboost-android-firefox` (**Default**): Offline-ONNX-Onset-Erkennung mit dem Android-Firefox-Modell, Peak-Picking und konservativer Schwelle. Das Modell liegt unter `models/onset_detector_android_firefox.onnx`.
+- `guitar-onset-sweep-standard`: Heuristische Sweep-Basis-Strategie; wird intern als Feature-Basis fuer das XGBoost-Modell verwendet, ist aber auch als eigenstaendiger Fallback-Detektor verfuegbar.
 
 Der Detector ist pitch-agnostisch. Er bewertet keine Note, sondern nur, ob ein
 neuer Gitarrenanschlag plausibel ist. Dafuer nutzt er mehrere Evidenzen:

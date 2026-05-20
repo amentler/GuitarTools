@@ -3,24 +3,22 @@
 **Erstellt:** 2026-05-15  
 **Status:** Phase 1 und Phase 2 sind teilweise umgesetzt. Tagged-Onset-Scoring ist zwischen Sweep und SFP vereinheitlicht; der Fingerprint-Report zeigt Hit/Miss- und Timing-Metriken fuer getaggte Fixtures. Der Feature-Layer im Detector enthaelt jetzt HFC, centroid/rolloff, flatness, crest factor und subband flux als Diagnosewerte. `sfp` nutzt ausserdem Fortschrittslogs und einen Worker-Pool mit `verfuegbare Kerne - 2` (mindestens 1), damit lange Laeufe beobachtbar und besser parallelisiert sind. Offene Teile betreffen weitergehende Fehlerklassifikation, optionale Trace-Ausgaben und spaetere Strategienutzung der neuen Features.
 
-## Ziel
+## Ziel (historisch – erreicht)
 
-Die aktuelle Onset-Erkennung soll vor einem Wechsel zu XGBoost oder neuronalen
-Netzen noch deutlich robuster werden. Der Plan fokussiert daher auf:
-
-- bessere Diagnose der aktuellen Fehlermuster
-- mehrere zusaetzliche, interpretierbare Feature-Familien
-- 2 bis 4 neue heuristische Strategien mit klarer Szenario-Staerke
-- reproduzierbare Bewertung ueber Fingerprint, getaggte Onsets und Guardrails
+Der Plan zielte auf eine Verbesserung der heuristischen Onset-Erkennung als Vorstufe zum
+XGBoost-Wechsel. Das Ziel ist erreicht: Der XGBoost-Onset-Detektor ist seit Mai 2026 produktiv.
+Offene Punkte (weitergehende Fehlerklassifikation, Trace-Ausgaben) sind nicht mehr prioritaer.
 
 ## Aktueller Stand
 
-Aktuell existieren vier Strategien in `js/shared/audio/guitarOnsetStrategies.js`:
+**Dieser Plan ist weitgehend abgeschlossen.** Der XGBoost-Onset-Detektor (`xgboost-android-firefox`) ist seit Mai 2026 der produktive Default und ersetzt alle heuristischen Strategien. Der folgende historische Kontext beschreibt den Zustand *vor* dem XGBoost-Wechsel.
 
-- `guitar-onset-sweep-standard`
-- `guitar-onset`
-- `guitar-onset-broadband-or`
-- `guitar-onset-legacy-bandpass`
+Aktuell existieren zwei Strategien in `js/shared/audio/guitarOnsetStrategies.js`:
+
+- `xgboost-android-firefox` (**Default** – ONNX-Modell, Offline-Erkennung)
+- `guitar-onset-sweep-standard` (heuristische Basis, intern als XGBoost-Feature-Fundament)
+
+Die frueheren Strategien `guitar-onset`, `guitar-onset-broadband-or` und `guitar-onset-legacy-bandpass` wurden entfernt.
 
 Der gemeinsame Kern in `js/shared/audio/guitarOnsetDetector.js` nutzt heute vor
 allem:
@@ -35,19 +33,19 @@ allem:
 - bestaetigte Weak-Attacks
 - Cooldown-Override
 
-## Beobachtungen aus dem Bestand
+## Historische Beobachtungen (vor XGBoost)
 
-- `sweep-standard` ist der konservativste, produktnahe Default. Er schuetzt
-  besser vor Overcounts, unterzaehlt aber schnelle Reattacks und legato-nahe
+Die folgenden Beobachtungen entstammen dem heuristischen Evaluierungsstand und sind nur noch als Hintergrundkontext relevant:
+
+- `sweep-standard` war der konservativste, produktnahe Default. Er schuetzte
+  besser vor Overcounts, unterzaehlte aber schnelle Reattacks und legato-nahe
   Anschlaege.
-- `guitar-onset` ist etwas aggressiver und holt mehr gute/akzeptable Treffer,
-  bleibt aber ebenfalls relativ stark im Undercount-Bereich.
-- `broadband-or` erhoeht die Empfindlichkeit deutlich, produziert aber schnell
-  zu viele Overcounts und ist damit als allgemeiner Default zu instabil.
-- `legacy-bandpass` verbessert Problemfaelle wie `fast.wav` und
-  `aeaedgdgbebeabab*_*.wav` sichtbar, kippt aber auf mehreren
-  `sheet-music-reading`-Fixtures in zu viele Zusatz-Onsets bzw. schlechtere
-  Timing-Treffer.
+- `guitar-onset` war etwas aggressiver und holte mehr gute/akzeptable Treffer,
+  blieb aber ebenfalls relativ stark im Undercount-Bereich.
+- `broadband-or` erhoehte die Empfindlichkeit deutlich, produzierte aber schnell
+  zu viele Overcounts und war damit als allgemeiner Default zu instabil.
+- `legacy-bandpass` verbesserte Problemfaelle wie `fast.wav` sichtbar, kippte aber
+  auf mehreren `sheet-music-reading`-Fixtures in zu viele Zusatz-Onsets.
 
 Arbeitshypothese:
 
@@ -211,7 +209,10 @@ Arbeitshypothese:
 - Erwarteter Nutzen:
   - falsche Trigger auf langem Sustain reduzieren
 
-## Empfohlene neue Strategien
+## Empfohlene neue Strategien (historisch – durch XGBoost ersetzt)
+
+> Diese Strategien wurden als Vorstufe zum ML-Wechsel geplant. Da der XGBoost-Detektor
+> inzwischen produktiv ist, sind sie als historischer Kontext zu verstehen, nicht als offene Aufgaben.
 
 ### S1: Brightness Reattack
 
@@ -362,10 +363,9 @@ Arbeitshypothese:
   Default-Vorschlag: ja, mindestens fuer HFC, Centroid-Delta, Subband-Flux und
   Crest-Factor, weil das Debugging sonst zu blind bleibt.
 
-- `Optional`: Soll `legacy-bandpass` als Referenz bestehen bleiben, auch wenn er
+- `Optional (historisch)`: Soll `legacy-bandpass` als Referenz bestehen bleiben, auch wenn er
   nicht Default wird?
-  Default-Vorschlag: ja, als aggressive Vergleichsbasis und fuer spaetere
-  Feature-Ablationen.
+  Default-Vorschlag: nein – Strategie wurde entfernt. XGBoost ist der neue Default.
 
 ## Empfohlene Reihenfolge
 
