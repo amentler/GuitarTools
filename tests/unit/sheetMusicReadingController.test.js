@@ -163,6 +163,11 @@ function buildDom() {
         <option value="4/4">4/4</option>
         <option value="3/4">3/4</option>
       </select>
+      <select id="sheet-music-key">
+        <option value="C">C-Dur</option>
+        <option value="D">D-Dur</option>
+        <option value="F">F-Dur</option>
+      </select>
       <input id="sheet-music-fret-range-slider" />
       <input id="sheet-music-min-fret-slider" />
       <span id="sheet-music-fret-range-label"></span>
@@ -296,6 +301,7 @@ describe('SheetMusicReading controller behavior', () => {
     localStorage.setItem('sheetMusic_endless', 'true');
     localStorage.setItem('sheetMusic_bpm', '92');
     localStorage.setItem('sheetMusic_timeSig', '3/4');
+    localStorage.setItem('sheetMusic_key', 'D');
 
     const feature = createSheetMusicReadingFeature();
     feature.mount();
@@ -305,6 +311,37 @@ describe('SheetMusicReading controller behavior', () => {
     expect(document.getElementById('btn-endless-mode').classList.contains('active')).toBe(true);
     expect(document.getElementById('sheet-music-bpm-label').textContent).toBe('92');
     expect(document.getElementById('sheet-music-time-sig').value).toBe('3/4');
+    expect(document.getElementById('sheet-music-key').value).toBe('D');
+  });
+
+  it('persists selected key and regenerates bars from that key pool', async () => {
+    const { getFilteredNotes } = await import('../../js/games/sheetMusicReading/sheetMusicLogic.js');
+    getFilteredNotes.mockClear();
+
+    const feature = createSheetMusicReadingFeature();
+    feature.mount();
+
+    const keySelect = document.getElementById('sheet-music-key');
+    keySelect.value = 'F';
+    keySelect.dispatchEvent(new Event('change', { bubbles: true }));
+
+    expect(localStorage.getItem('sheetMusic_key')).toBe('F');
+    expect(getFilteredNotes).toHaveBeenLastCalledWith(3, [0, 1, 2, 3, 4, 5], 0, 'F');
+  });
+
+  it('keeps fallback note pools inside the selected key when filters are empty', async () => {
+    const { getFilteredNotes } = await import('../../js/games/sheetMusicReading/sheetMusicLogic.js');
+    getFilteredNotes.mockClear();
+    getFilteredNotes
+      .mockReturnValueOnce([])
+      .mockReturnValueOnce([{ name: 'F', octave: 2, vfKey: 'f/3', string: 6, fret: 1 }]);
+    localStorage.setItem('sheetMusic_key', 'F');
+
+    const feature = createSheetMusicReadingFeature();
+    feature.mount();
+
+    expect(getFilteredNotes).toHaveBeenNthCalledWith(1, 3, [0, 1, 2, 3, 4, 5], 0, 'F');
+    expect(getFilteredNotes).toHaveBeenNthCalledWith(2, 8, [0, 1, 2, 3, 4, 5], 0, 'F');
   });
 
   it('play button toggles playback state and stop text', () => {

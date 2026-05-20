@@ -1,5 +1,12 @@
 import { describe, it, expect } from 'vitest';
-import { NOTES, generateBars, getFilteredNotes } from '../../js/games/sheetMusicReading/sheetMusicLogic.js';
+import {
+  MAJOR_KEYS,
+  NOTES,
+  generateBars,
+  getFilteredNotes,
+  getMajorScalePitchClasses,
+  normalizeMajorKey,
+} from '../../js/games/sheetMusicReading/sheetMusicLogic.js';
 
 describe('generateBars', () => {
   it('creates 4 bars with 4 notes by default', () => {
@@ -23,7 +30,7 @@ describe('generateBars', () => {
     }
   });
 
-  it('keeps interval jumps between consecutive notes at most 2 indices', () => {
+  it('keeps interval jumps between consecutive notes at most 3 indices', () => {
     const bars = generateBars(6, 6);
     const flatNotes = bars.flat();
     const noteKey = n => `${n.name}${n.octave}|${n.string}|${n.fret}`;
@@ -32,7 +39,7 @@ describe('generateBars', () => {
     for (let i = 1; i < flatNotes.length; i++) {
       const previousIndex = noteIndex(flatNotes[i - 1]);
       const currentIndex = noteIndex(flatNotes[i]);
-      expect(Math.abs(currentIndex - previousIndex)).toBeLessThanOrEqual(2);
+      expect(Math.abs(currentIndex - previousIndex)).toBeLessThanOrEqual(3);
     }
   });
 
@@ -71,24 +78,24 @@ describe('generateBars', () => {
 });
 
 describe('getFilteredNotes', () => {
-  it('returns 24 notes when maxFret is 3 and all strings are active', () => {
+  it('returns 17 C-major notes when maxFret is 3 and all strings are active', () => {
     const result = getFilteredNotes(3, [0, 1, 2, 3, 4, 5]);
+    expect(result).toHaveLength(17);
+  });
+
+  it('returns 18 C-major notes when maxFret is 4 and all strings are active', () => {
+    const result = getFilteredNotes(4, [0, 1, 2, 3, 4, 5]);
+    expect(result).toHaveLength(18);
+  });
+
+  it('returns 24 C-major notes when maxFret is 5 and all strings are active', () => {
+    const result = getFilteredNotes(5, [0, 1, 2, 3, 4, 5]);
     expect(result).toHaveLength(24);
   });
 
-  it('returns 25 notes when maxFret is 4 and all strings are active', () => {
-    const result = getFilteredNotes(4, [0, 1, 2, 3, 4, 5]);
-    expect(result).toHaveLength(25);
-  });
-
-  it('returns 31 notes when maxFret is 5 and all strings are active', () => {
-    const result = getFilteredNotes(5, [0, 1, 2, 3, 4, 5]);
-    expect(result).toHaveLength(31);
-  });
-
-  it('returns 34 notes when maxFret is 8 and all strings are active', () => {
+  it('returns 26 C-major notes when maxFret is 8 and all strings are active', () => {
     const result = getFilteredNotes(8, [0, 1, 2, 3, 4, 5]);
-    expect(result).toHaveLength(34);
+    expect(result).toHaveLength(26);
   });
 
   it('returns notes at fret 8 when maxFret is 8', () => {
@@ -97,16 +104,43 @@ describe('getFilteredNotes', () => {
     expect(fret8Notes.length).toBeGreaterThan(0);
   });
 
-  it('includes at least one note with a sharp (#) accidental in the pool', () => {
+  it('defaults to C major and excludes accidentals from the note pool', () => {
     const result = getFilteredNotes(8, [0, 1, 2, 3, 4, 5]);
+    expect(result.every(n => !n.vfKey.includes('#') && !/[a-g]b\//.test(n.vfKey))).toBe(true);
+  });
+
+  it('includes at least one note with a sharp (#) accidental when the selected key needs it', () => {
+    const result = getFilteredNotes(8, [0, 1, 2, 3, 4, 5], 0, 'G');
     const sharpNote = result.find(n => n.vfKey.includes('#'));
     expect(sharpNote).toBeDefined();
   });
 
-  it('includes at least one note with a flat (b) accidental in the pool', () => {
-    const result = getFilteredNotes(8, [0, 1, 2, 3, 4, 5]);
+  it('includes at least one note with a flat (b) accidental when the selected key needs it', () => {
+    const result = getFilteredNotes(8, [0, 1, 2, 3, 4, 5], 0, 'F');
     const flatNote = result.find(n => /[a-g]b\//.test(n.vfKey));
     expect(flatNote).toBeDefined();
+  });
+
+  it('filters notes to the selected major key', () => {
+    const result = getFilteredNotes(8, [0, 1, 2, 3, 4, 5], 0, 'D');
+    const dMajorPitchClasses = getMajorScalePitchClasses('D');
+    const noteToPc = Object.fromEntries([
+      ['C', 0], ['C#', 1], ['Db', 1],
+      ['D', 2], ['D#', 3], ['Eb', 3],
+      ['E', 4],
+      ['F', 5], ['F#', 6], ['Gb', 6],
+      ['G', 7], ['G#', 8], ['Ab', 8],
+      ['A', 9], ['A#', 10], ['Bb', 10],
+      ['B', 11],
+    ]);
+    expect(result.every(note => dMajorPitchClasses.has(noteToPc[note.name]))).toBe(true);
+    expect(result.some(note => note.name === 'F#')).toBe(true);
+    expect(result.some(note => note.name === 'F')).toBe(false);
+  });
+
+  it('exposes C major as the default key choice', () => {
+    expect(MAJOR_KEYS[0]).toMatchObject({ value: 'C', label: 'C-Dur' });
+    expect(normalizeMajorKey('not-a-key')).toBe('C');
   });
 
   it('includes A4 on high E at fret 5', () => {

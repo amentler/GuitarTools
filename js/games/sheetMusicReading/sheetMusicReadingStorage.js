@@ -5,6 +5,7 @@ const LS_TIMESIG = 'sheetMusic_timeSig';
 const LS_TAB = 'sheetMusic_showTab';
 const LS_ENDLESS = 'sheetMusic_endless';
 const LS_ACTIVE = 'sheetMusic_active';
+const LS_KEY = 'sheetMusic_key';
 
 function getSheetMusicStorage(storage = globalThis.localStorage) {
   return createStorageService({ storage });
@@ -21,6 +22,7 @@ export function loadSheetMusicPrefs(storage = globalThis.localStorage) {
       parse: value => parseInt(value, 10),
     }),
     timeSig: sharedStorage.getString(LS_TIMESIG, { defaultValue: '4/4' }),
+    key: sharedStorage.getString(LS_KEY, { defaultValue: 'C' }),
     endless: sharedStorage.getBoolean(LS_ENDLESS, { defaultValue: false }),
   };
 }
@@ -35,6 +37,10 @@ export function saveSheetMusicActive(value, storage = globalThis.localStorage) {
 
 export function saveSheetMusicTimeSig(value, storage = globalThis.localStorage) {
   getSheetMusicStorage(storage).set(LS_TIMESIG, value);
+}
+
+export function saveSheetMusicKey(value, storage = globalThis.localStorage) {
+  getSheetMusicStorage(storage).set(LS_KEY, value);
 }
 
 export function saveSheetMusicShowTab(value, storage = globalThis.localStorage) {

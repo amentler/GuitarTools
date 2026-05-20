@@ -5,6 +5,35 @@
 // Frets 4–5 introduce same-pitch alternatives on adjacent strings (e.g. str6/fret5 = str5/fret0 = A2).
 // Accidental notes (sharps/flats) are included so they appear during the exercise.
 
+const MAJOR_SCALE_INTERVALS = [0, 2, 4, 5, 7, 9, 11];
+const CHROMATIC_SHARP = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+const NOTE_TO_PC = {
+  C: 0, 'C#': 1, Db: 1,
+  D: 2, 'D#': 3, Eb: 3,
+  E: 4,
+  F: 5, 'F#': 6, Gb: 6,
+  G: 7, 'G#': 8, Ab: 8,
+  A: 9, 'A#': 10, Bb: 10,
+  B: 11,
+};
+const DEFAULT_KEY = 'C';
+const MAX_NOTE_JUMP_STEPS = 3;
+
+export const MAJOR_KEYS = [
+  { value: 'C', label: 'C-Dur' },
+  { value: 'G', label: 'G-Dur' },
+  { value: 'D', label: 'D-Dur' },
+  { value: 'A', label: 'A-Dur' },
+  { value: 'E', label: 'E-Dur' },
+  { value: 'B', label: 'B-Dur' },
+  { value: 'F#', label: 'F#-Dur' },
+  { value: 'C#', label: 'C#-Dur' },
+  { value: 'F', label: 'F-Dur' },
+  { value: 'Bb', label: 'Bb-Dur' },
+  { value: 'Eb', label: 'Eb-Dur' },
+  { value: 'Ab', label: 'Ab-Dur' },
+];
+
 export const NOTES = [
   { name: 'E',  octave: 2, vfKey: 'e/3',  string: 6, fret: 0 },
   { name: 'F',  octave: 2, vfKey: 'f/3',  string: 6, fret: 1 },
@@ -42,10 +71,24 @@ export const NOTES = [
   { name: 'C',  octave: 5, vfKey: 'c/6',  string: 1, fret: 8 },
 ];
 
-export function getFilteredNotes(maxFret, activeStrings, minFret = 0) {
+export function normalizeMajorKey(key) {
+  return Object.prototype.hasOwnProperty.call(NOTE_TO_PC, key) ? key : DEFAULT_KEY;
+}
+
+export function getMajorScalePitchClasses(key = DEFAULT_KEY) {
+  const rootPc = NOTE_TO_PC[normalizeMajorKey(key)];
+  return new Set(MAJOR_SCALE_INTERVALS.map(interval => (rootPc + interval) % CHROMATIC_SHARP.length));
+}
+
+export function getFilteredNotes(maxFret, activeStrings, minFret = 0, key = DEFAULT_KEY) {
+  const scalePitchClasses = getMajorScalePitchClasses(key);
   return NOTES.filter(note => {
     const stringIndex = 6 - note.string;
-    return note.fret >= minFret && note.fret <= maxFret && activeStrings.includes(stringIndex);
+    const pitchClass = NOTE_TO_PC[note.name];
+    return note.fret >= minFret &&
+      note.fret <= maxFret &&
+      activeStrings.includes(stringIndex) &&
+      scalePitchClasses.has(pitchClass);
   });
 }
 
@@ -72,8 +115,8 @@ export function generateBars(numBars = 4, beatsPerBar = 4, notesPool = NOTES) {
 
   return Array.from({ length: numBars }, () =>
     Array.from({ length: beatsPerBar }, () => {
-      const lo = Math.max(0, idx - 2);
-      const hi = Math.min(n - 1, idx + 2);
+      const lo = Math.max(0, idx - MAX_NOTE_JUMP_STEPS);
+      const hi = Math.min(n - 1, idx + MAX_NOTE_JUMP_STEPS);
       idx = lo + Math.floor(Math.random() * (hi - lo + 1));
       return { ...notes[idx] };
     })
@@ -104,8 +147,8 @@ export class EndlessBarGenerator {
     }
     return Array.from({ length: count }, () =>
       Array.from({ length: this._beatsPerBar }, () => {
-        const lo = Math.max(0, this._idx - 2);
-        const hi = Math.min(n - 1, this._idx + 2);
+        const lo = Math.max(0, this._idx - MAX_NOTE_JUMP_STEPS);
+        const hi = Math.min(n - 1, this._idx + MAX_NOTE_JUMP_STEPS);
         this._idx = lo + Math.floor(Math.random() * (hi - lo + 1));
         return { ...notes[this._idx] };
       })

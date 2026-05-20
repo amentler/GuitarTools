@@ -59,6 +59,24 @@
     <!-- SETTINGS: Fret Range + String Selection -->
     <div class="settings-panel">
       <div class="settings-row">
+        <label for="sheet-music-key" class="settings-label">Tonart:</label>
+        <select id="sheet-music-key" class="settings-item__select">
+          <option value="C" selected>C-Dur</option>
+          <option value="G">G-Dur</option>
+          <option value="D">D-Dur</option>
+          <option value="A">A-Dur</option>
+          <option value="E">E-Dur</option>
+          <option value="B">B-Dur</option>
+          <option value="F#">F#-Dur</option>
+          <option value="C#">C#-Dur</option>
+          <option value="F">F-Dur</option>
+          <option value="Bb">Bb-Dur</option>
+          <option value="Eb">Eb-Dur</option>
+          <option value="Ab">Ab-Dur</option>
+        </select>
+      </div>
+
+      <div class="settings-row">
         <label for="sheet-music-fret-range-slider" class="settings-label">
           Bünde: <span id="sheet-music-fret-range-label">0 – 3</span>
         </label>

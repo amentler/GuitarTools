@@ -123,6 +123,7 @@ export function resolveSheetMusicUI(root = document) {
     bpmSlider: root.getElementById?.('sheet-music-bpm-slider') ?? document.getElementById('sheet-music-bpm-slider'),
     bpmLabel: root.getElementById?.('sheet-music-bpm-label') ?? document.getElementById('sheet-music-bpm-label'),
     timeSigSelect: root.getElementById?.('sheet-music-time-sig') ?? document.getElementById('sheet-music-time-sig'),
+    keySelect: root.getElementById?.('sheet-music-key') ?? document.getElementById('sheet-music-key'),
     fretSlider: root.getElementById?.('sheet-music-fret-range-slider') ?? document.getElementById('sheet-music-fret-range-slider'),
     fretLabel: root.getElementById?.('sheet-music-fret-range-label') ?? document.getElementById('sheet-music-fret-range-label'),
     minFretSlider: root.getElementById?.('sheet-music-min-fret-slider') ?? document.getElementById('sheet-music-min-fret-slider'),
@@ -147,6 +148,7 @@ export function syncSheetMusicUI(ui, state, syncFretSlider, syncStringToggles, s
   if (ui.bpmSlider) ui.bpmSlider.value = String(state.bpm);
   if (ui.bpmLabel) ui.bpmLabel.textContent = String(state.bpm);
   if (ui.timeSigSelect) ui.timeSigSelect.value = state.timeSig;
+  if (ui.keySelect) ui.keySelect.value = state.settings.key;
   if (ui.activeBtn) ui.activeBtn.classList.toggle('active', Boolean(state.active));
   if (ui.showTabBtn) ui.showTabBtn.classList.toggle('active', state.showTab);
   if (ui.endlessBtn) ui.endlessBtn.classList.toggle('active', state.endless);

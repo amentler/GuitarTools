@@ -51,7 +51,7 @@ describe('EndlessBarGenerator – structure', () => {
 });
 
 describe('EndlessBarGenerator – melodic continuity', () => {
-  it('consecutive notes stay within ±2 steps of the pool', () => {
+  it('consecutive notes stay within ±3 steps of the pool', () => {
     const gen = new EndlessBarGenerator(4, NOTES);
     const bars = gen.nextBatch(8);
     const flat = bars.flat();
@@ -60,7 +60,7 @@ describe('EndlessBarGenerator – melodic continuity', () => {
     for (let i = 1; i < flat.length; i++) {
       const a = noteIndex(flat[i - 1]);
       const b = noteIndex(flat[i]);
-      expect(Math.abs(a - b)).toBeLessThanOrEqual(2);
+      expect(Math.abs(a - b)).toBeLessThanOrEqual(3);
     }
   });
 
@@ -74,7 +74,7 @@ describe('EndlessBarGenerator – melodic continuity', () => {
     const noteIndex = n => NOTES.findIndex(ref => noteKey(ref) === noteKey(n));
     const a = noteIndex(lastNote);
     const b = noteIndex(firstNote);
-    expect(Math.abs(a - b)).toBeLessThanOrEqual(2);
+    expect(Math.abs(a - b)).toBeLessThanOrEqual(3);
   });
 });
 

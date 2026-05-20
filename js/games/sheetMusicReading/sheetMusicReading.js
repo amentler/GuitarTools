@@ -1,5 +1,5 @@
 import {
-  generateBars, getFilteredNotes, getTimeSignatureConfig,
+  generateBars, getFilteredNotes, getTimeSignatureConfig, normalizeMajorKey,
 } from './sheetMusicLogic.js';
 import { renderScore } from './sheetMusicSVG.js';
 import { PlaybackController } from './playbackController.js';
@@ -9,6 +9,7 @@ import {
   loadSheetMusicPrefs,
   saveSheetMusicActive,
   saveSheetMusicBpm,
+  saveSheetMusicKey,
   saveSheetMusicTimeSig,
   saveSheetMusicShowTab,
   saveSheetMusicEndless,
@@ -37,6 +38,7 @@ import { createPlaybackControl } from './sheetMusicPlaybackControl.js';
 const BARS_PER_ROW = 4;
 const ENDLESS_SCROLL_TARGET_FRACTION = 0.33;
 const ENDLESS_SCROLL_SHIFT_DELAY_MS = 420;
+const ALL_STRING_INDICES = [0, 1, 2, 3, 4, 5];
 
 // Preload Essentia WASM in the background so it is ready when the user starts.
 getEssentia().then(ess => {
@@ -76,6 +78,7 @@ export function createSheetMusicReadingFeature() {
     settings: {
       maxFret: 3,
       minFret: 0,
+      key: normalizeMajorKey(prefs.key),
       activeStrings: [0, 1, 2, 3, 4, 5],
     },
   };
@@ -98,7 +101,14 @@ export function createSheetMusicReadingFeature() {
     createEndlessHelpers(endlessS, () => state, () => ui, BARS_PER_ROW, ENDLESS_SCROLL_TARGET_FRACTION, ENDLESS_SCROLL_SHIFT_DELAY_MS);
 
   function getNotesPool() {
-    return getFilteredNotes(state.settings.maxFret, state.settings.activeStrings, state.settings.minFret);
+    const filtered = getFilteredNotes(
+      state.settings.maxFret,
+      state.settings.activeStrings,
+      state.settings.minFret,
+      state.settings.key,
+    );
+    if (filtered.length > 0) return filtered;
+    return getFilteredNotes(8, ALL_STRING_INDICES, 0, state.settings.key);
   }
 
   function getTimeSigConfig() {
@@ -272,6 +282,16 @@ export function createSheetMusicReadingFeature() {
         if (state.endless) cleanupEndlessState();
         renderBeatDots(ui, state.timeSig);
         regenerate();
+      });
+
+      ui.keySelect?.addEventListener('change', e => {
+        state.settings.key = normalizeMajorKey(e.target.value);
+        saveSheetMusicKey(state.settings.key);
+        playbackControl.stopPlayback();
+        if (state.endless) cleanupEndlessState();
+        regenerate();
+        updateFeedback(ui, state);
+        syncSettingsUI();
       });
 
       wireFretSlider(ui.fretSlider, ui.fretLabel, state.settings, () => {

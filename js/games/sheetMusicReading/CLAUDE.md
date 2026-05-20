@@ -12,9 +12,10 @@ Optionaler Aktiv-Modus: Mikrofon-basierte Tonprüfung.
 ## Dateien
 
 ### `sheetMusicLogic.js`
-- `NOTES` – 24 Noten in C-Dur, Bünde 0–5, Saiten 1–6 (E2–A4 sounding, vfKey = written pitch); Bünde 4–5 enthalten Alternativ-Positionen (gleiche Tonhöhe, andere Saite/Bund)
+- `NOTES` – chromatischer Gitarren-Notenpool, Bünde 0–8, Saiten 1–6 (E2–C5 sounding, vfKey = written pitch); Bünde 4–5 enthalten Alternativ-Positionen (gleiche Tonhöhe, andere Saite/Bund)
+- `MAJOR_KEYS`, `normalizeMajorKey()`, `getMajorScalePitchClasses()` – Tonartauswahl fuer Dur-Tonarten; Default ist C-Dur
 - `generateBars(numBars, beatsPerBar, notesPool?)` → `Note[][]`
-- `getFilteredNotes(maxFret, activeStrings)` → gefilterter Note-Pool
+- `getFilteredNotes(maxFret, activeStrings, minFret?, key?)` → gefilterter Note-Pool innerhalb der gewaehlten Dur-Tonart
 - `getTimeSignatureConfig(sig)` → `{ beatsPerBar, noteDuration, vfTimeSig }` für 2/4, 3/4, 4/4, 3/8, 6/8
 - `validateTimeSignature(sig)` → boolean
 - `EndlessBarGenerator(beatsPerBar, notesPool)` – stateful; `nextBatch(count=4)` → `Note[][]`; `reset()`; `setNotesPool()`; `setBeatsPerBar()`
@@ -85,7 +86,7 @@ Optionaler Aktiv-Modus: Mikrofon-basierte Tonprüfung.
 - Test-/Legacy-Hooks:
   - `?active=1` aktiviert den Aktivmodus direkt beim Laden
   - `window.__GT_SHEET_MUSIC_READING_BARS__` injiziert deterministische Notenfolgen
-- localStorage-Persistenz: `sheetMusic_active`, `sheetMusic_bpm`, `sheetMusic_timeSig`, `sheetMusic_showTab`, `sheetMusic_endless`; globale Strategy-Auswahl fuer diese Uebung: `gt_sheet_music_recognition_strategy`
+- localStorage-Persistenz: `sheetMusic_active`, `sheetMusic_bpm`, `sheetMusic_timeSig`, `sheetMusic_key`, `sheetMusic_showTab`, `sheetMusic_endless`; globale Strategy-Auswahl fuer diese Uebung: `gt_sheet_music_recognition_strategy`
 - Buttons: `#btn-sheet-active-mode`, `#btn-sheet-play` (Play/Stop), `#btn-new-bars`, `#btn-show-tab`, `#btn-endless-mode`, `#btn-record`, `#btn-record-stop`, `#btn-record-cancel`, `#btn-download-recordings`, `#btn-analyse-recording`, `#btn-open-recordings`
 - Aufnahmen: jeder Klick auf `Speichern` erzeugt einen dauerhaften WAV+JSON-Take in `audioAnalyseStorage`; der Session-Download exportiert nur die seit Mount erzeugten Takes als `<baseName>.wav` + `<baseName>.json`.
 - Aufnahme-BaseNames sind stabil und werden einmal beim Stoppen erzeugt:
@@ -94,7 +95,7 @@ Optionaler Aktiv-Modus: Mikrofon-basierte Tonprüfung.
   BaseName; Downstream-Tools wie Audio-Analyse und Onset-Tagger duerfen ihn
   nicht neu berechnen.
 - Slider: `#sheet-music-bpm-slider` (40–240), `#sheet-music-fret-range-slider`
-- Select: `#sheet-music-time-sig` (2/4|3/4|4/4|3/8|6/8)
+- Selects: `#sheet-music-time-sig` (2/4|3/4|4/4|3/8|6/8), `#sheet-music-key` (Dur-Tonart, Default C-Dur)
 - `wired`-Flag verhindert doppeltes Event-Listener-Wiring
 
 ### `sheetMusicRecorder.js`

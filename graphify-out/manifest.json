@@ -40,8 +40,8 @@
     "semantic_hash": ""
   },
   "/workspace/GuitarTools/sw.js": {
-    "mtime": 1779229190.0149372,
-    "ast_hash": "06a4ec00ab28f4e71c045af991cd4c9f",
+    "mtime": 1779231131.7219346,
+    "ast_hash": "accdc2e0711fc86462ea36e371e24f85",
     "semantic_hash": ""
   },
   "/workspace/GuitarTools/sfp.sh": {
@@ -820,8 +820,8 @@
     "semantic_hash": ""
   },
   "/workspace/GuitarTools/tests/unit/sheetMusicLogic.test.js": {
-    "mtime": 1779230681.1481032,
-    "ast_hash": "3425483b6aad34e55aa75b3348cab7ab",
+    "mtime": 1779252397.306432,
+    "ast_hash": "d7598c6ab398917fc04b89f3b4fa98be",
     "semantic_hash": ""
   },
   "/workspace/GuitarTools/tests/unit/recordingsOverviewLogic.test.js": {
@@ -1005,8 +1005,8 @@
     "semantic_hash": ""
   },
   "/workspace/GuitarTools/tests/unit/sheetMusicLogic.edgeCases.test.js": {
-    "mtime": 1779230690.5213003,
-    "ast_hash": "3ac079725fd7a8c3f6a3e4a7580e98ff",
+    "mtime": 1779252410.6073148,
+    "ast_hash": "d9616a43a4cfcda55f5ccd01e8d4ac36",
     "semantic_hash": ""
   },
   "/workspace/GuitarTools/tests/unit/precacheManifest.test.js": {
@@ -1105,8 +1105,8 @@
     "semantic_hash": ""
   },
   "/workspace/GuitarTools/tests/unit/sheetMusicReadingController.test.js": {
-    "mtime": 1779230884.245643,
-    "ast_hash": "590695310a15708750ee9cc223da3f2c",
+    "mtime": 1779252647.9592552,
+    "ast_hash": "14ba7e6ca834b76fff59598419d4ff52",
     "semantic_hash": ""
   },
   "/workspace/GuitarTools/tests/unit/audioSessionService.test.js": {
@@ -1285,8 +1285,8 @@
     "semantic_hash": ""
   },
   "/workspace/GuitarTools/tests/unit/endlessBarGenerator.test.js": {
-    "mtime": 1779048725.254268,
-    "ast_hash": "4ca6ec261df0e1a0a10f5e274a991844",
+    "mtime": 1779252403.1182194,
+    "ast_hash": "c5e52253513fe6282286b7df3d0861bc",
     "semantic_hash": ""
   },
   "/workspace/GuitarTools/tests/unit/tunerLogic.test.js": {
@@ -1660,8 +1660,8 @@
     "semantic_hash": ""
   },
   "/workspace/GuitarTools/js/shared/music/sheetMusicLogic.js": {
-    "mtime": 1779230637.4738166,
-    "ast_hash": "79051817cfbb86197cae2e73394091f3",
+    "mtime": 1779252323.149303,
+    "ast_hash": "42a16c805dc2dc28e1e2ae0d4d0f1992",
     "semantic_hash": ""
   },
   "/workspace/GuitarTools/js/shared/learning/srsLogic.js": {
@@ -1950,8 +1950,8 @@
     "semantic_hash": ""
   },
   "/workspace/GuitarTools/js/games/sheetMusicReading/sheetMusicReading.js": {
-    "mtime": 1779230801.7982073,
-    "ast_hash": "176c93ca7ab2e7b67201548cc5655ed2",
+    "mtime": 1779252616.7634501,
+    "ast_hash": "a39223ed8e166529878ce12fe1e2c8ef",
     "semantic_hash": ""
   },
   "/workspace/GuitarTools/js/games/sheetMusicReading/sheetMusicRecorder.js": {
@@ -1985,8 +1985,8 @@
     "semantic_hash": ""
   },
   "/workspace/GuitarTools/js/games/sheetMusicReading/sheetMusicReadingUI.js": {
-    "mtime": 1779230813.9083116,
-    "ast_hash": "c057ccdc0b7a774acfbd1ed95e47f5e5",
+    "mtime": 1779252341.5566068,
+    "ast_hash": "bc5e2bbd8c4b6af374f4cc84880f0112",
     "semantic_hash": ""
   },
   "/workspace/GuitarTools/js/games/sheetMusicReading/sheetMusicRecognition.js": {
@@ -2000,8 +2000,8 @@
     "semantic_hash": ""
   },
   "/workspace/GuitarTools/js/games/sheetMusicReading/sheetMusicReadingStorage.js": {
-    "mtime": 1779048724.3596015,
-    "ast_hash": "e0be231fee8980fe5fbfb9526b09101d",
+    "mtime": 1779252333.1348352,
+    "ast_hash": "989607b527a40868e9f675d19660d210",
     "semantic_hash": ""
   },
   "/workspace/GuitarTools/js/games/sheetMusicReading/sheetMusicPlaybackControl.js": {
@@ -2505,7 +2505,7 @@
     "semantic_hash": ""
   },
   "/workspace/GuitarTools/test-results/.last-run.json": {
-    "mtime": 1779171077.9243054,
+    "mtime": 1779252717.1195946,
     "ast_hash": "f196824657d8858bc7fa44eecbba38b1",
     "semantic_hash": ""
   },
@@ -2550,8 +2550,8 @@
     "semantic_hash": ""
   },
   "/workspace/GuitarTools/version.txt": {
-    "mtime": 1779229189.990903,
-    "ast_hash": "5126149df5910c7da67eb07cc24ec3d8",
+    "mtime": 1779231131.6939094,
+    "ast_hash": "0493facac101411a39256aabc2f6e358",
     "semantic_hash": ""
   },
   "/workspace/GuitarTools/copilot.md": {
@@ -2580,8 +2580,8 @@
     "semantic_hash": ""
   },
   "/workspace/GuitarTools/AGENTS.md": {
-    "mtime": 1779224579.4724524,
-    "ast_hash": "a1f0269427ba5b86937658ae3213e833",
+    "mtime": 1779252624.5321624,
+    "ast_hash": "4a7180ae4051160380934320ed90bce4",
     "semantic_hash": ""
   },
   "/workspace/GuitarTools/index.html": {
@@ -2790,8 +2790,8 @@
     "semantic_hash": ""
   },
   "/workspace/GuitarTools/js/games/sheetMusicReading/CLAUDE.md": {
-    "mtime": 1779121095.4463842,
-    "ast_hash": "c06f3288c9e59ba166c58af253068248",
+    "mtime": 1779252488.4204702,
+    "ast_hash": "93beed71f6c03749386377286474e5e4",
     "semantic_hash": ""
   },
   "/workspace/GuitarTools/js/games/sheetMusicReading/AGENTS.md": {
@@ -2915,8 +2915,8 @@
     "semantic_hash": ""
   },
   "/workspace/GuitarTools/pages/sheet-music-reading/index.html": {
-    "mtime": 1779230723.957314,
-    "ast_hash": "591c4e44153e98d1828ccb3f51559bf4",
+    "mtime": 1779252357.2752986,
+    "ast_hash": "dcf77f779d708916e3399701001c6116",
     "semantic_hash": ""
   },
   "/workspace/GuitarTools/pages/note-playing/index.html": {
