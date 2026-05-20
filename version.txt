@@ -1,1 +1,1 @@
-Version 0.177 | 2026-05-20 16:27 | 4b3a108 | js/data/android-firefox-training-review-catalog.json (+10 more)
+Version 0.178 | 2026-05-20 19:31 | bde11ce | AGENTS.md (+6 more)

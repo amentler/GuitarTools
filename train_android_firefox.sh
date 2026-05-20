@@ -25,6 +25,9 @@ Environment overrides:
                   Paths template, default:
                   ml/training_config.android_firefox.paths.template.yaml
   OUT_DIR=...      Output directory, default: models
+  TRAINING_DATA_JOBS=...
+                  Parallel JS workers for temporary training_data_*.json
+                  generation, default: auto
 
 The base config requests XGBoost CUDA training and falls back to CPU if the
 container/WSL GPU runtime is not available. Missing Python training
@@ -137,6 +140,7 @@ PY
 }
 
 TRAINING_MEDIA_DIR="${TRAINING_MEDIA_DIR:-tests/fixtures/sequences/sheet-music-reading}"
+TRAINING_DATA_JOBS="${TRAINING_DATA_JOBS:-auto}"
 DATA_DIR="$(mktemp -d "${TMPDIR:-/tmp}/android-firefox-training-data.XXXXXX")"
 generation_log=""
 tmp_config=""
@@ -184,11 +188,13 @@ fi
 print_section "Generating training data"
 print_kv "media" "$TRAINING_MEDIA_DIR"
 print_kv "target" "$DATA_DIR"
+print_kv "jobs" "$TRAINING_DATA_JOBS"
 
 generation_log="$(mktemp "${TMPDIR:-/tmp}/android-firefox-training-data.XXXXXX.log")"
 if ! node scripts/generate-xgboost-training-data-from-media.mjs \
   --media-dir "$TRAINING_MEDIA_DIR" \
   --output-dir "$DATA_DIR" \
+  --jobs "$TRAINING_DATA_JOBS" \
   --clean >"$generation_log" 2>&1; then
   echo "ERROR: training data generation failed. Last log lines:" >&2
   tail -n 40 "$generation_log" >&2

@@ -1,6 +1,8 @@
 import { mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'fs';
+import { availableParallelism } from 'os';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { isMainThread, parentPort, workerData, Worker } from 'worker_threads';
 
 import { readZip } from '../js/shared/zip.js';
 import { collectFrameData } from '../js/shared/audio/collectFrameData.js';
@@ -36,6 +38,7 @@ function parseArgs(argv) {
     strategyKey: DEFAULT_STRATEGY_KEY,
     clean: false,
     limit: Number.POSITIVE_INFINITY,
+    jobs: process.env.TRAINING_DATA_JOBS ?? 'auto',
   };
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index];
@@ -43,10 +46,11 @@ function parseArgs(argv) {
     else if (arg === '--output-dir') args.outputDir = argv[++index];
     else if (arg === '--strategy-key') args.strategyKey = argv[++index];
     else if (arg === '--limit') args.limit = Number(argv[++index]);
+    else if (arg === '--jobs') args.jobs = argv[++index];
     else if (arg === '--clean') args.clean = true;
     else if (arg === '-h' || arg === '--help') {
       console.log([
-        'Usage: node scripts/generate-xgboost-training-data-from-media.mjs --output-dir DIR [--media-dir DIR] [--clean]',
+        'Usage: node scripts/generate-xgboost-training-data-from-media.mjs --output-dir DIR [--media-dir DIR] [--jobs N|auto] [--clean]',
         '',
         'Generates temporary XGBoost training_data_*.json files from tagged ZIP/WAV fixtures.',
         'Feature extraction runs through the shared JS/browser feature code, not Python.',
@@ -58,6 +62,21 @@ function parseArgs(argv) {
     throw new Error('--output-dir is required');
   }
   return args;
+}
+
+function parseJobCount(rawJobs, mediaCount) {
+  if (mediaCount <= 1) return 1;
+  const raw = String(rawJobs ?? 'auto').trim().toLowerCase();
+  if (raw === '' || raw === 'auto') {
+    const cpuCount = typeof availableParallelism === 'function' ? availableParallelism() : 2;
+    return Math.max(1, Math.min(mediaCount, Math.max(1, cpuCount - 1)));
+  }
+
+  const parsed = Number(raw);
+  if (!Number.isInteger(parsed) || parsed < 1) {
+    throw new Error(`--jobs must be a positive integer or "auto", got: ${rawJobs}`);
+  }
+  return Math.min(parsed, mediaCount);
 }
 
 function walkMediaFiles(relativeDir, results = []) {
@@ -208,6 +227,60 @@ function outputNameFor(baseName) {
   return `training_data_${baseName.replace(/\.[^.]+$/, '')}.json`;
 }
 
+async function generateTrainingFile({ mediaFile, outputDir, strategyKey }) {
+  const media = readMedia(mediaFile);
+  if (!Array.isArray(media.manifest?.onsetsMs)) {
+    return {
+      status: 'skipped',
+      mediaFile,
+      reason: 'no onsetsMs sidecar',
+    };
+  }
+
+  process.stderr.write(`Generating ${media.baseName}...\n`);
+  const trainingData = await buildTrainingData(media, strategyKey);
+  const targetPath = path.join(outputDir, outputNameFor(media.baseName));
+  writeFileSync(targetPath, JSON.stringify(trainingData));
+  return {
+    status: 'written',
+    mediaFile,
+    baseName: media.baseName,
+    targetPath,
+  };
+}
+
+function runWorker(task) {
+  return new Promise((resolve, reject) => {
+    const worker = new Worker(fileURLToPath(import.meta.url), {
+      workerData: task,
+    });
+    worker.once('message', result => {
+      if (result?.ok) resolve(result.value);
+      else reject(new Error(result?.error?.message ?? 'Worker failed'));
+    });
+    worker.once('error', reject);
+    worker.once('exit', code => {
+      if (code !== 0) reject(new Error(`Worker exited with code ${code}`));
+    });
+  });
+}
+
+async function runWorkerPool(tasks, jobCount) {
+  const results = [];
+  let nextTaskIndex = 0;
+
+  async function runNext() {
+    while (nextTaskIndex < tasks.length) {
+      const task = tasks[nextTaskIndex];
+      nextTaskIndex += 1;
+      results.push(await runWorker(task));
+    }
+  }
+
+  await Promise.all(Array.from({ length: jobCount }, () => runNext()));
+  return results;
+}
+
 async function main() {
   const args = parseArgs(process.argv.slice(2));
   const outputDir = outputPath(args.outputDir);
@@ -215,18 +288,20 @@ async function main() {
   mkdirSync(outputDir, { recursive: true });
 
   const mediaFiles = walkMediaFiles(args.mediaDir).slice(0, args.limit);
-  let written = 0;
-  for (const mediaFile of mediaFiles) {
-    const media = readMedia(mediaFile);
-    if (!Array.isArray(media.manifest?.onsetsMs)) {
-      process.stderr.write(`Skipping ${mediaFile}: no onsetsMs sidecar\n`);
-      continue;
+  const jobCount = parseJobCount(args.jobs, mediaFiles.length);
+  process.stderr.write(`Using ${jobCount} training data worker${jobCount === 1 ? '' : 's'}\n`);
+
+  const tasks = mediaFiles.map(mediaFile => ({
+    mediaFile,
+    outputDir,
+    strategyKey: args.strategyKey,
+  }));
+  const results = await runWorkerPool(tasks, jobCount);
+  const written = results.filter(result => result.status === 'written').length;
+  for (const result of results) {
+    if (result.status === 'skipped') {
+      process.stderr.write(`Skipping ${result.mediaFile}: ${result.reason}\n`);
     }
-    process.stderr.write(`Generating ${media.baseName}...\n`);
-    const trainingData = await buildTrainingData(media, args.strategyKey);
-    const targetPath = path.join(outputDir, outputNameFor(media.baseName));
-    writeFileSync(targetPath, JSON.stringify(trainingData));
-    written += 1;
   }
 
   console.log(JSON.stringify({
@@ -234,10 +309,31 @@ async function main() {
     outputDir: args.outputDir,
     filesScanned: mediaFiles.length,
     filesWritten: written,
+    jobs: jobCount,
   }));
 }
 
-main().catch(error => {
-  console.error(error);
-  process.exitCode = 1;
-});
+async function workerMain() {
+  try {
+    parentPort.postMessage({
+      ok: true,
+      value: await generateTrainingFile(workerData),
+    });
+  } catch (error) {
+    parentPort.postMessage({
+      ok: false,
+      error: {
+        message: error?.message ?? String(error),
+      },
+    });
+  }
+}
+
+if (isMainThread) {
+  main().catch(error => {
+    console.error(error);
+    process.exitCode = 1;
+  });
+} else {
+  workerMain();
+}
