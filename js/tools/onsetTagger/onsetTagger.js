@@ -19,6 +19,7 @@ import { createGlobalDebugStore } from '../../shared/debug/index.js';
 import { closeLoadMenu, wireLoadMenu } from './onsetTaggerLoadMenu.js';
 import { createOnsetTaggerPersistenceController } from './onsetTaggerPersistence.js';
 import { createOnsetTaggerAnalysisFlyout } from './onsetTaggerAnalysisFlyout.js';
+import { renderOnsetList } from './onsetTaggerOnsetList.js';
 
 import {
   clientXToTime,
@@ -123,6 +124,7 @@ export function createOnsetTaggerFeature() {
       cursorEl:      q('tagger-cursor'),
       cursorDisplay: q('tagger-cursor-display'),
       addOnsetBtn:   q('tagger-add-onset'),
+      removeOnsetBtn: q('tagger-remove-onset'),
       zoomInBtn:      q('tagger-zoom-in'),
       zoomOutBtn:     q('tagger-zoom-out'),
       strategyList:   q('tagger-strategy-list'),
@@ -237,11 +239,37 @@ export function createOnsetTaggerFeature() {
   }
 
   function updateOnsetUI(ui) {
-    renderOnsetList(ui);
+    syncRemoveOnsetButton(ui);
+    renderOnsetList(ui.onsetList, _onsetsMs, _selectedOnsetIndex);
     if (_svgEl) {
       updateOnsetMarkers(_svgEl, _onsetsMs, _rangeStart, _rangeEnd, _selectedOnsetIndex);
     }
     _analysisFlyout.render(ui);
+  }
+
+  function syncRemoveOnsetButton(ui) {
+    if (!ui.removeOnsetBtn) return;
+    const hasSelection = _selectedOnsetIndex >= 0 && _selectedOnsetIndex < _onsetsMs.length;
+    ui.removeOnsetBtn.disabled = !hasSelection;
+  }
+
+  function removeOnsetAt(ui, index, selectNeighbor = false) {
+    if (index < 0 || index >= _onsetsMs.length) return;
+    _onsetsMs = removeOnset(_onsetsMs, index);
+    if (selectNeighbor && _onsetsMs.length > 0) {
+      _selectedOnsetIndex = Math.min(index, _onsetsMs.length - 1);
+      const selectedMs = _onsetsMs[_selectedOnsetIndex];
+      if (Number.isFinite(selectedMs)) {
+        _cursorSec = clamp(selectedMs / 1000, _rangeStart, _rangeEnd);
+        syncCursorUI(ui);
+      }
+    } else if (_selectedOnsetIndex === index) {
+      _selectedOnsetIndex = -1;
+    } else if (_selectedOnsetIndex > index) {
+      _selectedOnsetIndex--;
+    }
+    updateOnsetUI(ui);
+    schedulePersist(ui);
   }
 
   function redrawWaveform(ui) {
@@ -306,8 +334,10 @@ export function createOnsetTaggerFeature() {
     if (reset) {
       _playOffset = _rangeStart;
       if (_svgEl) updatePlayhead(_svgEl, null, _rangeStart, _rangeEnd);
+      _analysisFlyout.resetPlayhead();
     } else {
       if (_svgEl) updatePlayhead(_svgEl, _playOffset, _rangeStart, _rangeEnd);
+      _analysisFlyout.setPlayheadSec(_playOffset);
     }
   }
 
@@ -324,6 +354,7 @@ export function createOnsetTaggerFeature() {
         _rangeStart, _rangeEnd, _playOffset
       );
       updatePlayhead(_svgEl, pos, _rangeStart, _rangeEnd);
+      _analysisFlyout.setPlayheadSec(pos);
       _rafId = requestAnimationFrame(tick);
     }
     _rafId = requestAnimationFrame(tick);
@@ -331,38 +362,6 @@ export function createOnsetTaggerFeature() {
 
   function cancelRAF() {
     if (_rafId !== null) { cancelAnimationFrame(_rafId); _rafId = null; }
-  }
-
-  function renderOnsetList(ui) {
-    if (!ui.onsetList) return;
-    ui.onsetList.innerHTML = '';
-    if (_onsetsMs.length === 0) {
-      const empty = document.createElement('li');
-      empty.className = 'tagger-onset-empty';
-      empty.textContent = 'Noch keine Onsets markiert.';
-      ui.onsetList.appendChild(empty);
-      return;
-    }
-    _onsetsMs.forEach((ms, i) => {
-      const li = document.createElement('li');
-      li.className = i === _selectedOnsetIndex
-        ? 'tagger-onset-item tagger-onset-item--selected'
-        : 'tagger-onset-item';
-      const selectBtn = document.createElement('button');
-      selectBtn.className = 'tagger-onset-select';
-      selectBtn.type = 'button';
-      selectBtn.setAttribute('data-select-index', i);
-      selectBtn.setAttribute('aria-pressed', i === _selectedOnsetIndex ? 'true' : 'false');
-      selectBtn.textContent = `${i + 1}`;
-      const btn = document.createElement('button');
-      btn.className = 'tagger-onset-remove';
-      btn.setAttribute('data-index', i);
-      btn.setAttribute('aria-label', `Onset ${ms} ms entfernen`);
-      btn.textContent = '✕';
-      li.appendChild(selectBtn);
-      li.appendChild(btn);
-      ui.onsetList.appendChild(li);
-    });
   }
 
   function renderStrategyButtons(ui) {
@@ -429,6 +428,8 @@ export function createOnsetTaggerFeature() {
       _cursorSec  = 0;
       _onsetsMs   = [];
       _selectedOnsetIndex = -1;
+      _playOffset = 0;
+      _analysisFlyout.resetPlayhead();
 
       ui.rangeStartEl.step  = '0.001';
       ui.rangeEndEl.step    = '0.001';
@@ -446,7 +447,7 @@ export function createOnsetTaggerFeature() {
 
       ui.step1.classList.remove('tagger-section--disabled');
       redrawWaveform(ui);
-      renderOnsetList(ui);
+      updateOnsetUI(ui);
       enableStep2(ui);
       void _analysisFlyout.run(ui);
     } catch (err) {
@@ -463,7 +464,7 @@ export function createOnsetTaggerFeature() {
       _onsetsMs = _sidecarData.onsetsMs.slice();
       _selectedOnsetIndex = -1;
       if (_svgEl) updateOnsetMarkers(_svgEl, _onsetsMs, _rangeStart, _rangeEnd, _selectedOnsetIndex);
-      renderOnsetList(ui);
+      updateOnsetUI(ui);
     }
     renderMetaForm(ui, _sidecarData);
     enableStep2(ui);
@@ -606,6 +607,11 @@ export function createOnsetTaggerFeature() {
         schedulePersist(ui);
       });
     }
+    if (ui.removeOnsetBtn) {
+      ui.removeOnsetBtn.addEventListener('click', () => {
+        removeOnsetAt(ui, _selectedOnsetIndex, true);
+      });
+    }
     if (ui.zoomInBtn) {
       ui.zoomInBtn.addEventListener('click', () => {
         if (_duration > 0) stepZoom(ui, 'in');
@@ -648,14 +654,7 @@ export function createOnsetTaggerFeature() {
         const removeBtn = e.target.closest('[data-index]');
         if (removeBtn) {
           const idx = parseInt(removeBtn.dataset.index, 10);
-          _onsetsMs = removeOnset(_onsetsMs, idx);
-          if (_selectedOnsetIndex === idx) {
-            _selectedOnsetIndex = -1;
-          } else if (_selectedOnsetIndex > idx) {
-            _selectedOnsetIndex--;
-          }
-          updateOnsetUI(ui);
-          schedulePersist(ui);
+          removeOnsetAt(ui, idx);
           return;
         }
 

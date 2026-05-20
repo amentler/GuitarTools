@@ -280,6 +280,16 @@
       margin: 0.75rem 0 0.5rem;
     }
 
+    .tagger-remove-selected {
+      border-color: var(--color-wrong, #e74c3c);
+      color: var(--color-wrong, #e74c3c);
+    }
+
+    .tagger-remove-selected:disabled {
+      border-color: var(--color-border);
+      color: var(--color-text-muted);
+    }
+
     .tagger-zoom-btn {
       width: 2.1rem;
       min-width: 2.1rem;

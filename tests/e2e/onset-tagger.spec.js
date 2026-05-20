@@ -101,6 +101,25 @@ test.describe('Onset Tagger', () => {
     expect(afterX).not.toEqual(beforeX);
   });
 
+  test('playback marker appears in all analyzer charts and follows playback', async ({ page }) => {
+    await page.locator('#tagger-wav-input').setInputFiles(WAV_FIXTURE);
+    const wrapper = page.locator('#tagger-analysis-charts-wrapper');
+    await expect(wrapper).toBeVisible({ timeout: 30_000 });
+
+    const chartCount = await wrapper.locator('svg.analysis-chart-svg').count();
+    await expect(wrapper.locator('.analysis-playhead')).toHaveCount(chartCount);
+
+    const firstPlayhead = wrapper.locator('.analysis-playhead').first();
+    const beforeX = await firstPlayhead.getAttribute('x1');
+    await page.locator('#tagger-play').click();
+
+    await expect(firstPlayhead).toHaveAttribute('opacity', '1');
+    await expect.poll(async () => firstPlayhead.getAttribute('x1')).not.toBe(beforeX);
+
+    await page.locator('#tagger-stop').click();
+    await expect(firstPlayhead).toHaveAttribute('opacity', '0');
+  });
+
   test('add onset button adds entry to onset list', async ({ page }) => {
     await page.locator('#tagger-wav-input').setInputFiles(WAV_FIXTURE);
     await expect(page.locator('#tagger-waveform-wrap svg')).toBeVisible({ timeout: 10_000 });
@@ -110,6 +129,29 @@ test.describe('Onset Tagger', () => {
 
     const items = page.locator('.tagger-onset-item');
     await expect(items).toHaveCount(1);
+  });
+
+  test('top remove onset button is disabled until an onset is selected', async ({ page }) => {
+    await page.locator('#tagger-wav-input').setInputFiles(WAV_FIXTURE);
+    await expect(page.locator('#tagger-waveform-wrap svg')).toBeVisible({ timeout: 10_000 });
+
+    const removeButton = page.locator('#tagger-remove-onset');
+    await expect(removeButton).toBeDisabled();
+
+    await page.locator('#tagger-add-onset').click();
+    await expect(removeButton).toBeEnabled();
+  });
+
+  test('top remove onset button removes selected onset from list', async ({ page }) => {
+    await page.locator('#tagger-wav-input').setInputFiles(WAV_FIXTURE);
+    await expect(page.locator('#tagger-waveform-wrap svg')).toBeVisible({ timeout: 10_000 });
+
+    await page.locator('#tagger-add-onset').click();
+    await expect(page.locator('.tagger-onset-item')).toHaveCount(1);
+
+    await page.locator('#tagger-remove-onset').click();
+    await expect(page.locator('.tagger-onset-item')).toHaveCount(0);
+    await expect(page.locator('#tagger-remove-onset')).toBeDisabled();
   });
 
   test('remove onset button removes entry from list', async ({ page }) => {

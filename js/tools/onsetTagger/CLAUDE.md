@@ -28,7 +28,7 @@ Browser-Werkzeug zur manuellen Annotation von Onset-Zeitstempeln in Gitarren-Auf
 6. Onset-Cursor-Slider → grüner Strich positionieren (Range: Start bis Ende in ms)
 7. „+ Hinzufügen" oder Klick in die Waveform → Onset in Liste
 8. Onset in der Liste oder ueber den Punkt vertikal oberhalb der Waveform-Linie anklicken → Marker wird grün, Cursor springt dorthin, sichtbarer Bereich zentriert den Onset in einem 0,6-s-Fenster
-9. Ausgewählten Onset mit dem Cursor-Slider verschieben; Entfernen bleibt über das X am Listeneintrag möglich
+9. Ausgewählten Onset mit dem Cursor-Slider verschieben; Entfernen ist über den Button neben „+ Hinzufügen" und über das X am Listeneintrag möglich
 10. Strategie-Button unter der Onset-Liste anklicken → erkannte Onsets werden additiv importiert, wenn sie mindestens 50 ms Abstand zu bestehenden Markierungen haben
 11. Metadaten editieren (Schritt 2)
 12. Dateiname/BaseName kann im Tagger editiert werden; Export, persistierte Aufnahme und Analyzer-Link verwenden den aktuellen Namen sofort

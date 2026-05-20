@@ -22,6 +22,7 @@ const CORE_PRECACHED_URLS = [
   'js/tools/audioAnalyse/audioAnalyseSVGSeries.js',
   'js/tools/onsetTagger/onsetTaggerAnalysisFlyout.js',
   'js/tools/onsetTagger/onsetTaggerLoadMenu.js',
+  'js/tools/onsetTagger/onsetTaggerOnsetList.js',
   'js/tools/onsetTagger/onsetTaggerPersistence.js',
   'js/shared/learning/srsLogic.js',
   'manifest.json',

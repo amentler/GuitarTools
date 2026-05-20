@@ -62,6 +62,7 @@ function makePlayheadLine(svg, height) {
     'stroke-width': '1.5',
     opacity: '0',
     'pointer-events': 'none',
+    class: 'analysis-playhead',
   });
   svg.appendChild(line);
   _playheadLines.push(line);

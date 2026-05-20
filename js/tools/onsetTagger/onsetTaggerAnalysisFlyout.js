@@ -1,7 +1,9 @@
 import { analyzeAudio } from '../audioAnalyse/audioAnalyseEngine.js';
 import {
   initCrosshair,
+  resetPlayhead as resetAnalyzerPlayhead,
   renderAllCharts,
+  updatePlayhead as updateAnalyzerPlayhead,
 } from '../audioAnalyse/audioAnalyseSVG.js';
 
 export function createOnsetTaggerAnalysisFlyout({
@@ -17,6 +19,7 @@ export function createOnsetTaggerAnalysisFlyout({
   let normalizeY = true;
   let showDetectedOnsets = true;
   let showTaggedOnsets = true;
+  let playheadSec = null;
 
   function setStatus(ui, text, isError = false) {
     if (!ui.analysisStatus) return;
@@ -50,7 +53,26 @@ export function createOnsetTaggerAnalysisFlyout({
       }
     }
     initCrosshair(ui.analysisChartsWrapper);
+    applyPlayhead();
     ui.analysisChartsWrapper.classList.remove('u-hidden');
+  }
+
+  function applyPlayhead() {
+    if (!analysisResult || !Number.isFinite(playheadSec) || analysisResult.duration <= 0) {
+      resetAnalyzerPlayhead();
+      return;
+    }
+    updateAnalyzerPlayhead(playheadSec / analysisResult.duration);
+  }
+
+  function setPlayheadSec(sec) {
+    playheadSec = Number.isFinite(sec) ? sec : null;
+    applyPlayhead();
+  }
+
+  function resetPlayhead() {
+    playheadSec = null;
+    resetAnalyzerPlayhead();
   }
 
   async function run(ui) {
@@ -90,8 +112,10 @@ export function createOnsetTaggerAnalysisFlyout({
 
   return {
     render,
+    resetPlayhead,
     run,
     setStatus,
+    setPlayheadSec,
     wire,
   };
 }
