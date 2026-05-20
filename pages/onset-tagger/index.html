@@ -44,20 +44,6 @@
       <div id="tagger-step1" class="tagger-section tagger-section--disabled">
         <p class="tagger-section-title">1 — Onset-Tagging</p>
 
-        <!-- Wiedergabe -->
-        <div class="tagger-playback-row">
-          <div class="tagger-playback-panel">
-            <button id="tagger-play" class="btn-play-stop" type="button">▶ Play</button>
-            <button id="tagger-stop" class="btn-play-stop" type="button">■ Stop</button>
-            <div class="tagger-speed-group">
-              <button class="tagger-speed-btn tagger-speed--active" data-speed="1" type="button">100%</button>
-              <button class="tagger-speed-btn" data-speed="0.75" type="button">75%</button>
-              <button class="tagger-speed-btn" data-speed="0.5" type="button">50%</button>
-              <button class="tagger-speed-btn" data-speed="0.25" type="button">25%</button>
-            </div>
-          </div>
-        </div>
-
         <!-- Waveform -->
         <div id="tagger-waveform-wrap" class="tagger-waveform-wrap" aria-label="Wellenform"></div>
 
@@ -121,6 +107,19 @@
   </section>
 
   <gt-analysis-flyout id="tagger-analysis-flyout" class="tagger-analysis-flyout" toggle-id="tagger-analysis-toggle" content-id="tagger-analysis-content">
+    <div class="tagger-flyout-controls-row">
+      <div class="tagger-flyout-playback">
+        <button id="tagger-play" class="btn-play-stop" type="button">▶ Play</button>
+        <button id="tagger-stop" class="btn-play-stop" type="button">■ Stop</button>
+      </div>
+      <button id="tagger-analysis-toggle" type="button"></button>
+      <div class="tagger-speed-group">
+        <button class="tagger-speed-btn tagger-speed--active" data-speed="1" type="button">100%</button>
+        <button class="tagger-speed-btn" data-speed="0.75" type="button">75%</button>
+        <button class="tagger-speed-btn" data-speed="0.5" type="button">50%</button>
+        <button class="tagger-speed-btn" data-speed="0.25" type="button">25%</button>
+      </div>
+    </div>
     <div id="tagger-analysis-content" class="tagger-analysis-content analysis-flyout-scroll">
       <p id="tagger-analysis-status" class="tagger-analysis-status">Noch keine Analyse.</p>
       <div class="tagger-analysis-options">

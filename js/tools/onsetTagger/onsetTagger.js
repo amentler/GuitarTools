@@ -353,7 +353,7 @@ export function createOnsetTaggerFeature() {
       selectBtn.type = 'button';
       selectBtn.setAttribute('data-select-index', i);
       selectBtn.setAttribute('aria-pressed', i === _selectedOnsetIndex ? 'true' : 'false');
-      selectBtn.textContent = `${i + 1}. ${Math.round(ms)} ms`;
+      selectBtn.textContent = `${i + 1}`;
       const btn = document.createElement('button');
       btn.className = 'tagger-onset-remove';
       btn.setAttribute('data-index', i);

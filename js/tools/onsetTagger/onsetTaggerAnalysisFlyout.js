@@ -46,7 +46,7 @@ export function createOnsetTaggerAnalysisFlyout({
       const aspect = wrap.style.getPropertyValue('--chart-aspect').trim();
       const match = aspect.match(/^([0-9.]+)\s*\/\s*([0-9.]+)$/);
       if (match) {
-        wrap.style.setProperty('--chart-aspect', `${match[1]} / ${Number(match[2]) * 2}`);
+        wrap.style.setProperty('--chart-aspect', `${match[1]} / ${Number(match[2]) * 3}`);
       }
     }
     initCrosshair(ui.analysisChartsWrapper);
