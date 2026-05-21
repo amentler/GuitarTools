@@ -76,10 +76,12 @@ SUPPORTED_SCHEMA_VERSION = 1
 def load_training_files(data_dir: str, feature_names: list[str], positive_window_ms: float):
     """
     Load all training JSON files from data_dir.
-    Returns (file_features, file_labels, file_names, audio_config_sample).
+    Returns (file_features, file_labels, file_names, file_times_ms,
+             file_onsets_ms, file_training_roles, audio_config_sample).
 
-    file_features[i]  = np.ndarray of shape (n_frames_i, n_features)
-    file_labels[i]    = np.ndarray of shape (n_frames_i,) with 0/1
+    file_features[i]      = np.ndarray of shape (n_frames_i, n_features)
+    file_labels[i]        = np.ndarray of shape (n_frames_i,) with 0/1
+    file_training_roles[i] = str | None  ("train", "test", "val", or None)
     """
     data_dir = Path(data_dir)
     json_files = sorted(data_dir.glob("training_data_*.json"))
@@ -91,6 +93,7 @@ def load_training_files(data_dir: str, feature_names: list[str], positive_window
     file_names = []
     file_times_ms = []
     file_onsets_ms = []
+    file_training_roles = []
     audio_config_sample = None
     n_skipped = 0
 
@@ -182,13 +185,19 @@ def load_training_files(data_dir: str, feature_names: list[str], positive_window
         X = np.array(rows, dtype=np.float32)
         y = np.array(labels, dtype=np.int32)
 
+        # Training role (forced split assignment)
+        raw_role = meta.get("trainingRole") or None
+        training_role = raw_role if raw_role in ("train", "test", "val") else None
+
         file_features.append(X)
         file_labels.append(y)
         file_names.append(path.name)
         file_times_ms.append(np.array(times_ms, dtype=np.float32))
         file_onsets_ms.append([float(onset) for onset in onsets_ms])
+        file_training_roles.append(training_role)
+        role_hint = f" [{training_role}]" if training_role else ""
         print(
-            f"  Loaded {path.name}: {len(frames)} frames, "
+            f"  Loaded {path.name}{role_hint}: {len(frames)} frames, "
             f"{y.sum()} positives ({100 * y.mean():.1f}%)"
         )
 
@@ -197,7 +206,7 @@ def load_training_files(data_dir: str, feature_names: list[str], positive_window
     if not file_features:
         sys.exit("ERROR: No usable training files after filtering.")
 
-    return file_features, file_labels, file_names, file_times_ms, file_onsets_ms, audio_config_sample
+    return file_features, file_labels, file_names, file_times_ms, file_onsets_ms, file_training_roles, audio_config_sample
 
 
 # ---------------------------------------------------------------------------
@@ -208,33 +217,64 @@ def split_by_file(
     file_features: list,
     file_labels: list,
     file_names: list,
+    file_training_roles: list,
     test_split: float,
     val_split: float,
     random_state: int,
 ):
     """
-    Splits file-level. Returns (X_train, y_train, X_val, y_val, X_test, y_test).
-    split_mode: by_file — no frame-level random split.
+    Splits file-level. Files with a forced trainingRole ("train"/"test"/"val")
+    are always assigned to their designated split. Remaining files are split
+    randomly according to test_split and val_split.
+
+    Returns (X_train, y_train, X_val, y_val, X_test, y_test, val_idx, test_idx).
     """
-    rng = np.random.RandomState(random_state)
-    n = len(file_features)
-    indices = rng.permutation(n)
+    forced_train = [i for i, r in enumerate(file_training_roles) if r == "train"]
+    forced_val   = [i for i, r in enumerate(file_training_roles) if r == "val"]
+    forced_test  = [i for i, r in enumerate(file_training_roles) if r == "test"]
+    random_files = [i for i, r in enumerate(file_training_roles) if r not in ("train", "test", "val")]
 
-    n_test = max(1, int(n * test_split))
-    n_val  = max(1, int(n * val_split))
-    n_train = n - n_test - n_val
-
-    if n_train <= 0:
-        sys.exit(
-            f"ERROR: Not enough files for split. Have {n}, need at least "
-            f"{n_test + n_val + 1}. Add more training data or lower test/val split."
+    if forced_train or forced_test or forced_val:
+        print(
+            f"  Forced assignments: train={len(forced_train)}, "
+            f"val={len(forced_val)}, test={len(forced_test)}, "
+            f"random={len(random_files)}"
         )
 
-    train_idx = indices[:n_train]
-    val_idx   = indices[n_train:n_train + n_val]
-    test_idx  = indices[n_train + n_val:]
+    rng = np.random.RandomState(random_state)
+    indices = rng.permutation(random_files)
+    n = len(indices)
+
+    n_test  = max(0, int(n * test_split))
+    n_val   = max(0, int(n * val_split))
+    n_train = n - n_test - n_val
+
+    if n_train < 0:
+        n_train = 0
+
+    rand_train = list(indices[:n_train])
+    rand_val   = list(indices[n_train:n_train + n_val])
+    rand_test  = list(indices[n_train + n_val:])
+
+    train_idx = np.array(forced_train + rand_train)
+    val_idx   = np.array(forced_val   + rand_val)
+    test_idx  = np.array(forced_test  + rand_test)
+
+    total_assigned = len(train_idx) + len(val_idx) + len(test_idx)
+    if total_assigned < len(file_features):
+        sys.exit(
+            f"ERROR: Not enough files for split. Have {len(file_features)}, "
+            f"assigned {total_assigned}. Add more training data or lower test/val split."
+        )
+    if len(train_idx) == 0:
+        sys.exit(
+            "ERROR: Training set is empty after forced assignments. "
+            "Tag fewer files as 'test'/'val' or add more training data."
+        )
 
     def concat(idxs):
+        if len(idxs) == 0:
+            return np.empty((0, file_features[0].shape[1]), dtype=np.float32), np.empty(0, dtype=np.int32)
         X = np.concatenate([file_features[i] for i in idxs], axis=0)
         y = np.concatenate([file_labels[i]   for i in idxs], axis=0)
         return X, y
@@ -1049,14 +1089,14 @@ def main():
 
     # Load data
     print("--- Loading training data ---")
-    file_features, file_labels, file_names, file_times_ms, file_onsets_ms, audio_config = load_training_files(
+    file_features, file_labels, file_names, file_times_ms, file_onsets_ms, file_training_roles, audio_config = load_training_files(
         data_dir, feature_names, positive_window
     )
 
     # Split
     print("\n--- Splitting by file ---")
     X_train, y_train, X_val, y_val, X_test, y_test, val_idx, test_idx = split_by_file(
-        file_features, file_labels, file_names, test_split, val_split, random_state
+        file_features, file_labels, file_names, file_training_roles, test_split, val_split, random_state
     )
 
     val_files = []

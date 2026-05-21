@@ -310,6 +310,30 @@ export function normalizeRecordingBaseName(input, fallback = 'recording') {
   return fallbackName || 'recording';
 }
 
+const TRAINING_ROLE_TOKENS = ['train', 'test', 'val'];
+
+/**
+ * Inserts, replaces, or removes a training-role token in a baseName.
+ * The token is placed before the last underscore-separated segment
+ * (which is typically the random suffix).
+ *
+ * @param {string} baseName     Current baseName, e.g. "notenlesen_4_4_120bpm_abc12"
+ * @param {string} trainingRole One of "train" | "test" | "val" | ""
+ * @returns {string}            Updated baseName
+ */
+export function applyTrainingRoleToBaseName(baseName, trainingRole) {
+  const parts = String(baseName ?? '').split('_').filter(Boolean);
+  const withoutRole = parts.filter(p => !TRAINING_ROLE_TOKENS.includes(p));
+  if (!trainingRole) return withoutRole.join('_') || baseName;
+  if (withoutRole.length >= 2) {
+    withoutRole.splice(withoutRole.length - 1, 0, trainingRole);
+  } else {
+    withoutRole.push(trainingRole);
+  }
+  return withoutRole.join('_');
+}
+
+
 export function resolveRecordingFileBaseName(source, id, entry = {}) {
   if (source === 'sheet-music') {
     return entry.baseName ?? entry.id ?? id ?? 'notenlesen';

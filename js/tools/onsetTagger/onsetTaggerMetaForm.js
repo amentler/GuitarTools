@@ -1,4 +1,6 @@
 export const DEFAULT_SIDECAR_FIELDS = {
+  // Training role (forced train/test/val split)
+  trainingRole:    '',
   // Routing
   category:        '',
   chord:           '',
@@ -35,6 +37,7 @@ export const DEFAULT_SIDECAR_FIELDS = {
 };
 
 export const DROPDOWN_OPTIONS = {
+  trainingRole:  ['', 'train', 'test', 'val'],
   category:      ['', 'sheet-music-reading', 'open-strings'],
   chord:         ['', 'A-Dur', 'A-Moll', 'A7', 'Am7', 'Amaj7',
                   'C-Dur', 'C-Dur (1-Finger)', 'C7', 'Cmaj7',

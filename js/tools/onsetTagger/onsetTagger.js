@@ -11,6 +11,7 @@ import {
   computePlayheadPosition,
   normalizeRecordingBaseName,
   resolveRecordingFileBaseName,
+  applyTrainingRoleToBaseName,
 } from './onsetTaggerLogic.js';
 import { loadRecordingFromSource } from '../../shared/recordingLoader.js';
 import { detectOnsetsOffline } from '../../shared/audio/offlineOnsetDetection.js';
@@ -751,17 +752,16 @@ export function createOnsetTaggerFeature() {
         _sidecarFilename = `${_fileBaseName}.json`;
         schedulePersist(ui);
       });
-      ui.filenameInput.addEventListener('change', () => {
-        setBaseName(ui, ui.filenameInput.value);
-        schedulePersist(ui);
-      });
+      ui.filenameInput.addEventListener('change', () => { setBaseName(ui, ui.filenameInput.value); schedulePersist(ui); });
       ui.filenameInput.addEventListener('blur', () => setBaseName(ui, ui.filenameInput.value));
     }
     if (ui.metaForm) {
-      ui.metaForm.addEventListener('change', () => schedulePersist(ui));
-      ui.metaForm.addEventListener('input', (e) => {
-        if (e.target?.tagName === 'TEXTAREA') schedulePersist(ui);
+      ui.metaForm.addEventListener('change', (e) => {
+        if (e.target?.name === 'trainingRole')
+          setBaseName(ui, applyTrainingRoleToBaseName(_fileBaseName, e.target.value));
+        schedulePersist(ui);
       });
+      ui.metaForm.addEventListener('input', (e) => { if (e.target?.tagName === 'TEXTAREA') schedulePersist(ui); });
     }
 
     const params = new URLSearchParams(window.location.search);

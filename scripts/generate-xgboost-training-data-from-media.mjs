@@ -209,6 +209,7 @@ async function buildTrainingData(media, strategyKey) {
     metadata: {
       filename: media.baseName,
       source: media.source,
+      trainingRole: media.manifest?.trainingRole || null,
       sampleRate,
       fftSize: ONSET_FFT_SIZE,
       hopSize: ONSET_HOP_SIZE,
@@ -237,7 +238,6 @@ async function generateTrainingFile({ mediaFile, outputDir, strategyKey }) {
     };
   }
 
-  process.stderr.write(`Generating ${media.baseName}...\n`);
   const trainingData = await buildTrainingData(media, strategyKey);
   const targetPath = path.join(outputDir, outputNameFor(media.baseName));
   writeFileSync(targetPath, JSON.stringify(trainingData));
@@ -268,16 +268,28 @@ function runWorker(task) {
 async function runWorkerPool(tasks, jobCount) {
   const results = [];
   let nextTaskIndex = 0;
+  const poolStart = Date.now();
 
-  async function runNext() {
+  async function runNext(workerSlot) {
     while (nextTaskIndex < tasks.length) {
       const task = tasks[nextTaskIndex];
+      const taskNumber = nextTaskIndex + 1;
       nextTaskIndex += 1;
-      results.push(await runWorker(task));
+      const taskStart = Date.now();
+      process.stderr.write(`[${workerSlot}/${jobCount}] Generating ${path.basename(task.mediaFile)}...\n`);
+      const result = await runWorker(task);
+      const elapsed = ((Date.now() - taskStart) / 1000).toFixed(1);
+      if (result.status === 'written') {
+        process.stderr.write(`[${workerSlot}/${jobCount}] Done: ${result.baseName} (${elapsed}s)\n`);
+      }
+      results.push(result);
     }
   }
 
-  await Promise.all(Array.from({ length: jobCount }, () => runNext()));
+  await Promise.all(Array.from({ length: jobCount }, (_, i) => runNext(i + 1)));
+  const totalElapsed = ((Date.now() - poolStart) / 1000).toFixed(1);
+  const written = results.filter(r => r.status === 'written').length;
+  process.stderr.write(`Finished ${written} file(s) in ${totalElapsed}s using ${jobCount} worker${jobCount === 1 ? '' : 's'}\n`);
   return results;
 }
 
@@ -300,7 +312,7 @@ async function main() {
   const written = results.filter(result => result.status === 'written').length;
   for (const result of results) {
     if (result.status === 'skipped') {
-      process.stderr.write(`Skipping ${result.mediaFile}: ${result.reason}\n`);
+      process.stderr.write(`Skipped ${result.mediaFile}: ${result.reason}\n`);
     }
   }
 

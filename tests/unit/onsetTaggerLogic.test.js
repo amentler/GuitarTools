@@ -16,6 +16,7 @@ import {
   computePlayheadPosition,
   normalizeRecordingBaseName,
   resolveRecordingFileBaseName,
+  applyTrainingRoleToBaseName,
 } from '../../js/tools/onsetTagger/onsetTaggerLogic.js';
 
 describe('clamp', () => {
@@ -362,5 +363,47 @@ describe('computePlayheadPosition', () => {
     // range [2, 7] → length 5; offset 2, elapsed 6 * rate 1 → (2 - 2 + 6) % 5 = 1 → 2 + 1 = 3
     const pos = computePlayheadPosition(0, 6, 1, 2, 7, 2);
     expect(pos).toBeCloseTo(3);
+  });
+});
+
+describe('applyTrainingRoleToBaseName', () => {
+  it('inserts role before last segment', () => {
+    expect(applyTrainingRoleToBaseName('notenlesen_4_4_120bpm_abc12', 'train'))
+      .toBe('notenlesen_4_4_120bpm_train_abc12');
+  });
+
+  it('inserts role before last segment for test', () => {
+    expect(applyTrainingRoleToBaseName('notenlesen_4_4_120bpm_abc12', 'test'))
+      .toBe('notenlesen_4_4_120bpm_test_abc12');
+  });
+
+  it('inserts role before last segment for val', () => {
+    expect(applyTrainingRoleToBaseName('notenlesen_abc12', 'val'))
+      .toBe('notenlesen_val_abc12');
+  });
+
+  it('replaces existing train role with test', () => {
+    expect(applyTrainingRoleToBaseName('notenlesen_4_train_abc12', 'test'))
+      .toBe('notenlesen_4_test_abc12');
+  });
+
+  it('removes role when empty string given', () => {
+    expect(applyTrainingRoleToBaseName('notenlesen_4_train_abc12', ''))
+      .toBe('notenlesen_4_abc12');
+  });
+
+  it('removes test role when empty string given', () => {
+    expect(applyTrainingRoleToBaseName('notenlesen_test_abc12', ''))
+      .toBe('notenlesen_abc12');
+  });
+
+  it('appends role when baseName has only one segment', () => {
+    expect(applyTrainingRoleToBaseName('recording', 'train'))
+      .toBe('recording_train');
+  });
+
+  it('returns baseName unchanged when no role and no existing token', () => {
+    expect(applyTrainingRoleToBaseName('notenlesen_abc12', ''))
+      .toBe('notenlesen_abc12');
   });
 });
