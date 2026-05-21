@@ -45,12 +45,13 @@ test.describe('Onset Tagger', () => {
     await expect(page.locator('#tagger-analysis-charts-wrapper svg.analysis-chart-svg').first()).toBeVisible();
   });
 
-  test('analysis flyout contains only analyzer display options', async ({ page }) => {
+  test('analysis flyout contains analyzer display options and playback controls', async ({ page }) => {
     const flyout = page.locator('#tagger-analysis-flyout');
     await expect(flyout.locator('input[type="checkbox"]')).toHaveCount(3);
     await expect(flyout.locator('input[type="range"]')).toHaveCount(0);
     await expect(flyout.locator('select')).toHaveCount(0);
-    await expect(flyout.locator('#tagger-play, #tagger-stop, #btn-play-pause, #btn-stop-audio')).toHaveCount(0);
+    await expect(flyout.locator('#tagger-play, #tagger-stop')).toHaveCount(2);
+    await expect(flyout.locator('[data-speed]')).toHaveCount(4);
   });
 
   test('analysis flyout scrolls internally', async ({ page }) => {
@@ -120,6 +121,15 @@ test.describe('Onset Tagger', () => {
     await expect(firstPlayhead).toHaveAttribute('opacity', '0');
   });
 
+  test('speed buttons update active playback rate selection', async ({ page }) => {
+    await expect(page.locator('[data-speed="1"]')).toHaveClass(/tagger-speed--active/);
+
+    await page.locator('[data-speed="0.5"]').click();
+
+    await expect(page.locator('[data-speed="1"]')).not.toHaveClass(/tagger-speed--active/);
+    await expect(page.locator('[data-speed="0.5"]')).toHaveClass(/tagger-speed--active/);
+  });
+
   test('add onset button adds entry to onset list', async ({ page }) => {
     await page.locator('#tagger-wav-input').setInputFiles(WAV_FIXTURE);
     await expect(page.locator('#tagger-waveform-wrap svg')).toBeVisible({ timeout: 10_000 });
@@ -154,15 +164,13 @@ test.describe('Onset Tagger', () => {
     await expect(page.locator('#tagger-remove-onset')).toBeDisabled();
   });
 
-  test('remove onset button removes entry from list', async ({ page }) => {
+  test('onset list shows only the index without milliseconds', async ({ page }) => {
     await page.locator('#tagger-wav-input').setInputFiles(WAV_FIXTURE);
     await expect(page.locator('#tagger-waveform-wrap svg')).toBeVisible({ timeout: 10_000 });
 
     await page.locator('#tagger-add-onset').click();
     await expect(page.locator('.tagger-onset-item')).toHaveCount(1);
-
-    await page.locator('.tagger-onset-remove').click();
-    await expect(page.locator('.tagger-onset-item')).toHaveCount(0);
+    await expect(page.locator('.tagger-onset-select')).toHaveText('1');
   });
 
   test('selecting an onset in the list focuses it and slider edits the marker', async ({ page }) => {
@@ -181,7 +189,7 @@ test.describe('Onset Tagger', () => {
       el.dispatchEvent(new Event('input', { bubbles: true }));
     });
 
-    await expect(page.locator('.tagger-onset-select')).toHaveText('1. 100 ms');
+    await expect(page.locator('.tagger-onset-select')).toHaveText('1');
   });
 
   test('zoom buttons shrink and expand the visible range', async ({ page }) => {
@@ -248,7 +256,7 @@ test.describe('Onset Tagger', () => {
     });
     await page.mouse.click(clickPoint.x, clickPoint.y);
 
-    await expect(page.locator('.tagger-onset-select')).toHaveText('1. 1000 ms');
+    await expect(page.locator('.tagger-onset-select')).toHaveText('1');
     const range = await page.locator('#tagger-range-end').evaluate((endEl) => {
       const startEl = document.getElementById('tagger-range-start');
       return {
@@ -260,12 +268,12 @@ test.describe('Onset Tagger', () => {
     expect((range.start + range.end) / 2).toBeCloseTo(1, 1);
   });
 
-  test('playback controls fit on a narrow mobile viewport', async ({ page }) => {
+  test('onset action controls fit on a narrow mobile viewport', async ({ page }) => {
     await page.setViewportSize({ width: 360, height: 740 });
     await page.locator('#tagger-wav-input').setInputFiles(WAV_FIXTURE);
     await expect(page.locator('#tagger-waveform-wrap svg')).toBeVisible({ timeout: 10_000 });
 
-    const overflow = await page.locator('.tagger-playback-panel').evaluate((el) => (
+    const overflow = await page.locator('.tagger-onset-actions').evaluate((el) => (
       el.scrollWidth - el.clientWidth
     ));
     expect(overflow).toBeLessThanOrEqual(1);

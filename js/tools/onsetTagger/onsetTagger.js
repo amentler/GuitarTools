@@ -131,7 +131,7 @@ export function createOnsetTaggerFeature() {
       strategyStatus: q('tagger-strategy-status'),
       playBtn:       q('tagger-play'),
       stopBtn:       q('tagger-stop'),
-      speedBtns:     _root.querySelectorAll('[data-speed]'),
+      speedBtns:     document.querySelectorAll('[data-speed]'),
       onsetList:     q('tagger-onset-list'),
       metaForm:      q('tagger-meta-form'),
       exportBtn:     q('tagger-export'),
@@ -724,6 +724,10 @@ export function createOnsetTaggerFeature() {
       btn.addEventListener('click', () => {
         ui.speedBtns.forEach(b => b.classList.remove('tagger-speed--active'));
         btn.classList.add('tagger-speed--active');
+        if (_isPlaying && _audioCtx) {
+          _playOffset = computePlayheadPosition(_playStartTime, _audioCtx.currentTime, _playbackRate, _rangeStart, _rangeEnd, _playOffset);
+          _playStartTime = _audioCtx.currentTime;
+        }
         _playbackRate = parseFloat(btn.dataset.speed);
         if (_isPlaying && _sourceNode) {
           _sourceNode.playbackRate.value = _playbackRate;

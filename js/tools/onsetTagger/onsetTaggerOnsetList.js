@@ -18,12 +18,12 @@ export function renderOnsetList(onsetList, onsetsMs, selectedOnsetIndex) {
     selectBtn.type = 'button';
     selectBtn.setAttribute('data-select-index', i);
     selectBtn.setAttribute('aria-pressed', i === selectedOnsetIndex ? 'true' : 'false');
-    selectBtn.textContent = `${i + 1}. ${Math.round(ms)} ms`;
+    selectBtn.textContent = String(i + 1);
     const removeBtn = document.createElement('button');
     removeBtn.className = 'tagger-onset-remove';
     removeBtn.type = 'button';
     removeBtn.setAttribute('data-index', i);
-    removeBtn.setAttribute('aria-label', `Onset ${ms} ms entfernen`);
+    removeBtn.setAttribute('aria-label', `Onset ${i + 1} entfernen`);
     removeBtn.textContent = 'X';
     li.appendChild(selectBtn);
     li.appendChild(removeBtn);

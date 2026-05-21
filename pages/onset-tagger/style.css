@@ -275,9 +275,18 @@
     .tagger-onset-actions {
       display: flex;
       align-items: center;
-      gap: 0.35rem;
-      flex-wrap: wrap;
+      gap: 0.25rem;
+      flex-wrap: nowrap;
       margin: 0.75rem 0 0.5rem;
+    }
+
+    .tagger-onset-action-btn {
+      flex: 1 1 0;
+      min-width: 0;
+      padding: 0.35rem 0.35rem;
+      text-align: center;
+      font-size: 0.78rem;
+      line-height: 1;
     }
 
     .tagger-remove-selected {
@@ -506,7 +515,7 @@
       }
 
       .tagger-onset-actions .btn-play-stop:not(.tagger-zoom-btn) {
-        flex: 1;
-        min-width: 8.5rem;
+        flex: 1 1 0;
+        min-width: 0;
       }
     }

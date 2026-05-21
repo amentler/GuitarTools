@@ -24,11 +24,11 @@ Browser-Werkzeug zur manuellen Annotation von Onset-Zeitstempeln in Gitarren-Auf
 2. JSON-Sidecar laden → Metadaten-Formular befüllt, Schritt 2 aktiv
 3. Play/Pause/Stop und Speed-Auswahl stehen oberhalb der Waveform; Wiedergabe läuft in Schleife über Start–Ende
 4. Start/Ende-Slider → Bereich einschränken (Waveform zoomt in den Bereich). Der Start-Slider läuft von WAV-Start bis zur aktuellen Ende-Position; der Ende-Slider läuft von der aktuellen Start-Position bis zum WAV-Ende.
-5. Kleine Zoom-/Unzoom-Buttons neben „+ Hinzufügen" ziehen Start und Ende je Klick um 10% der aktuellen sichtbaren Distanz zusammen oder auseinander
+5. Kleine `+`/`-`-Zoom-Buttons neben „Hinzufügen" und „Entfernen" ziehen Start und Ende je Klick um 10% der aktuellen sichtbaren Distanz zusammen oder auseinander
 6. Onset-Cursor-Slider → grüner Strich positionieren (Range: Start bis Ende in ms)
 7. „+ Hinzufügen" oder Klick in die Waveform → Onset in Liste
 8. Onset in der Liste oder ueber den Punkt vertikal oberhalb der Waveform-Linie anklicken → Marker wird grün, Cursor springt dorthin, sichtbarer Bereich zentriert den Onset in einem 0,6-s-Fenster
-9. Ausgewählten Onset mit dem Cursor-Slider verschieben; Entfernen ist über den Button neben „+ Hinzufügen" und über das X am Listeneintrag möglich
+9. Ausgewählten Onset mit dem Cursor-Slider verschieben; Entfernen ist über den „Entfernen"-Button neben „Hinzufügen" möglich
 10. Strategie-Button unter der Onset-Liste anklicken → erkannte Onsets werden additiv importiert, wenn sie mindestens 50 ms Abstand zu bestehenden Markierungen haben
 11. Metadaten editieren (Schritt 2)
 12. Dateiname/BaseName kann im Tagger editiert werden; Export, persistierte Aufnahme und Analyzer-Link verwenden den aktuellen Namen sofort
