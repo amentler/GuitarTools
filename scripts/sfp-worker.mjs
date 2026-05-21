@@ -2,6 +2,7 @@ import { parentPort } from 'worker_threads';
 import {
   discoverSheetMusicSequenceFixtures,
   evaluateOnsetStrategyReport,
+  evaluateXGBoostOnsetModelReport,
   evaluateSequenceStrategyReport,
 } from '../tests/helpers/sheetMusicSequenceFingerprint.js';
 import {
@@ -13,6 +14,7 @@ import { getSheetMusicRecognitionStrategies } from '../js/games/sheetMusicReadin
 import { createEssentiaSheetMusicStrategy } from '../js/games/sheetMusicReading/essentiaSheetMusicStrategy.js';
 import { loadEssentiaForNode } from '../tests/helpers/essentiaNodeWasmLoader.js';
 import { resolveGuitarOnsetStrategy } from '../js/shared/audio/guitarOnsetStrategies.js';
+import { loadNodeXGBoostModelForStrategy } from './sfpOnsetModels.mjs';
 
 let cachedStrategies = null;
 
@@ -57,9 +59,20 @@ async function handleTask(task) {
   }
 
   if (task.type === 'sequence-onset-strategy-report') {
-    const fixtures = discoverSheetMusicSequenceFixtures();
-    const onsetStrategy = resolveGuitarOnsetStrategy(task.strategyKey);
-    const report = evaluateOnsetStrategyReport(fixtures, onsetStrategy, task.options ?? {});
+    const allFixtures = discoverSheetMusicSequenceFixtures();
+    const fixtureFileSet = Array.isArray(task.fixtureFiles) ? new Set(task.fixtureFiles) : null;
+    const fixtures = fixtureFileSet
+      ? allFixtures.filter(fixture => fixtureFileSet.has(fixture.file))
+      : allFixtures;
+    const onsetStrategy = task.onsetStrategy ?? resolveGuitarOnsetStrategy(task.strategyKey);
+    const report = onsetStrategy.offlineDetector === 'xgboost'
+      ? await evaluateXGBoostOnsetModelReport(
+        fixtures,
+        onsetStrategy,
+        await loadNodeXGBoostModelForStrategy(onsetStrategy),
+        task.options ?? {},
+      )
+      : evaluateOnsetStrategyReport(fixtures, onsetStrategy, task.options ?? {});
     return {
       ...report,
       onsetStrategy: sanitizeStrategy(report.onsetStrategy),

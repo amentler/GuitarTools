@@ -4,8 +4,10 @@ import { fileURLToPath } from 'url';
 import {
   discoverSheetMusicSequenceFixtures,
   evaluateOnsetStrategyReport,
+  evaluateXGBoostOnsetModelReport,
   evaluateSequenceStrategyReport,
   formatSheetMusicSequenceFingerprintReport,
+  summarizeOnsetStrategyCases,
 } from '../tests/helpers/sheetMusicSequenceFingerprint.js';
 import {
   NOTE_AUDIO_FIXTURES,
@@ -14,10 +16,13 @@ import {
   formatOpenStringNoteFingerprintReport,
 } from '../tests/helpers/sheetMusicNoteFingerprint.js';
 import { getSheetMusicRecognitionStrategies } from '../js/games/sheetMusicReading/sheetMusicRecognition.js';
-import { getGuitarOnsetStrategies } from '../js/shared/audio/guitarOnsetStrategies.js';
 import { loadEssentiaForNode } from '../tests/helpers/essentiaNodeWasmLoader.js';
 import { createEssentiaSheetMusicStrategy } from '../js/games/sheetMusicReading/essentiaSheetMusicStrategy.js';
 import { loadSheetMusicOnsetConfigFromArgs } from './sheetMusicOnsetConfig.mjs';
+import {
+  loadNodeXGBoostModelForStrategy,
+  loadTrainedOnsetModelStrategiesForNode,
+} from './sfpOnsetModels.mjs';
 
 function logProgress(message) {
   console.error(`[SFP] ${message}`);
@@ -52,7 +57,9 @@ function createProgressLogger() {
 }
 
 const WORKER_SCRIPT = fileURLToPath(new URL('./sfp-worker.mjs', import.meta.url));
-const DEFAULT_WORKER_COUNT = Math.max(1, (availableParallelism?.() ?? cpus().length) - 2);
+const DEFAULT_WORKER_COUNT = Number.parseInt(process.env.SFP_WORKERS ?? '', 10)
+  || Math.max(1, (availableParallelism?.() ?? cpus().length) - 2);
+const DEFAULT_ONSET_SHARD_COUNT = Number.parseInt(process.env.SFP_ONSET_SHARDS ?? '', 10) || 1;
 
 function createWorkerPool(workerCount) {
   return Array.from({ length: workerCount }, () => new Worker(WORKER_SCRIPT));
@@ -102,6 +109,15 @@ async function runWorkerTasks(tasks, workerCount) {
   return results;
 }
 
+function chunkArray(items, chunkCount) {
+  const actualCount = Math.max(1, Math.min(chunkCount, items.length));
+  const chunks = Array.from({ length: actualCount }, () => []);
+  items.forEach((item, index) => {
+    chunks[index % actualCount].push(item);
+  });
+  return chunks.filter(chunk => chunk.length > 0);
+}
+
 const { configPath, options: onsetConfigOptions } = loadSheetMusicOnsetConfigFromArgs();
 if (configPath) {
   logProgress(`onset config: ${configPath}`);
@@ -120,36 +136,52 @@ try {
   console.warn('[SFP] Essentia WASM not available, running without essentia-pitch-yin strategy:', err.message);
 }
 
-const onsetStrategies = getGuitarOnsetStrategies();
+const onsetStrategies = loadTrainedOnsetModelStrategiesForNode();
 const progress = createProgressLogger();
 const workerCount = DEFAULT_WORKER_COUNT;
 
 logProgress(`worker pool: ${workerCount} (${Math.max(1, (availableParallelism?.() ?? cpus().length))} cores detected, reserving 2)`);
 
 const sequenceFixtures = discoverSheetMusicSequenceFixtures();
-const sequenceTasks = [
-  ...strategies.map(strategy => ({
+const sequenceStrategyTasks = strategies.map(strategy => ({
     payload: {
       type: 'sequence-strategy-report',
       strategyKey: strategy.key,
       options: onsetConfigOptions,
     },
     run: () => evaluateSequenceStrategyReport(sequenceFixtures, strategy, onsetConfigOptions),
-  })),
-  ...onsetStrategies.map(strategy => ({
+  }));
+const onsetShardCount = Math.max(1, Math.min(DEFAULT_ONSET_SHARD_COUNT, sequenceFixtures.length));
+const onsetTasks = onsetStrategies.flatMap(strategy => (
+  chunkArray(sequenceFixtures, onsetShardCount).map(chunk => ({
     payload: {
       type: 'sequence-onset-strategy-report',
       strategyKey: strategy.key,
+      onsetStrategy: strategy,
+      fixtureFiles: chunk.map(fixture => fixture.file),
       options: onsetConfigOptions,
     },
-    run: () => evaluateOnsetStrategyReport(sequenceFixtures, strategy, onsetConfigOptions),
-  })),
-];
+    run: async () => {
+      if (strategy.offlineDetector === 'xgboost') {
+        const model = await loadNodeXGBoostModelForStrategy(strategy);
+        return evaluateXGBoostOnsetModelReport(chunk, strategy, model, onsetConfigOptions);
+      }
+      return evaluateOnsetStrategyReport(chunk, strategy, onsetConfigOptions);
+    },
+  }))
+));
+const sequenceTasks = [...sequenceStrategyTasks, ...onsetTasks];
 
-logProgress(`starting sequence fingerprint (${strategies.length} pitch strategies, ${onsetStrategies.length} onset strategies)`);
+logProgress(`starting sequence fingerprint (${strategies.length} pitch strategies, ${onsetStrategies.length} onset strategies, ${onsetTasks.length} onset shards)`);
 const sequenceResults = await runWorkerTasks(sequenceTasks, workerCount);
-const strategyReports = sequenceResults.slice(0, strategies.length);
-const onsetStrategyReports = sequenceResults.slice(strategies.length);
+const strategyReports = sequenceResults.slice(0, sequenceStrategyTasks.length);
+const onsetShardReports = sequenceResults.slice(sequenceStrategyTasks.length);
+const onsetStrategyReports = onsetStrategies.map(strategy => {
+  const cases = onsetShardReports
+    .filter(report => report.onsetStrategy.key === strategy.key)
+    .flatMap(report => report.cases);
+  return summarizeOnsetStrategyCases(strategy, cases);
+});
 const defaultSequenceReport = strategyReports[0];
 const sequenceReport = {
   ...defaultSequenceReport,

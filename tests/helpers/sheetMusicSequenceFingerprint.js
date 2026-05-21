@@ -13,6 +13,7 @@ import {
   getGuitarOnsetStrategies,
   resolveGuitarOnsetStrategy,
 } from '../../js/shared/audio/guitarOnsetStrategies.js';
+import { detectOnsetsOfflineXGBoost } from '../../js/shared/audio/offlineOnsetDetectionXGBoost.js';
 import { ONSET_FFT_SIZE, ONSET_LIVE_ANALYZE_INTERVAL_MS, BROWSER_SAMPLE_RATE } from '../../js/shared/audio/onsetPipelineConfig.js';
 import { computeDbSpectrum } from './chordHpcpExtraction.js';
 import { percentile, scoreTaggedOnsets } from '../../scripts/taggedOnsetScoring.mjs';
@@ -549,6 +550,10 @@ export function evaluateOnsetStrategyReport(
     strategyKey: onsetStrategy.key,
     fixtureCount: evaluated.length,
   });
+  return summarizeOnsetStrategyCases(onsetStrategy, cases);
+}
+
+export function summarizeOnsetStrategyCases(onsetStrategy, cases) {
   const totalExpected = cases.reduce((s, c) => s + c.expectedCount, 0);
   const totalDetected = cases.reduce((s, c) => s + c.onsetCount, 0);
   const onsetSummary = summarizeOnsetMetrics(cases);
@@ -563,6 +568,8 @@ export function evaluateOnsetStrategyReport(
       mixed: onsetSummary.counts.mixed,
       totalExpected,
       totalDetected,
+      truePositives: onsetSummary.counts.truePositives,
+      falseNegatives: onsetSummary.counts.falseNegatives,
       totalTaggedOnsets: onsetSummary.counts.totalTaggedOnsets,
       goodMatches: onsetSummary.counts.goodMatches,
       acceptableMatches: onsetSummary.counts.acceptableMatches,
@@ -579,6 +586,49 @@ export function evaluateOnsetStrategyReport(
       onsetP95AbsErrorMs: onsetSummary.metrics.p95AbsErrorMs,
     },
   };
+}
+
+export async function evaluateXGBoostOnsetModelReport(
+  fixtures = discoverSheetMusicSequenceFixtures(),
+  onsetStrategy = getGuitarOnsetStrategies()[0],
+  model,
+  options = {},
+) {
+  const progress = typeof options.onProgress === 'function' ? options.onProgress : null;
+  const evaluated = fixtures.filter(f => f.expectedNotes.length > 0);
+  progress?.({
+    phase: 'sequence-onset-strategy-start',
+    strategyKey: onsetStrategy.key,
+    fixtureCount: evaluated.length,
+  });
+  const cases = [];
+
+  for (const fixture of evaluated) {
+    const { samples: rawSamples, sampleRate: rawRate } = loadSequenceFixtureAudio(fixture);
+    const samples = resampleLinear(rawSamples, rawRate, BROWSER_SAMPLE_RATE);
+    const sampleRate = BROWSER_SAMPLE_RATE;
+    const onsetResult = await detectOnsetsOfflineXGBoost(samples, sampleRate, model, {
+      onsetStrategyKey: onsetStrategy.baseStrategyKey,
+    });
+    const onsetEvaluation = createOnsetEvaluation(fixture, onsetResult.onsetsMs);
+    cases.push({
+      fixture,
+      expectedCount: onsetEvaluation.expectedCount,
+      onsetCount: onsetEvaluation.onsetCount,
+      onsetDelta: onsetEvaluation.onsetDelta,
+      onsetStatus: onsetEvaluation.onsetStatus,
+      onsetTimestampsMs: onsetResult.onsetsMs,
+      onsetFeatureSummary: null,
+      onsetTaggedScore: onsetEvaluation.onsetTaggedScore,
+    });
+  }
+
+  progress?.({
+    phase: 'sequence-onset-strategy-done',
+    strategyKey: onsetStrategy.key,
+    fixtureCount: evaluated.length,
+  });
+  return summarizeOnsetStrategyCases(onsetStrategy, cases);
 }
 
 export function evaluateSheetMusicSequenceFingerprint(fixtures = discoverSheetMusicSequenceFixtures(), options = {}) {
@@ -726,8 +776,11 @@ export function formatSheetMusicSequenceFingerprintReport(report) {
   ));
   const onsetStrategyTable = (onsetStrategyReports ?? []).map(row => (
     `| ${row.onsetStrategy.key} | ${row.counts.total} | ${row.counts.exact} | ${row.counts.under} | `
-      + `${row.counts.over} | ${row.counts.totalDetected}/${row.counts.totalExpected} | `
-      + `${formatPercent(row.metrics.onsetCountRatio)} | ${row.counts.goodMatches + row.counts.acceptableMatches}/${row.counts.totalTaggedOnsets} | `
+      + `${row.counts.over} | ${row.counts.mixed ?? 0} | ${row.counts.truePositives ?? row.counts.goodMatches + row.counts.acceptableMatches} | `
+      + `${row.counts.falsePositives} | ${row.counts.falseNegatives ?? row.counts.misses} | `
+      + `${row.counts.totalDetected}/${row.counts.totalExpected} | ${formatPercent(row.metrics.onsetCountRatio)} | `
+      + `${formatPercent(row.metrics.onsetPrecision)} | ${formatPercent(row.metrics.onsetRecall)} | ${formatPercent(row.metrics.onsetF1)} | `
+      + `${row.counts.goodMatches + row.counts.acceptableMatches}/${row.counts.totalTaggedOnsets} | `
       + `${formatMs(row.metrics.onsetP95AbsErrorMs)} |`
   ));
   return [
@@ -742,8 +795,8 @@ export function formatSheetMusicSequenceFingerprintReport(report) {
     ...strategyTable,
     '',
     '## Onset Strategy Summary',
-    '| onset strategy | fixtures | exact | under | over | detected/expected | onset ratio | tagged hits | tagged p95 |',
-    '|---|---:|---:|---:|---:|---:|---:|---:|---:|',
+    '| onset strategy | fixtures | exact | under | over | mixed | TP | FP | FN | detected/expected | onset ratio | precision | recall | f1 | tagged hits | tagged p95 |',
+    '|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|',
     ...onsetStrategyTable,
     ...(onsetStrategyReports ?? []).flatMap(row => ['', ...formatOnsetStrategyDetailSection(row)]),
     '',

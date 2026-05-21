@@ -71,7 +71,7 @@ export async function loadXGBoostOnsetModel(modelSource, schemaSource) {
 
   // Load schema
   let schema;
-  if (schemaSource instanceof File) {
+  if (typeof File !== 'undefined' && schemaSource instanceof File) {
     const text = await schemaSource.text();
     schema = JSON.parse(text);
   } else if (schemaSource && typeof schemaSource === 'object' && !('href' in schemaSource)) {
@@ -84,8 +84,15 @@ export async function loadXGBoostOnsetModel(modelSource, schemaSource) {
 
   // Load ONNX model
   let modelData;
-  if (modelSource instanceof File) {
+  if (typeof File !== 'undefined' && modelSource instanceof File) {
     modelData = await modelSource.arrayBuffer();
+  } else if (modelSource instanceof ArrayBuffer) {
+    modelData = modelSource;
+  } else if (ArrayBuffer.isView(modelSource)) {
+    modelData = modelSource.buffer.slice(
+      modelSource.byteOffset,
+      modelSource.byteOffset + modelSource.byteLength,
+    );
   } else {
     const res = await fetch(modelSource);
     modelData = await res.arrayBuffer();
@@ -267,6 +274,7 @@ export async function detectOnsetsOfflineXGBoost(samples, sampleRate, model, opt
   let prevCrestFactor = 0;
   let prevLogBandFlux_150_6000 = 0;
   const ort = await getORT();
+  const inputRows = [];
 
   for (let i = 0; i < frames.length; i++) {
     const { samples: frame, frequencyData } = frames[i];
@@ -322,17 +330,7 @@ export async function detectOnsetsOfflineXGBoost(samples, sampleRate, model, opt
       }
       inputVec[j] = v;
     }
-
-    // Run ONNX inference
-    const inputTensor = new ort.Tensor('float32', inputVec, [1, featureOrder.length]);
-    const results = await session.run({ [inputName]: inputTensor });
-    const output = results[outputName] ?? results.probabilities;
-
-    // Extract probability for the positive class
-    const prob = output.data.length >= 2
-      ? output.data[1]  // classifier output: [prob_class0, prob_class1]
-      : output.data[0];
-    probabilities.push(Number.isFinite(prob) ? prob : 0);
+    inputRows.push(inputVec);
 
     // Update history (newest first, max 30)
     historyBuffer.unshift({ ...baseFeatures });
@@ -346,6 +344,22 @@ export async function detectOnsetsOfflineXGBoost(samples, sampleRate, model, opt
     prevSpectralFlatness = baseFeatures.spectralFlatness;
     prevCrestFactor = baseFeatures.crestFactor;
     prevLogBandFlux_150_6000 = baseFeatures.logBandFlux_150_6000;
+  }
+
+  if (inputRows.length > 0) {
+    const batchedInput = new Float32Array(inputRows.length * featureOrder.length);
+    for (let i = 0; i < inputRows.length; i++) {
+      batchedInput.set(inputRows[i], i * featureOrder.length);
+    }
+    const inputTensor = new ort.Tensor('float32', batchedInput, [inputRows.length, featureOrder.length]);
+    const results = await session.run({ [inputName]: inputTensor });
+    const output = results[outputName] ?? results.probabilities;
+    const stride = output.data.length >= inputRows.length * 2 ? 2 : 1;
+    for (let i = 0; i < inputRows.length; i++) {
+      const valueIndex = stride === 2 ? (i * 2) + 1 : i;
+      const prob = output.data[valueIndex];
+      probabilities.push(Number.isFinite(prob) ? prob : 0);
+    }
   }
 
   return applyPeakPicking(probabilities, hopSize, sampleRate, decision);
