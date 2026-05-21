@@ -24,6 +24,7 @@ This file is the central hub for all AI agents (Claude, Gemini, Codex, Copilot, 
 - **Mobile First:** Ensure the UI is responsive and touch-friendly.
 - **PWA Ready:** Keep `sw.js` and `manifest.json` updated.
 - **Logic Isolation:** Business logic belongs in `*Logic.js` files as pure functions.
+- **File Size Limit:** Controller/Tool files (`js/games/*/`, `js/tools/*/`) must stay under **~400 LOC**. If a controller exceeds this, extract audio, UI rendering, or domain logic into separate focused modules. Pure-function logic files (`*Logic.js`) have no hard limit.
 - **Architecture Reference:** Follow [docs/architecture.md](docs/architecture.md).
 
 ## 3. Workflow & Quality Assurance
