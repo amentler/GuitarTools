@@ -310,7 +310,7 @@ export function normalizeRecordingBaseName(input, fallback = 'recording') {
   return fallbackName || 'recording';
 }
 
-const TRAINING_ROLE_TOKENS = ['train', 'test', 'val'];
+const TRAINING_ROLE_TOKENS = ['train', 'validation'];
 
 /**
  * Inserts, replaces, or removes a training-role token in a baseName.
@@ -318,7 +318,7 @@ const TRAINING_ROLE_TOKENS = ['train', 'test', 'val'];
  * (which is typically the random suffix).
  *
  * @param {string} baseName     Current baseName, e.g. "notenlesen_4_4_120bpm_abc12"
- * @param {string} trainingRole One of "train" | "test" | "random" | ""
+ * @param {string} trainingRole One of "train" | "validation" | "random" | ""
  * @returns {string}            Updated baseName
  */
 export function applyTrainingRoleToBaseName(baseName, trainingRole) {

@@ -31,8 +31,8 @@ describe('DROPDOWN_OPTIONS', () => {
       expect(opts[0] === '' || key === 'trainingRole').toBe(true);
     }
   });
-  it('trainingRole options are random/train/test', () => {
-    expect(DROPDOWN_OPTIONS.trainingRole).toEqual(['random', 'train', 'test']);
+  it('trainingRole options are random/train/validation', () => {
+    expect(DROPDOWN_OPTIONS.trainingRole).toEqual(['random', 'train', 'validation']);
   });
 });
 

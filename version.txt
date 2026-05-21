@@ -1,1 +1,1 @@
-Version 0.185 | 2026-05-21 17:16 | d17951d | js/tools/onsetTagger/onsetTagger.js (+5 more)
+Version 0.186 | 2026-05-21 18:14 | 5ac13f9 | js/tools/onsetTagger/onsetTaggerLogic.js (+5 more)

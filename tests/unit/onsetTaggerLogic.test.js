@@ -377,9 +377,9 @@ describe('applyTrainingRoleToBaseName', () => {
       .toBe('notenlesen_4_4_120bpm_test_abc12');
   });
 
-  it('inserts role before last segment for val (backward compat)', () => {
-    expect(applyTrainingRoleToBaseName('notenlesen_abc12', 'val'))
-      .toBe('notenlesen_val_abc12');
+  it('inserts validation role before last segment', () => {
+    expect(applyTrainingRoleToBaseName('notenlesen_abc12', 'validation'))
+      .toBe('notenlesen_validation_abc12');
   });
 
   it('replaces existing train role with test', () => {
@@ -392,8 +392,8 @@ describe('applyTrainingRoleToBaseName', () => {
       .toBe('notenlesen_4_abc12');
   });
 
-  it('removes test role when empty string given', () => {
-    expect(applyTrainingRoleToBaseName('notenlesen_test_abc12', ''))
+  it('removes validation role when empty string given', () => {
+    expect(applyTrainingRoleToBaseName('notenlesen_validation_abc12', ''))
       .toBe('notenlesen_abc12');
   });
 

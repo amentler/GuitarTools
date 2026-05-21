@@ -187,7 +187,7 @@ def load_training_files(data_dir: str, feature_names: list[str], positive_window
 
         # Training role (forced split assignment)
         raw_role = meta.get("trainingRole") or None
-        training_role = raw_role if raw_role in ("train", "test", "val") and raw_role != "random" else None
+        training_role = raw_role if raw_role in ("train", "validation") else None
 
         file_features.append(X)
         file_labels.append(y)
@@ -218,58 +218,51 @@ def split_by_file(
     file_labels: list,
     file_names: list,
     file_training_roles: list,
-    test_split: float,
-    val_split: float,
+    validation_split: float,
     random_state: int,
 ):
     """
-    Splits file-level. Files with a forced trainingRole ("train"/"test"/"val")
+    Splits file-level. Files with a forced trainingRole ("train"/"validation")
     are always assigned to their designated split. Remaining files are split
-    randomly according to test_split and val_split.
+    randomly according to validation_split.
 
-    Returns (X_train, y_train, X_val, y_val, X_test, y_test, val_idx, test_idx).
+    Returns (X_train, y_train, X_val, y_val, val_idx).
     """
-    forced_train = [i for i, r in enumerate(file_training_roles) if r == "train"]
-    forced_val   = [i for i, r in enumerate(file_training_roles) if r == "val"]
-    forced_test  = [i for i, r in enumerate(file_training_roles) if r == "test"]
-    random_files = [i for i, r in enumerate(file_training_roles) if r not in ("train", "test", "val")]
+    forced_train      = [i for i, r in enumerate(file_training_roles) if r == "train"]
+    forced_validation = [i for i, r in enumerate(file_training_roles) if r == "validation"]
+    random_files      = [i for i, r in enumerate(file_training_roles) if r not in ("train", "validation")]
 
-    if forced_train or forced_test or forced_val:
+    if forced_train or forced_validation:
         print(
             f"  Forced assignments: train={len(forced_train)}, "
-            f"val={len(forced_val)}, test={len(forced_test)}, "
-            f"random={len(random_files)}"
+            f"validation={len(forced_validation)}, random={len(random_files)}"
         )
 
     rng = np.random.RandomState(random_state)
     indices = rng.permutation(random_files)
     n = len(indices)
 
-    n_test  = max(0, int(n * test_split))
-    n_val   = max(0, int(n * val_split))
-    n_train = n - n_test - n_val
-
+    n_val   = max(0, int(n * validation_split))
+    n_train = n - n_val
     if n_train < 0:
         n_train = 0
 
     rand_train = list(indices[:n_train])
-    rand_val   = list(indices[n_train:n_train + n_val])
-    rand_test  = list(indices[n_train + n_val:])
+    rand_val   = list(indices[n_train:])
 
-    train_idx = np.array(forced_train + rand_train)
-    val_idx   = np.array(forced_val   + rand_val)
-    test_idx  = np.array(forced_test  + rand_test)
+    train_idx = np.array(forced_train      + rand_train)
+    val_idx   = np.array(forced_validation + rand_val)
 
-    total_assigned = len(train_idx) + len(val_idx) + len(test_idx)
+    total_assigned = len(train_idx) + len(val_idx)
     if total_assigned < len(file_features):
         sys.exit(
             f"ERROR: Not enough files for split. Have {len(file_features)}, "
-            f"assigned {total_assigned}. Add more training data or lower test/val split."
+            f"assigned {total_assigned}. Add more training data or lower validation_split."
         )
     if len(train_idx) == 0:
         sys.exit(
             "ERROR: Training set is empty after forced assignments. "
-            "Tag fewer files as 'test'/'val' or add more training data."
+            "Tag fewer files as 'validation' or add more training data."
         )
 
     def concat(idxs):
@@ -281,14 +274,12 @@ def split_by_file(
 
     X_train, y_train = concat(train_idx)
     X_val,   y_val   = concat(val_idx)
-    X_test,  y_test  = concat(test_idx)
 
     print(
         f"  Split: train={len(train_idx)} files ({len(y_train)} frames), "
-        f"val={len(val_idx)} files ({len(y_val)} frames), "
-        f"test={len(test_idx)} files ({len(y_test)} frames)"
+        f"validation={len(val_idx)} files ({len(y_val)} frames)"
     )
-    return X_train, y_train, X_val, y_val, X_test, y_test, val_idx, test_idx
+    return X_train, y_train, X_val, y_val, val_idx
 
 
 # ---------------------------------------------------------------------------
@@ -919,24 +910,24 @@ def summarize_probabilities(y_prob: np.ndarray) -> dict:
 
 def compute_metrics(
     model,
-    X_test,
-    y_test,
-    test_files: list[dict],
+    X_val,
+    y_val,
+    val_files: list[dict],
     cfg: dict,
     audio_config: dict,
     threshold: float = 0.5,
     threshold_selection: dict | None = None,
 ) -> dict:
-    y_prob = predict_probabilities(model, X_test)
+    y_prob = predict_probabilities(model, X_val)
     y_pred = (y_prob >= threshold).astype(int)
-    peak_metrics = evaluate_app_peak_picking(model, test_files, threshold, cfg, audio_config)
+    peak_metrics = evaluate_app_peak_picking(model, val_files, threshold, cfg, audio_config)
 
-    prec  = precision_score(y_test, y_pred, zero_division=0)
-    rec   = recall_score(y_test, y_pred, zero_division=0)
-    f1    = f1_score(y_test, y_pred, zero_division=0)
-    roc   = roc_auc_score(y_test, y_prob) if y_test.sum() > 0 else 0.0
-    pr    = average_precision_score(y_test, y_prob) if y_test.sum() > 0 else 0.0
-    cm    = confusion_matrix(y_test, y_pred).tolist()
+    prec  = precision_score(y_val, y_pred, zero_division=0)
+    rec   = recall_score(y_val, y_pred, zero_division=0)
+    f1    = f1_score(y_val, y_pred, zero_division=0)
+    roc   = roc_auc_score(y_val, y_prob) if y_val.sum() > 0 else 0.0
+    pr    = average_precision_score(y_val, y_prob) if y_val.sum() > 0 else 0.0
+    cm    = confusion_matrix(y_val, y_pred).tolist()
 
     metrics = {
         "threshold":   round(float(threshold), 6),
@@ -946,8 +937,8 @@ def compute_metrics(
         "roc_auc":     round(roc, 4),
         "pr_auc":      round(pr, 4),
         "confusion_matrix": cm,
-        "test_positives":   int(y_test.sum()),
-        "test_negatives":   int((y_test == 0).sum()),
+        "validation_positives":   int(y_val.sum()),
+        "validation_negatives":   int((y_val == 0).sum()),
         "probability_summary": summarize_probabilities(y_prob),
         "peak_picking": {
             **peak_metrics,
@@ -961,7 +952,7 @@ def compute_metrics(
     if threshold_selection:
         metrics["threshold_selection"] = threshold_selection
     print(
-        f"\n  Test metrics after app peak picking (threshold={threshold}):\n"
+        f"\n  Validation metrics after app peak picking (threshold={threshold}):\n"
         f"    Precision={peak_metrics['precision']:.4f}  Recall={peak_metrics['recall']:.4f} "
         f"F1={peak_metrics['f1']:.4f}\n"
         f"    Confusion Matrix: {peak_metrics['confusion_matrix']}\n"
@@ -1076,10 +1067,9 @@ def main():
     sampling_cfg    = cfg.get("sampling", {})
     decision_cfg    = cfg.get("decision", {})
 
-    random_state   = training_cfg.get("random_state", 42)
-    test_split     = training_cfg.get("test_split", 0.2)
-    val_split      = training_cfg.get("validation_split", 0.1)
-    normalize      = training_cfg.get("normalize_features", True)
+    random_state      = training_cfg.get("random_state", 42)
+    validation_split  = training_cfg.get("validation_split", 0.2)
+    normalize         = training_cfg.get("normalize_features", True)
     neg_ratio      = sampling_cfg.get("negative_sampling_ratio", 5.0)
     data_dir       = paths_cfg.get("training_data_dir", "./training_data")
     output_model   = paths_cfg.get("output_model",   "./models/onset_detector.onnx")
@@ -1095,8 +1085,8 @@ def main():
 
     # Split
     print("\n--- Splitting by file ---")
-    X_train, y_train, X_val, y_val, X_test, y_test, val_idx, test_idx = split_by_file(
-        file_features, file_labels, file_names, file_training_roles, test_split, val_split, random_state
+    X_train, y_train, X_val, y_val, val_idx = split_by_file(
+        file_features, file_labels, file_names, file_training_roles, validation_split, random_state
     )
 
     val_files = []
@@ -1131,7 +1121,6 @@ def main():
             scaler = StandardScaler()
             X_train = scaler.fit_transform(X_train)
             X_val   = scaler.transform(X_val)
-            X_test  = scaler.transform(X_test)
             file_features_for_eval = [scaler.transform(X) for X in file_features]
         else:
             file_features_for_eval = file_features
@@ -1150,19 +1139,10 @@ def main():
         model = tuned_model
         scaler = tuned_scaler
         if scaler is not None:
-            X_test = scaler.transform(X_test)
+            X_val = scaler.transform(X_val)
             file_features_for_eval = [scaler.transform(X) for X in file_features]
         else:
             file_features_for_eval = file_features
-
-    test_files = build_eval_files(
-        test_idx,
-        file_features_for_eval,
-        file_labels,
-        file_names,
-        file_times_ms,
-        file_onsets_ms,
-    )
 
     print("\n--- Selecting threshold on validation set after app peak picking ---")
     threshold_selection = select_peak_threshold(model, val_files, cfg, audio_config or {})
@@ -1184,9 +1164,9 @@ def main():
         threshold_selection["hyperparameter_tuning"] = tuning_result
     print(f"  Threshold selection: {threshold_selection}")
 
-    # Metrics
-    print("\n--- Evaluating on test set ---")
-    metrics = compute_metrics(model, X_test, y_test, test_files, cfg, audio_config or {}, threshold, threshold_selection)
+    # Metrics on validation set
+    print("\n--- Evaluating on validation set ---")
+    metrics = compute_metrics(model, X_val, y_val, val_files, cfg, audio_config or {}, threshold, threshold_selection)
 
     # ONNX export
     print("\n--- Exporting ONNX ---")

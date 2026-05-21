@@ -37,7 +37,7 @@ export const DEFAULT_SIDECAR_FIELDS = {
 };
 
 export const DROPDOWN_OPTIONS = {
-  trainingRole:  ['random', 'train', 'test'],
+  trainingRole:  ['random', 'train', 'validation'],
   category:      ['', 'sheet-music-reading', 'open-strings'],
   chord:         ['', 'A-Dur', 'A-Moll', 'A7', 'Am7', 'Amaj7',
                   'C-Dur', 'C-Dur (1-Finger)', 'C7', 'Cmaj7',

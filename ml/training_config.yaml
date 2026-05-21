@@ -133,8 +133,7 @@ decision:
 
 training:
   split_mode: by_file
-  test_split: 0.2
-  validation_split: 0.1
+  validation_split: 0.2
   early_stopping_rounds: 20
   random_state: 42
   normalize_features: true
