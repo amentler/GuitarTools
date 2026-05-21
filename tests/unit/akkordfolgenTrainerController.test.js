@@ -62,7 +62,7 @@ function buildDom() {
       <div id="aft-progression-display"></div>
       <div id="aft-current-chord-name"></div>
       <div id="aft-current-numeral"></div>
-      <div id="aft-chord-diagram"></div>
+      <div id="aft-chord-fretboard"></div>
       <div id="aft-beat-dots"></div>
       <div id="aft-feedback"></div>
       <button id="aft-stop-btn">Stop</button>
@@ -214,5 +214,65 @@ describe('AkkordfolgenTrainer controller behavior', () => {
       analyserNode: mockAudio.analyser,
       sampleRate: 44100,
     });
+  });
+
+  it('start button populates progression strip and beat dots', async () => {
+    const feature = createAkkordfolgenTrainerFeature();
+    feature.mount();
+
+    document.getElementById('aft-start-btn').click();
+    await vi.waitFor(() => {
+      expect(metronomeStart).toHaveBeenCalled();
+    });
+
+    const progressionDisplay = document.getElementById('aft-progression-display');
+    expect(progressionDisplay.children.length).toBeGreaterThan(0);
+
+    const beatDots = document.getElementById('aft-beat-dots');
+    expect(beatDots.children.length).toBeGreaterThan(0);
+  });
+
+  it('active panel is shown immediately when start is clicked (before mic resolves)', async () => {
+    let resolveMic;
+    vi.stubGlobal('navigator', {
+      mediaDevices: {
+        getUserMedia: vi.fn(() => new Promise(resolve => { resolveMic = resolve; })),
+      },
+    });
+    vi.resetModules();
+    ({ createAkkordfolgenTrainerFeature } = await import('../../js/games/akkordfolgenTrainer/akkordfolgenTrainer.js'));
+
+    const feature = createAkkordfolgenTrainerFeature();
+    feature.mount();
+
+    document.getElementById('aft-start-btn').click();
+    await Promise.resolve();
+
+    expect(document.getElementById('aft-active').classList.contains('u-hidden')).toBe(false);
+    expect(document.getElementById('aft-setup').classList.contains('u-hidden')).toBe(true);
+
+    resolveMic({ getTracks: () => [{ stop: vi.fn() }] });
+  });
+
+  it('reverts to setup with error message when microphone is denied', async () => {
+    vi.stubGlobal('navigator', {
+      mediaDevices: {
+        getUserMedia: vi.fn().mockRejectedValue(new Error('Permission denied')),
+      },
+    });
+    vi.resetModules();
+    ({ createAkkordfolgenTrainerFeature } = await import('../../js/games/akkordfolgenTrainer/akkordfolgenTrainer.js'));
+
+    const feature = createAkkordfolgenTrainerFeature();
+    feature.mount();
+
+    document.getElementById('aft-start-btn').click();
+    await vi.waitFor(() => {
+      expect(document.getElementById('aft-setup').classList.contains('u-hidden')).toBe(false);
+    });
+
+    expect(document.getElementById('aft-active').classList.contains('u-hidden')).toBe(true);
+    const permissionEl = document.getElementById('aft-permission');
+    expect(permissionEl.textContent).toMatch(/Mikrofon/i);
   });
 });

@@ -1,16 +1,16 @@
-# Graph Report - GuitarTools  (2026-05-20)
+# Graph Report - GuitarToolsCopilot  (2026-05-21)
 
 ## Corpus Check
-- 585 files · ~918,098 words
+- 585 files · ~918,162 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 29674 nodes · 40375 edges · 2059 communities (2035 shown, 24 thin omitted)
+- 29685 nodes · 40382 edges · 2050 communities (2028 shown, 22 thin omitted)
 - Extraction: 100% EXTRACTED · 0% INFERRED · 0% AMBIGUOUS · INFERRED: 173 edges (avg confidence: 0.8)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `e3a86e27`
+- Built from commit: `3a10af40`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -1908,10 +1908,7 @@
 - [[_COMMUNITY_Community 2002|Community 2002]]
 - [[_COMMUNITY_Community 2003|Community 2003]]
 - [[_COMMUNITY_Community 2004|Community 2004]]
-- [[_COMMUNITY_Community 2005|Community 2005]]
 - [[_COMMUNITY_Community 2006|Community 2006]]
-- [[_COMMUNITY_Community 2007|Community 2007]]
-- [[_COMMUNITY_Community 2008|Community 2008]]
 - [[_COMMUNITY_Community 2009|Community 2009]]
 - [[_COMMUNITY_Community 2010|Community 2010]]
 - [[_COMMUNITY_Community 2011|Community 2011]]
@@ -1922,7 +1919,6 @@
 - [[_COMMUNITY_Community 2016|Community 2016]]
 - [[_COMMUNITY_Community 2017|Community 2017]]
 - [[_COMMUNITY_Community 2018|Community 2018]]
-- [[_COMMUNITY_Community 2019|Community 2019]]
 - [[_COMMUNITY_Community 2020|Community 2020]]
 - [[_COMMUNITY_Community 2021|Community 2021]]
 - [[_COMMUNITY_Community 2022|Community 2022]]
@@ -1934,9 +1930,7 @@
 - [[_COMMUNITY_Community 2028|Community 2028]]
 - [[_COMMUNITY_Community 2029|Community 2029]]
 - [[_COMMUNITY_Community 2030|Community 2030]]
-- [[_COMMUNITY_Community 2031|Community 2031]]
 - [[_COMMUNITY_Community 2032|Community 2032]]
-- [[_COMMUNITY_Community 2033|Community 2033]]
 - [[_COMMUNITY_Community 2034|Community 2034]]
 - [[_COMMUNITY_Community 2035|Community 2035]]
 - [[_COMMUNITY_Community 2036|Community 2036]]
@@ -1945,13 +1939,10 @@
 - [[_COMMUNITY_Community 2039|Community 2039]]
 - [[_COMMUNITY_Community 2040|Community 2040]]
 - [[_COMMUNITY_Community 2041|Community 2041]]
-- [[_COMMUNITY_Community 2042|Community 2042]]
 - [[_COMMUNITY_Community 2043|Community 2043]]
 - [[_COMMUNITY_Community 2044|Community 2044]]
-- [[_COMMUNITY_Community 2045|Community 2045]]
 - [[_COMMUNITY_Community 2046|Community 2046]]
 - [[_COMMUNITY_Community 2047|Community 2047]]
-- [[_COMMUNITY_Community 2058|Community 2058]]
 
 ## God Nodes (most connected - your core abstractions)
 1. `mean` - 82 edges
@@ -1966,18 +1957,18 @@
 10. `std` - 82 edges
 
 ## Surprising Connections (you probably didn't know these)
-- `Gb()` --calls--> `x`  [INFERRED]
-  js/lib/onnxruntime/ort-wasm-simd-threaded.jsep.mjs → tests/unit/playbackBar.test.js
-- `Zd()` --calls--> `x`  [INFERRED]
-  js/lib/onnxruntime/ort-wasm-simd-threaded.jsep.mjs → tests/unit/playbackBar.test.js
-- `getVoiceParams()` --calls--> `getTimeSignatureConfig()`  [INFERRED]
-  tests/unit/vexflowConfig.test.js → js/shared/music/sheetMusicLogic.js
-- `pitchHz()` --calls--> `noteToFrequency()`  [INFERRED]
-  tests/unit/fastNoteMatcher.test.js → js/domain/pitch/pitchCore.js
-- `a` --calls--> `q`  [INFERRED]
-  js/lib/onnxruntime/ort.min.js → tests/unit/chordRecorderFiles.test.js
+- `train_model()` --calls--> `version`  [INFERRED]
+  /workspace/GuitarTools/ml/train_onset_detector.py → models/strategies/registry.json
+- `discoverSheetMusicSequenceFixtures()` --calls--> `collectWavFiles()`  [EXTRACTED]
+  /workspace/GuitarTools/tests/helpers/sheetMusicSequenceFingerprint.js → tests/helpers/sheetMusicSequenceFingerprint.js
+- `loadFixture()` --calls--> `readWavFile()`  [EXTRACTED]
+  tests/unit/noteOnsetGateAudio.test.js → /workspace/GuitarTools/tests/helpers/wavDecoder.js
+- `createOnsetTaggerFeature()` --calls--> `createGlobalDebugStore()`  [INFERRED]
+  js/tools/onsetTagger/onsetTagger.js → /workspace/GuitarTools/js/shared/debug/debugStore.js
+- `getSheetMusicTargetHarmonicScore()` --calls--> `noteToFrequency()`  [INFERRED]
+  js/games/sheetMusicReading/sheetMusicRecognition.js → /workspace/GuitarTools/js/domain/pitch/pitchCore.js
 
-## Communities (2059 total, 24 thin omitted)
+## Communities (2050 total, 22 thin omitted)
 
 ### Community 0 - "Community 0"
 Cohesion: 0.08
@@ -1988,40 +1979,40 @@ Cohesion: 0.06
 Nodes (73): abort(), addFunctionWasm(), alignUp(), ClassHandle(), ClassHandle_isAliasOf(), ClassHandle_isDeleted(), _clock(), convertJsFunctionToWasm() (+65 more)
 
 ### Community 2 - "Community 2"
-Cohesion: 0.06
-Nodes (68): frameRms(), parsePitch(), classifyFrame(), createMatchState(), FFT_SIZE_OPTIONS, getMinSamplesFor(), getRecommendedFftSize(), parsePitch() (+60 more)
+Cohesion: 0.07
+Nodes (59): createEssentiaSheetMusicStrategy(), frameRms(), parsePitch(), classifyFrame(), createMatchState(), FFT_SIZE_OPTIONS, getMinSamplesFor(), getRecommendedFftSize() (+51 more)
 
 ### Community 3 - "Community 3"
-Cohesion: 0.11
-Nodes (46): getDurationMs(), getSortedChordNames(), GUITAR_SIZES, GUITAR_STRINGS, loadInventory(), PRE_COUNTDOWN, ROOT_ORDER, sleep() (+38 more)
+Cohesion: 0.05
+Nodes (79): countMatchingRecordings(), isChordSufficient(), createChordRecorderTool(), getDurationMs(), getSortedChordNames(), GUITAR_SIZES, GUITAR_STRINGS, loadInventory() (+71 more)
 
 ### Community 4 - "Community 4"
-Cohesion: 0.07
-Nodes (34): feature, root, feature, root, feature, root, createAkkordfolgenTrainerFeature(), createAkkordTrainerFeature() (+26 more)
+Cohesion: 0.05
+Nodes (47): feature, root, feature, root, feature, root, createAkkordfolgenTrainerFeature(), createAkkordTrainerFeature() (+39 more)
 
 ### Community 5 - "Community 5"
-Cohesion: 0.05
-Nodes (100): createGuitarOnsetState(), createOnsetGateState(), buildWasmSandbox(), __dirname, LIB_DIR, loadEssentiaForNode(), resampleLinear(), loadSequenceFixtureAudio() (+92 more)
+Cohesion: 0.07
+Nodes (67): createGuitarOnsetState(), getGuitarOnsetStrategies(), getSheetMusicRecognitionStrategies(), buildWasmSandbox(), __dirname, LIB_DIR, loadEssentiaForNode(), collectWavs() (+59 more)
 
 ### Community 6 - "Community 6"
 Cohesion: 0.06
-Nodes (70): collectFrameData(), computeDbSpectrum(), fftInPlace(), getEssentia(), loadScript(), createEssentiaSheetMusicStrategy(), BROADBAND_OR_GUITAR_ONSET_OPTIONS, BROADBAND_OR_NORMALIZED_OPTIONS (+62 more)
+Nodes (62): collectFrameData(), computeDbSpectrum(), fftInPlace(), getEssentia(), loadScript(), BROADBAND_OR_GUITAR_ONSET_OPTIONS, BROADBAND_OR_NORMALIZED_OPTIONS, _buildStrategyFromEntry() (+54 more)
 
 ### Community 7 - "Community 7"
 Cohesion: 0.03
 Nodes (161): additionalImplementations(), addSymbol(), adjustPadAndReturnShape(), adjustPadsBasedOnAutoPad(), adjustPoolAttributes(), alloc(), appendVariableUniforms(), areEqual() (+153 more)
 
 ### Community 8 - "Community 8"
-Cohesion: 0.07
-Nodes (61): binToUnit(), computeActiveBandRatio(), computeActiveBandRatioLinear(), computeBroadbandFlux(), computeCrestFactor(), computeHighFrequencyContent(), computeSpectralCentroid(), computeSpectralFlatness() (+53 more)
+Cohesion: 0.05
+Nodes (77): binToUnit(), computeActiveBandRatio(), computeActiveBandRatioLinear(), computeBroadbandFlux(), computeCrestFactor(), computeHighFrequencyContent(), computeSpectralCentroid(), computeSpectralFlatness() (+69 more)
 
 ### Community 9 - "Community 9"
 Cohesion: 0.02
 Nodes (82): bandRatio.current, bandRatio.previous_1, bandRatio.previous_2, bandRatio.previous_3, broadbandFlux.current, broadbandFlux.mad_last_30, broadbandFlux.max_last_5, broadbandFlux.mean_last_5 (+74 more)
 
 ### Community 10 - "Community 10"
-Cohesion: 0.05
-Nodes (71): getGuitarOnsetStrategies(), GLOBAL_DEBUG_DEFAULTS, clonePayload(), createBasePageContext(), createGlobalDebugStore(), loadPersistedState(), normalizeString(), resolvePageUrl() (+63 more)
+Cohesion: 0.08
+Nodes (44): GLOBAL_DEBUG_DEFAULTS, clonePayload(), createBasePageContext(), createGlobalDebugStore(), loadPersistedState(), normalizeString(), resolvePageUrl(), toIsoTimestamp() (+36 more)
 
 ### Community 11 - "Community 11"
 Cohesion: 0.08
@@ -2032,8 +2023,8 @@ Cohesion: 0.1
 Nodes (55): BASS_VARIANT_COUNTERPART, CHORD_TYPE_PROFILES, DEFAULT_PROFILE, GERMAN_TO_BIN, NOTE_TO_BIN, OPEN_STRUM_BASE_BINS, OPEN_STRUM_TEMPLATE_OFFSETS, SUS_IDENTITY_COUNTERPART (+47 more)
 
 ### Community 13 - "Community 13"
-Cohesion: 0.16
-Nodes (41): _analysisFrames, appendAxes(), appendOnsetMarkers(), appendXAxis(), appendYGrid(), _buildTooltipContent(), createSection(), _crosshairLines (+33 more)
+Cohesion: 0.06
+Nodes (55): _analysisFrames, appendAxes(), appendOnsetMarkers(), appendXAxis(), appendYGrid(), _buildTooltipContent(), createSection(), _crosshairLines (+47 more)
 
 ### Community 14 - "Community 14"
 Cohesion: 0.08
@@ -2044,8 +2035,8 @@ Cohesion: 0.02
 Nodes (82): bandRatio.current, bandRatio.previous_1, bandRatio.previous_2, bandRatio.previous_3, broadbandFlux.current, broadbandFlux.mad_last_30, broadbandFlux.max_last_5, broadbandFlux.mean_last_5 (+74 more)
 
 ### Community 16 - "Community 16"
-Cohesion: 0.18
-Nodes (17): closeAkkordfolgenAudioSession(), createAkkordfolgenAudioSession(), openAkkordfolgenAudioSession(), closeAudioSession(), createAudioSessionState(), openAudioSession(), closeAudioSession(), closeNotePlayingAudioSession() (+9 more)
+Cohesion: 0.12
+Nodes (27): closeAkkordfolgenAudioSession(), createAkkordfolgenAudioSession(), openAkkordfolgenAudioSession(), closeAudioSession(), createAudioSessionState(), openAudioSession(), DEFAULT_CONSTRAINTS, requestMicrophoneStream() (+19 more)
 
 ### Community 17 - "Community 17"
 Cohesion: 0.04
@@ -3088,12 +3079,12 @@ Cohesion: 0.05
 Nodes (38): analyzeIntervalMs, acceptableMatches, duplicates, exact, extremeOver, extremeUnder, falsePositives, goodMatches (+30 more)
 
 ### Community 277 - "Community 277"
-Cohesion: 0.22
-Nodes (14): buildInventoryEntry(), countMatchingRecordings(), isChordSufficient(), CHORDS_DIR, collectSidecars(), __dirname, inventory, OUT_FILE (+6 more)
+Cohesion: 0.42
+Nodes (7): buildInventoryEntry(), CHORDS_DIR, collectSidecars(), __dirname, inventory, OUT_FILE, REPO_ROOT
 
 ### Community 278 - "Community 278"
-Cohesion: 0.11
-Nodes (5): MetronomeLogic, PlaybackController, barIndices, calls, pc
+Cohesion: 0.08
+Nodes (13): createAudioContext(), createAudioContextFactory(), resolveAudioContextCtor(), MetronomeLogic, PlaybackController, audioContext, ExplicitAudioContext, factory (+5 more)
 
 ### Community 279 - "Community 279"
 Cohesion: 0.05
@@ -3128,8 +3119,8 @@ Cohesion: 0.05
 Nodes (37): acceptableMatches, duplicates, exact, extremeOver, extremeUnder, falsePositives, goodMatches, meanAbsErrorMs (+29 more)
 
 ### Community 287 - "Community 287"
-Cohesion: 0.11
-Nodes (31): CHORD_DETECTION_PATHS, getDefaultChordDetectionPath(), isEssentiaDetectionPath(), resolveChordDetectionPath(), audioSession, CHORD_TEMPLATES, computeHpcp(), computeHpcpEssentia() (+23 more)
+Cohesion: 0.1
+Nodes (32): CHORD_DETECTION_PATHS, getDefaultChordDetectionPath(), isEssentiaDetectionPath(), resolveChordDetectionPath(), audioSession, CHORD_TEMPLATES, computeHpcp(), computeHpcpEssentia() (+24 more)
 
 ### Community 288 - "Community 288"
 Cohesion: 0.17
@@ -3148,8 +3139,8 @@ Cohesion: 0.02
 Nodes (82): std, bandRatio.current, bandRatio.previous_1, bandRatio.previous_2, bandRatio.previous_3, broadbandFlux.current, broadbandFlux.mad_last_30, broadbandFlux.max_last_5 (+74 more)
 
 ### Community 292 - "Community 292"
-Cohesion: 0.07
-Nodes (53): buildCollectionZip(), buildRecordingZip(), buildZip(), crc32(), CRC_TABLE, downloadBlob(), readZip(), writeU16() (+45 more)
+Cohesion: 0.1
+Nodes (38): buildCollectionZip(), buildRecordingZip(), buildZip(), crc32(), CRC_TABLE, downloadBlob(), writeU16(), writeU32() (+30 more)
 
 ### Community 293 - "Community 293"
 Cohesion: 0.06
@@ -3160,8 +3151,8 @@ Cohesion: 0.18
 Nodes (12): 1. Collaboration & Documentation, 2. Technical Standards & Architecture, 3. Workflow & Quality Assurance, 4. Developer Guides, 5. Tools & Shortcuts, Adding a New Game/Exercise, AI Agent Mandates - GuitarTools, graphify (+4 more)
 
 ### Community 295 - "Community 295"
-Cohesion: 0.13
-Nodes (42): createOnsetTaggerFeature(), DEFAULT_SIDECAR_FIELDS, DROPDOWN_OPTIONS, NUMERIC_DROPDOWN_KEYS, createOnsetTaggerAnalysisFlyout(), closeLoadMenu(), wireLoadMenu(), addOnset() (+34 more)
+Cohesion: 0.23
+Nodes (23): addOnset(), addOnsetWithIndex(), buildSidecarWithOnsets(), clamp(), computeFocusedRange(), computePlayheadPosition(), computeRangeSliderState(), computeSteppedZoomRange() (+15 more)
 
 ### Community 296 - "Community 296"
 Cohesion: 0.05
@@ -3169,7 +3160,7 @@ Nodes (42): Current Architecture, Current Architecture (Phase 1 Web Components),
 
 ### Community 297 - "Community 297"
 Cohesion: 0.1
-Nodes (41): applyGuitarBandpass(), buildAdaptiveThreshold(), centsDistance(), dampAttack(), detectPitch(), detectPitchHps(), detectPitchYin(), estimateNoiseFloorRms() (+33 more)
+Nodes (42): applyGuitarBandpass(), buildAdaptiveThreshold(), centsDistance(), dampAttack(), detectPitch(), detectPitchHps(), detectPitchYin(), estimateNoiseFloorRms() (+34 more)
 
 ### Community 298 - "Community 298"
 Cohesion: 0.16
@@ -3356,12 +3347,8 @@ Cohesion: 0.07
 Nodes (28): bpm, browserEnvironment, browser, browserVersion, language, model, os, osVersion (+20 more)
 
 ### Community 344 - "Community 344"
-Cohesion: 0.19
-Nodes (27): applyNoteSwitchHysteresis(), buildGuidedDisplay(), evaluateTrend(), getGuidedFeedback(), getPitchDirection(), getTuningState(), GUIDED_TUNING_STEPS, pushAndMedian() (+19 more)
-
-### Community 345 - "Community 345"
-Cohesion: 0.16
-Nodes (3): createMetronomeFeature(), MetronomeSVG, metro
+Cohesion: 0.06
+Nodes (73): createGuitarTunerFeature(), closeAudioSession(), createAudioSessionState(), openAudioSession(), nextGuidedStepState(), startGuidedModeState(), stopGuidedModeState(), createAnalysisRuntime() (+65 more)
 
 ### Community 346 - "Community 346"
 Cohesion: 0.22
@@ -3436,8 +3423,8 @@ Cohesion: 0.14
 Nodes (17): beatsSelect, highlightBeat(), highlightBeatMock, init(), initMock, render(), renderMock, setBeatsMock (+9 more)
 
 ### Community 364 - "Community 364"
-Cohesion: 0.13
-Nodes (15): feature, getEssentia, getSetting, init(), metronomeInit, metronomeSetBeatsPerMeasure, metronomeSetBpm, metronomeStart (+7 more)
+Cohesion: 0.11
+Nodes (18): beatDots, feature, getEssentia, getSetting, init(), metronomeInit, metronomeSetBeatsPerMeasure, metronomeSetBpm (+10 more)
 
 ### Community 365 - "Community 365"
 Cohesion: 0.1
@@ -3532,12 +3519,12 @@ Cohesion: 0.11
 Nodes (29): buildProgression(), createBeatChordSync(), generateRandomProgression(), getChordName(), MAJOR_KEYS, PROGRESSIONS, ROMAN_NUMERALS, resolveAkkordfolgenUI() (+21 more)
 
 ### Community 388 - "Community 388"
-Cohesion: 0.16
-Nodes (19): extractHpcpAnalysisFromWav(), CHORD_HPCP_FIXTURE_CASES, ALL_CHORD_NAMES, analysisCache, bassSupportCache, CHORD_FIXTURES_DIR, __dirname, getBassSupport() (+11 more)
+Cohesion: 0.18
+Nodes (18): extractHpcpAnalysisFromWav(), ALL_CHORD_NAMES, analysisCache, bassSupportCache, CHORD_FIXTURES_DIR, __dirname, getBassSupport(), getDirectAnalysis() (+10 more)
 
 ### Community 389 - "Community 389"
-Cohesion: 0.1
-Nodes (36): filter, getFilteredChords(), initFilters(), renderGrid(), ROOT_ORDER, TYPE_ORDER, getEssentia(), getRandomChord() (+28 more)
+Cohesion: 0.08
+Nodes (48): validateChord(), filter, getFilteredChords(), initFilters(), renderGrid(), ROOT_ORDER, TYPE_ORDER, getRandomChord() (+40 more)
 
 ### Community 390 - "Community 390"
 Cohesion: 0.11
@@ -4312,8 +4299,8 @@ Cohesion: 0.23
 Nodes (14): __embind_register_bool(), __embind_register_emval(), __embind_register_float(), __embind_register_integer(), __embind_register_memory_view(), __embind_register_std_wstring(), __embind_register_void(), __emval_decref() (+6 more)
 
 ### Community 583 - "Community 583"
-Cohesion: 0.09
-Nodes (45): apply_app_peak_picking(), apply_negative_sampling(), build_eval_files(), compute_metrics(), evaluate_app_peak_picking(), export_onnx(), find_best_f1_threshold(), generate_tuning_candidates() (+37 more)
+Cohesion: 0.15
+Nodes (34): apply_app_peak_picking(), apply_negative_sampling(), build_eval_files(), compute_metrics(), evaluate_app_peak_picking(), find_best_f1_threshold(), generate_tuning_candidates(), load_config() (+26 more)
 
 ### Community 584 - "Community 584"
 Cohesion: 0.13
@@ -4384,8 +4371,8 @@ Cohesion: 0.11
 Nodes (18): metrics, confusion_matrix, f1, pr_auc, precision, probability_summary, recall, roc_auc (+10 more)
 
 ### Community 601 - "Community 601"
-Cohesion: 0.13
-Nodes (28): buildBassSupportByChord(), CHORD_FIXTURES_DIR, __dirname, extractBassScoreForChordFromSamples(), extractBassScoreForChordFromWav(), extractBassSupportMapFromSamples(), extractBassSupportMapFromWav(), findStrumOnsetSample() (+20 more)
+Cohesion: 0.21
+Nodes (16): ALL_CHORD_NAMES, aMinorResult, avgHpcp, bassSupportByChord, __dirname, EMPTY_STRUM_BASS_SUPPORT, EMPTY_STRUM_FIXTURES, fixture (+8 more)
 
 ### Community 602 - "Community 602"
 Cohesion: 0.19
@@ -4645,7 +4632,7 @@ Nodes (10): beamSize, candidatesPerRound, fixturesDir, globalResetInterval, minS
 
 ### Community 666 - "Community 666"
 Cohesion: 0.18
-Nodes (11): fixtureOverrides, open-strings/aeaedgdgbebeabab_slow.wav, sheet-music-reading/4-4_40bpm_EBGDA_1jtn8.wav, maxOnsets, minOnsets, role, weight, maxOnsets (+3 more)
+Nodes (11): fixtureOverrides, open-strings/aeaedgdgbebeabab_slow.wav, open-strings/aeaedgdgbebeabab.wav, maxOnsets, minOnsets, role, weight, maxOnsets (+3 more)
 
 ### Community 667 - "Community 667"
 Cohesion: 0.18
@@ -4660,8 +4647,8 @@ Cohesion: 0.14
 Nodes (14): params, colsample_bytree, gamma, learning_rate, lookahead_frames, max_delta_step, max_depth, min_child_weight (+6 more)
 
 ### Community 670 - "Community 670"
-Cohesion: 0.28
-Nodes (11): DEFAULT_CONSTRAINTS, requestMicrophoneStream(), resolveGetUserMedia(), stopMicrophoneStream(), createChordRecorderAudio(), encodeWav(), constraints, getUserMedia (+3 more)
+Cohesion: 0.11
+Nodes (40): createOnsetGateState(), resampleLinear(), loadSequenceFixtureAudio(), buildOnsetAcceptAlignment(), collectWavFiles(), countGuitarOnsets(), countRmsOnsets(), createOnsetEvaluation() (+32 more)
 
 ### Community 671 - "Community 671"
 Cohesion: 0.18
@@ -4697,7 +4684,7 @@ Nodes (22): audioConfig, fftSize, hopSize, logCompression, sampleRate, windowFun
 
 ### Community 679 - "Community 679"
 Cohesion: 0.18
-Nodes (11): fixtureOverrides, open-strings/aeaedgdgbebeabab_slow.wav, sheet-music-reading/4-4_40bpm_EBGDA_1jtn8.wav, maxOnsets, minOnsets, role, weight, maxOnsets (+3 more)
+Nodes (11): fixtureOverrides, open-strings/aeaedgdgbebeabab_slow.wav, open-strings/aeaedgdgbebeabab.wav, maxOnsets, minOnsets, role, weight, maxOnsets (+3 more)
 
 ### Community 680 - "Community 680"
 Cohesion: 0.4
@@ -4709,7 +4696,7 @@ Nodes (19): cosineSimilarity(), a, active, aMajorResult, aMinorResult, b, cDur, 
 
 ### Community 682 - "Community 682"
 Cohesion: 0.18
-Nodes (11): fixtureOverrides, open-strings/aeaedgdgbebeabab_slow.wav, open-strings/eeeeaaaaddddgggg.wav, maxOnsets, minOnsets, role, weight, maxOnsets (+3 more)
+Nodes (11): fixtureOverrides, open-strings/aeaedgdgbebeabab_slow.wav, open-strings/aeaedgdgbebeabab.wav, maxOnsets, minOnsets, role, weight, maxOnsets (+3 more)
 
 ### Community 683 - "Community 683"
 Cohesion: 0.18
@@ -5272,8 +5259,8 @@ Cohesion: 0.39
 Nodes (7): activeBtn, endlessBtn, label, score, select, slider, tabBtn
 
 ### Community 823 - "Community 823"
-Cohesion: 0.16
-Nodes (19): computed, __dirname, firstChartWrap, firstMarker, firstPlayhead, firstSvg, flyout, input (+11 more)
+Cohesion: 0.19
+Nodes (17): computed, __dirname, firstChartWrap, firstMarker, firstSvg, flyout, input, items (+9 more)
 
 ### Community 824 - "Community 824"
 Cohesion: 0.22
@@ -7220,8 +7207,8 @@ Cohesion: 0.12
 Nodes (22): audioConfig, fftSize, hopSize, logCompression, sampleRate, windowFunction, decision, lookaheadFrames (+14 more)
 
 ### Community 1310 - "Community 1310"
-Cohesion: 0.14
-Nodes (12): calcBeatX(), PlaybackBar, steps, UNEQUAL_LAYOUT, firstBeatBar1, lastBeatBar0, LAYOUT, single (+4 more)
+Cohesion: 0.11
+Nodes (20): calcBeatX(), PlaybackBar, createEndlessHelpers(), accidentalFromVfKey(), appendRow(), _renderNotation(), renderScore(), renderTab() (+12 more)
 
 ### Community 1311 - "Community 1311"
 Cohesion: 0.48
@@ -7248,8 +7235,8 @@ Cohesion: 0.14
 Nodes (16): addRunDependency(), assert(), ccall(), createExportWrapper(), createWasm(), doCallback(), done(), dynamicAlloc() (+8 more)
 
 ### Community 1317 - "Community 1317"
-Cohesion: 0.14
-Nodes (27): buildFrequencyFrames(), computeDbSpectrum(), computeLinearAndDbSpectrum(), computeLinearSpectrum(), computeRms(), extractHpcpAnalysisFromSamples(), fftInPlace(), fftScratchCache (+19 more)
+Cohesion: 0.17
+Nodes (14): buildCollectionZipMock, buildRecordingZipMock, data, downloadBlobMock, enc, eocd, extracted, files (+6 more)
 
 ### Community 1318 - "Community 1318"
 Cohesion: 0.29
@@ -7316,16 +7303,16 @@ Cohesion: 0.33
 Nodes (6): fixtureOverrides, open-strings/aeaedgdgbebeabab_slow.wav, maxOnsets, minOnsets, role, weight
 
 ### Community 1334 - "Community 1334"
-Cohesion: 0.4
-Nodes (5): sheet-music-reading/4-4_40bpm_EBGDA_1jtn8.wav, maxOnsets, minOnsets, role, weight
+Cohesion: 0.33
+Nodes (6): fixtureOverrides, sheet-music-reading/4-4_40bpm_EBGDA_1jtn8.wav, maxOnsets, minOnsets, role, weight
 
 ### Community 1335 - "Community 1335"
-Cohesion: 0.33
-Nodes (6): fixtureOverrides, open-strings/fast.wav, maxOnsets, minOnsets, role, weight
-
-### Community 1336 - "Community 1336"
 Cohesion: 0.4
 Nodes (5): open-strings/fast.wav, maxOnsets, minOnsets, role, weight
+
+### Community 1336 - "Community 1336"
+Cohesion: 0.33
+Nodes (6): fixtureOverrides, open-strings/fast.wav, maxOnsets, minOnsets, role, weight
 
 ### Community 1337 - "Community 1337"
 Cohesion: 0.53
@@ -8068,16 +8055,16 @@ Cohesion: 0.33
 Nodes (4): code:bash (# 1. ZIP(s) via GitHub in dieses Verzeichnis hochladen), Fixture Drop Zone, Was passiert, Workflow
 
 ### Community 1522 - "Community 1522"
-Cohesion: 0.22
-Nodes (12): buf, buffer, detected, freq, hz, level, mags, makeHarmonicSpectrum() (+4 more)
+Cohesion: 0.12
+Nodes (28): detectNoteFromSamples(), getAudioFixtures(), __dirname, __filename, fixtures, FIXTURES_DIR, IMPRECISE_FIXTURES, runCase() (+20 more)
 
 ### Community 1523 - "Community 1523"
 Cohesion: 0.4
 Nodes (5): sheet-music-reading/4-4_40bpm_EGADB_9low6.wav, maxOnsets, minOnsets, role, weight
 
 ### Community 1524 - "Community 1524"
-Cohesion: 0.25
-Nodes (18): CHROMATIC_NOTES, getAvailableNotes(), getAvailablePitches(), getPitchAtPosition(), getPositionsForNote(), getPositionsForPitch(), getRandomNote(), getRandomPitch() (+10 more)
+Cohesion: 0.08
+Nodes (51): CHROMATIC_NOTES, drawRandom(), getNoteAtPosition(), getRandomPosition(), OPEN_STRING_NOTES, STRING_LABELS, evaluateAnswer(), initGameState() (+43 more)
 
 ### Community 1525 - "Community 1525"
 Cohesion: 0.4
@@ -8164,8 +8151,8 @@ Cohesion: 0.4
 Nodes (5): open-strings/medium.wav, maxOnsets, minOnsets, role, weight
 
 ### Community 1546 - "Community 1546"
-Cohesion: 0.33
-Nodes (6): fixtureOverrides, open-strings/aeaedgdgbebeabab_slow.wav, maxOnsets, minOnsets, role, weight
+Cohesion: 0.4
+Nodes (5): open-strings/aeaedgdgbebeabab_slow.wav, maxOnsets, minOnsets, role, weight
 
 ### Community 1547 - "Community 1547"
 Cohesion: 0.4
@@ -8196,8 +8183,8 @@ Cohesion: 0.4
 Nodes (5): open-strings/medium.wav, maxOnsets, minOnsets, role, weight
 
 ### Community 1554 - "Community 1554"
-Cohesion: 0.4
-Nodes (5): sheet-music-reading/4-4_40bpm_EBGDA_1jtn8.wav, maxOnsets, minOnsets, role, weight
+Cohesion: 0.33
+Nodes (6): fixtureOverrides, sheet-music-reading/4-4_40bpm_EBGDA_1jtn8.wav, maxOnsets, minOnsets, role, weight
 
 ### Community 1555 - "Community 1555"
 Cohesion: 0.4
@@ -8208,8 +8195,8 @@ Cohesion: 0.4
 Nodes (5): open-strings/medium.wav, maxOnsets, minOnsets, role, weight
 
 ### Community 1557 - "Community 1557"
-Cohesion: 0.33
-Nodes (6): fixtureOverrides, open-strings/aeaedgdgbebeabab_slow.wav, maxOnsets, minOnsets, role, weight
+Cohesion: 0.4
+Nodes (5): open-strings/aeaedgdgbebeabab_slow.wav, maxOnsets, minOnsets, role, weight
 
 ### Community 1558 - "Community 1558"
 Cohesion: 0.4
@@ -8512,12 +8499,12 @@ Cohesion: 0.4
 Nodes (5): open-strings/eeeeaaaaddddgggg.wav, maxOnsets, minOnsets, role, weight
 
 ### Community 1633 - "Community 1633"
-Cohesion: 0.33
-Nodes (6): fixtureOverrides, open-strings/fast.wav, maxOnsets, minOnsets, role, weight
+Cohesion: 0.4
+Nodes (5): open-strings/fast.wav, maxOnsets, minOnsets, role, weight
 
 ### Community 1634 - "Community 1634"
-Cohesion: 0.4
-Nodes (5): open-strings/aeaedgdgbebeabab_slow.wav, maxOnsets, minOnsets, role, weight
+Cohesion: 0.33
+Nodes (6): fixtureOverrides, open-strings/aeaedgdgbebeabab_slow.wav, maxOnsets, minOnsets, role, weight
 
 ### Community 1635 - "Community 1635"
 Cohesion: 0.4
@@ -8617,7 +8604,7 @@ Nodes (5): open-strings/fast.wav, maxOnsets, minOnsets, role, weight
 
 ### Community 1659 - "Community 1659"
 Cohesion: 0.18
-Nodes (11): fixtureOverrides, open-strings/aeaedgdgbebeabab_slow.wav, open-strings/aeaedgdgbebeabab.wav, maxOnsets, minOnsets, role, weight, maxOnsets (+3 more)
+Nodes (11): fixtureOverrides, open-strings/aeaedgdgbebeabab_slow.wav, open-strings/eeeeaaaaddddgggg.wav, maxOnsets, minOnsets, role, weight, maxOnsets (+3 more)
 
 ### Community 1660 - "Community 1660"
 Cohesion: 0.4
@@ -8636,8 +8623,8 @@ Cohesion: 0.4
 Nodes (5): open-strings/medium.wav, maxOnsets, minOnsets, role, weight
 
 ### Community 1664 - "Community 1664"
-Cohesion: 0.4
-Nodes (5): open-strings/fast.wav, maxOnsets, minOnsets, role, weight
+Cohesion: 0.31
+Nodes (16): choose_destination(), collect_pairs_in_dir(), collect_sources(), default_drop_dir(), evaluate_imported(), fail(), import_pairs(), load_manifest() (+8 more)
 
 ### Community 1665 - "Community 1665"
 Cohesion: 0.11
@@ -8653,7 +8640,7 @@ Nodes (5): open-strings/medium.wav, maxOnsets, minOnsets, role, weight
 
 ### Community 1668 - "Community 1668"
 Cohesion: 0.18
-Nodes (11): fixtureOverrides, open-strings/aeaedgdgbebeabab_slow.wav, open-strings/eeeeaaaaddddgggg.wav, maxOnsets, minOnsets, role, weight, maxOnsets (+3 more)
+Nodes (11): fixtureOverrides, open-strings/aeaedgdgbebeabab_slow.wav, open-strings/fast.wav, maxOnsets, minOnsets, role, weight, maxOnsets (+3 more)
 
 ### Community 1669 - "Community 1669"
 Cohesion: 0.15
@@ -8677,7 +8664,7 @@ Nodes (5): sheet-music-reading/4-4_40bpm_EGADB_9low6.wav, maxOnsets, minOnsets, 
 
 ### Community 1674 - "Community 1674"
 Cohesion: 0.18
-Nodes (11): fixtureOverrides, open-strings/aeaedgdgbebeabab_slow.wav, open-strings/fast.wav, maxOnsets, minOnsets, role, weight, maxOnsets (+3 more)
+Nodes (11): fixtureOverrides, open-strings/aeaedgdgbebeabab_slow.wav, open-strings/aeaedgdgbebeabab.wav, maxOnsets, minOnsets, role, weight, maxOnsets (+3 more)
 
 ### Community 1675 - "Community 1675"
 Cohesion: 0.17
@@ -8689,11 +8676,11 @@ Nodes (10): code:bash (npm run test:unit), code:bash (npm run test:audio), code:
 
 ### Community 1677 - "Community 1677"
 Cohesion: 0.18
-Nodes (11): fixtureOverrides, open-strings/aeaedgdgbebeabab_slow.wav, open-strings/aeaedgdgbebeabab.wav, maxOnsets, minOnsets, role, weight, maxOnsets (+3 more)
+Nodes (11): fixtureOverrides, open-strings/aeaedgdgbebeabab_slow.wav, open-strings/fast.wav, maxOnsets, minOnsets, role, weight, maxOnsets (+3 more)
 
 ### Community 1678 - "Community 1678"
-Cohesion: 0.4
-Nodes (5): open-strings/fast.wav, maxOnsets, minOnsets, role, weight
+Cohesion: 0.23
+Nodes (10): assertSequenceFixture(), deduplicateConsecutive(), __dirname, __filename, getSequenceFixture(), SEQUENCES_DIR, { deduped, expectedNotes, isFastTempo }, minNotes (+2 more)
 
 ### Community 1679 - "Community 1679"
 Cohesion: 0.12
@@ -8712,12 +8699,12 @@ Cohesion: 0.4
 Nodes (5): open-strings/medium.wav, maxOnsets, minOnsets, role, weight
 
 ### Community 1683 - "Community 1683"
-Cohesion: 0.17
-Nodes (19): validateChord(), createChordRecorderUI(), chordStringToFretboardIndex(), fretboardIndexToChordString(), clampWeight(), createSrsStore(), getWeight(), getWeights() (+11 more)
+Cohesion: 0.24
+Nodes (16): fretboardIndexToChordString(), clampWeight(), createSrsStore(), getWeight(), getWeights(), loadWeights(), pickNextItem(), recordResult() (+8 more)
 
 ### Community 1684 - "Community 1684"
 Cohesion: 0.18
-Nodes (11): fixtureOverrides, open-strings/aeaedgdgbebeabab_slow.wav, open-strings/aeaedgdgbebeabab.wav, maxOnsets, minOnsets, role, weight, maxOnsets (+3 more)
+Nodes (11): fixtureOverrides, open-strings/aeaedgdgbebeabab_slow.wav, open-strings/eeeeaaaaddddgggg.wav, maxOnsets, minOnsets, role, weight, maxOnsets (+3 more)
 
 ### Community 1685 - "Community 1685"
 Cohesion: 0.33
@@ -8748,8 +8735,8 @@ Cohesion: 0.12
 Nodes (22): audioConfig, fftSize, hopSize, logCompression, sampleRate, windowFunction, decision, lookaheadFrames (+14 more)
 
 ### Community 1692 - "Community 1692"
-Cohesion: 0.28
-Nodes (12): arcPath(), initTunerSVG(), polarPoint(), svgEl(), updateTunerDisplay(), angle, { cents }, dot (+4 more)
+Cohesion: 0.17
+Nodes (6): analyser, beatDots, chordName, fakeStream, fakeTrack, progressionDisplay
 
 ### Community 1693 - "Community 1693"
 Cohesion: 0.11
@@ -8760,8 +8747,8 @@ Cohesion: 0.18
 Nodes (9): code:bash (node scripts/chord-recognition-fingerprint.mjs), code:bash (npx vitest run tests/unit/essentiaChordFingerprintMetrics.te), code:bash (node scripts/generate-essentia-fingerprint-fixtures.mjs), code:bash (node scripts/chord-recognition-jsfingerprint.mjs), code:bash (npx vitest run tests/unit/essentiaChordJsfingerprintMetrics.), Fingerprint, Regeln, Workflow (+1 more)
 
 ### Community 1695 - "Community 1695"
-Cohesion: 0.24
-Nodes (21): createGuitarTunerFeature(), createAudioSessionState(), openAudioSession(), nextGuidedStepState(), startGuidedModeState(), stopGuidedModeState(), createAnalysisRuntime(), createGuidedState() (+13 more)
+Cohesion: 0.48
+Nodes (10): computeEnvelope(), timeToPixel(), clientXToTime(), el(), plotHeight(), plotWidth(), renderWaveform(), updateCursor() (+2 more)
 
 ### Community 1696 - "Community 1696"
 Cohesion: 0.02
@@ -8784,12 +8771,12 @@ Cohesion: 0.4
 Nodes (5): open-strings/medium.wav, maxOnsets, minOnsets, role, weight
 
 ### Community 1702 - "Community 1702"
-Cohesion: 0.21
-Nodes (17): createChordRecorderTool(), addEventListener(), audioSession, cards, close, constructor(), createMockStorageService(), firstChord (+9 more)
+Cohesion: 0.3
+Nodes (10): b1, b2, bars, gen, keySet, noteKey(), notes, single (+2 more)
 
 ### Community 1703 - "Community 1703"
 Cohesion: 0.18
-Nodes (11): fixtureOverrides, open-strings/aeaedgdgbebeabab_slow.wav, open-strings/eeeeaaaaddddgggg.wav, maxOnsets, minOnsets, role, weight, maxOnsets (+3 more)
+Nodes (11): fixtureOverrides, open-strings/aeaedgdgbebeabab_slow.wav, open-strings/aeaedgdgbebeabab.wav, maxOnsets, minOnsets, role, weight, maxOnsets (+3 more)
 
 ### Community 1704 - "Community 1704"
 Cohesion: 0.12
@@ -8805,7 +8792,7 @@ Nodes (5): open-strings/slow.wav, maxOnsets, minOnsets, role, weight
 
 ### Community 1707 - "Community 1707"
 Cohesion: 0.18
-Nodes (11): fixtureOverrides, open-strings/aeaedgdgbebeabab_slow.wav, open-strings/eeeeaaaaddddgggg.wav, maxOnsets, minOnsets, role, weight, maxOnsets (+3 more)
+Nodes (11): fixtureOverrides, open-strings/aeaedgdgbebeabab_slow.wav, open-strings/aeaedgdgbebeabab.wav, maxOnsets, minOnsets, role, weight, maxOnsets (+3 more)
 
 ### Community 1708 - "Community 1708"
 Cohesion: 0.4
@@ -8853,7 +8840,7 @@ Nodes (5): sheet-music-reading/4-4_40bpm_EGADB_9low6.wav, maxOnsets, minOnsets, 
 
 ### Community 1719 - "Community 1719"
 Cohesion: 0.18
-Nodes (11): fixtureOverrides, open-strings/aeaedgdgbebeabab_slow.wav, open-strings/eeeeaaaaddddgggg.wav, maxOnsets, minOnsets, role, weight, maxOnsets (+3 more)
+Nodes (11): fixtureOverrides, open-strings/aeaedgdgbebeabab_slow.wav, open-strings/aeaedgdgbebeabab.wav, maxOnsets, minOnsets, role, weight, maxOnsets (+3 more)
 
 ### Community 1720 - "Community 1720"
 Cohesion: 0.22
@@ -8905,15 +8892,15 @@ Nodes (10): detectOnsetsOfflineXGBoost, expected, legacyOptions, loadDefaultXGBo
 
 ### Community 1732 - "Community 1732"
 Cohesion: 0.18
-Nodes (11): fixtureOverrides, open-strings/aeaedgdgbebeabab_slow.wav, open-strings/fast.wav, maxOnsets, minOnsets, role, weight, maxOnsets (+3 more)
+Nodes (11): fixtureOverrides, open-strings/aeaedgdgbebeabab_slow.wav, sheet-music-reading/4-4_40bpm_EGADB_9low6.wav, maxOnsets, minOnsets, role, weight, maxOnsets (+3 more)
 
 ### Community 1733 - "Community 1733"
-Cohesion: 0.08
-Nodes (10): Accidental, accidentals, bars, container, Formatter, Renderer, Stave, StaveNote (+2 more)
+Cohesion: 0.09
+Nodes (48): buildBassSupportByChord(), CHORD_FIXTURES_DIR, __dirname, extractBassScoreForChordFromSamples(), extractBassScoreForChordFromWav(), extractBassSupportMapFromSamples(), extractBassSupportMapFromWav(), buildFrequencyFrames() (+40 more)
 
 ### Community 1734 - "Community 1734"
-Cohesion: 0.4
-Nodes (5): sheet-music-reading/4-4_40bpm_EGADB_9low6.wav, maxOnsets, minOnsets, role, weight
+Cohesion: 0.24
+Nodes (4): createNotePlayingExerciseFeature(), MockAudioContext, skipBtn, targetNoteEl
 
 ### Community 1735 - "Community 1735"
 Cohesion: 0.4
@@ -8940,8 +8927,8 @@ Cohesion: 0.4
 Nodes (5): sheet-music-reading/4-4_40bpm_EBGDA_1jtn8.wav, maxOnsets, minOnsets, role, weight
 
 ### Community 1741 - "Community 1741"
-Cohesion: 0.24
-Nodes (11): computeFretWireX(), el(), renderFretboard(), STRING_LABELS, stringY(), txt(), fretNumbers, fretValues (+3 more)
+Cohesion: 0.13
+Nodes (12): GtFretboard, computeFretWireX(), el(), renderFretboard(), STRING_LABELS, stringY(), txt(), fretNumbers (+4 more)
 
 ### Community 1742 - "Community 1742"
 Cohesion: 0.4
@@ -8952,8 +8939,8 @@ Cohesion: 0.4
 Nodes (5): sheet-music-reading/4-4_40bpm_EGADB_9low6.wav, maxOnsets, minOnsets, role, weight
 
 ### Community 1744 - "Community 1744"
-Cohesion: 0.33
-Nodes (7): buildVariationList(), LAUTSTAERKEN, indices, lautstaerken, modi, result, techniken
+Cohesion: 0.22
+Nodes (9): export_onnx(), Export model to ONNX and return the detected output name., Export model to ONNX and return the detected output name., Export model to ONNX and return the detected output name., Export model to ONNX and return the detected output name., Export model to ONNX and return the detected output name., Export model to ONNX and return the detected output name., Export model to ONNX and return the detected output name. (+1 more)
 
 ### Community 1745 - "Community 1745"
 Cohesion: 0.18
@@ -8977,7 +8964,7 @@ Nodes (18): f_beta, mode, precision, recall, threshold, threshold_selection, con
 
 ### Community 1750 - "Community 1750"
 Cohesion: 0.18
-Nodes (11): fixtureOverrides, open-strings/aeaedgdgbebeabab_slow.wav, open-strings/medium.wav, maxOnsets, minOnsets, role, weight, maxOnsets (+3 more)
+Nodes (11): fixtureOverrides, open-strings/aeaedgdgbebeabab_slow.wav, open-strings/eeeeaaaaddddgggg.wav, maxOnsets, minOnsets, role, weight, maxOnsets (+3 more)
 
 ### Community 1751 - "Community 1751"
 Cohesion: 0.4
@@ -8988,12 +8975,12 @@ Cohesion: 0.22
 Nodes (13): createRecorder(), encodeWav(), getSupportedMimeType(), trimSilence(), ch, ch0, ch1, makeSignal() (+5 more)
 
 ### Community 1753 - "Community 1753"
-Cohesion: 0.31
-Nodes (16): choose_destination(), collect_pairs_in_dir(), collect_sources(), default_drop_dir(), evaluate_imported(), fail(), import_pairs(), load_manifest() (+8 more)
+Cohesion: 0.4
+Nodes (5): open-strings/slow.wav, maxOnsets, minOnsets, role, weight
 
 ### Community 1754 - "Community 1754"
-Cohesion: 0.26
-Nodes (12): activeCategories, cDurWithoutOpenStrings, draw, draws, exactInput, missingString, mutedOpenString, openString (+4 more)
+Cohesion: 0.4
+Nodes (5): open-strings/aeaedgdgbebeabab.wav, maxOnsets, minOnsets, role, weight
 
 ### Community 1755 - "Community 1755"
 Cohesion: 0.4
@@ -9032,12 +9019,12 @@ Cohesion: 0.4
 Nodes (5): open-strings/eeeeaaaaddddgggg.wav, maxOnsets, minOnsets, role, weight
 
 ### Community 1764 - "Community 1764"
-Cohesion: 0.24
-Nodes (3): MockAudioContext, skipBtn, targetNoteEl
+Cohesion: 0.28
+Nodes (11): accepted, advanceUntil(), audioContext, buildDom(), concatSamples(), createFixtureAudioContext(), feature, RIGHT_G3 (+3 more)
 
 ### Community 1765 - "Community 1765"
-Cohesion: 0.33
-Nodes (10): resolveNotePlayingUI(), syncSheetMusicUI(), formatFretLabel(), formatFretRangeLabel(), syncFretSlider(), syncMinFretSlider(), syncStringToggles(), wireFretSlider() (+2 more)
+Cohesion: 0.4
+Nodes (5): open-strings/aeaedgdgbebeabab.wav, maxOnsets, minOnsets, role, weight
 
 ### Community 1766 - "Community 1766"
 Cohesion: 0.4
@@ -9120,8 +9107,8 @@ Cohesion: 0.13
 Nodes (15): false_negatives, false_positives, true_negatives, true_positives, peak_picking, confusion_matrix, f1, frame_ms (+7 more)
 
 ### Community 1903 - "Community 1903"
-Cohesion: 0.3
-Nodes (13): buildPeakFrames(), createEssentiaPage(), createStaticServer(), deepNormalize(), __dirname, essentiaLibDir, fixtureDir, main() (+5 more)
+Cohesion: 0.24
+Nodes (11): DEFAULT_GUITAR_ONSET_OPTIONS, { configPath, options }, ANALYSIS_OPTION_KEYS, assertPlainObject(), DETECTOR_OPTION_KEYS, loadSheetMusicOnsetConfigFromArgs(), normalizeConfig(), readConfigPath() (+3 more)
 
 ### Community 1905 - "Community 1905"
 Cohesion: 0.4
@@ -9152,12 +9139,12 @@ Cohesion: 0.5
 Nodes (3): permissions, allow, $version
 
 ### Community 1915 - "Community 1915"
-Cohesion: 0.38
-Nodes (9): evaluateRound(), getAllPositions(), getNotePool(), NATURAL_NOTES, positionKey(), correctPositions, pool, positions (+1 more)
+Cohesion: 0.4
+Nodes (5): open-strings/aeaedgdgbebeabab.wav, maxOnsets, minOnsets, role, weight
 
 ### Community 1916 - "Community 1916"
-Cohesion: 0.43
-Nodes (6): buildZip(), crc32(), CRC_TABLE, downloadBlob(), writeU16(), writeU32()
+Cohesion: 0.15
+Nodes (16): feature, root, createOnsetTaggerFeature(), DEFAULT_SIDECAR_FIELDS, DROPDOWN_OPTIONS, NUMERIC_DROPDOWN_KEYS, createOnsetTaggerAnalysisFlyout(), closeLoadMenu() (+8 more)
 
 ### Community 1917 - "Community 1917"
 Cohesion: 0.67
@@ -9196,16 +9183,16 @@ Cohesion: 0.4
 Nodes (4): code:block1 (Error: browserType.launch: Target page, context or browser h), Error details, Instructions, Test info
 
 ### Community 1936 - "Community 1936"
-Cohesion: 0.05
-Nodes (58): collectWavs(), discoverNoteAudioFixtures(), inferPitchFromPath(), NOTE_AUDIO_FIXTURES_DIR, parsePitchToken(), assertSequenceFixture(), deduplicateConsecutive(), __dirname (+50 more)
+Cohesion: 0.15
+Nodes (22): collectFixtureFiles(), discoverSequenceFixtureSources(), normalizeLookupPath(), normalizeRelativePath(), parseManifest(), readLooseSequencePair(), readSequenceZip(), resolveSequenceFixtureSource() (+14 more)
 
 ### Community 1937 - "Community 1937"
-Cohesion: 0.23
-Nodes (14): a, b, bars, batch1, batch2, flat, gen, lastNote (+6 more)
+Cohesion: 0.4
+Nodes (5): open-strings/eeeeaaaaddddgggg.wav, maxOnsets, minOnsets, role, weight
 
 ### Community 1938 - "Community 1938"
-Cohesion: 0.12
-Nodes (28): detectNoteFromSamples(), getAudioFixtures(), __dirname, __filename, fixtures, FIXTURES_DIR, IMPRECISE_FIXTURES, runCase() (+20 more)
+Cohesion: 0.4
+Nodes (5): open-strings/fast.wav, maxOnsets, minOnsets, role, weight
 
 ### Community 1939 - "Community 1939"
 Cohesion: 0.4
@@ -9308,12 +9295,12 @@ Cohesion: 0.4
 Nodes (4): code:block1 (Error: browserType.launch: Target page, context or browser h), Error details, Instructions, Test info
 
 ### Community 1964 - "Community 1964"
-Cohesion: 0.3
-Nodes (8): createAudioContext(), createAudioContextFactory(), resolveAudioContextCtor(), audioContext, ExplicitAudioContext, factory, MockAudioContext, WebkitAudioContext
+Cohesion: 0.4
+Nodes (5): open-strings/eeeeaaaaddddgggg.wav, maxOnsets, minOnsets, role, weight
 
 ### Community 1965 - "Community 1965"
 Cohesion: 0.18
-Nodes (11): fixtureOverrides, open-strings/fast.wav, sheet-music-reading/4-4_40bpm_EGADB_9low6.wav, maxOnsets, minOnsets, role, weight, maxOnsets (+3 more)
+Nodes (11): fixtureOverrides, sheet-music-reading/4-4_40bpm_EBGDA_1jtn8.wav, sheet-music-reading/4-4_40bpm_EGADB_9low6.wav, maxOnsets, minOnsets, role, weight, maxOnsets (+3 more)
 
 ### Community 1966 - "Community 1966"
 Cohesion: 0.4
@@ -9321,11 +9308,11 @@ Nodes (5): open-strings/fast.wav, maxOnsets, minOnsets, role, weight
 
 ### Community 1967 - "Community 1967"
 Cohesion: 0.4
-Nodes (5): open-strings/eeeeaaaaddddgggg.wav, maxOnsets, minOnsets, role, weight
+Nodes (5): sheet-music-reading/4-4_40bpm_EBGDA_1jtn8.wav, maxOnsets, minOnsets, role, weight
 
 ### Community 1968 - "Community 1968"
-Cohesion: 0.3
-Nodes (10): b1, b2, bars, gen, keySet, noteKey(), notes, single (+2 more)
+Cohesion: 0.4
+Nodes (5): open-strings/aeaedgdgbebeabab.wav, maxOnsets, minOnsets, role, weight
 
 ### Community 1969 - "Community 1969"
 Cohesion: 0.4
@@ -9345,7 +9332,7 @@ Nodes (5): open-strings/medium.wav, maxOnsets, minOnsets, role, weight
 
 ### Community 1973 - "Community 1973"
 Cohesion: 0.4
-Nodes (5): open-strings/fast.wav, maxOnsets, minOnsets, role, weight
+Nodes (5): sheet-music-reading/4-4_40bpm_EBGDA_1jtn8.wav, maxOnsets, minOnsets, role, weight
 
 ### Community 1974 - "Community 1974"
 Cohesion: 0.14
@@ -9369,11 +9356,11 @@ Nodes (5): open-strings/medium.wav, maxOnsets, minOnsets, role, weight
 
 ### Community 1979 - "Community 1979"
 Cohesion: 0.4
-Nodes (5): open-strings/aeaedgdgbebeabab.wav, maxOnsets, minOnsets, role, weight
+Nodes (5): open-strings/eeeeaaaaddddgggg.wav, maxOnsets, minOnsets, role, weight
 
 ### Community 1980 - "Community 1980"
 Cohesion: 0.4
-Nodes (5): open-strings/aeaedgdgbebeabab.wav, maxOnsets, minOnsets, role, weight
+Nodes (5): open-strings/fast.wav, maxOnsets, minOnsets, role, weight
 
 ### Community 1981 - "Community 1981"
 Cohesion: 0.4
@@ -9381,11 +9368,11 @@ Nodes (5): false_negatives, false_positives, true_negatives, true_positives, con
 
 ### Community 1982 - "Community 1982"
 Cohesion: 0.4
-Nodes (5): open-strings/aeaedgdgbebeabab.wav, maxOnsets, minOnsets, role, weight
+Nodes (5): open-strings/fast.wav, maxOnsets, minOnsets, role, weight
 
 ### Community 1983 - "Community 1983"
 Cohesion: 0.4
-Nodes (5): open-strings/aeaedgdgbebeabab.wav, maxOnsets, minOnsets, role, weight
+Nodes (5): open-strings/eeeeaaaaddddgggg.wav, maxOnsets, minOnsets, role, weight
 
 ### Community 1984 - "Community 1984"
 Cohesion: 0.4
@@ -9420,8 +9407,8 @@ Cohesion: 0.14
 Nodes (14): params, colsample_bytree, gamma, learning_rate, lookahead_frames, max_delta_step, max_depth, min_child_weight (+6 more)
 
 ### Community 1992 - "Community 1992"
-Cohesion: 0.37
-Nodes (9): CHROMATIC_NOTES, drawRandom(), getNoteAtPosition(), getRandomPosition(), OPEN_STRING_NOTES, STRING_LABELS, draws, pos (+1 more)
+Cohesion: 0.4
+Nodes (5): open-strings/medium.wav, maxOnsets, minOnsets, role, weight
 
 ### Community 1993 - "Community 1993"
 Cohesion: 0.4
@@ -9433,7 +9420,7 @@ Nodes (5): open-strings/eeeeaaaaddddgggg.wav, maxOnsets, minOnsets, role, weight
 
 ### Community 1995 - "Community 1995"
 Cohesion: 0.4
-Nodes (5): sheet-music-reading/4-4_40bpm_EBGDA_1jtn8.wav, maxOnsets, minOnsets, role, weight
+Nodes (5): open-strings/fast.wav, maxOnsets, minOnsets, role, weight
 
 ### Community 1996 - "Community 1996"
 Cohesion: 0.4
@@ -9443,13 +9430,17 @@ Nodes (5): open-strings/fast.wav, maxOnsets, minOnsets, role, weight
 Cohesion: 0.4
 Nodes (5): open-strings/eeeeaaaaddddgggg.wav, maxOnsets, minOnsets, role, weight
 
+### Community 1998 - "Community 1998"
+Cohesion: 0.4
+Nodes (5): open-strings/aeaedgdgbebeabab_slow.wav, maxOnsets, minOnsets, role, weight
+
 ### Community 1999 - "Community 1999"
 Cohesion: 0.18
 Nodes (11): 5. Tools & Shortcuts, code:bash (uv tool install graphifyy), code:bash (pipx install graphifyy), code:bash (pip install --user graphifyy), code:bash (graphify codex install), code:bash (sudo apt-get update && sudo apt-get install -y libnspr4 libn), Graphify (Knowledge Graph), Playwright / Chromium System Dependencies (+3 more)
 
 ### Community 2000 - "Community 2000"
-Cohesion: 0.14
-Nodes (12): result, t1, t2, t5, bars, config, noteKey(), sigs (+4 more)
+Cohesion: 0.09
+Nodes (26): result, t1, t2, t5, a, b, bars, batch1 (+18 more)
 
 ### Community 2001 - "Community 2001"
 Cohesion: 0.6
@@ -9463,25 +9454,9 @@ Nodes (5): open-strings/fast.wav, maxOnsets, minOnsets, role, weight
 Cohesion: 0.18
 Nodes (11): 5. Tools & Shortcuts, code:bash (uv tool install graphifyy), code:bash (pipx install graphifyy), code:bash (pip install --user graphifyy), code:bash (graphify codex install), code:bash (sudo apt-get update && sudo apt-get install -y libnspr4 libn), Graphify (Knowledge Graph), Playwright / Chromium System Dependencies (+3 more)
 
-### Community 2004 - "Community 2004"
-Cohesion: 0.4
-Nodes (5): open-strings/aeaedgdgbebeabab.wav, maxOnsets, minOnsets, role, weight
-
-### Community 2005 - "Community 2005"
-Cohesion: 0.4
-Nodes (5): open-strings/fast.wav, maxOnsets, minOnsets, role, weight
-
 ### Community 2006 - "Community 2006"
 Cohesion: 0.4
 Nodes (5): sheet-music-reading/4-4_40bpm_EBGDA_1jtn8.wav, maxOnsets, minOnsets, role, weight
-
-### Community 2007 - "Community 2007"
-Cohesion: 0.4
-Nodes (5): open-strings/aeaedgdgbebeabab.wav, maxOnsets, minOnsets, role, weight
-
-### Community 2008 - "Community 2008"
-Cohesion: 0.44
-Nodes (5): evaluateAnswer(), initGameState(), result, settings, state
 
 ### Community 2009 - "Community 2009"
 Cohesion: 0.4
@@ -9496,8 +9471,8 @@ Cohesion: 0.67
 Nodes (3): code:bash (python3 -m graphify.serve graphify-out/graph.json), code:json ({), Step 7d - MCP server (only if --mcp flag)
 
 ### Community 2012 - "Community 2012"
-Cohesion: 0.4
-Nodes (5): open-strings/aeaedgdgbebeabab.wav, maxOnsets, minOnsets, role, weight
+Cohesion: 0.33
+Nodes (7): createMockStorage(), entry, payload, serialized, sessionStorage, storage, store
 
 ### Community 2013 - "Community 2013"
 Cohesion: 0.22
@@ -9505,11 +9480,11 @@ Nodes (9): 1. Collaboration & Documentation, 2. Technical Standards & Architectu
 
 ### Community 2014 - "Community 2014"
 Cohesion: 0.4
-Nodes (5): open-strings/eeeeaaaaddddgggg.wav, maxOnsets, minOnsets, role, weight
+Nodes (5): open-strings/fast.wav, maxOnsets, minOnsets, role, weight
 
 ### Community 2015 - "Community 2015"
 Cohesion: 0.4
-Nodes (5): open-strings/eeeeaaaaddddgggg.wav, maxOnsets, minOnsets, role, weight
+Nodes (5): sheet-music-reading/4-4_40bpm_EBGDA_1jtn8.wav, maxOnsets, minOnsets, role, weight
 
 ### Community 2016 - "Community 2016"
 Cohesion: 0.22
@@ -9525,7 +9500,7 @@ Nodes (8): 6. Container Dependencies, code:block6 (/usr/local/bin/graphify → /
 
 ### Community 2020 - "Community 2020"
 Cohesion: 0.4
-Nodes (5): open-strings/aeaedgdgbebeabab.wav, maxOnsets, minOnsets, role, weight
+Nodes (5): open-strings/fast.wav, maxOnsets, minOnsets, role, weight
 
 ### Community 2021 - "Community 2021"
 Cohesion: 0.4
@@ -9545,7 +9520,7 @@ Nodes (5): open-strings/fast.wav, maxOnsets, minOnsets, role, weight
 
 ### Community 2025 - "Community 2025"
 Cohesion: 0.4
-Nodes (5): open-strings/slow.wav, maxOnsets, minOnsets, role, weight
+Nodes (5): open-strings/eeeeaaaaddddgggg.wav, maxOnsets, minOnsets, role, weight
 
 ### Community 2026 - "Community 2026"
 Cohesion: 0.4
@@ -9557,7 +9532,7 @@ Nodes (5): open-strings/fast.wav, maxOnsets, minOnsets, role, weight
 
 ### Community 2028 - "Community 2028"
 Cohesion: 0.4
-Nodes (5): open-strings/fast.wav, maxOnsets, minOnsets, role, weight
+Nodes (5): open-strings/eeeeaaaaddddgggg.wav, maxOnsets, minOnsets, role, weight
 
 ### Community 2029 - "Community 2029"
 Cohesion: 0.4
@@ -9567,15 +9542,7 @@ Nodes (5): open-strings/slow.wav, maxOnsets, minOnsets, role, weight
 Cohesion: 0.4
 Nodes (5): open-strings/fast.wav, maxOnsets, minOnsets, role, weight
 
-### Community 2031 - "Community 2031"
-Cohesion: 0.4
-Nodes (5): open-strings/eeeeaaaaddddgggg.wav, maxOnsets, minOnsets, role, weight
-
 ### Community 2032 - "Community 2032"
-Cohesion: 0.4
-Nodes (5): sheet-music-reading/4-4_40bpm_EBGDA_1jtn8.wav, maxOnsets, minOnsets, role, weight
-
-### Community 2033 - "Community 2033"
 Cohesion: 0.4
 Nodes (5): sheet-music-reading/4-4_40bpm_EBGDA_1jtn8.wav, maxOnsets, minOnsets, role, weight
 
@@ -9619,10 +9586,6 @@ Nodes (5): code:bash (uv tool install graphifyy), code:bash (pipx install graphi
 Cohesion: 0.4
 Nodes (5): open-strings/slow.wav, maxOnsets, minOnsets, role, weight
 
-### Community 2045 - "Community 2045"
-Cohesion: 0.4
-Nodes (5): open-strings/aeaedgdgbebeabab_slow.wav, maxOnsets, minOnsets, role, weight
-
 ### Community 2046 - "Community 2046"
 Cohesion: 0.5
 Nodes (4): code:bash ($(cat .graphify_python) -c "), code:bash ($(cat .graphify_python) -c "), code:bash ($(cat .graphify_python) -m graphify save-result --question "), For /graphify path
@@ -9632,9 +9595,9 @@ Cohesion: 0.67
 Nodes (3): code:bash ($(cat .graphify_python) -c "), code:bash ($(cat .graphify_python) -c "), Step 7 - Neo4j export (only if --neo4j or --neo4j-push flag)
 
 ## Knowledge Gaps
-- **17066 isolated node(s):** `test`, `test:unit`, `test:precommit`, `test:audio:goldens`, `test:sync` (+17061 more)
+- **17073 isolated node(s):** `test`, `test:unit`, `test:precommit`, `test:audio:goldens`, `test:sync` (+17068 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **24 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **22 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
@@ -9646,10 +9609,10 @@ _Questions this graph is uniquely positioned to answer:_
 - **Why does `t` connect `Community 660` to `Community 3`, `Community 7`?**
   _High betweenness centrality (0.002) - this node is a cross-community bridge._
 - **What connects `test`, `test:unit`, `test:precommit` to the rest of the system?**
-  _17083 weakly-connected nodes found - possible documentation gaps or missing edges._
+  _17090 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `Community 0` be split into smaller, more focused modules?**
   _Cohesion score 0.08 - nodes in this community are weakly interconnected._
 - **Should `Community 1` be split into smaller, more focused modules?**
   _Cohesion score 0.06 - nodes in this community are weakly interconnected._
 - **Should `Community 2` be split into smaller, more focused modules?**
-  _Cohesion score 0.06 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.07 - nodes in this community are weakly interconnected._

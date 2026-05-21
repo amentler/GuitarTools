@@ -114,7 +114,7 @@ export function createAkkordfolgenTrainerFeature() {
       ui.bpmLabel.textContent = state.bpm;
     });
 
-    document.getElementById('aft-bpm-buttons').addEventListener('bpm-delta', ({ detail }) => {
+    document.getElementById('aft-bpm-buttons')?.addEventListener('bpm-delta', ({ detail }) => {
       state.bpm = Math.max(40, Math.min(200, state.bpm + detail.delta));
       ui.bpmSlider.value = state.bpm;
       ui.bpmLabel.textContent = state.bpm;
