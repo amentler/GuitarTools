@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-05-20T16:13:37.877Z",
+  "generatedAt": "2026-05-21T14:25:50.752Z",
   "mediaRoots": [
     "tests/fixtures/sequences/sheet-music-reading"
   ],
@@ -272,13 +272,13 @@
       },
       "metrics": {
         "expected": 17,
-        "detected": null,
-        "tp": null,
-        "fp": null,
-        "fn": null,
-        "precision": null,
-        "recall": null,
-        "f1": null
+        "detected": 5,
+        "tp": 1,
+        "fp": 4,
+        "fn": 16,
+        "precision": 0.2,
+        "recall": 0.058823529411764705,
+        "f1": 0.0909090909090909
       }
     },
     {
@@ -297,12 +297,12 @@
       },
       "metrics": {
         "expected": 16,
-        "detected": 20,
-        "tp": 0,
-        "fp": 20,
-        "fn": 16,
-        "precision": 0,
-        "recall": 0,
+        "detected": null,
+        "tp": null,
+        "fp": null,
+        "fn": null,
+        "precision": null,
+        "recall": null,
         "f1": null
       }
     },
@@ -322,13 +322,13 @@
       },
       "metrics": {
         "expected": 16,
-        "detected": null,
-        "tp": null,
-        "fp": null,
-        "fn": null,
-        "precision": null,
-        "recall": null,
-        "f1": null
+        "detected": 15,
+        "tp": 15,
+        "fp": 0,
+        "fn": 1,
+        "precision": 1,
+        "recall": 0.9375,
+        "f1": 0.967741935483871
       }
     },
     {
@@ -397,13 +397,13 @@
       },
       "metrics": {
         "expected": 16,
-        "detected": 15,
-        "tp": 15,
-        "fp": 0,
-        "fn": 1,
-        "precision": 1,
-        "recall": 0.9375,
-        "f1": 0.967741935483871
+        "detected": null,
+        "tp": null,
+        "fp": null,
+        "fn": null,
+        "precision": null,
+        "recall": null,
+        "f1": null
       }
     },
     {
@@ -422,13 +422,13 @@
       },
       "metrics": {
         "expected": 10,
-        "detected": null,
-        "tp": null,
-        "fp": null,
-        "fn": null,
-        "precision": null,
-        "recall": null,
-        "f1": null
+        "detected": 9,
+        "tp": 9,
+        "fp": 0,
+        "fn": 1,
+        "precision": 1,
+        "recall": 0.9,
+        "f1": 0.9473684210526316
       }
     },
     {
@@ -447,13 +447,13 @@
       },
       "metrics": {
         "expected": 21,
-        "detected": 21,
-        "tp": 20,
-        "fp": 1,
-        "fn": 1,
-        "precision": 0.9523809523809523,
-        "recall": 0.9523809523809523,
-        "f1": 0.9523809523809523
+        "detected": null,
+        "tp": null,
+        "fp": null,
+        "fn": null,
+        "precision": null,
+        "recall": null,
+        "f1": null
       }
     },
     {
@@ -472,13 +472,13 @@
       },
       "metrics": {
         "expected": 30,
-        "detected": null,
-        "tp": null,
-        "fp": null,
-        "fn": null,
-        "precision": null,
-        "recall": null,
-        "f1": null
+        "detected": 29,
+        "tp": 28,
+        "fp": 1,
+        "fn": 2,
+        "precision": 0.9655172413793104,
+        "recall": 0.9333333333333333,
+        "f1": 0.9491525423728815
       }
     },
     {
@@ -497,13 +497,13 @@
       },
       "metrics": {
         "expected": 22,
-        "detected": 17,
-        "tp": 16,
-        "fp": 1,
-        "fn": 6,
-        "precision": 0.9411764705882353,
-        "recall": 0.7272727272727273,
-        "f1": 0.8205128205128205
+        "detected": null,
+        "tp": null,
+        "fp": null,
+        "fn": null,
+        "precision": null,
+        "recall": null,
+        "f1": null
       }
     },
     {
@@ -622,13 +622,13 @@
       },
       "metrics": {
         "expected": 16,
-        "detected": null,
-        "tp": null,
-        "fp": null,
-        "fn": null,
-        "precision": null,
-        "recall": null,
-        "f1": null
+        "detected": 16,
+        "tp": 16,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1,
+        "recall": 1,
+        "f1": 1
       }
     },
     {
@@ -822,13 +822,13 @@
       },
       "metrics": {
         "expected": 16,
-        "detected": null,
-        "tp": null,
-        "fp": null,
-        "fn": null,
-        "precision": null,
-        "recall": null,
-        "f1": null
+        "detected": 17,
+        "tp": 16,
+        "fp": 1,
+        "fn": 0,
+        "precision": 0.9411764705882353,
+        "recall": 1,
+        "f1": 0.9696969696969697
       }
     },
     {
@@ -847,13 +847,13 @@
       },
       "metrics": {
         "expected": 16,
-        "detected": 7,
-        "tp": 7,
-        "fp": 0,
-        "fn": 9,
-        "precision": 1,
-        "recall": 0.4375,
-        "f1": 0.6086956521739131
+        "detected": null,
+        "tp": null,
+        "fp": null,
+        "fn": null,
+        "precision": null,
+        "recall": null,
+        "f1": null
       }
     },
     {
@@ -948,12 +948,12 @@
       "metrics": {
         "expected": 12,
         "detected": 12,
-        "tp": 12,
-        "fp": 0,
-        "fn": 0,
-        "precision": 1,
-        "recall": 1,
-        "f1": 1
+        "tp": 11,
+        "fp": 1,
+        "fn": 1,
+        "precision": 0.9166666666666666,
+        "recall": 0.9166666666666666,
+        "f1": 0.9166666666666666
       }
     },
     {
@@ -997,6 +997,31 @@
       },
       "metrics": {
         "expected": 15,
+        "detected": null,
+        "tp": null,
+        "fp": null,
+        "fn": null,
+        "precision": null,
+        "recall": null,
+        "f1": null
+      }
+    },
+    {
+      "id": "travis_cmajamindmaj_a917zn-18ha08v",
+      "name": "Travis_cmajamindmaj_a917zn-tagged",
+      "baseName": "Travis_cmajamindmaj_a917zn",
+      "kind": "zip",
+      "url": "../../tests/fixtures/sequences/sheet-music-reading/Travis_cmajamindmaj_a917zn-tagged.zip",
+      "jsonUrl": null,
+      "sidecarInZip": true,
+      "trainingFile": "training_data_Travis_cmajamindmaj_a917zn.json",
+      "trainingJsonUrl": null,
+      "match": {
+        "status": "tagged-zip",
+        "score": 1000
+      },
+      "metrics": {
+        "expected": 48,
         "detected": null,
         "tp": null,
         "fp": null,

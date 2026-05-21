@@ -1,65 +1,65 @@
 {
-  "threshold": 0.99,
-  "precision": 0.9436,
-  "recall": 0.298,
-  "f1": 0.453,
-  "roc_auc": 0.947,
-  "pr_auc": 0.717,
+  "threshold": 0.95,
+  "precision": 0.8744,
+  "recall": 0.3944,
+  "f1": 0.5436,
+  "roc_auc": 0.9475,
+  "pr_auc": 0.6954,
   "confusion_matrix": [
     [
-      17402,
-      19
+      15351,
+      55
     ],
     [
-      749,
-      318
+      588,
+      383
     ]
   ],
-  "test_positives": 1067,
-  "test_negatives": 17421,
+  "test_positives": 971,
+  "test_negatives": 15406,
   "probability_summary": {
-    "min": 0.000483,
-    "p50": 0.039191,
-    "p75": 0.217346,
-    "p90": 0.617185,
-    "p95": 0.8706,
-    "p99": 0.995734,
-    "max": 0.999068
+    "min": 0.008646,
+    "p50": 0.077196,
+    "p75": 0.209459,
+    "p90": 0.4927,
+    "p95": 0.824573,
+    "p99": 0.982855,
+    "max": 0.991251
   },
   "peak_picking": {
-    "threshold": 0.99,
+    "threshold": 0.95,
     "lookahead_frames": 4,
     "refractory_ms": 30.0,
     "tolerance_ms": 30.0,
     "frame_ms": 5.3333,
     "confusion_matrix": {
-      "true_positives": 95,
-      "false_positives": 22,
-      "false_negatives": 49,
+      "true_positives": 112,
+      "false_positives": 7,
+      "false_negatives": 21,
       "true_negatives": null
     },
-    "precision": 0.812,
-    "recall": 0.6597,
-    "f1": 0.728,
+    "precision": 0.9412,
+    "recall": 0.8421,
+    "f1": 0.8889,
     "per_file": [
       {
         "file": "training_data_Random_4-4_97bpm_bhcmd.json",
         "expected": 12,
         "detected": 12,
-        "tp": 12,
-        "fp": 0,
-        "fn": 0
-      },
-      {
-        "file": "training_data_notenlesen_4-4_134bpm_kaxua.json",
-        "expected": 22,
-        "detected": 17,
-        "tp": 16,
+        "tp": 11,
         "fp": 1,
-        "fn": 6
+        "fn": 1
       },
       {
-        "file": "training_data_notenlesen_4-4_132bpm_DGB_sznlg.json",
+        "file": "training_data_notenlesen_4-4_134bpm_ED_u83jq.json",
+        "expected": 30,
+        "detected": 29,
+        "tp": 28,
+        "fp": 1,
+        "fn": 2
+      },
+      {
+        "file": "training_data_notenlesen_4-4_120bpm_travis_oytwr.json",
         "expected": 16,
         "detected": 15,
         "tp": 15,
@@ -67,11 +67,11 @@
         "fn": 1
       },
       {
-        "file": "training_data_notenlesen_4-4_134bpm_ED_oeems.json",
-        "expected": 21,
-        "detected": 21,
-        "tp": 20,
-        "fp": 1,
+        "file": "training_data_notenlesen_4-4_134bpm_ED_gyjfv.json",
+        "expected": 10,
+        "detected": 9,
+        "tp": 9,
+        "fp": 0,
         "fn": 1
       },
       {
@@ -83,63 +83,63 @@
         "fn": 0
       },
       {
-        "file": "training_data_medium.json",
-        "expected": 16,
-        "detected": 20,
-        "tp": 0,
-        "fp": 20,
+        "file": "training_data_fast.json",
+        "expected": 17,
+        "detected": 5,
+        "tp": 1,
+        "fp": 4,
         "fn": 16
       },
       {
-        "file": "training_data_notenlesen_4-4_240bpm_EBA_0lg1o.json",
-        "expected": 25,
-        "detected": 9,
-        "tp": 9,
+        "file": "training_data_notenlesen_4-4_161bpm_EGBD_y18iz.json",
+        "expected": 16,
+        "detected": 16,
+        "tp": 16,
         "fp": 0,
-        "fn": 16
+        "fn": 0
       },
       {
-        "file": "training_data_notenlesen_4-4_99bpm_travis_cmajdmaj_147kdtra.json",
+        "file": "training_data_notenlesen_4-4_99bpm_ED_chstz.json",
         "expected": 16,
-        "detected": 7,
-        "tp": 7,
-        "fp": 0,
-        "fn": 9
+        "detected": 17,
+        "tp": 16,
+        "fp": 1,
+        "fn": 0
       }
     ]
   },
   "threshold_selection": {
     "mode": "target_recall_peak_picking",
     "configured_threshold": 0.85,
-    "selected_threshold": 0.99,
-    "validation_peak_precision": 1.0,
+    "selected_threshold": 0.95,
+    "validation_peak_precision": 0.9722,
     "validation_peak_recall": 1.0,
-    "validation_peak_f_beta": 1.0,
+    "validation_peak_f_beta": 0.9943,
     "validation_peak_tp": 70,
-    "validation_peak_fp": 0,
+    "validation_peak_fp": 2,
     "validation_peak_fn": 0,
     "target_recall": 0.9,
     "min_precision": 0.6,
     "hyperparameter_tuning": {
       "params": {
-        "max_depth": 5,
+        "max_depth": 6,
         "min_child_weight": 5,
-        "learning_rate": 0.05,
-        "n_estimators": 450,
-        "subsample": 0.85,
-        "colsample_bytree": 0.95,
-        "gamma": 0.1,
+        "learning_rate": 0.03,
+        "n_estimators": 300,
+        "subsample": 0.8,
+        "colsample_bytree": 0.8,
+        "gamma": 0.3,
         "reg_alpha": 0.05,
-        "reg_lambda": 1.0,
-        "scale_pos_weight_multiplier": 1.25,
+        "reg_lambda": 1.5,
+        "scale_pos_weight_multiplier": 1.0,
         "max_delta_step": 0,
         "negative_sampling_ratio": 10.0,
         "lookahead_frames": 4
       },
-      "threshold": 0.99,
-      "precision": 1.0,
+      "threshold": 0.95,
+      "precision": 0.9722222222222222,
       "recall": 1.0,
-      "f_beta": 1.0,
+      "f_beta": 0.9943181818181817,
       "mode": "target_recall_peak_picking"
     }
   }

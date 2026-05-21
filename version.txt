@@ -1,1 +1,1 @@
-Version 0.189 | 2026-05-21 19:00 | 808767b | js/tools/onsetTagger/onsetTagger.js (+4 more)
+Version 0.190 | 2026-05-21 20:26 | 8afd8e7 | js/data/android-firefox-training-review-catalog.json (+17 more)
