@@ -377,7 +377,7 @@ describe('applyTrainingRoleToBaseName', () => {
       .toBe('notenlesen_4_4_120bpm_test_abc12');
   });
 
-  it('inserts role before last segment for val', () => {
+  it('inserts role before last segment for val (backward compat)', () => {
     expect(applyTrainingRoleToBaseName('notenlesen_abc12', 'val'))
       .toBe('notenlesen_val_abc12');
   });
@@ -404,6 +404,16 @@ describe('applyTrainingRoleToBaseName', () => {
 
   it('returns baseName unchanged when no role and no existing token', () => {
     expect(applyTrainingRoleToBaseName('notenlesen_abc12', ''))
+      .toBe('notenlesen_abc12');
+  });
+
+  it('random role removes existing token without inserting one', () => {
+    expect(applyTrainingRoleToBaseName('notenlesen_4_train_abc12', 'random'))
+      .toBe('notenlesen_4_abc12');
+  });
+
+  it('random role returns baseName unchanged when no existing token', () => {
+    expect(applyTrainingRoleToBaseName('notenlesen_abc12', 'random'))
       .toBe('notenlesen_abc12');
   });
 });

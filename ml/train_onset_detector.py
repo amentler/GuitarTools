@@ -187,7 +187,7 @@ def load_training_files(data_dir: str, feature_names: list[str], positive_window
 
         # Training role (forced split assignment)
         raw_role = meta.get("trainingRole") or None
-        training_role = raw_role if raw_role in ("train", "test", "val") else None
+        training_role = raw_role if raw_role in ("train", "test", "val") and raw_role != "random" else None
 
         file_features.append(X)
         file_labels.append(y)

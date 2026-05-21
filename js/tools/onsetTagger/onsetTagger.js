@@ -467,7 +467,7 @@ export function createOnsetTaggerFeature() {
       if (_svgEl) updateOnsetMarkers(_svgEl, _onsetsMs, _rangeStart, _rangeEnd, _selectedOnsetIndex);
       updateOnsetUI(ui);
     }
-    renderMetaForm(ui, _sidecarData);
+    renderMetaForm(ui, { ...DEFAULT_SIDECAR_FIELDS, ...sidecarObj });
     enableStep2(ui);
     _analysisFlyout.render(ui);
     schedulePersist(ui);

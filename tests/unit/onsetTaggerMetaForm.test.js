@@ -26,10 +26,13 @@ describe('DROPDOWN_OPTIONS', () => {
     expect(DROPDOWN_OPTIONS).toHaveProperty('chord');
     expect(DROPDOWN_OPTIONS).toHaveProperty('timeSig');
   });
-  it('each option list starts with empty string', () => {
-    for (const opts of Object.values(DROPDOWN_OPTIONS)) {
-      expect(opts[0]).toBe('');
+  it('each option list starts with empty string or an explicit default', () => {
+    for (const [key, opts] of Object.entries(DROPDOWN_OPTIONS)) {
+      expect(opts[0] === '' || key === 'trainingRole').toBe(true);
     }
+  });
+  it('trainingRole options are random/train/test', () => {
+    expect(DROPDOWN_OPTIONS.trainingRole).toEqual(['random', 'train', 'test']);
   });
 });
 

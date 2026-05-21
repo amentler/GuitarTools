@@ -318,13 +318,13 @@ const TRAINING_ROLE_TOKENS = ['train', 'test', 'val'];
  * (which is typically the random suffix).
  *
  * @param {string} baseName     Current baseName, e.g. "notenlesen_4_4_120bpm_abc12"
- * @param {string} trainingRole One of "train" | "test" | "val" | ""
+ * @param {string} trainingRole One of "train" | "test" | "random" | ""
  * @returns {string}            Updated baseName
  */
 export function applyTrainingRoleToBaseName(baseName, trainingRole) {
   const parts = String(baseName ?? '').split('_').filter(Boolean);
   const withoutRole = parts.filter(p => !TRAINING_ROLE_TOKENS.includes(p));
-  if (!trainingRole) return withoutRole.join('_') || baseName;
+  if (!trainingRole || trainingRole === 'random') return withoutRole.join('_') || baseName;
   if (withoutRole.length >= 2) {
     withoutRole.splice(withoutRole.length - 1, 0, trainingRole);
   } else {
