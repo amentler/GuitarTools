@@ -1,1 +1,1 @@
-Version 0.192 | 2026-05-21 21:57 | 1e83159 | js/data/android-firefox-training-review-catalog.json (+10 more)
+Version 0.193 | 2026-05-21 22:45 | 5f66426 | .claude/commands/architecture-check.md (+5 more)
