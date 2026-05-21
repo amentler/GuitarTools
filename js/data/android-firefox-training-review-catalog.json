@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-05-21T20:32:53.455Z",
+  "generatedAt": "2026-05-21T21:57:38.725Z",
   "mediaRoots": [
     "tests/fixtures/sequences/sheet-music-reading"
   ],
@@ -172,13 +172,13 @@
       },
       "metrics": {
         "expected": 16,
-        "detected": 20,
-        "tp": 15,
-        "fp": 5,
-        "fn": 1,
-        "precision": 0.75,
-        "recall": 0.9375,
-        "f1": 0.8333333333333334
+        "detected": null,
+        "tp": null,
+        "fp": null,
+        "fn": null,
+        "precision": null,
+        "recall": null,
+        "f1": null
       }
     },
     {
@@ -197,13 +197,13 @@
       },
       "metrics": {
         "expected": 16,
-        "detected": 16,
-        "tp": 16,
-        "fp": 0,
-        "fn": 0,
-        "precision": 1,
-        "recall": 1,
-        "f1": 1
+        "detected": 17,
+        "tp": 15,
+        "fp": 2,
+        "fn": 1,
+        "precision": 0.8823529411764706,
+        "recall": 0.9375,
+        "f1": 0.9090909090909091
       }
     },
     {
@@ -272,13 +272,13 @@
       },
       "metrics": {
         "expected": 17,
-        "detected": null,
-        "tp": null,
-        "fp": null,
-        "fn": null,
-        "precision": null,
-        "recall": null,
-        "f1": null
+        "detected": 7,
+        "tp": 1,
+        "fp": 6,
+        "fn": 16,
+        "precision": 0.14285714285714285,
+        "recall": 0.058823529411764705,
+        "f1": 0.08333333333333333
       }
     },
     {
@@ -322,13 +322,13 @@
       },
       "metrics": {
         "expected": 16,
-        "detected": 15,
-        "tp": 15,
-        "fp": 0,
-        "fn": 1,
-        "precision": 1,
-        "recall": 0.9375,
-        "f1": 0.967741935483871
+        "detected": null,
+        "tp": null,
+        "fp": null,
+        "fn": null,
+        "precision": null,
+        "recall": null,
+        "f1": null
       }
     },
     {
@@ -422,13 +422,13 @@
       },
       "metrics": {
         "expected": 10,
-        "detected": null,
-        "tp": null,
-        "fp": null,
-        "fn": null,
-        "precision": null,
-        "recall": null,
-        "f1": null
+        "detected": 11,
+        "tp": 10,
+        "fp": 1,
+        "fn": 0,
+        "precision": 0.9090909090909091,
+        "recall": 1,
+        "f1": 0.9523809523809523
       }
     },
     {
@@ -472,13 +472,13 @@
       },
       "metrics": {
         "expected": 30,
-        "detected": 29,
-        "tp": 28,
-        "fp": 1,
-        "fn": 2,
-        "precision": 0.9655172413793104,
-        "recall": 0.9333333333333333,
-        "f1": 0.9491525423728815
+        "detected": null,
+        "tp": null,
+        "fp": null,
+        "fn": null,
+        "precision": null,
+        "recall": null,
+        "f1": null
       }
     },
     {
@@ -522,13 +522,13 @@
       },
       "metrics": {
         "expected": 22,
-        "detected": 25,
-        "tp": 22,
-        "fp": 3,
-        "fn": 0,
-        "precision": 0.88,
-        "recall": 1,
-        "f1": 0.9361702127659575
+        "detected": null,
+        "tp": null,
+        "fp": null,
+        "fn": null,
+        "precision": null,
+        "recall": null,
+        "f1": null
       }
     },
     {
@@ -647,13 +647,13 @@
       },
       "metrics": {
         "expected": 17,
-        "detected": null,
-        "tp": null,
-        "fp": null,
-        "fn": null,
-        "precision": null,
-        "recall": null,
-        "f1": null
+        "detected": 20,
+        "tp": 15,
+        "fp": 5,
+        "fn": 2,
+        "precision": 0.75,
+        "recall": 0.8823529411764706,
+        "f1": 0.8108108108108107
       }
     },
     {
@@ -672,13 +672,13 @@
       },
       "metrics": {
         "expected": 16,
-        "detected": 15,
-        "tp": 15,
-        "fp": 0,
-        "fn": 1,
-        "precision": 1,
-        "recall": 0.9375,
-        "f1": 0.967741935483871
+        "detected": null,
+        "tp": null,
+        "fp": null,
+        "fn": null,
+        "precision": null,
+        "recall": null,
+        "f1": null
       }
     },
     {
@@ -722,13 +722,13 @@
       },
       "metrics": {
         "expected": 18,
-        "detected": null,
-        "tp": null,
-        "fp": null,
-        "fn": null,
-        "precision": null,
-        "recall": null,
-        "f1": null
+        "detected": 20,
+        "tp": 18,
+        "fp": 2,
+        "fn": 0,
+        "precision": 0.9,
+        "recall": 1,
+        "f1": 0.9473684210526316
       }
     },
     {
@@ -1047,13 +1047,13 @@
       },
       "metrics": {
         "expected": 22,
-        "detected": null,
-        "tp": null,
-        "fp": null,
-        "fn": null,
-        "precision": null,
-        "recall": null,
-        "f1": null
+        "detected": 28,
+        "tp": 21,
+        "fp": 7,
+        "fn": 1,
+        "precision": 0.75,
+        "recall": 0.9545454545454546,
+        "f1": 0.84
       }
     },
     {
@@ -1072,13 +1072,13 @@
       },
       "metrics": {
         "expected": 22,
-        "detected": null,
-        "tp": null,
-        "fp": null,
-        "fn": null,
-        "precision": null,
-        "recall": null,
-        "f1": null
+        "detected": 31,
+        "tp": 19,
+        "fp": 12,
+        "fn": 3,
+        "precision": 0.6129032258064516,
+        "recall": 0.8636363636363636,
+        "f1": 0.7169811320754716
       }
     },
     {
@@ -1172,13 +1172,13 @@
       },
       "metrics": {
         "expected": 11,
-        "detected": null,
-        "tp": null,
-        "fp": null,
-        "fn": null,
-        "precision": null,
-        "recall": null,
-        "f1": null
+        "detected": 11,
+        "tp": 11,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1,
+        "recall": 1,
+        "f1": 1
       }
     },
     {
@@ -1197,13 +1197,13 @@
       },
       "metrics": {
         "expected": 15,
-        "detected": null,
-        "tp": null,
-        "fp": null,
-        "fn": null,
-        "precision": null,
-        "recall": null,
-        "f1": null
+        "detected": 20,
+        "tp": 13,
+        "fp": 7,
+        "fn": 2,
+        "precision": 0.65,
+        "recall": 0.8666666666666667,
+        "f1": 0.7428571428571429
       }
     },
     {
@@ -1247,13 +1247,13 @@
       },
       "metrics": {
         "expected": 48,
-        "detected": null,
-        "tp": null,
-        "fp": null,
-        "fn": null,
-        "precision": null,
-        "recall": null,
-        "f1": null
+        "detected": 53,
+        "tp": 42,
+        "fp": 11,
+        "fn": 6,
+        "precision": 0.7924528301886793,
+        "recall": 0.875,
+        "f1": 0.8316831683168316
       }
     }
   ]

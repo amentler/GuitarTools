@@ -2,19 +2,6 @@
   "version": 1,
   "strategies": [
     {
-      "key": "xgboost-20260519-213045",
-      "label": "XGB 2026-05-19 21:30",
-      "description": "XGBoost Android-Firefox, trainiert 2026-05-19 21:30. Peak F1 0.4639, Precision 0.3109, Recall 0.9136. Threshold 0.493. 27 Trainingsdateien. depth=6 lr=0.03 est=300.",
-      "modelFile": "strategies/xgb_20260519_213045_15e268.onnx",
-      "schemaFile": "strategies/xgb_20260519_213045_15e268.schema.json",
-      "trainedOn": "2026-05-19T21:30:45.400207+00:00",
-      "trainingFileCount": 27,
-      "peakF1": 0.4639,
-      "peakPrecision": 0.3109,
-      "peakRecall": 0.9136,
-      "threshold": 0.493
-    },
-    {
       "key": "xgboost-20260519-221744",
       "label": "XGB 2026-05-19 22:17",
       "description": "XGBoost Android-Firefox, trainiert 2026-05-19 22:17. Peak F1 0.5813, Precision 0.417, Recall 0.9588. Threshold 0.529. 32 Trainingsdateien. depth=6 lr=0.02 est=450.",
@@ -78,6 +65,32 @@
       "peakPrecision": 0.9412,
       "peakRecall": 0.8421,
       "threshold": 0.95
+    },
+    {
+      "key": "xgboost-20260521-210549",
+      "label": "XGB 2026-05-21 21:05",
+      "description": "XGBoost Android-Firefox, trainiert 2026-05-21 21:05. Peak F1 0.8091, Precision 0.7295, Recall 0.9082. Threshold 0.901. 50 Trainingsdateien. depth=5 lr=0.05 est=300.",
+      "modelFile": "strategies/xgb_20260521_210549_a95976.onnx",
+      "schemaFile": "strategies/xgb_20260521_210549_a95976.schema.json",
+      "trainedOn": "2026-05-21T21:05:49.995869+00:00",
+      "trainingFileCount": 50,
+      "peakF1": 0.8091,
+      "peakPrecision": 0.7295,
+      "peakRecall": 0.9082,
+      "threshold": 0.901
+    },
+    {
+      "key": "xgboost-20260521-214052",
+      "label": "XGB 2026-05-21 21:40",
+      "description": "XGBoost Android-Firefox, trainiert 2026-05-21 21:40. Peak F1 0.7971, Precision 0.7569, Recall 0.8418. Threshold 0.889. 50 Trainingsdateien. depth=6 lr=0.03 est=200.",
+      "modelFile": "strategies/xgb_20260521_214052_5a6130.onnx",
+      "schemaFile": "strategies/xgb_20260521_214052_5a6130.schema.json",
+      "trainedOn": "2026-05-21T21:40:52.349287+00:00",
+      "trainingFileCount": 50,
+      "peakF1": 0.7971,
+      "peakPrecision": 0.7569,
+      "peakRecall": 0.8418,
+      "threshold": 0.889
     }
   ]
 }

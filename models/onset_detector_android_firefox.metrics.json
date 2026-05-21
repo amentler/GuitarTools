@@ -1,137 +1,161 @@
 {
-  "threshold": 0.929,
-  "precision": 0.8576,
-  "recall": 0.4995,
-  "f1": 0.6313,
-  "roc_auc": 0.9422,
-  "pr_auc": 0.7381,
+  "threshold": 0.889,
+  "precision": 0.7607,
+  "recall": 0.448,
+  "f1": 0.5639,
+  "roc_auc": 0.9322,
+  "pr_auc": 0.6639,
   "confusion_matrix": [
     [
-      15166,
-      88
+      18801,
+      202
     ],
     [
-      531,
-      530
+      791,
+      642
     ]
   ],
-  "test_positives": 1061,
-  "test_negatives": 15254,
+  "validation_positives": 1433,
+  "validation_negatives": 19003,
   "probability_summary": {
-    "min": 0.004422,
-    "p50": 0.130286,
-    "p75": 0.306667,
-    "p90": 0.60164,
-    "p95": 0.869971,
-    "p99": 0.990494,
-    "max": 0.995333
+    "min": 0.004539,
+    "p50": 0.087639,
+    "p75": 0.267073,
+    "p90": 0.637383,
+    "p95": 0.851214,
+    "p99": 0.986591,
+    "max": 0.99538
   },
   "peak_picking": {
-    "threshold": 0.929,
-    "lookahead_frames": 4,
-    "refractory_ms": 30.0,
-    "tolerance_ms": 30.0,
+    "threshold": 0.889,
+    "lookahead_frames": 5,
+    "refractory_ms": 20.0,
+    "tolerance_ms": 20.0,
     "frame_ms": 5.3333,
     "confusion_matrix": {
-      "true_positives": 131,
-      "false_positives": 13,
-      "false_negatives": 10,
+      "true_positives": 165,
+      "false_positives": 53,
+      "false_negatives": 31,
       "true_negatives": null
     },
-    "precision": 0.9097,
-    "recall": 0.9291,
-    "f1": 0.9193,
+    "precision": 0.7569,
+    "recall": 0.8418,
+    "f1": 0.7971,
     "per_file": [
       {
-        "file": "training_data_notenlesen_4-4_134bpm_ED_u83jq.json",
-        "expected": 30,
-        "detected": 29,
-        "tp": 28,
-        "fp": 1,
+        "file": "training_data_Random_4-4_170bpm_validation_ie97l.json",
+        "expected": 22,
+        "detected": 31,
+        "tp": 19,
+        "fp": 12,
+        "fn": 3
+      },
+      {
+        "file": "training_data_fast.json",
+        "expected": 17,
+        "detected": 7,
+        "tp": 1,
+        "fp": 6,
+        "fn": 16
+      },
+      {
+        "file": "training_data_Random_4-4_cucpn.json",
+        "expected": 11,
+        "detected": 11,
+        "tp": 11,
+        "fp": 0,
+        "fn": 0
+      },
+      {
+        "file": "training_data_read_my_mind_d8pnf.json",
+        "expected": 15,
+        "detected": 20,
+        "tp": 13,
+        "fp": 7,
         "fn": 2
       },
       {
-        "file": "training_data_notenlesen_4-4_240bpm_EBA_0lg1o.json",
-        "expected": 25,
-        "detected": 24,
-        "tp": 20,
-        "fp": 4,
-        "fn": 5
-      },
-      {
-        "file": "training_data_4-4_91bpm_GDAB_q6ntm.json",
-        "expected": 16,
-        "detected": 20,
-        "tp": 15,
-        "fp": 5,
-        "fn": 1
-      },
-      {
-        "file": "training_data_notenlesen_4-4_134bpm_vad9j.json",
-        "expected": 22,
-        "detected": 25,
-        "tp": 22,
-        "fp": 3,
-        "fn": 0
+        "file": "training_data_Travis_cmajamindmaj_a917zn.json",
+        "expected": 48,
+        "detected": 53,
+        "tp": 42,
+        "fp": 11,
+        "fn": 6
       },
       {
         "file": "training_data_4-4_91bpm_GEB_u25pb.json",
         "expected": 16,
-        "detected": 16,
-        "tp": 16,
-        "fp": 0,
+        "detected": 17,
+        "tp": 15,
+        "fp": 2,
+        "fn": 1
+      },
+      {
+        "file": "training_data_notenlesen_4-4_59bpm_1y27l.json",
+        "expected": 18,
+        "detected": 20,
+        "tp": 18,
+        "fp": 2,
         "fn": 0
       },
       {
-        "file": "training_data_notenlesen_4-4_120bpm_travis_oytwr.json",
-        "expected": 16,
-        "detected": 15,
-        "tp": 15,
-        "fp": 0,
+        "file": "training_data_Random_4-4_170bpm_jl6ut.json",
+        "expected": 22,
+        "detected": 28,
+        "tp": 21,
+        "fp": 7,
         "fn": 1
       },
       {
-        "file": "training_data_notenlesen_4-4_240bpm_EBA_oytwr.json",
-        "expected": 16,
-        "detected": 15,
+        "file": "training_data_notenlesen_4-4_134bpm_ED_gyjfv.json",
+        "expected": 10,
+        "detected": 11,
+        "tp": 10,
+        "fp": 1,
+        "fn": 0
+      },
+      {
+        "file": "training_data_notenlesen_4-4_240bpm_EBA_1m5by.json",
+        "expected": 17,
+        "detected": 20,
         "tp": 15,
-        "fp": 0,
-        "fn": 1
+        "fp": 5,
+        "fn": 2
       }
     ]
   },
   "threshold_selection": {
     "mode": "recall_priority_peak_picking",
-    "configured_threshold": 0.85,
-    "selected_threshold": 0.929,
-    "validation_peak_precision": 0.6087,
-    "validation_peak_recall": 0.7241,
-    "validation_peak_f_beta": 0.6977,
-    "validation_peak_tp": 42,
-    "validation_peak_fp": 27,
-    "validation_peak_fn": 16,
-    "target_recall": 0.9,
-    "min_precision": 0.6,
+    "configured_threshold": 0.5,
+    "selected_threshold": 0.889,
+    "validation_peak_precision": 0.7569,
+    "validation_peak_recall": 0.8418,
+    "validation_peak_f_beta": 0.8234,
+    "validation_peak_tp": 165,
+    "validation_peak_fp": 53,
+    "validation_peak_fn": 31,
+    "target_recall": 0.93,
+    "min_precision": 0.75,
     "hyperparameter_tuning": {
       "params": {
         "max_depth": 6,
-        "min_child_weight": 5,
+        "min_child_weight": 3,
         "learning_rate": 0.03,
-        "n_estimators": 300,
-        "subsample": 0.8,
-        "colsample_bytree": 0.8,
-        "gamma": 0.3,
-        "reg_alpha": 0.05,
-        "reg_lambda": 1.5,
-        "scale_pos_weight_multiplier": 1.0,
-        "max_delta_step": 0,
-        "negative_sampling_ratio": 5.0,
-        "lookahead_frames": 4
+        "n_estimators": 200,
+        "subsample": 0.9,
+        "colsample_bytree": 0.9,
+        "gamma": 0.2,
+        "reg_alpha": 0.1,
+        "reg_lambda": 2.0,
+        "scale_pos_weight_multiplier": 0.75,
+        "max_delta_step": 1,
+        "negative_sampling_ratio": 4.0,
+        "lookahead_frames": 5
       },
-      "threshold": 0.929,
-      "precision": 0.6086956521739131,
-      "recall": 0.7241379310344828,
-      "f_beta": 0.6976744186046512,
+      "threshold": 0.889,
+      "precision": 0.7568807339449541,
+      "recall": 0.8418367346938775,
+      "f_beta": 0.8233918955868349,
       "mode": "recall_priority_peak_picking"
     }
   }
