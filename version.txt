@@ -1,1 +1,1 @@
-Version 0.187 | 2026-05-21 18:36 | 6b6fa72 | js/tools/onsetTagger/onsetTagger.js (+4 more)
+Version 0.188 | 2026-05-21 18:38 | 8d2269e | AGENTS.md (+1 more)
