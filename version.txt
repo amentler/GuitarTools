@@ -1,1 +1,1 @@
-Version 0.194 | 2026-05-21 22:54 | 991ff25 | tests/e2e/akkord-trainer.spec.js (+3 more)
+Version 0.195 | 2026-05-21 23:01 | 6011130 | .claude/commands/architecture-review.md (+10 more)
