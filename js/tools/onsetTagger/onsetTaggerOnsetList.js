@@ -1,4 +1,10 @@
-export function renderOnsetList(onsetList, onsetsMs, selectedOnsetIndex) {
+import { computeAutoBpm } from './onsetTaggerLogic.js';
+
+export function renderOnsetList(onsetList, onsetsMs, selectedOnsetIndex, autoBpmEl) {
+  if (autoBpmEl) {
+    const bpm = computeAutoBpm(onsetsMs);
+    autoBpmEl.textContent = bpm !== null ? String(bpm) : '—';
+  }
   if (!onsetList) return;
   onsetList.innerHTML = '';
   if (onsetsMs.length === 0) {

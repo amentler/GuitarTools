@@ -365,3 +365,22 @@ export function computePlayheadPosition(startTime, ctxCurrentTime, playbackRate,
   const pos = (offsetWithinLoop + elapsed) % loopLen;
   return rangeStart + (pos < 0 ? pos + loopLen : pos);
 }
+
+/**
+ * Computes BPM from a list of onset timestamps (ms) by extrapolating the
+ * average interval between first and last onset over the total beat count.
+ *
+ * @param {number[]} onsetsMs  Array of onset timestamps in milliseconds
+ * @returns {number|null}      Rounded BPM value, or null if fewer than 2 onsets
+ */
+export function computeAutoBpm(onsetsMs) {
+  const sorted = onsetsMs
+    .filter(ms => Number.isFinite(ms))
+    .slice()
+    .sort((a, b) => a - b);
+  if (sorted.length < 2) return null;
+  const spanMs = sorted[sorted.length - 1] - sorted[0];
+  if (spanMs <= 0) return null;
+  const beatCount = sorted.length - 1;
+  return Math.round((beatCount / spanMs) * 60000);
+}

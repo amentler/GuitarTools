@@ -69,7 +69,6 @@ export function createOnsetTaggerFeature() {
   let _isPlaying     = false;
   let _playbackRate  = 1.0;
   let _rafId         = null;
-
   let _root = null;
   let _svgEl = null;
   const _analysisFlyout = createOnsetTaggerAnalysisFlyout({
@@ -135,6 +134,7 @@ export function createOnsetTaggerFeature() {
       speedBtns:     document.querySelectorAll('[data-speed]'),
       onsetList:     q('tagger-onset-list'),
       metaForm:      q('tagger-meta-form'),
+      autoBpmValue:  q('tagger-auto-bpm-value'),
       exportBtn:     q('tagger-export'),
       exportTopBtn:  q('tagger-export-top'),
       filenameInput: q('tagger-filename-input'),
@@ -241,7 +241,7 @@ export function createOnsetTaggerFeature() {
 
   function updateOnsetUI(ui) {
     syncRemoveOnsetButton(ui);
-    renderOnsetList(ui.onsetList, _onsetsMs, _selectedOnsetIndex);
+    renderOnsetList(ui.onsetList, _onsetsMs, _selectedOnsetIndex, ui.autoBpmValue);
     if (_svgEl) {
       updateOnsetMarkers(_svgEl, _onsetsMs, _rangeStart, _rangeEnd, _selectedOnsetIndex);
     }
