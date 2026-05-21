@@ -3,7 +3,7 @@ import { registerServiceWorker, forceAppReload } from '../../js/shared/pwa/sw-cl
 import { createGlobalDebugStore } from '../../js/shared/debug/index.js';
 import { getSetting, setSetting, SETTING_KEYS } from '../../js/shared/globalSettings.js';
 import { getSheetMusicRecognitionStrategies } from '../../js/games/sheetMusicReading/sheetMusicRecognition.js';
-import { getGuitarOnsetStrategies } from '../../js/shared/audio/guitarOnsetStrategies.js';
+import { getGuitarOnsetStrategies, loadGuitarOnsetStrategiesFromRegistry } from '../../js/shared/audio/guitarOnsetStrategies.js';
 
 async function loadVersionInfo() {
   const versionEl = document.getElementById('app-version');
@@ -88,23 +88,27 @@ function initSettings() {
 
   const onsetStrategyList = document.getElementById('setting-sheet-music-onset-strategy-list');
   if (onsetStrategyList) {
-    const onsetStrategies = getGuitarOnsetStrategies();
-    const savedOnset = getSetting(SETTING_KEYS.SHEET_MUSIC_ONSET_STRATEGY);
-    const activeKey = onsetStrategies.some(s => s.key === savedOnset) ? savedOnset : onsetStrategies[0]?.key;
-    onsetStrategyList.innerHTML = onsetStrategies.map(s => `
-      <label class="onset-strategy-item">
-        <input type="radio" name="onset-strategy" value="${s.key}"${s.key === activeKey ? ' checked' : ''}>
-        <div class="onset-strategy-item__body">
-          <span class="onset-strategy-item__name">${s.label}</span>
-          <span class="onset-strategy-item__desc">${s.description}</span>
-        </div>
-      </label>
-    `).join('');
+    function renderOnsetStrategyList() {
+      const onsetStrategies = getGuitarOnsetStrategies();
+      const savedOnset = getSetting(SETTING_KEYS.SHEET_MUSIC_ONSET_STRATEGY);
+      const activeKey = onsetStrategies.some(s => s.key === savedOnset) ? savedOnset : onsetStrategies[0]?.key;
+      onsetStrategyList.innerHTML = onsetStrategies.map(s => `
+        <label class="onset-strategy-item">
+          <input type="radio" name="onset-strategy" value="${s.key}"${s.key === activeKey ? ' checked' : ''}>
+          <div class="onset-strategy-item__body">
+            <span class="onset-strategy-item__name">${s.label}</span>
+            <span class="onset-strategy-item__desc">${s.description}</span>
+          </div>
+        </label>
+      `).join('');
+    }
+    renderOnsetStrategyList();
     onsetStrategyList.addEventListener('change', e => {
       if (e.target.name === 'onset-strategy') {
         setSetting(SETTING_KEYS.SHEET_MUSIC_ONSET_STRATEGY, e.target.value);
       }
     });
+    loadGuitarOnsetStrategiesFromRegistry().then(() => renderOnsetStrategyList());
   }
 }
 

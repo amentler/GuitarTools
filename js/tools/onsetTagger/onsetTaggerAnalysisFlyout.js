@@ -5,6 +5,12 @@ import {
   renderAllCharts,
   updatePlayhead as updateAnalyzerPlayhead,
 } from '../audioAnalyse/audioAnalyseSVG.js';
+import {
+  getGuitarOnsetStrategies,
+  loadGuitarOnsetStrategiesFromRegistry,
+  DEFAULT_GUITAR_ONSET_STRATEGY_KEY,
+} from '../../shared/audio/guitarOnsetStrategies.js';
+import { getSetting, SETTING_KEYS } from '../../shared/globalSettings.js';
 
 export function createOnsetTaggerAnalysisFlyout({
   getSamples,
@@ -20,6 +26,18 @@ export function createOnsetTaggerAnalysisFlyout({
   let showDetectedOnsets = true;
   let showTaggedOnsets = true;
   let playheadSec = null;
+  let _onsetStrategyKey = getSetting(SETTING_KEYS.SHEET_MUSIC_ONSET_STRATEGY) ?? DEFAULT_GUITAR_ONSET_STRATEGY_KEY;
+
+  function populateOnsetSelect(ui) {
+    if (!ui.analysisOnsetSelectEl) return;
+    const strategies = getGuitarOnsetStrategies();
+    const currentKey = ui.analysisOnsetSelectEl.value || _onsetStrategyKey;
+    const activeKey = strategies.some(s => s.key === currentKey) ? currentKey : (strategies[0]?.key ?? _onsetStrategyKey);
+    ui.analysisOnsetSelectEl.innerHTML = strategies
+      .map(s => `<option value="${s.key}"${s.key === activeKey ? ' selected' : ''}>${s.label}</option>`)
+      .join('');
+    _onsetStrategyKey = activeKey;
+  }
 
   function setStatus(ui, text, isError = false) {
     if (!ui.analysisStatus) return;
@@ -83,7 +101,7 @@ export function createOnsetTaggerAnalysisFlyout({
     ui.analysisChartsWrapper?.classList.add('u-hidden');
     setStatus(ui, 'Analyse läuft ...');
     try {
-      const result = await analyzeAudio(samples, getSampleRate());
+      const result = await analyzeAudio(samples, getSampleRate(), { onsetStrategyKey: _onsetStrategyKey });
       if (runId !== analysisRunId) return;
       analysisResult = result;
       setStatus(ui, `${result.frames.length} Frames, ${result.onsets.length} erkannte Onsets.`);
@@ -107,6 +125,12 @@ export function createOnsetTaggerAnalysisFlyout({
     ui.analysisShowTaggedOnsetsEl?.addEventListener('change', () => {
       showTaggedOnsets = ui.analysisShowTaggedOnsetsEl.checked;
       render(ui);
+    });
+    populateOnsetSelect(ui);
+    loadGuitarOnsetStrategiesFromRegistry().then(() => populateOnsetSelect(ui));
+    ui.analysisOnsetSelectEl?.addEventListener('change', () => {
+      _onsetStrategyKey = ui.analysisOnsetSelectEl.value;
+      void run(ui);
     });
   }
 

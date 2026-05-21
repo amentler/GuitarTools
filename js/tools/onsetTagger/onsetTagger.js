@@ -15,7 +15,7 @@ import {
 } from './onsetTaggerLogic.js';
 import { loadRecordingFromSource } from '../../shared/recordingLoader.js';
 import { detectOnsetsOffline } from '../../shared/audio/offlineOnsetDetection.js';
-import { getGuitarOnsetStrategies } from '../../shared/audio/guitarOnsetStrategies.js';
+import { getGuitarOnsetStrategies, loadGuitarOnsetStrategiesFromRegistry } from '../../shared/audio/guitarOnsetStrategies.js';
 import { createGlobalDebugStore } from '../../shared/debug/index.js';
 import { closeLoadMenu, wireLoadMenu } from './onsetTaggerLoadMenu.js';
 import { createOnsetTaggerPersistenceController } from './onsetTaggerPersistence.js';
@@ -60,7 +60,6 @@ export function createOnsetTaggerFeature() {
   let _cursorSec     = 0;
   let _onsetsMs      = [];
   let _selectedOnsetIndex = -1;
-
   let _audioCtx      = null;
   let _audioBuffer   = null;
   let _sourceNode    = null;
@@ -145,6 +144,7 @@ export function createOnsetTaggerFeature() {
       analysisNormalizeYEl: q('tagger-analysis-normalize-y'),
       analysisShowDetectedOnsetsEl: q('tagger-analysis-show-detected-onsets'),
       analysisShowTaggedOnsetsEl: q('tagger-analysis-show-tagged-onsets'),
+      analysisOnsetSelectEl: q('tagger-analysis-onset-select'),
     };
   }
 
@@ -365,7 +365,7 @@ export function createOnsetTaggerFeature() {
     if (_rafId !== null) { cancelAnimationFrame(_rafId); _rafId = null; }
   }
 
-  function renderStrategyButtons(ui) {
+  function renderStrategyButtons(ui, afterRefresh = false) {
     if (!ui.strategyList) return;
     ui.strategyList.innerHTML = '';
     for (const strategy of getGuitarOnsetStrategies()) {
@@ -377,8 +377,8 @@ export function createOnsetTaggerFeature() {
       btn.textContent = strategy.label.replace(/^Guitar Onset Detector \((.*)\)$/, '$1');
       ui.strategyList.appendChild(btn);
     }
+    if (!afterRefresh) loadGuitarOnsetStrategiesFromRegistry().then(() => renderStrategyButtons(ui, true));
   }
-
   function setStrategyStatus(ui, text) {
     if (ui.strategyStatus) ui.strategyStatus.textContent = text;
   }
