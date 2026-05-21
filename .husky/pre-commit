@@ -7,5 +7,13 @@
 #   • Do NOT pre-stage version.txt — the hook owns it entirely.
 scripts/auto-update-version.sh
 
+# ── Training fixture catalog ─────────────────────────────────────────────────
+# Auto-regenerate the android-firefox review catalog when ZIP fixtures change.
+if git diff --cached --name-only | grep -q "^tests/fixtures/sequences/sheet-music-reading/.*\.zip$"; then
+  echo "New fixture ZIPs detected – updating android-firefox review catalog…"
+  npm run review:android-firefox --silent
+  git add js/data/android-firefox-training-review-catalog.json
+fi
+
 # ── Lint ────────────────────────────────────────────────────────────────────
 npx lint-staged

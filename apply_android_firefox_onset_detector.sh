@@ -280,12 +280,7 @@ registry["strategies"].append(new_entry)
 MAX_STRATEGIES = 7
 while len(registry["strategies"]) > MAX_STRATEGIES:
     removed = registry["strategies"].pop(0)
-    # Also remove the model files of the evicted strategy
-    for field in ("modelFile", "schemaFile"):
-        old_file = Path(strategies_dir).parent / removed.get(field, "")
-        if old_file.exists():
-            old_file.unlink()
-    print(f"  Aelteste Strategie entfernt: {removed['key']}")
+    print(f"  Aelteste Strategie aus Registry entfernt: {removed['key']} (Dateien bleiben erhalten)")
 
 with open(registry_path, "w", encoding="utf-8") as f:
     json.dump(registry, f, indent=2, ensure_ascii=False)

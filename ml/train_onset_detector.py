@@ -282,6 +282,49 @@ def split_by_file(
     return X_train, y_train, X_val, y_val, val_idx
 
 
+def concat_files(file_indices: np.ndarray, file_features: list, file_labels: list):
+    """Concatenate features and labels for the given file indices."""
+    if len(file_indices) == 0:
+        return np.empty((0, file_features[0].shape[1]), dtype=np.float32), np.empty(0, dtype=np.int32)
+    X = np.concatenate([file_features[i] for i in file_indices], axis=0)
+    y = np.concatenate([file_labels[i]   for i in file_indices], axis=0)
+    return X, y
+
+
+def kfold_file_splits(
+    file_training_roles: list,
+    n_folds: int,
+    random_state: int,
+) -> list[tuple[np.ndarray, np.ndarray]]:
+    """
+    Creates k file-level splits for cross-validation.
+
+    Files with forced roles are kept fixed:
+    - forced 'train' files appear in every fold's train set
+    - forced 'validation' files appear in every fold's val set
+    Remaining files are shuffled and distributed evenly across k folds.
+
+    Returns list of (train_file_indices, val_file_indices) tuples.
+    """
+    forced_train = [i for i, r in enumerate(file_training_roles) if r == "train"]
+    forced_val   = [i for i, r in enumerate(file_training_roles) if r == "validation"]
+    random_files = [i for i, r in enumerate(file_training_roles) if r not in ("train", "validation")]
+
+    rng = np.random.RandomState(random_state)
+    shuffled = rng.permutation(random_files).tolist()
+
+    folds = []
+    for k in range(n_folds):
+        val_file_set  = set(shuffled[k::n_folds])
+        val_indices   = sorted(val_file_set)
+        train_indices = [i for i in shuffled if i not in val_file_set]
+        folds.append((
+            np.array(forced_train + train_indices),
+            np.array(forced_val   + val_indices),
+        ))
+    return folds
+
+
 # ---------------------------------------------------------------------------
 # Negative sampling
 # ---------------------------------------------------------------------------
@@ -805,12 +848,15 @@ def tune_hyperparameters(
     feature_names: list[str],
     random_state: int,
     normalize: bool,
+    kfolds: list[tuple[np.ndarray, np.ndarray]] | None = None,
 ) -> tuple[xgb.XGBClassifier | None, dict, StandardScaler | None]:
     candidates = generate_tuning_candidates(cfg, random_state)
     if not candidates:
         return None, {}, None
 
-    print(f"\n--- Hyperparameter tuning ({len(candidates)} candidate(s)) ---")
+    n_folds = len(kfolds) if kfolds else 0
+    mode_label = f"{n_folds}-fold CV" if kfolds else "single val split"
+    print(f"\n--- Hyperparameter tuning ({len(candidates)} candidate(s), {mode_label}) ---")
     best_model = None
     best_result = None
     best_scaler = None
@@ -828,44 +874,105 @@ def tune_hyperparameters(
         if "lookahead_frames" in candidate:
             trial_cfg.setdefault("decision", {})["lookahead_frames"] = candidate["lookahead_frames"]
 
-        print(f"  Candidate {index}/{len(candidates)}: {candidate}")
         sampling_ratio = trial_cfg.get("sampling", {}).get("negative_sampling_ratio", 5.0)
-        X_train, y_train = apply_negative_sampling(X_train_full, y_train_full, sampling_ratio, random_state)
+        print(f"  Candidate {index}/{len(candidates)}: {candidate}")
 
-        scaler = None
-        trial_X_val = X_val
-        trial_file_features = file_features
-        if normalize:
-            scaler = StandardScaler()
-            X_train = scaler.fit_transform(X_train)
-            trial_X_val = scaler.transform(X_val)
-            trial_file_features = [scaler.transform(X) for X in file_features]
+        if kfolds:
+            # k-fold cross-validation scoring: average f_beta across folds
+            fold_scores = []
+            for fold_i, (fold_train_idx, fold_val_idx) in enumerate(kfolds):
+                X_fold_train, y_fold_train = concat_files(fold_train_idx, file_features, file_labels)
+                X_fold_val,   y_fold_val   = concat_files(fold_val_idx,   file_features, file_labels)
 
-        trial_val_files = build_eval_files(
-            val_idx,
-            trial_file_features,
-            file_labels,
-            file_names,
-            file_times_ms,
-            file_onsets_ms,
-        )
-        model = train_model(X_train, y_train, trial_X_val, y_val, trial_cfg, feature_names, random_state)
-        threshold_result = select_peak_threshold(model, trial_val_files, trial_cfg, audio_config)
-        result = {
-            "params": candidate,
-            "threshold": round(float(threshold_result["threshold"]), 6),
-            "precision": threshold_result["precision"],
-            "recall": threshold_result["recall"],
-            "f_beta": threshold_result["f_beta"],
-            "mode": threshold_result["mode"],
-        }
-        print(
-            "    Validation: "
-            f"threshold={result['threshold']:.6f} "
-            f"peak_precision={result['precision']:.4f} "
-            f"peak_recall={result['recall']:.4f} "
-            f"f_beta={result['f_beta']:.4f}"
-        )
+                X_fold_train, y_fold_train = apply_negative_sampling(
+                    X_fold_train, y_fold_train, sampling_ratio, random_state
+                )
+                fold_scaler = None
+                fold_file_features = file_features
+                if normalize:
+                    fold_scaler = StandardScaler()
+                    X_fold_train = fold_scaler.fit_transform(X_fold_train)
+                    X_fold_val   = fold_scaler.transform(X_fold_val)
+                    fold_file_features = [fold_scaler.transform(X) for X in file_features]
+
+                fold_val_files = build_eval_files(
+                    fold_val_idx, fold_file_features, file_labels, file_names,
+                    file_times_ms, file_onsets_ms,
+                )
+                fold_model = train_model(
+                    X_fold_train, y_fold_train, X_fold_val, y_fold_val,
+                    trial_cfg, feature_names, random_state
+                )
+                fold_thresh = select_peak_threshold(fold_model, fold_val_files, trial_cfg, audio_config)
+                fold_scores.append(fold_thresh["f_beta"])
+                print(
+                    f"    Fold {fold_i + 1}/{n_folds}: "
+                    f"threshold={fold_thresh['threshold']:.4f} "
+                    f"P={fold_thresh['precision']:.4f} R={fold_thresh['recall']:.4f} "
+                    f"f_beta={fold_thresh['f_beta']:.4f}"
+                )
+
+            avg_f_beta = float(np.mean(fold_scores))
+            print(f"    CV mean f_beta={avg_f_beta:.4f} (folds: {[round(s, 4) for s in fold_scores]})")
+
+            # Re-train on the full training set with these params for the final model
+            X_tr, y_tr = apply_negative_sampling(X_train_full, y_train_full, sampling_ratio, random_state)
+            scaler = None
+            trial_X_val = X_val
+            trial_file_features = file_features
+            if normalize:
+                scaler = StandardScaler()
+                X_tr = scaler.fit_transform(X_tr)
+                trial_X_val = scaler.transform(X_val)
+                trial_file_features = [scaler.transform(X) for X in file_features]
+
+            trial_val_files = build_eval_files(
+                val_idx, trial_file_features, file_labels, file_names,
+                file_times_ms, file_onsets_ms,
+            )
+            model = train_model(X_tr, y_tr, trial_X_val, y_val, trial_cfg, feature_names, random_state)
+            threshold_result = select_peak_threshold(model, trial_val_files, trial_cfg, audio_config)
+            result = {
+                "params": candidate,
+                "threshold": round(float(threshold_result["threshold"]), 6),
+                "precision": threshold_result["precision"],
+                "recall": threshold_result["recall"],
+                "f_beta": avg_f_beta,  # CV score for ranking
+                "mode": threshold_result["mode"],
+            }
+        else:
+            # Single val split (original behaviour)
+            X_train, y_train = apply_negative_sampling(X_train_full, y_train_full, sampling_ratio, random_state)
+            scaler = None
+            trial_X_val = X_val
+            trial_file_features = file_features
+            if normalize:
+                scaler = StandardScaler()
+                X_train = scaler.fit_transform(X_train)
+                trial_X_val = scaler.transform(X_val)
+                trial_file_features = [scaler.transform(X) for X in file_features]
+
+            trial_val_files = build_eval_files(
+                val_idx, trial_file_features, file_labels, file_names,
+                file_times_ms, file_onsets_ms,
+            )
+            model = train_model(X_train, y_train, trial_X_val, y_val, trial_cfg, feature_names, random_state)
+            threshold_result = select_peak_threshold(model, trial_val_files, trial_cfg, audio_config)
+            result = {
+                "params": candidate,
+                "threshold": round(float(threshold_result["threshold"]), 6),
+                "precision": threshold_result["precision"],
+                "recall": threshold_result["recall"],
+                "f_beta": threshold_result["f_beta"],
+                "mode": threshold_result["mode"],
+            }
+            print(
+                "    Validation: "
+                f"threshold={result['threshold']:.6f} "
+                f"peak_precision={result['precision']:.4f} "
+                f"peak_recall={result['recall']:.4f} "
+                f"f_beta={result['f_beta']:.4f}"
+            )
 
         rank = recall_priority_rank(result)
         if best_result is None or rank > best_result["rank"]:
@@ -1083,11 +1190,20 @@ def main():
         data_dir, feature_names, positive_window
     )
 
-    # Split
+    # Split (also used for final threshold selection and metrics after tuning)
     print("\n--- Splitting by file ---")
     X_train, y_train, X_val, y_val, val_idx = split_by_file(
         file_features, file_labels, file_names, file_training_roles, validation_split, random_state
     )
+
+    # Optional k-fold splits for hyperparameter scoring
+    cv_cfg = training_cfg.get("cross_validation", {})
+    kfolds = None
+    if cv_cfg.get("enabled", False):
+        n_folds = int(cv_cfg.get("n_folds", 5))
+        print(f"\n--- Preparing {n_folds}-fold cross-validation ---")
+        kfolds = kfold_file_splits(file_training_roles, n_folds, random_state)
+        print(f"  Created {len(kfolds)} folds from {len(file_features)} files")
 
     val_files = []
     scaler = None
@@ -1108,6 +1224,7 @@ def main():
         feature_names,
         random_state,
         normalize,
+        kfolds=kfolds,
     )
 
     if tuned_model is None:
