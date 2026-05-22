@@ -192,6 +192,28 @@ export function readZip(data) {
   return entries;
 }
 
+// ── Recording ZIP helper ─────────────────────────────────────────────────────
+
+/**
+ * Reads a ZIP file (from a File/Blob) and extracts the WAV and optional
+ * JSON sidecar. Returns null if no WAV entry is found.
+ *
+ * @param {File} file
+ * @returns {Promise<{ wavName: string, wavBuffer: ArrayBuffer, sidecar: object|undefined }|null>}
+ */
+export async function readRecordingZip(file) {
+  const buf     = await file.arrayBuffer();
+  const entries = readZip(new Uint8Array(buf));
+  const wavEntry  = entries.find(e => e.name.toLowerCase().endsWith('.wav'));
+  if (!wavEntry) return null;
+  const jsonEntry = entries.find(e => e.name.toLowerCase().endsWith('.json'));
+  let sidecar;
+  if (jsonEntry) {
+    try { sidecar = JSON.parse(new TextDecoder().decode(jsonEntry.data)); } catch { /* ignore */ }
+  }
+  return { wavName: wavEntry.name, wavBuffer: wavEntry.data.buffer, sidecar };
+}
+
 // ── Download helper ──────────────────────────────────────────────────────────
 
 /**

@@ -1,1 +1,1 @@
-Version 0.194 | 2026-05-22 10:29 | 991ff25 | AGENTS.md (+7 more)
+Version 0.195 | 2026-05-22 10:32 | eea81a3 | .claude/commands/architecture-review.md (+24 more)

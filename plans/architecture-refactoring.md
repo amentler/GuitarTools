@@ -54,7 +54,7 @@ Ziel: CSP-Header und aktuelle Architekturdoku.
 
 ## Phase 3 – Controller-Tests
 
-**Status: OFFEN**
+**Status: ERLEDIGT**
 
 Ziel: Fehlende Smoke-/Controller-Tests für ältere Games nachholen.
 
@@ -136,7 +136,7 @@ Aufteilung:
 |---|---|---|
 | 1 – Quick Wins | ERLEDIGT | (nächster Commit) |
 | 2 – Doku & Sicherheit | ERLEDIGT | (nächster Commit) |
-| 3 – Controller-Tests | OFFEN | — |
+| 3 – Controller-Tests | ERLEDIGT | — |
 | 4 – chordRecorder aufteilen | OFFEN | — |
 | 5 – essentiaChordLogic aufteilen | OFFEN | — |
 | 6 – sheetMusicReading aufteilen | OFFEN | — |

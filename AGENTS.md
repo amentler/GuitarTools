@@ -15,6 +15,7 @@ This file is the central hub for all AI agents (Claude, Gemini, Codex, Copilot, 
 - **Sheet-Music Reading Keys:** The Notenlesen exercise offers a major-key selector above the fret-range controls. Default is C-Dur; generated notes must stay inside the selected major key and use the current fret/string filters when they leave playable notes.
 - **XGBoost Onset Assets:** The default sheet-music onset strategy is the offline browser XGBoost detector (`xgboost-android-firefox`). Keep `models/onset_detector_android_firefox.{onnx,schema.json,metrics.json}` and the local ONNX Runtime files under `js/lib/onnxruntime/` cached via `js/shared/pwa/precacheManifest.js`/`sw.js`.
 - **Keep Plans Current:** Update implementation status in `plans/` files immediately after execution. Store new ideas in `plans/ideen.md`.
+- **Documentation Freshness:** After completing any non-trivial feature or refactoring, update: (1) `Last Updated` date in `docs/architecture.md`, (2) AGENTS.md Section 1 if conventions changed, (3) GEMINI.md if feature/module list changed, (4) local `CLAUDE.md` in affected module directories. Quick audit: `git diff --name-only HEAD~5 | grep -E '\.js$'` to find changed JS files, then verify corresponding docs.
 
 ## 2. Technical Standards & Architecture
 

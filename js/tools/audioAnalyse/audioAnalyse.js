@@ -40,7 +40,8 @@ import {
   buildContextFeatures,
   getFeatureOrder,
 } from '../../shared/audio/xgboostFeatureExtractor.js';
-import { readZip, downloadBlob } from '../../shared/zip.js';
+import { readRecordingZip, downloadBlob } from '../../shared/zip.js';
+import { createAudioTransport } from '../../shared/audio/audioTransport.js';
 
 const PITCH_STRATEGY_LABELS = {
   'fast-note-matcher': 'Fast Note Matcher',
@@ -55,13 +56,10 @@ export function createAudioAnalyseFeature() {
   let _root = null;
 
   // ── Playback-State ─────────────────────────────────────────────────────────
-  let _audioCtx       = null;
+  const _transport    = createAudioTransport();
   let _audioBuffer    = null;   // decoded AudioBuffer für Web Audio
-  let _sourceNode     = null;   // laufende AudioBufferSourceNode
-  let _playStartTime  = 0;      // audioCtx.currentTime beim Start
   let _playOffset     = 0;      // Abspielposition beim letzten Pause (Sekunden)
   let _isPlaying      = false;
-  let _rafId          = null;
   let _analysisDur    = 1;
   let _cachedSamples  = null;   // Float32Array für späteren Re-Decode-Bedarf
   let _cachedSR       = 44100;
@@ -416,15 +414,9 @@ export function createAudioAnalyseFeature() {
     if (ui.playPauseBtn) ui.playPauseBtn.textContent = playing ? '⏸ Pause' : '▶ Abspielen';
   }
 
-  function getOrCreateAudioCtx() {
-    if (!_audioCtx || _audioCtx.state === 'closed') {
-      _audioCtx = new AudioContext();
-    }
-    return _audioCtx;
-  }
-
-  function buildAudioBuffer(ctx) {
+  function buildAudioBuffer() {
     if (_audioBuffer) return _audioBuffer;
+    const ctx = _transport.getCtx();
     const buf = ctx.createBuffer(1, _cachedSamples.length, _cachedSR);
     buf.copyToChannel(_cachedSamples, 0);
     _audioBuffer = buf;
@@ -432,36 +424,34 @@ export function createAudioAnalyseFeature() {
   }
 
   function startPlayback(ui, offset = 0) {
-    const ctx = getOrCreateAudioCtx();
-    if (ctx.state === 'suspended') ctx.resume();
-
-    const buf = buildAudioBuffer(ctx);
-    _sourceNode = ctx.createBufferSource();
-    _sourceNode.buffer = buf;
-    _sourceNode.loop = true;
-    _sourceNode.connect(ctx.destination);
-    _sourceNode.start(0, offset % _analysisDur);
-
-    _playStartTime = ctx.currentTime - (offset % _analysisDur);
-    _playOffset    = offset % _analysisDur;
-    _isPlaying     = true;
+    const startOffset = offset % _analysisDur;
+    _transport.start(buildAudioBuffer(), {
+      offset: startOffset,
+      loopStart: 0,
+      loopEnd: _analysisDur,
+      playbackRate: 1,
+      onTick: (pos) => {
+        const fraction = pos / _analysisDur;
+        updatePlayhead(fraction);
+        if (!_sliderDragging && ui.sliderEl) {
+          ui.sliderEl.value = String(Math.round(fraction * 1000));
+        }
+        if (ui.sliderTimeEl) {
+          ui.sliderTimeEl.textContent = `${pos.toFixed(2)} s`;
+        }
+      },
+    });
+    _playOffset = startOffset;
+    _isPlaying  = true;
     setPlayPauseLabel(ui, true);
-    startRaf(ui);
   }
 
   function pausePlayback(ui) {
     if (!_isPlaying) return;
-    const ctx = _audioCtx;
-    const elapsed = ctx.currentTime - _playStartTime;
-    _playOffset = elapsed % _analysisDur;
-
-    _sourceNode?.stop();
-    _sourceNode = null;
+    _playOffset = _transport.pause();
     _isPlaying  = false;
     setPlayPauseLabel(ui, false);
-    stopRaf();
 
-    // Crosshair + Slider an Pause-Position setzen
     const fraction = _playOffset / _analysisDur;
     setCrosshairFromFraction(fraction);
     if (ui.sliderEl) ui.sliderEl.value = String(Math.round(fraction * 1000));
@@ -469,41 +459,14 @@ export function createAudioAnalyseFeature() {
   }
 
   function stopPlayback(ui) {
-    _sourceNode?.stop();
-    _sourceNode = null;
-    _isPlaying  = false;
+    _transport.stop();
     _playOffset = 0;
-    stopRaf();
+    _isPlaying  = false;
     resetPlayhead();
     if (ui) {
       setPlayPauseLabel(ui, false);
       if (ui.sliderEl) ui.sliderEl.value = '0';
       if (ui.sliderTimeEl) ui.sliderTimeEl.textContent = '0.00 s';
-    }
-  }
-
-  function startRaf(ui) {
-    if (_rafId !== null) return;
-    function tick() {
-      if (!_isPlaying || !_audioCtx) return;
-      const elapsed  = _audioCtx.currentTime - _playStartTime;
-      const fraction = (elapsed % _analysisDur) / _analysisDur;
-      updatePlayhead(fraction);
-      if (!_sliderDragging && ui.sliderEl) {
-        ui.sliderEl.value = String(Math.round(fraction * 1000));
-      }
-      if (ui.sliderTimeEl) {
-        ui.sliderTimeEl.textContent = `${(fraction * _analysisDur).toFixed(2)} s`;
-      }
-      _rafId = requestAnimationFrame(tick);
-    }
-    _rafId = requestAnimationFrame(tick);
-  }
-
-  function stopRaf() {
-    if (_rafId !== null) {
-      cancelAnimationFrame(_rafId);
-      _rafId = null;
     }
   }
 
@@ -576,17 +539,10 @@ export function createAudioAnalyseFeature() {
   async function handleFileInput(ui, file) {
     if (!file) return;
     if (file.name.toLowerCase().endsWith('.zip') || file.type === 'application/zip') {
-      const buf     = await file.arrayBuffer();
-      const entries = readZip(new Uint8Array(buf));
-      const wavEntry  = entries.find(e => e.name.toLowerCase().endsWith('.wav'));
-      if (!wavEntry) { showStatus(ui, 'Keine WAV-Datei in der ZIP gefunden.', true); return; }
-      const jsonEntry = entries.find(e => e.name.toLowerCase().endsWith('.json'));
-      let sidecar;
-      if (jsonEntry) {
-        try { sidecar = JSON.parse(new TextDecoder().decode(jsonEntry.data)); } catch { /* ignore */ }
-      }
-      showStatus(ui, `Lese ${wavEntry.name} aus ZIP…`);
-      await runAnalysis(ui, wavEntry.data.buffer, wavEntry.name, sidecar);
+      const result = await readRecordingZip(file);
+      if (!result) { showStatus(ui, 'Keine WAV-Datei in der ZIP gefunden.', true); return; }
+      showStatus(ui, `Lese ${result.wavName} aus ZIP…`);
+      await runAnalysis(ui, result.wavBuffer, result.wavName, result.sidecar);
       return;
     }
     if (!file.name.endsWith('.wav') && file.type !== 'audio/wav') {
@@ -683,10 +639,8 @@ export function createAudioAnalyseFeature() {
       const wasPlaying = _isPlaying;
 
       if (_isPlaying) {
-        _sourceNode?.stop();
-        _sourceNode = null;
-        _isPlaying  = false;
-        stopRaf();
+        _transport.pause();
+        _isPlaying = false;
       }
 
       _playOffset = newOffset;
@@ -745,10 +699,7 @@ export function createAudioAnalyseFeature() {
 
   function unmount() {
     stopPlayback(null);
-    if (_audioCtx && _audioCtx.state !== 'closed') {
-      _audioCtx.close();
-      _audioCtx = null;
-    }
+    _transport.close();
     _audioBuffer    = null;
     _cachedSamples  = null;
     _cachedFilename = '';

@@ -1,6 +1,6 @@
 # GuitarTools Architecture Guide
 
-Last Updated: 2026-05-14
+Last Updated: 2026-05-21
 
 ## 1. Goal
 GuitarTools is a modular Multi-Page Application (MPA). Each exercise or tool is a self-contained feature that can be mounted into a target DOM element.
@@ -85,14 +85,118 @@ Feature-local `*Logic.js` files (e.g., `js/games/akkordfolgenTrainer/akkordfolge
 ```text
 /
 ├── js/
-│   ├── components/     # Web Components
-│   ├── games/          # Complex features (exercises)
-│   ├── tools/          # Utility tools
-│   ├── shared/         # Infrastructure (Audio, Storage, PWA)
-│   ├── domain/         # Canonical business logic (reused across features)
-│   └── utils/          # Generic helpers
-├── pages/              # HTML entry points; each page may have a local style.css
+│   ├── components/                   # Web Components (registered via components/index.js)
+│   │   ├── fretboard/
+│   │   │   ├── gt-fretboard.js       # <gt-fretboard> custom element
+│   │   │   └── gt-fretboard-render.js  # Pure SVG render function
+│   │   ├── gt-exercise-header.js     # <gt-exercise-header> (title + back nav)
+│   │   ├── gt-string-toggles.js      # <gt-string-toggles> (string filter UI)
+│   │   ├── gt-menu-card.js           # <gt-menu-card> (main menu entry)
+│   │   └── index.js                  # Registers all custom elements
+│   ├── games/                        # Interactive exercises (controller + optional *Logic.js)
+│   │   ├── tonFinder/
+│   │   ├── fretboardToneRecognition/
+│   │   ├── akkordTrainer/
+│   │   ├── akkordfolgenTrainer/
+│   │   ├── chordExerciseEssentia/
+│   │   ├── sheetMusicReading/
+│   │   └── notePlayingExercise/
+│   ├── tools/                        # Utility tools (same lifecycle API as games)
+│   │   ├── guitarTuner/
+│   │   ├── metronome/
+│   │   ├── audioAnalyse/
+│   │   ├── onsetTagger/
+│   │   ├── chordRecorder/
+│   │   ├── recordingsOverview/
+│   │   └── akkordUebersicht/
+│   ├── shared/                       # Cross-cutting infrastructure
+│   │   ├── audio/                    # AudioContext, pitch detection, onset detection, tuner
+│   │   ├── pwa/                      # Service Worker utilities, precache manifest
+│   │   ├── storage/                  # IndexedDB / localStorage wrappers
+│   │   └── debug/                    # Developer debug overlays
+│   ├── domain/                       # Canonical pure business logic (reused across features)
+│   │   ├── chordCatalog.js           # Chord definition lookup
+│   │   ├── chordDetector.js          # Chord recognition from HPCP
+│   │   └── fretboardMapper.js        # String/fret ↔ note mapping
+│   ├── data/                         # Static data (Single Source of Truth)
+│   │   └── akkordData.js             # All 35 chord definitions with finger positions
+│   └── utils/                        # Generic helpers (no domain knowledge)
+│       ├── settings.js               # Fret/string setting helpers
+│       └── chordDetectionUtils.js
+├── pages/                            # HTML entry points; each has a local style.css
+│   ├── ton-finder/
+│   ├── fretboard-tone-recognition/
+│   ├── akkord-trainer/
+│   ├── sheet-music-reading/
+│   └── ...
+├── models/                           # ONNX models for onset detection
+│   └── onset_detector_android_firefox.{onnx,schema.json,metrics.json}
 └── tests/
-    ├── unit/           # Vitest unit & smoke tests
-    └── e2e/            # Playwright E2E tests
+    ├── unit/                         # Vitest unit & smoke tests
+    │   ├── *Logic.test.js            # Pure function tests (100% branch coverage)
+    │   └── *PageSmoke.test.js        # mount/unmount lifecycle tests
+    └── e2e/                          # Playwright E2E tests (critical interaction paths)
 ```
+
+## 8. Web Component API Reference
+
+### `<gt-fretboard>`
+**File:** `js/components/fretboard/gt-fretboard.js`
+
+| API | Type | Description |
+|-----|------|-------------|
+| `frets` (attr/prop) | `number` | Highest fret shown (default: 5) |
+| `interactive` (attr/prop) | `boolean` | Makes positions clickable |
+| `positions` (prop) | `Array<{stringIndex, fret, state}>` | Markers to render |
+| `activeStrings` (prop) | `number[]` | Strings to show (default: all 6) |
+| `fret-select` (event) | `CustomEvent` | Fired on click; detail: `{stringIndex, fret, note}` |
+
+### `<gt-exercise-header>`
+**File:** `js/components/gt-exercise-header.js`
+
+Renders the back-navigation bar and exercise title. Used on every exercise/tool page.
+
+| API | Type | Description |
+|-----|------|-------------|
+| `title` (attr) | `string` | Exercise name shown in header |
+| `back-href` (attr) | `string` | URL for the back-navigation link |
+
+### `<gt-string-toggles>`
+**File:** `js/components/gt-string-toggles.js`
+
+Six toggle buttons for enabling/disabling individual guitar strings (E2 → E4).
+
+| API | Type | Description |
+|-----|------|-------------|
+| `active-strings` (prop) | `number[]` | Currently active string indices |
+| `string-toggle` (event) | `CustomEvent` | Fired on click; detail: `{stringIndex, active}` |
+
+### `<gt-menu-card>`
+**File:** `js/components/gt-menu-card.js`
+
+Main-menu entry card linking to a feature page.
+
+## 9. Shared Audio Module Map
+
+Located in `js/shared/audio/` — see `js/shared/audio/CLAUDE.md` for the full table.
+
+Key modules:
+
+| Module | Purpose |
+|--------|---------|
+| `audioContextFactory.js` | Creates/resumes the global `AudioContext` |
+| `audioSessionService.js` | Manages mic lifecycle; single shared stream |
+| `pitchDetector.js` | YIN + HPS pitch detection |
+| `guitarOnsetDetector.js` | XGBoost ONNX onset detection (Android-Firefox) |
+| `offlineOnsetDetectionXGBoost.js` | Offline inference wrapper |
+
+## 10. Documentation Freshness
+
+After completing any non-trivial feature or refactoring:
+
+1. Update `Last Updated` date at the top of this file.
+2. Update `AGENTS.md` Section 1 if new conventions were established.
+3. Update `GEMINI.md` if the module or feature list changed.
+4. If a module in `js/shared/`, `js/domain/`, or a game/tool directory grew, check its local `CLAUDE.md`.
+
+> Quick check: `git diff --name-only HEAD~5 | grep -E '\.js$'` then verify docs match.
