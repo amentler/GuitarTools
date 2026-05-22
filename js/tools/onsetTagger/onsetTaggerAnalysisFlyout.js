@@ -28,6 +28,7 @@ export function createOnsetTaggerAnalysisFlyout({
   let analysisResult = null;
   let statsSnapshot = null;
   let analysisRunId = 0;
+  let _analysisChain = Promise.resolve(); // serializes ONNX session.run() calls
   let normalizeY = true;
   let showDetectedOnsets = true;
   let showTaggedOnsets = true;
@@ -197,17 +198,26 @@ export function createOnsetTaggerAnalysisFlyout({
     renderStats(ui);
     ui.analysisChartsWrapper?.classList.add('u-hidden');
     setStatus(ui, 'Analyse läuft ...');
-    try {
-      const result = await analyzeAudio(samples, getSampleRate(), { onsetStrategyKey: _onsetStrategyKey });
-      if (runId !== analysisRunId) return;
-      analysisResult = result;
-      statsSnapshot = buildStatsSnapshot(result);
-      setStatus(ui, `${result.frames.length} Frames, ${result.onsets.length} erkannte Onsets.`);
-      render(ui);
-    } catch (err) {
-      if (runId !== analysisRunId) return;
-      setStatus(ui, `Analyse-Fehler: ${err.message}`, true);
-    }
+
+    // Chain onto the previous run so session.run() calls are never concurrent.
+    // The earlier run is skipped via the runId guard if it has been superseded.
+    // Returning the chain lets callers await the actual completion.
+    return (_analysisChain = _analysisChain
+      .catch(() => {})
+      .then(async () => {
+        if (runId !== analysisRunId) return;
+        try {
+          const result = await analyzeAudio(samples, getSampleRate(), { onsetStrategyKey: _onsetStrategyKey });
+          if (runId !== analysisRunId) return;
+          analysisResult = result;
+          statsSnapshot = buildStatsSnapshot(result);
+          setStatus(ui, `${result.frames.length} Frames, ${result.onsets.length} erkannte Onsets.`);
+          render(ui);
+        } catch (err) {
+          if (runId !== analysisRunId) return;
+          setStatus(ui, `Analyse-Fehler: ${err.message}`, true);
+        }
+      }));
   }
 
   function wire(ui) {

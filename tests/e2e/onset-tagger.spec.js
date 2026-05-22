@@ -1,9 +1,42 @@
 import { test, expect } from '@playwright/test';
 import path from 'path';
+import fs from 'fs';
 import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const WAV_FIXTURE  = path.resolve(__dirname, '../fixtures/chords/E-Moll/emin.wav');
+const ZIP_FIXTURE  = path.resolve(__dirname, '../fixtures/sequences/sheet-music-reading/sheet-music-reading_100bpm_tffjv-tagged.zip');
+
+/** Seed a WAV+sidecar recording into gt-audio-analyse-db so the onset tagger
+ *  can load it via ?source=sheet-music&id=<id>. */
+async function seedSheetMusicTake(page, id) {
+  const wavBytes = Array.from(fs.readFileSync(WAV_FIXTURE));
+  await page.evaluate(([recId, wavArr]) => {
+    const wav = new Uint8Array(wavArr);
+    const sidecar = {
+      id: recId,
+      baseName: recId,
+      bpm: 120,
+      category: 'random',
+      trainingRole: 'random',
+      updatedAt: new Date().toISOString(),
+      recordedAt: new Date().toISOString(),
+    };
+    return new Promise((resolve, reject) => {
+      const req = indexedDB.open('gt-audio-analyse-db', 1);
+      req.onupgradeneeded = (e) => e.target.result.createObjectStore('recordings');
+      req.onsuccess = (e) => {
+        const db = e.target.result;
+        const entry = { id: recId, baseName: recId, wav, sidecar, manifest: sidecar, savedAt: sidecar.recordedAt };
+        const tx = db.transaction('recordings', 'readwrite');
+        tx.objectStore('recordings').put(entry, recId);
+        tx.oncomplete = () => { db.close(); resolve(); };
+        tx.onerror   = () => { db.close(); reject(tx.error); };
+      };
+      req.onerror = () => reject(req.error);
+    });
+  }, [id, wavBytes]);
+}
 
 test.describe('Onset Tagger', () => {
 
@@ -332,6 +365,71 @@ test.describe('Onset Tagger', () => {
     await strategyButton.click();
     await expect(page.locator('#tagger-strategy-status')).toContainText('übersprungen', { timeout: 10_000 });
     await expect(page.locator('.tagger-onset-item')).toHaveCount(firstCount);
+  });
+
+  test('ZIP load does not produce Analyse-Fehler (no concurrent ONNX session)', async ({ page }) => {
+    await page.locator('#tagger-zip-input').setInputFiles(ZIP_FIXTURE);
+
+    // Wait for analysis to settle (either success or error)
+    await expect(page.locator('#tagger-analysis-status')).not.toContainText('läuft', { timeout: 60_000 });
+
+    // Must NOT show an error
+    const statusText = await page.locator('#tagger-analysis-status').textContent();
+    expect(statusText).not.toMatch(/Analyse-Fehler/i);
+    expect(statusText).not.toMatch(/Session already started/i);
+
+    // Analysis charts must be visible (success path)
+    await expect(page.locator('#tagger-analysis-charts-wrapper')).toBeVisible();
+  });
+
+  // ── URL-params load (recordings page → onset tagger) ──────────────────────
+  // This is the real trigger: applyWavBuffer().then(() => applySidecarData())
+  // fires both run() calls in the same microtask chain, causing concurrent ONNX.
+
+  test('URL-params load does not produce Analyse-Fehler (Session already started)', async ({ page }) => {
+    const testId = 'tdd-test-url-params-load';
+    // Seed IDB with a real WAV recording so loadRecordingFromSource can find it
+    await seedSheetMusicTake(page, testId);
+
+    // Navigate with ?source=sheet-music&id=<testId> — mirrors "open in onset tagger" button
+    await page.goto(`/pages/onset-tagger/index.html?source=sheet-music&id=${testId}`);
+
+    // Waveform must render (WAV decoded successfully)
+    await expect(page.locator('#tagger-waveform-wrap svg')).toBeVisible({ timeout: 15_000 });
+
+    // Analysis must complete without error
+    await expect(page.locator('#tagger-analysis-status')).not.toContainText('läuft', { timeout: 60_000 });
+    const statusText = await page.locator('#tagger-analysis-status').textContent();
+    expect(statusText).not.toMatch(/Analyse-Fehler/i);
+    expect(statusText).not.toMatch(/Session already started/i);
+
+    // Charts must be visible
+    await expect(page.locator('#tagger-analysis-charts-wrapper')).toBeVisible();
+  });
+
+  test('analysis flyout stays within viewport on mobile after URL-params analysis', async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 667 });
+    const testId = 'tdd-test-flyout-mobile';
+    await seedSheetMusicTake(page, testId);
+    await page.goto(`/pages/onset-tagger/index.html?source=sheet-music&id=${testId}`);
+
+    // Wait for analysis to finish
+    await expect(page.locator('#tagger-analysis-status')).not.toContainText('läuft', { timeout: 60_000 });
+
+    const flyout = page.locator('#tagger-analysis-flyout');
+
+    // Flyout must not overflow horizontally
+    const overflow = await flyout.evaluate(el => el.scrollWidth - el.clientWidth);
+    expect(overflow).toBeLessThanOrEqual(1);
+
+    // Flyout must be within viewport (position:fixed bottom:0 must hold)
+    const rect = await flyout.evaluate(el => {
+      const r = el.getBoundingClientRect();
+      return { bottom: r.bottom, left: r.left, right: r.right, width: r.width };
+    });
+    expect(rect.bottom).toBeLessThanOrEqual(667 + 2);
+    expect(rect.width).toBeLessThanOrEqual(375 + 1);
+    expect(rect.left).toBeGreaterThanOrEqual(-1);
   });
 
 });

@@ -40,8 +40,8 @@
     "semantic_hash": ""
   },
   "/workspace/GuitarToolsCopilot/sw.js": {
-    "mtime": 1779474716.3198056,
-    "ast_hash": "5855d700bac4c652121375c9f8df005d",
+    "mtime": 1779482255.4041562,
+    "ast_hash": "11260529f8726593351626e31a1416b5",
     "semantic_hash": ""
   },
   "/workspace/GuitarToolsCopilot/sfp.sh": {
@@ -700,8 +700,8 @@
     "semantic_hash": ""
   },
   "/workspace/GuitarToolsCopilot/tests/e2e/recordings-overview.spec.js": {
-    "mtime": 1779301761.6518424,
-    "ast_hash": "53536835e66f5456c428229114b46b1b",
+    "mtime": 1779482161.1409967,
+    "ast_hash": "61b7bfc19542946c4da9b9c5a1a840a6",
     "semantic_hash": ""
   },
   "/workspace/GuitarToolsCopilot/tests/e2e/sheet-music-reading-accidentals.spec.js": {
@@ -715,8 +715,8 @@
     "semantic_hash": ""
   },
   "/workspace/GuitarToolsCopilot/tests/e2e/onset-tagger.spec.js": {
-    "mtime": 1779359278.4044733,
-    "ast_hash": "4ed10e9c483dd5d39551b758be1e3848",
+    "mtime": 1779483577.023697,
+    "ast_hash": "44920dafe82afcf581105946342f838e",
     "semantic_hash": ""
   },
   "/workspace/GuitarToolsCopilot/tests/e2e/fretboard-tone-recognition.spec.js": {
@@ -870,8 +870,8 @@
     "semantic_hash": ""
   },
   "/workspace/GuitarToolsCopilot/tests/unit/recordingsOverviewLogic.test.js": {
-    "mtime": 1779301762.1624494,
-    "ast_hash": "dbccc5781d7f133b63d7ec215b1f1835",
+    "mtime": 1779482119.8845139,
+    "ast_hash": "c2773a6b155948c29110155c56657b11",
     "semantic_hash": ""
   },
   "/workspace/GuitarToolsCopilot/tests/unit/chordRecorderController.test.js": {
@@ -1510,13 +1510,13 @@
     "semantic_hash": ""
   },
   "/workspace/GuitarToolsCopilot/js/tools/recordingsOverview/recordingsOverviewLogic.js": {
-    "mtime": 1779301760.080437,
-    "ast_hash": "f08fdf3bd2c769a58df54f9e725e8b62",
+    "mtime": 1779482131.0665307,
+    "ast_hash": "58aca1abf031c31cae5d2143c299a002",
     "semantic_hash": ""
   },
   "/workspace/GuitarToolsCopilot/js/tools/recordingsOverview/recordingsOverview.js": {
-    "mtime": 1779301760.080437,
-    "ast_hash": "5182d87a95092de4599f3b214632cecb",
+    "mtime": 1779482140.1203744,
+    "ast_hash": "8deebbae24699f7f9de35c2eb5ddd1e9",
     "semantic_hash": ""
   },
   "/workspace/GuitarToolsCopilot/js/tools/chordRecorder/chordInventoryLogic.js": {
@@ -1620,8 +1620,8 @@
     "semantic_hash": ""
   },
   "/workspace/GuitarToolsCopilot/js/tools/onsetTagger/onsetTaggerAnalysisFlyout.js": {
-    "mtime": 1779474716.3118033,
-    "ast_hash": "5a52560743594f61c7454b12648cb318",
+    "mtime": 1779483764.9453914,
+    "ast_hash": "beed90029848a86b0cbb0df6500aab42",
     "semantic_hash": ""
   },
   "/workspace/GuitarToolsCopilot/js/tools/onsetTagger/onsetTaggerMetaForm.js": {
@@ -1885,8 +1885,8 @@
     "semantic_hash": ""
   },
   "/workspace/GuitarToolsCopilot/js/data/android-firefox-training-review-catalog.json": {
-    "mtime": 1779478698.700835,
-    "ast_hash": "7f04f7ce9faa583c30480c373d1cbc68",
+    "mtime": 1779479066.5383444,
+    "ast_hash": "3c286b2c8d363408e155418d79fc004d",
     "semantic_hash": ""
   },
   "/workspace/GuitarToolsCopilot/js/data/akkordData.js": {
@@ -2635,8 +2635,8 @@
     "semantic_hash": ""
   },
   "/workspace/GuitarToolsCopilot/test-results/.last-run.json": {
-    "mtime": 1779404586.9235876,
-    "ast_hash": "8bdfdb3a05a2e280a122b0758b887346",
+    "mtime": 1779483862.5785255,
+    "ast_hash": "f196824657d8858bc7fa44eecbba38b1",
     "semantic_hash": ""
   },
   "/workspace/GuitarToolsCopilot/.claude/settings.json": {
@@ -2700,8 +2700,8 @@
     "semantic_hash": ""
   },
   "/workspace/GuitarToolsCopilot/version.txt": {
-    "mtime": 1779474716.679899,
-    "ast_hash": "b43b2498611130c6ebdb6b7fe8e8435b",
+    "mtime": 1779482255.376149,
+    "ast_hash": "08576a2a0b22b69e3173c1cce9901060",
     "semantic_hash": ""
   },
   "/workspace/GuitarToolsCopilot/copilot.md": {
@@ -3144,26 +3144,6 @@
     "ast_hash": "03085501c12e098a2e10ce8bd6cc5909",
     "semantic_hash": ""
   },
-  "/workspace/GuitarToolsCopilot/test-results/metronome-Metronome-BPM-buttons-update-display-and-slider-chromium/error-context.md": {
-    "mtime": 1779404548.7732084,
-    "ast_hash": "2c480552cec09925422e3bb6ef741956",
-    "semantic_hash": ""
-  },
-  "/workspace/GuitarToolsCopilot/test-results/onset-tagger-Onset-Tagger--51424-tions-and-playback-controls-chromium/error-context.md": {
-    "mtime": 1779404549.5908246,
-    "ast_hash": "877e7cd5ee3bf939cb544aff9b493e12",
-    "semantic_hash": ""
-  },
-  "/workspace/GuitarToolsCopilot/test-results/sheet-music-reading-accide-aaa9c-l-for-a-note-with-vfKey-f-3-chromium/error-context.md": {
-    "mtime": 1779404521.9146545,
-    "ast_hash": "8b6b4041425f67e506f8e091c2d2a7b8",
-    "semantic_hash": ""
-  },
-  "/workspace/GuitarToolsCopilot/test-results/sheet-music-reading-accide-469ad--for-a-note-with-vfKey-bb-3-chromium/error-context.md": {
-    "mtime": 1779404526.7862246,
-    "ast_hash": "1f91812daa1b87f4f301e6b89a5b929f",
-    "semantic_hash": ""
-  },
   "/workspace/GuitarToolsCopilot/.claude/commands/architecture-review.md": {
     "mtime": 1779404253.2053761,
     "ast_hash": "03a10cd5c030ac74d636479f1f716d65",
@@ -3222,26 +3202,6 @@
   "/workspace/GuitarToolsCopilot/icons/icon.svg": {
     "mtime": 1779301759.9954188,
     "ast_hash": "d567714f9effe99e9977ada77ae94b82",
-    "semantic_hash": ""
-  },
-  "/workspace/GuitarToolsCopilot/test-results/metronome-Metronome-BPM-buttons-update-display-and-slider-chromium/test-failed-1.png": {
-    "mtime": 1779404546.4967334,
-    "ast_hash": "03445d8a0ea1fc04bb446000c428fc8c",
-    "semantic_hash": ""
-  },
-  "/workspace/GuitarToolsCopilot/test-results/onset-tagger-Onset-Tagger--51424-tions-and-playback-controls-chromium/test-failed-1.png": {
-    "mtime": 1779404547.9796367,
-    "ast_hash": "86c3e44a5dec5615b85446c3023c8d94",
-    "semantic_hash": ""
-  },
-  "/workspace/GuitarToolsCopilot/test-results/sheet-music-reading-accide-aaa9c-l-for-a-note-with-vfKey-f-3-chromium/test-failed-1.png": {
-    "mtime": 1779404520.5021145,
-    "ast_hash": "07b5df08c4c60964637ef780994919fb",
-    "semantic_hash": ""
-  },
-  "/workspace/GuitarToolsCopilot/test-results/sheet-music-reading-accide-469ad--for-a-note-with-vfKey-bb-3-chromium/test-failed-1.png": {
-    "mtime": 1779404525.782415,
-    "ast_hash": "07b5df08c4c60964637ef780994919fb",
     "semantic_hash": ""
   },
   "/workspace/GuitarToolsCopilot/tests/fixtures/chords/d_chord_wrong.wav": {
@@ -4672,26 +4632,6 @@
   "/workspace/GuitarToolsCopilot/tests/fixtures/audio/F4/f4.wav": {
     "mtime": 1779301761.7693405,
     "ast_hash": "e7ca87f2d31a94c08c0b8a76ad53d83c",
-    "semantic_hash": ""
-  },
-  "/workspace/GuitarToolsCopilot/test-results/metronome-Metronome-BPM-buttons-update-display-and-slider-chromium/video.webm": {
-    "mtime": 1779404548.7692003,
-    "ast_hash": "96d9e5e23089822d830ab268bbebebe9",
-    "semantic_hash": ""
-  },
-  "/workspace/GuitarToolsCopilot/test-results/onset-tagger-Onset-Tagger--51424-tions-and-playback-controls-chromium/video.webm": {
-    "mtime": 1779404549.5908246,
-    "ast_hash": "5de905ef214f9cd4dfef3fd955a8e688",
-    "semantic_hash": ""
-  },
-  "/workspace/GuitarToolsCopilot/test-results/sheet-music-reading-accide-aaa9c-l-for-a-note-with-vfKey-f-3-chromium/video.webm": {
-    "mtime": 1779404521.9066722,
-    "ast_hash": "d5271451edfec0634df4bd074552dfed",
-    "semantic_hash": ""
-  },
-  "/workspace/GuitarToolsCopilot/test-results/sheet-music-reading-accide-469ad--for-a-note-with-vfKey-bb-3-chromium/video.webm": {
-    "mtime": 1779404526.7702265,
-    "ast_hash": "c0493cdb999de1abaa9963f43e397bc5",
     "semantic_hash": ""
   }
 }
