@@ -75,10 +75,11 @@ function openDb() {
 export async function saveSheetMusicTake(wav, sidecar, options = {}) {
   if (!hasWav(wav) || !hasSidecar(sidecar)) return null;
   const id = makeTakeId(options.id ?? options.baseName);
+  const baseName = options.baseName ?? id;
   const savedAt = sidecar.savedAt ?? sidecar.recordedAt ?? new Date().toISOString();
   const entry = {
     id,
-    baseName: id,
+    baseName,
     wav,
     sidecar,
     manifest: sidecar,
@@ -189,7 +190,10 @@ export async function deleteSheetMusicTake(id) {
  */
 export async function replaceSheetMusicTake(previousId, entry, options) {
   const sidecar = entry?.sidecar ?? entry?.manifest ?? null;
-  const next = await saveSheetMusicTake(entry?.wav, sidecar, { baseName: options?.baseName });
+  const next = await saveSheetMusicTake(entry?.wav, sidecar, {
+    id: options?.id,
+    baseName: options?.baseName,
+  });
   if (next && previousId && previousId !== next.id) {
     await deleteSheetMusicTake(previousId);
   }

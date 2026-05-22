@@ -153,13 +153,13 @@ export async function loadRecordingFromSource(source, id) {
  * Local handoff recordings are stored as sheet-music takes.
  * @param {'sheet-music'|'chord-recorder'} source
  * @param {string} id
- * @param {{ wav: Uint8Array, sidecar: object, baseName: string }} entry
+ * @param {{ wav: Uint8Array, sidecar: object, id?: string, baseName: string }} entry
  * @returns {Promise<{ source: string, id: string, baseName: string }|null>}
  */
 export async function saveRecordingToSource(source, id, entry) {
   if (!entry?.wav || !entry?.sidecar || !entry?.baseName) return null;
   if (source === 'training-data') {
-    const saved = await saveSheetMusicTake(entry.wav, entry.sidecar, { baseName: entry.baseName });
+    const saved = await saveSheetMusicTake(entry.wav, entry.sidecar, { id: entry.id, baseName: entry.baseName });
     return saved ? { source: 'sheet-music', id: saved.id, baseName: saved.baseName } : null;
   }
   if (source === 'chord-recorder') {
@@ -167,7 +167,7 @@ export async function saveRecordingToSource(source, id, entry) {
     return saved ? { source, id: saved.baseName, baseName: saved.baseName } : null;
   }
   const saved = id
-    ? await replaceSheetMusicTake(id, entry, { baseName: entry.baseName })
-    : await saveSheetMusicTake(entry.wav, entry.sidecar, { baseName: entry.baseName });
+    ? await replaceSheetMusicTake(id, entry, { id: entry.id ?? id, baseName: entry.baseName })
+    : await saveSheetMusicTake(entry.wav, entry.sidecar, { id: entry.id, baseName: entry.baseName });
   return saved ? { source: 'sheet-music', id: saved.id, baseName: saved.baseName } : null;
 }

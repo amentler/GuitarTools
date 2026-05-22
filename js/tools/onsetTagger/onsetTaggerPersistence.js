@@ -20,7 +20,7 @@ export function createOnsetTaggerPersistenceController({
 
   function getCurrentSidecar(ui) {
     const formValues = ui.metaForm ? readMetaForm(ui) : (getSidecarData() ?? DEFAULT_SIDECAR_FIELDS);
-    return buildSidecarWithOnsets(formValues, getOnsets());
+    return buildSidecarWithOnsets(formValues, getOnsets(), { id: getId(), baseName: getBaseName() });
   }
 
   function setSaveStatus(ui, text) {
@@ -34,6 +34,7 @@ export function createOnsetTaggerPersistenceController({
     const saved = await saveRecordingToSource(getSource() || 'sheet-music', getId(), {
       wav: arrayBufferToUint8Array(wavArrayBuffer),
       sidecar,
+      id: getId(),
       baseName: getBaseName(),
     });
     if (!saved) return null;

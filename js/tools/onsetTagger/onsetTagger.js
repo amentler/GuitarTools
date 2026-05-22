@@ -7,6 +7,9 @@ import {
   removeOnset,
   normalizeRecordingBaseName,
   resolveRecordingFileBaseName,
+  normalizeSidecarFormat,
+  extractRandomSuffix,
+  buildGeneratedBaseName,
 } from './onsetTaggerLogic.js';
 import { loadRecordingFromSource } from '../../shared/recordingLoader.js';
 import { getGuitarOnsetStrategies, loadGuitarOnsetStrategiesFromRegistry } from '../../shared/audio/guitarOnsetStrategies.js';
@@ -28,6 +31,7 @@ import { buildRecordingZip, readRecordingZip, downloadBlob } from '../../shared/
 import {
   DEFAULT_SIDECAR_FIELDS,
   renderMetaForm,
+  readMetaForm,
 } from './onsetTaggerMetaForm.js';
 
 const FOCUS_WINDOW_SEC = 0.6;
@@ -144,9 +148,16 @@ export function createOnsetTaggerFeature() {
     _fileBaseName = normalizeRecordingBaseName(value, _fileBaseName || 'recording');
     _wavFilename = `${_fileBaseName}.wav`;
     _sidecarFilename = `${_fileBaseName}.json`;
-    if (_ui?.filenameInput && _ui.filenameInput.value !== _fileBaseName) {
-      _ui.filenameInput.value = _fileBaseName;
-    }
+    const display = _ui?.metaForm?.querySelector('.tagger-basename-display');
+    if (display) display.textContent = _fileBaseName;
+  }
+
+  function computeAndSetBaseName() {
+    if (!_ui?.metaForm) return;
+    const meta = readMetaForm(_ui);
+    const suffix = extractRandomSuffix(_recordingId);
+    const generated = buildGeneratedBaseName(meta, suffix);
+    setBaseName(generated);
   }
 
   function schedulePersist() {
@@ -388,18 +399,22 @@ export function createOnsetTaggerFeature() {
   }
 
   function applySidecarData(sidecarObj, filename) {
-    _sidecarData     = sidecarObj;
+    const normalized = normalizeSidecarFormat(sidecarObj);
+    _sidecarData     = normalized;
     _sidecarFilename = filename;
+    // Only adopt sidecar id if no storage-bound id is set yet
+    if (!_recordingId && normalized.id) _recordingId = normalized.id;
     if (_ui.jsonLabel) _ui.jsonLabel.textContent = filename + ' ✓';
-    if (Array.isArray(_sidecarData.onsetsMs)) {
-      _onsetsMs = _sidecarData.onsetsMs.slice();
+    if (Array.isArray(normalized.onsetsMs)) {
+      _onsetsMs = normalized.onsetsMs.slice();
       _selectedOnsetIndex = -1;
       if (_svgEl) updateOnsetMarkers(_svgEl, _onsetsMs, _rangeStart, _rangeEnd, _selectedOnsetIndex);
       updateOnsetUI();
     }
-    renderMetaForm(_ui, { ...DEFAULT_SIDECAR_FIELDS, ...sidecarObj });
+    renderMetaForm(_ui, { ...DEFAULT_SIDECAR_FIELDS, ...normalized }, _fileBaseName);
     enableStep2();
-    void _analysisFlyout.run(_ui);
+    // Only start analysis when audio is already decoded
+    if (_samples) void _analysisFlyout.run(_ui);
     schedulePersist();
   }
 
@@ -441,7 +456,7 @@ export function createOnsetTaggerFeature() {
   function enableStep2() {
     if (!_samples) return;
     _ui.step2.classList.remove('tagger-section--disabled');
-    if (!_sidecarData) renderMetaForm(_ui, DEFAULT_SIDECAR_FIELDS);
+    if (!_sidecarData) renderMetaForm(_ui, DEFAULT_SIDECAR_FIELDS, _fileBaseName);
   }
 
   // ── Mount / unmount ─────────────────────────────────────────────────────────
@@ -485,6 +500,7 @@ export function createOnsetTaggerFeature() {
       handleExport, handleOpenAnalyser,
       startPlayback, stopPlayback,
       setBaseName,
+      computeAndSetBaseName,
       renderStrategyButtons,
       wireAnalysisFlyout: (ui) => _analysisFlyout.wire(ui),
       computePos: () => _transport.getPosition(),

@@ -17,6 +17,10 @@ import {
   normalizeRecordingBaseName,
   resolveRecordingFileBaseName,
   applyTrainingRoleToBaseName,
+  generateRecordingUid,
+  extractRandomSuffix,
+  buildGeneratedBaseName,
+  normalizeSidecarFormat,
 } from '../../js/tools/onsetTagger/onsetTaggerLogic.js';
 
 describe('clamp', () => {
@@ -274,7 +278,10 @@ describe('removeOnset', () => {
 describe('buildSidecarWithOnsets', () => {
   it('returns an object with all form values and onsetsMs', () => {
     const result = buildSidecarWithOnsets({ category: 'test', tempoBpm: 120 }, [100, 200]);
-    expect(result).toEqual({ category: 'test', tempoBpm: 120, onsetsMs: [100, 200] });
+    expect(result.category).toBe('test');
+    expect(result.tempoBpm).toBe(120);
+    expect(result.onsetsMs).toEqual([100, 200]);
+    expect(result.updatedAt).toMatch(/^\d{4}-\d{2}-\d{2}T/);
   });
 
   it('overwrites an existing onsetsMs field', () => {
@@ -415,5 +422,116 @@ describe('applyTrainingRoleToBaseName', () => {
   it('random role returns baseName unchanged when no existing token', () => {
     expect(applyTrainingRoleToBaseName('notenlesen_abc12', 'random'))
       .toBe('notenlesen_abc12');
+  });
+});
+
+describe('generateRecordingUid', () => {
+  it('returns a 12-char lowercase alphanumeric string', () => {
+    const uid = generateRecordingUid();
+    expect(uid).toMatch(/^[a-z0-9]{12}$/);
+  });
+
+  it('returns unique values', () => {
+    const a = generateRecordingUid();
+    const b = generateRecordingUid();
+    expect(a).not.toBe(b);
+  });
+});
+
+describe('extractRandomSuffix', () => {
+  it('returns the last 5 alphanumeric characters', () => {
+    expect(extractRandomSuffix('zhivfozfod0c')).toBe('fod0c');
+  });
+
+  it('strips non-alphanumeric chars before taking last 5', () => {
+    expect(extractRandomSuffix('abc-def-xyz12')).toBe('xyz12');
+  });
+
+  it('works with a standard 12-char uid', () => {
+    const uid = generateRecordingUid();
+    const suffix = extractRandomSuffix(uid);
+    expect(suffix).toHaveLength(5);
+    expect(suffix).toMatch(/^[a-z0-9]+$/);
+  });
+});
+
+describe('buildGeneratedBaseName', () => {
+  it('formats as category_bpmBPM_suffix by default', () => {
+    expect(buildGeneratedBaseName({ category: 'sheet-music-reading', bpm: 120 }, 'abc12'))
+      .toBe('sheet-music-reading_120bpm_abc12');
+  });
+
+  it('omits role when trainingRole is random', () => {
+    expect(buildGeneratedBaseName({ trainingRole: 'random', category: 'sheet-music-reading', bpm: 80 }, 'z1234'))
+      .toBe('sheet-music-reading_80bpm_z1234');
+  });
+
+  it('includes role prefix when trainingRole is train', () => {
+    expect(buildGeneratedBaseName({ trainingRole: 'train', category: 'sheet-music-reading', bpm: 100 }, 'a1b2c'))
+      .toBe('train_sheet-music-reading_100bpm_a1b2c');
+  });
+
+  it('uses unknown when category is empty', () => {
+    expect(buildGeneratedBaseName({ bpm: 60 }, 'xxxxx'))
+      .toBe('unknown_60bpm_xxxxx');
+  });
+});
+
+describe('normalizeSidecarFormat', () => {
+  it('migrates tempoBpm to bpm when bpm is absent', () => {
+    const result = normalizeSidecarFormat({ tempoBpm: 120 });
+    expect(result.bpm).toBe(120);
+    expect(result.tempoBpm).toBeUndefined();
+  });
+
+  it('keeps existing bpm when both bpm and tempoBpm are present', () => {
+    const result = normalizeSidecarFormat({ bpm: 80, tempoBpm: 120 });
+    expect(result.bpm).toBe(80);
+    expect(result.tempoBpm).toBeUndefined();
+  });
+
+  it('removes tempoBpm even when bpm already present', () => {
+    const result = normalizeSidecarFormat({ bpm: 100, tempoBpm: 200 });
+    expect(result.tempoBpm).toBeUndefined();
+  });
+
+  it('preserves existing id', () => {
+    const result = normalizeSidecarFormat({ id: 'abc123xyz000', bpm: 90 });
+    expect(result.id).toBe('abc123xyz000');
+  });
+
+  it('generates id if missing', () => {
+    const result = normalizeSidecarFormat({ bpm: 60 });
+    expect(result.id).toMatch(/^[a-z0-9]{12}$/);
+  });
+
+  it('does not modify the original object', () => {
+    const original = { tempoBpm: 120 };
+    normalizeSidecarFormat(original);
+    expect(original.tempoBpm).toBe(120);
+  });
+});
+
+describe('buildSidecarWithOnsets (id/updatedAt behaviour)', () => {
+  it('sets updatedAt as an ISO string', () => {
+    const result = buildSidecarWithOnsets({ bpm: 100 }, [100, 200], { id: 'abc123xyz000' });
+    expect(result.updatedAt).toMatch(/^\d{4}-\d{2}-\d{2}T/);
+  });
+
+  it('preserves id from meta', () => {
+    const result = buildSidecarWithOnsets({ bpm: 80 }, [], { id: 'stableid12ab' });
+    expect(result.id).toBe('stableid12ab');
+  });
+
+  it('preserves baseName from meta', () => {
+    const result = buildSidecarWithOnsets({}, [500], { id: 'xyz', baseName: 'sheet-music-reading_80bpm_abc12' });
+    expect(result.baseName).toBe('sheet-music-reading_80bpm_abc12');
+  });
+
+  it('id is stable across repeated calls with same meta', () => {
+    const meta = { id: 'fixed1234567' };
+    const r1 = buildSidecarWithOnsets({}, [100], meta);
+    const r2 = buildSidecarWithOnsets({}, [200], meta);
+    expect(r1.id).toBe(r2.id);
   });
 });

@@ -22,9 +22,9 @@ const SEQUENCES_DIR = join(process.cwd(), 'tests/fixtures/sequences');
 export const SHEET_FINGERPRINT_ANALYZE_INTERVAL_MS = ONSET_LIVE_ANALYZE_INTERVAL_MS;
 export const SHEET_FINGERPRINT_ONSET_FRAME_SIZE = ONSET_FFT_SIZE;
 export const SHEET_FINGERPRINT_POSITIVE_FIXTURE_FILES = [
-  'sheet-music-reading/eeeeaaaaddddgggg-tagged.zip',
-  'sheet-music-reading/medium-tagged.zip',
-  'sheet-music-reading/4-4_40bpm_EGADB_9low6-tagged.zip',
+  'sheet-music-reading/unknown_52bpm_saw04-tagged.zip',
+  'sheet-music-reading/unknown_80bpm_ek6yp-tagged.zip',
+  'sheet-music-reading/sheet-music-reading_40bpm_by7pc-tagged.zip',
 ];
 
 // Manifest tempo fields are recording metadata only. Real takes can be slower,

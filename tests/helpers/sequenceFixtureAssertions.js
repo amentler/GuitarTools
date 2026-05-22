@@ -23,7 +23,7 @@ function deduplicateConsecutive(arr) {
 
 export function assertSequenceFixture(category, name) {
   const fixture = getSequenceFixture(category, name);
-  const bpm = fixture.manifest.tempoBpm ?? 60;
+  const bpm = fixture.manifest.bpm ?? fixture.manifest.tempoBpm ?? 60;
   const notesPerBeat = fixture.manifest.notesPerBeat ?? 1;
   const effectiveNoteRate = (bpm * notesPerBeat) / 60;
   const isFastTempo = effectiveNoteRate >= 3;

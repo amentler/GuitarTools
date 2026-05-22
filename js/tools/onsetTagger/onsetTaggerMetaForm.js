@@ -9,7 +9,6 @@ export const DEFAULT_SIDECAR_FIELDS = {
   notes:           [],
   timeSig:         '',
   bpm:             '',
-  tempoBpm:        '',
   notesPerBeat:    '',
   description:     '',
   // Recording metadata
@@ -38,14 +37,13 @@ export const DEFAULT_SIDECAR_FIELDS = {
 
 export const DROPDOWN_OPTIONS = {
   trainingRole:  ['random', 'train', 'validation'],
-  category:      ['', 'sheet-music-reading', 'open-strings'],
+  category:      ['', 'sheet-music-reading', 'open-strings', 'random', 'akkord'],
   chord:         ['', 'A-Dur', 'A-Moll', 'A7', 'Am7', 'Amaj7',
                   'C-Dur', 'C-Dur (1-Finger)', 'C7', 'Cmaj7',
                   'D-Dur', 'D7', 'Dsus2', 'E-Dur', 'E-Moll', 'Em7', 'Esus4',
                   'G-Dur', 'G-Dur (1-Finger)', 'G-Moll'],
   timeSig:       ['', '2/4', '3/4', '4/4', '3/8', '6/8'],
   bpm:           ['', '40', '50', '52', '60', '70', '80', '90', '100', '110', '120', '150', '180'],
-  tempoBpm:      ['', '40', '50', '52', '60', '70', '80', '90', '100', '110', '120', '150', '180'],
   notesPerBeat:  ['', '1', '2', '3', '4'],
   volume:        ['', 'laut', 'mittel', 'leise'],
   guitarSize:    ['', 'Vollgröße', 'Dreiviertel', 'Halbe'],
@@ -56,13 +54,32 @@ export const DROPDOWN_OPTIONS = {
   os:            ['', 'Windows', 'macOS', 'iOS', 'Android', 'Linux', 'Unknown'],
 };
 
-export const NUMERIC_DROPDOWN_KEYS = new Set(['bpm', 'tempoBpm', 'notesPerBeat']);
+export const NUMERIC_DROPDOWN_KEYS = new Set(['bpm', 'notesPerBeat']);
 
-export function renderMetaForm(ui, data) {
+/** Fields that are system-managed and must not appear as editable form inputs. */
+const SYSTEM_FIELDS = new Set(['id', 'baseName', 'updatedAt', 'recordedAt', 'onsetsMs', 'browserEnv', 'tempoBpm']);
+
+export function renderMetaForm(ui, data, computedBaseName = '') {
   if (!ui.metaForm) return;
   ui.metaForm.innerHTML = '';
+
+  // Read-only baseName display
+  if (computedBaseName) {
+    const displayRow = document.createElement('div');
+    displayRow.className = 'tagger-meta-row tagger-meta-row--readonly';
+    const label = document.createElement('label');
+    label.className = 'tagger-meta-label';
+    label.textContent = 'Dateiname';
+    const display = document.createElement('span');
+    display.className = 'tagger-basename-display tagger-meta-value';
+    display.textContent = computedBaseName;
+    displayRow.appendChild(label);
+    displayRow.appendChild(display);
+    ui.metaForm.appendChild(displayRow);
+  }
+
   for (const [key, value] of Object.entries(data)) {
-    if (key === 'onsetsMs') continue;
+    if (SYSTEM_FIELDS.has(key)) continue;
     if (key === 'browserEnvironment' && value && typeof value === 'object' && !Array.isArray(value)) {
       const heading = document.createElement('p');
       heading.className = 'tagger-meta-section-heading';
@@ -74,7 +91,22 @@ export function renderMetaForm(ui, data) {
       }
       continue;
     }
-    ui.metaForm.appendChild(buildMetaRow(key, key, value, null));
+    const row = buildMetaRow(key, key, value, null);
+    if (key === 'notes') {
+      const textarea = row.querySelector('textarea');
+      if (textarea) {
+        const clearBtn = document.createElement('button');
+        clearBtn.type = 'button';
+        clearBtn.className = 'tagger-notes-clear-btn';
+        clearBtn.textContent = '✕ Leeren';
+        clearBtn.addEventListener('click', () => {
+          textarea.value = '';
+          textarea.dispatchEvent(new Event('input', { bubbles: true }));
+        });
+        row.appendChild(clearBtn);
+      }
+    }
+    ui.metaForm.appendChild(row);
   }
 }
 

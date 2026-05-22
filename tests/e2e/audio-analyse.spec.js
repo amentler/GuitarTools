@@ -7,7 +7,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 // Baseline-Fixture: in sheetMusicSequenceFingerprint als positive Datei gelistet
 const FIXTURE_ZIP = path.resolve(
   __dirname,
-  '../fixtures/sequences/sheet-music-reading/4-4_40bpm_EGADB_9low6-tagged.zip',
+  '../fixtures/sequences/sheet-music-reading/sheet-music-reading_40bpm_by7pc-tagged.zip',
 );
 const FIXTURE_WAV = path.resolve(__dirname, '../fixtures/audio/E2/e2.wav');
 
@@ -32,7 +32,7 @@ test.describe('Audio-Analyse Werkzeug', () => {
 
     const statsText = await statsHeader.innerText();
     // Dateiname im Header
-    expect(statsText).toContain('4-4_40bpm_EGADB_9low6.wav');
+    expect(statsText).toContain('sheet-music-reading_40bpm_by7pc.wav');
     // Dauer ist positiv
     expect(statsText).toMatch(/\d+\.\d+ s/);
     // Mindestens 1 Onset erkannt

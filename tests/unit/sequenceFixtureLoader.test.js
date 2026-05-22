@@ -7,15 +7,13 @@ import {
 const SEQUENCES_DIR = join(process.cwd(), 'tests/fixtures/sequences');
 
 describe('sequenceFixtureLoader', () => {
-  it('resolves a fixture by stem across wav/zip/tagged variants', () => {
-    const byStem = resolveSequenceFixtureSource(SEQUENCES_DIR, 'sheet-music-reading/medium');
-    const byTaggedZip = resolveSequenceFixtureSource(SEQUENCES_DIR, 'sheet-music-reading/medium-tagged.zip');
-    const byLegacyWavName = resolveSequenceFixtureSource(SEQUENCES_DIR, 'sheet-music-reading/medium.wav');
-    const byBareName = resolveSequenceFixtureSource(SEQUENCES_DIR, 'medium');
+  it('resolves a fixture by stem across zip/tagged variants', () => {
+    const byStem = resolveSequenceFixtureSource(SEQUENCES_DIR, 'sheet-music-reading/unknown_80bpm_ek6yp');
+    const byTaggedZip = resolveSequenceFixtureSource(SEQUENCES_DIR, 'sheet-music-reading/unknown_80bpm_ek6yp-tagged.zip');
+    const byBareName = resolveSequenceFixtureSource(SEQUENCES_DIR, 'unknown_80bpm_ek6yp');
 
-    expect(byStem?.file).toBe('sheet-music-reading/medium-tagged.zip');
-    expect(byTaggedZip?.file).toBe('sheet-music-reading/medium-tagged.zip');
-    expect(byLegacyWavName?.file).toBe('sheet-music-reading/medium-tagged.zip');
-    expect(byBareName?.file).toBe('sheet-music-reading/medium-tagged.zip');
+    expect(byStem?.file).toBe('sheet-music-reading/unknown_80bpm_ek6yp-tagged.zip');
+    expect(byTaggedZip?.file).toBe('sheet-music-reading/unknown_80bpm_ek6yp-tagged.zip');
+    expect(byBareName?.file).toBe('sheet-music-reading/unknown_80bpm_ek6yp-tagged.zip');
   });
 });

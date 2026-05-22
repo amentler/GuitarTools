@@ -286,15 +286,76 @@ export function removeOnset(onsets, index) {
 }
 
 /**
+ * Generates a stable 12-character alphanumeric unique recording id.
+ * @returns {string}
+ */
+export function generateRecordingUid() {
+  return Math.random().toString(36).slice(2, 8) + Math.random().toString(36).slice(2, 8);
+}
+
+/**
+ * Extracts the last 5 alphanumeric characters of an id as a stable random suffix
+ * that can be used in auto-generated baseNames.
+ * @param {string} id
+ * @returns {string}
+ */
+export function extractRandomSuffix(id) {
+  const clean = String(id ?? '').replace(/[^a-z0-9]/gi, '');
+  return clean.slice(-5) || Math.random().toString(36).slice(2, 7);
+}
+
+/**
+ * Builds an auto-generated baseName from recording metadata.
+ * Format: [role_]category_bpmBPM_suffix
+ * The trainingRole token is omitted when it equals 'random'.
+ *
+ * @param {{ trainingRole?: string, category?: string, bpm?: string|number }} meta
+ * @param {string} suffix  Random suffix (stable per recording)
+ * @returns {string}
+ */
+export function buildGeneratedBaseName({ trainingRole, category, bpm } = {}, suffix = '') {
+  const role = (!trainingRole || trainingRole === 'random') ? null : trainingRole;
+  const cat  = category || 'unknown';
+  const bpmStr = bpm ? `${bpm}bpm` : '0bpm';
+  const parts = role ? [role, cat, bpmStr] : [cat, bpmStr];
+  return normalizeRecordingBaseName([...parts, suffix || 'x'].join('_'));
+}
+
+/**
+ * Normalizes an old sidecar format to the current format:
+ * - Migrates tempoBpm → bpm (if bpm is missing)
+ * - Removes the tempoBpm field
+ * - Generates a stable id if none is present
+ *
+ * Does NOT update updatedAt — that happens on explicit save.
+ *
+ * @param {object} sidecar
+ * @returns {object}
+ */
+export function normalizeSidecarFormat(sidecar) {
+  const s = { ...sidecar };
+  if (!s.bpm && s.tempoBpm) s.bpm = s.tempoBpm;
+  delete s.tempoBpm;
+  if (!s.id) s.id = generateRecordingUid();
+  return s;
+}
+
+/**
  * Builds the final sidecar object from form values + onset list.
  * Overwrites any existing onsetsMs field.
+ * Preserves stable fields (id, recordedAt) from meta if provided.
+ * Always writes a fresh updatedAt timestamp.
  *
  * @param {object} formValues  Parsed sidecar fields (excluding onsetsMs)
  * @param {number[]} onsetsMs  Confirmed onsets in milliseconds
+ * @param {{ id?: string, baseName?: string }} [meta]  Stable identity fields
  * @returns {object}
  */
-export function buildSidecarWithOnsets(formValues, onsetsMs) {
-  return { ...formValues, onsetsMs };
+export function buildSidecarWithOnsets(formValues, onsetsMs, meta = {}) {
+  const result = { ...formValues, onsetsMs, updatedAt: new Date().toISOString() };
+  if (meta.id)       result.id       = meta.id;
+  if (meta.baseName) result.baseName = meta.baseName;
+  return result;
 }
 
 export function normalizeRecordingBaseName(input, fallback = 'recording') {

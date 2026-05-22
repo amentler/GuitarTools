@@ -10,7 +10,6 @@ import { clamp, addOnsetWithIndex, moveOnset, mergeOnsetsWithMinDistance } from 
 import { closeLoadMenu, wireLoadMenu } from './onsetTaggerLoadMenu.js';
 import { detectOnsetsOffline } from '../../shared/audio/offlineOnsetDetection.js';
 import { clientXToTime, updateCursor } from './onsetTaggerWaveform.js';
-import { normalizeRecordingBaseName, applyTrainingRoleToBaseName } from './onsetTaggerLogic.js';
 
 const STRATEGY_IMPORT_MIN_DISTANCE_MS = 50;
 
@@ -57,7 +56,7 @@ export function wireOnsetTaggerEvents(ui, ctx) {
     schedulePersist,
     handleExport, handleOpenAnalyser,
     startPlayback, stopPlayback,
-    setBaseName,
+    computeAndSetBaseName,
     renderStrategyButtons,
     wireAnalysisFlyout,
   } = ctx;
@@ -242,24 +241,11 @@ export function wireOnsetTaggerEvents(ui, ctx) {
   ui.exportTopBtn?.addEventListener('click', () => handleExport());
   ui.openAnalyserBtn?.addEventListener('click', () => void handleOpenAnalyser());
 
-  // ── Filename input ────────────────────────────────────────────────────────
-  if (ui.filenameInput) {
-    ui.filenameInput.addEventListener('input', () => {
-      const base = normalizeRecordingBaseName(ui.filenameInput.value, ctx.getFileBaseName() || 'recording');
-      ctx.setFileBaseName(base);
-      ctx.setWavFilename(`${base}.wav`);
-      ctx.setSidecarFilename(`${base}.json`);
-      schedulePersist();
-    });
-    ui.filenameInput.addEventListener('change', () => { setBaseName(ui.filenameInput.value); schedulePersist(); });
-    ui.filenameInput.addEventListener('blur',   () => setBaseName(ui.filenameInput.value));
-  }
-
   // ── Meta form ─────────────────────────────────────────────────────────────
   if (ui.metaForm) {
+    const BASENAME_FIELDS = new Set(['trainingRole', 'category', 'bpm']);
     ui.metaForm.addEventListener('change', (e) => {
-      if (e.target?.name === 'trainingRole')
-        setBaseName(applyTrainingRoleToBaseName(ctx.getFileBaseName(), e.target.value));
+      if (BASENAME_FIELDS.has(e.target?.name)) computeAndSetBaseName();
       schedulePersist();
     });
     ui.metaForm.addEventListener('input', (e) => {
