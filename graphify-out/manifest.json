@@ -40,8 +40,8 @@
     "semantic_hash": ""
   },
   "/workspace/GuitarTools/sw.js": {
-    "mtime": 1779460050.4818027,
-    "ast_hash": "c4a9bda4bf2aa6c09bc09391975bd78b",
+    "mtime": 1779473055.9403405,
+    "ast_hash": "0b2c080bc3e52e5a73939642fc5f4d32",
     "semantic_hash": ""
   },
   "/workspace/GuitarTools/sfp.sh": {
@@ -1885,8 +1885,8 @@
     "semantic_hash": ""
   },
   "/workspace/GuitarTools/js/data/android-firefox-training-review-catalog.json": {
-    "mtime": 1779469634.1516874,
-    "ast_hash": "32a7d8915063d34b49ab3f3b07c03f56",
+    "mtime": 1779473056.1963441,
+    "ast_hash": "4eb147aba7f847b754eddf3b031754e1",
     "semantic_hash": ""
   },
   "/workspace/GuitarTools/js/data/akkordData.js": {
@@ -2544,6 +2544,11 @@
     "ast_hash": "81cda5a6041bc9e7ee4e8d2063fcc2b6",
     "semantic_hash": ""
   },
+  "/workspace/GuitarTools/scripts/normalize-sequence-zip-sidecars.mjs": {
+    "mtime": 1779473592.6710317,
+    "ast_hash": "a432f6d6e22f1958a4ebbafa80568609",
+    "semantic_hash": ""
+  },
   "/workspace/GuitarTools/scripts/generate-note-analyser-goldens.mjs": {
     "mtime": 1779048724.4439347,
     "ast_hash": "15735bfd3329db6e4f4d980e04200220",
@@ -2690,8 +2695,8 @@
     "semantic_hash": ""
   },
   "/workspace/GuitarTools/version.txt": {
-    "mtime": 1779460050.4537833,
-    "ast_hash": "595cbae77b7396e3f6d3804c4d95b5e1",
+    "mtime": 1779473055.9163418,
+    "ast_hash": "faaf0ec0169df4f1eaf1f377580b143d",
     "semantic_hash": ""
   },
   "/workspace/GuitarTools/copilot.md": {
@@ -2720,8 +2725,8 @@
     "semantic_hash": ""
   },
   "/workspace/GuitarTools/AGENTS.md": {
-    "mtime": 1779445766.7470403,
-    "ast_hash": "f3819f522850455f5b68e7156cd0d9c2",
+    "mtime": 1779473599.319029,
+    "ast_hash": "991155ce496329334fa6d387c4487c57",
     "semantic_hash": ""
   },
   "/workspace/GuitarTools/index.html": {
@@ -2900,8 +2905,8 @@
     "semantic_hash": ""
   },
   "/workspace/GuitarTools/js/tools/onsetTagger/CLAUDE.md": {
-    "mtime": 1779459188.9081779,
-    "ast_hash": "2884686d9d77dc661131697f69e74a2c",
+    "mtime": 1779473606.90498,
+    "ast_hash": "75edeec69ccf3d44c289d9920c70c4df",
     "semantic_hash": ""
   },
   "/workspace/GuitarTools/js/tools/onsetTagger/AGENTS.md": {

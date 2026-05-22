@@ -1,1 +1,1 @@
-Version 0.197 | 2026-05-22 18:04 | 4828066 | graphify-out/.graphify_labels.json (+16 more)
+Version 0.198 | 2026-05-22 18:16 | 956610d | AGENTS.md (+59 more)

@@ -69,9 +69,15 @@ Import: ZIP-Button (`tagger-zip-btn`) extrahiert WAV + optional JSON via `readRe
 Das exportierte JSON enthält alle Original-Felder plus:
 ```json
 {
+  "id": "notenlesen_4-4_120bpm_demo",
+  "baseName": "notenlesen_4-4_120bpm_demo",
+  "recordedAt": "2026-05-22T18:30:00.000Z",
+  "updatedAt": "2026-05-22T18:45:00.000Z",
   "onsetsMs": [1234, 2567, 3891]
 }
 ```
+
+Bestehende Sequence-Fixture-ZIPs werden mit `node scripts/normalize-sequence-zip-sidecars.mjs` normalisiert. Das Skript leitet `id` und `baseName` aus dem ZIP-Basisnamen ab und setzt `updatedAt` auf den Normalisierungszeitpunkt; fehlendes `recordedAt` wird ebenfalls ergänzt.
 
 ## Tests
 
