@@ -1,1 +1,1 @@
-Version 0.195 | 2026-05-22 10:32 | eea81a3 | .claude/commands/architecture-review.md (+24 more)
+Version 0.196 | 2026-05-22 14:27 | 0e798fa | docs/architecture.md (+15 more)

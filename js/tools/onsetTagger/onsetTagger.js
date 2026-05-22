@@ -61,6 +61,7 @@ export function createOnsetTaggerFeature() {
   const _analysisFlyout = createOnsetTaggerAnalysisFlyout({
     getSamples: () => _samples,
     getSampleRate: () => _sampleRate,
+    getBaseName: () => _fileBaseName,
     getRangeStart: () => _rangeStart,
     getRangeEnd: () => _rangeEnd,
     getCursorSec: () => _cursorSec,
@@ -133,6 +134,7 @@ export function createOnsetTaggerFeature() {
       analysisShowDetectedOnsetsEl: q('tagger-analysis-show-detected-onsets'),
       analysisShowTaggedOnsetsEl: q('tagger-analysis-show-tagged-onsets'),
       analysisOnsetSelectEl: q('tagger-analysis-onset-select'),
+      analysisStatsEl: q('tagger-analysis-stats'),
     };
   }
 
@@ -397,7 +399,7 @@ export function createOnsetTaggerFeature() {
     }
     renderMetaForm(_ui, { ...DEFAULT_SIDECAR_FIELDS, ...sidecarObj });
     enableStep2();
-    _analysisFlyout.render(_ui);
+    void _analysisFlyout.run(_ui);
     schedulePersist();
   }
 

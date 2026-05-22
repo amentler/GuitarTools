@@ -11,16 +11,22 @@ import {
   DEFAULT_GUITAR_ONSET_STRATEGY_KEY,
 } from '../../shared/audio/guitarOnsetStrategies.js';
 import { getSetting, SETTING_KEYS } from '../../shared/globalSettings.js';
+import {
+  computeTaggedOnsetMetrics,
+  resolveOnsetModelTrainingStatus,
+} from '../../shared/audio/taggedOnsetMetrics.js';
 
 export function createOnsetTaggerAnalysisFlyout({
   getSamples,
   getSampleRate,
+  getBaseName,
   getRangeStart,
   getRangeEnd,
   getCursorSec,
   getTaggedOnsetsSec,
 }) {
   let analysisResult = null;
+  let statsSnapshot = null;
   let analysisRunId = 0;
   let normalizeY = true;
   let showDetectedOnsets = true;
@@ -45,6 +51,94 @@ export function createOnsetTaggerAnalysisFlyout({
     ui.analysisStatus.classList.toggle('tagger-analysis-status--error', isError);
   }
 
+  function formatPercent(value) {
+    return `${(value * 100).toFixed(1)}%`;
+  }
+
+  function formatMs(value) {
+    return value === null || !Number.isFinite(value) ? 'n/a' : `${value.toFixed(1)} ms`;
+  }
+
+  function formatSignedMs(value) {
+    return value === null || !Number.isFinite(value)
+      ? 'n/a'
+      : `${value >= 0 ? '+' : ''}${value.toFixed(1)} ms`;
+  }
+
+  function formatTrainingStatus(status) {
+    if (status === 'trained') return 'Ja';
+    if (status === 'not-trained') return 'Nein';
+    return 'Unbekannt';
+  }
+
+  function buildStatsSnapshot(result) {
+    const taggedOnsetsMs = getTaggedOnsetsSec().map(sec => Math.round(sec * 1000));
+    const detectedOnsetsMs = (result.onsets ?? []).map(sec => Math.round(sec * 1000));
+    const metrics = computeTaggedOnsetMetrics(taggedOnsetsMs, detectedOnsetsMs);
+    const training = resolveOnsetModelTrainingStatus(
+      getBaseName?.() ?? '',
+      result.onsetStrategy?.trainingDataFiles,
+    );
+    return {
+      metrics,
+      hasTags: taggedOnsetsMs.length > 0,
+      strategy: result.onsetStrategy ?? null,
+      training,
+    };
+  }
+
+  function renderStats(ui) {
+    if (!ui.analysisStatsEl) return;
+    if (!statsSnapshot) {
+      ui.analysisStatsEl.classList.add('u-hidden');
+      ui.analysisStatsEl.innerHTML = '';
+      return;
+    }
+    ui.analysisStatsEl.classList.remove('u-hidden');
+    const { metrics, hasTags, strategy, training } = statsSnapshot;
+    const { counts } = metrics;
+    const { metrics: values } = metrics;
+    const modelLine = strategy?.modelId
+      ? `<span>Modell: ${strategy.modelId}</span>`
+      : '<span>Modell: n/a</span>';
+    const trainedLine = `<span>Trainiert mit dieser Wave: ${formatTrainingStatus(training.status)}</span>`;
+
+    if (!hasTags) {
+      ui.analysisStatsEl.innerHTML = `
+        <div class="tagger-analysis-stats__meta">
+          ${modelLine}
+          ${trainedLine}
+        </div>
+        <p class="tagger-analysis-stats__empty">Keine Referenz-Tags für diese Statistik geladen.</p>
+      `;
+      return;
+    }
+
+    ui.analysisStatsEl.innerHTML = `
+      <div class="tagger-analysis-stats__meta">
+        ${modelLine}
+        ${trainedLine}
+      </div>
+      <div class="tagger-analysis-stats__grid" aria-label="Onset-Strategie-Statistik">
+        <span>TP</span><strong>${counts.truePositives}</strong>
+        <span>FP</span><strong>${counts.falsePositives}</strong>
+        <span>FN</span><strong>${counts.falseNegatives}</strong>
+        <span>TN</span><strong>n/a</strong>
+        <span>Precision</span><strong>${formatPercent(values.precision)}</strong>
+        <span>Recall</span><strong>${formatPercent(values.recall)}</strong>
+        <span>F1</span><strong>${formatPercent(values.f1)}</strong>
+        <span>Detected/Expected</span><strong>${counts.detected}/${counts.expected}</strong>
+        <span>Treffer</span><strong>${counts.goodMatches + counts.acceptableMatches}/${counts.expected}</strong>
+        <span>Good/Acceptable</span><strong>${counts.goodMatches}/${counts.acceptableMatches}</strong>
+        <span>Duplicates</span><strong>${counts.duplicates}</strong>
+        <span>Early/Late</span><strong>${counts.earlyMatches}/${counts.lateMatches}</strong>
+        <span>Timing avg</span><strong>${formatMs(values.meanAbsErrorMs)}</strong>
+        <span>Timing p95</span><strong>${formatMs(values.p95AbsErrorMs)}</strong>
+        <span>Bias</span><strong>${formatSignedMs(values.meanSignedErrorMs)}</strong>
+      </div>
+    `;
+  }
+
   function syncOptions(ui) {
     if (ui.analysisNormalizeYEl) normalizeY = ui.analysisNormalizeYEl.checked;
     if (ui.analysisShowDetectedOnsetsEl) showDetectedOnsets = ui.analysisShowDetectedOnsetsEl.checked;
@@ -53,6 +147,7 @@ export function createOnsetTaggerAnalysisFlyout({
 
   function render(ui) {
     const samples = getSamples();
+    renderStats(ui);
     if (!ui.analysisChartsWrapper || !samples || !analysisResult) return;
     renderAllCharts(ui.analysisChartsWrapper, samples, analysisResult, {
       rangeStart: getRangeStart(),
@@ -98,12 +193,15 @@ export function createOnsetTaggerAnalysisFlyout({
     if (!samples) return;
     const runId = ++analysisRunId;
     analysisResult = null;
+    statsSnapshot = null;
+    renderStats(ui);
     ui.analysisChartsWrapper?.classList.add('u-hidden');
     setStatus(ui, 'Analyse läuft ...');
     try {
       const result = await analyzeAudio(samples, getSampleRate(), { onsetStrategyKey: _onsetStrategyKey });
       if (runId !== analysisRunId) return;
       analysisResult = result;
+      statsSnapshot = buildStatsSnapshot(result);
       setStatus(ui, `${result.frames.length} Frames, ${result.onsets.length} erkannte Onsets.`);
       render(ui);
     } catch (err) {

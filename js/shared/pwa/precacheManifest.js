@@ -15,6 +15,7 @@ const CORE_PRECACHED_URLS = [
   'js/shared/trainingDataReviewCatalog.js',
   'js/shared/audio/offlineOnsetDetection.js',
   'js/shared/audio/offlineOnsetDetectionXGBoost.js',
+  'js/shared/audio/taggedOnsetMetrics.js',
   'js/shared/audio/liveXGBoostOnsetDetector.js',
   'js/shared/audio/onsetPipelineConfig.js',
   'js/shared/audio/pitchPipelineConfig.js',

@@ -77,6 +77,13 @@ export async function decodeWav(arrayBuffer) {
  *   fftSize: number,
  *   hopSize: number,
  *   duration: number,
+ *   onsetStrategy: {
+ *     key: string,
+ *     label: string,
+ *     modelId: string|null,
+ *     trainedOn: string|null,
+ *     trainingDataFiles: string[],
+ *   },
  * }} AnalysisResult
  *
  * @typedef {{
@@ -177,10 +184,11 @@ export async function analyzeAudio(samples, sampleRate, options = {}) {
   // ── Onset analysis on onset frames ─────────────────────────────────────────
   const selectedOnsetStrategy = resolveGuitarOnsetStrategy(options.onsetStrategyKey);
   const onsetStrategy = resolveGuitarOnsetBaseStrategy(selectedOnsetStrategy.baseStrategyKey);
+  const xgboostModel = await loadXGBoostModelForStrategy(selectedOnsetStrategy);
   const xgboostOnsets = await detectOnsetsOfflineXGBoost(
     samples,
     sampleRate,
-    await loadXGBoostModelForStrategy(selectedOnsetStrategy),
+    xgboostModel,
     { onsetStrategyKey: selectedOnsetStrategy.baseStrategyKey },
   );
   const xgboostOnsetSet = new Set(xgboostOnsets.onsetsSec.map(sec => Math.round(sec * 1000)));
@@ -264,6 +272,15 @@ export async function analyzeAudio(samples, sampleRate, options = {}) {
     hopSize: onsetHopSize,
     duration,
     onsetOptions: lastOnsetResult?.options ?? null,
+    onsetStrategy: {
+      key: selectedOnsetStrategy.key,
+      label: selectedOnsetStrategy.label,
+      modelId: xgboostModel.schema?.modelId ?? selectedOnsetStrategy.modelId ?? null,
+      trainedOn: xgboostModel.schema?.trainedOn ?? selectedOnsetStrategy.trainedOn ?? null,
+      trainingDataFiles: Array.isArray(xgboostModel.schema?.trainingDataFiles)
+        ? xgboostModel.schema.trainingDataFiles
+        : [],
+    },
   };
 }
 
