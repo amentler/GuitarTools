@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { scoreTaggedOnsets } from '../../scripts/taggedOnsetScoring.mjs';
-import { summarizeOnsetMetrics } from '../helpers/sheetMusicSequenceFingerprint.js';
+import {
+  formatOnsetStrategySummaryLists,
+  summarizeOnsetMetrics,
+} from '../helpers/sheetMusicSequenceFingerprint.js';
 
 describe('taggedOnsetScoring', () => {
   it('tracks signed timing metrics for matched tagged onsets', () => {
@@ -63,5 +66,57 @@ describe('taggedOnsetScoring', () => {
     expect(summary.metrics.meanAbsErrorMs).toBe(20);
     expect(summary.metrics.p95AbsErrorMs).toBe(35);
     expect(summary.metrics.meanSignedErrorMs).toBe(20);
+  });
+
+  it('formats compact onset strategy summaries without per-fixture details', () => {
+    const output = formatOnsetStrategySummaryLists({
+      onsetStrategyReports: [
+        {
+          onsetStrategy: {
+            key: 'xgboost-test',
+            label: 'XGBoost Test',
+            modelId: 'abc123',
+          },
+          counts: {
+            total: 2,
+            exact: 1,
+            under: 0,
+            over: 1,
+            mixed: 0,
+            totalExpected: 6,
+            totalDetected: 7,
+            truePositives: 5,
+            falsePositives: 2,
+            falseNegatives: 1,
+            totalTaggedOnsets: 6,
+            goodMatches: 4,
+            acceptableMatches: 1,
+            misses: 1,
+            duplicates: 1,
+            earlyMatches: 2,
+            lateMatches: 3,
+          },
+          metrics: {
+            onsetCountRatio: 7 / 6,
+            onsetPrecision: 5 / 7,
+            onsetRecall: 5 / 6,
+            onsetF1: 10 / 13,
+            taggedHitRate: 5 / 6,
+            onsetMeanAbsErrorMs: 12,
+            onsetMedianAbsErrorMs: 10,
+            onsetP95AbsErrorMs: 24,
+            onsetMaxAbsErrorMs: 31,
+            onsetMeanSignedErrorMs: -4,
+          },
+        },
+      ],
+    });
+
+    expect(output).toContain('## Onset Strategy Compact Summaries');
+    expect(output).toContain('### xgboost-test (XGBoost Test)');
+    expect(output).toContain('- confusion matrix: TP=5 FP=2 FN=1 TN=n/a');
+    expect(output).toContain('- timing avg/median/p95/max/bias: 12ms / 10ms / 24ms / 31ms / -4ms');
+    expect(output).toContain('- early/late matches: 2/3, model abc123');
+    expect(output).not.toContain('| fixture |');
   });
 });

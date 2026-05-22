@@ -1,1 +1,1 @@
-Version 0.193 | 2026-05-21 22:44 | e5618dd | AGENTS.md (+10 more)
+Version 0.194 | 2026-05-22 10:29 | 991ff25 | AGENTS.md (+7 more)

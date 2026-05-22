@@ -40,8 +40,8 @@
     "semantic_hash": ""
   },
   "/workspace/GuitarTools/sw.js": {
-    "mtime": 1779400658.3244019,
-    "ast_hash": "a23f8d90482e34990a6f3d82b8d91afe",
+    "mtime": 1779403477.3646996,
+    "ast_hash": "aa873a58240bef3c911fa24fe954bbda",
     "semantic_hash": ""
   },
   "/workspace/GuitarTools/sfp.sh": {
@@ -839,6 +839,11 @@
     "ast_hash": "2c424dfba0fc0cf566b3f1c617c79e37",
     "semantic_hash": ""
   },
+  "/workspace/GuitarTools/tests/unit/tonFinderController.test.js": {
+    "mtime": 1779403610.0525553,
+    "ast_hash": "f94556f1fe5baaef4edac7940d0f1959",
+    "semantic_hash": ""
+  },
   "/workspace/GuitarTools/tests/unit/microphoneService.test.js": {
     "mtime": 1779048725.254268,
     "ast_hash": "3fbc04a89ed2a9285082280338130c3f",
@@ -924,6 +929,11 @@
     "ast_hash": "ba62eb561c468b5e2da723dbf9dcf06c",
     "semantic_hash": ""
   },
+  "/workspace/GuitarTools/tests/unit/akkordTrainerController.test.js": {
+    "mtime": 1779403610.0525553,
+    "ast_hash": "c42e05649cb8b4dda10539362a2f7105",
+    "semantic_hash": ""
+  },
   "/workspace/GuitarTools/tests/unit/essentiaChordConfusionMetrics.test.js": {
     "mtime": 1779048725.254268,
     "ast_hash": "87f6c214f8886559329abda5787e983b",
@@ -975,8 +985,8 @@
     "semantic_hash": ""
   },
   "/workspace/GuitarTools/tests/unit/taggedOnsetScoring.test.js": {
-    "mtime": 1779048725.2579346,
-    "ast_hash": "729063b1b19116f75ce500ab9fb91bb3",
+    "mtime": 1779432722.4479408,
+    "ast_hash": "2ee59ebd2d2d87fe84a9604a4fd53089",
     "semantic_hash": ""
   },
   "/workspace/GuitarTools/tests/unit/fretboardLogic.test.js": {
@@ -1209,6 +1219,11 @@
     "ast_hash": "a838745ec4ed1dcbc9a3feb1dcf96b4c",
     "semantic_hash": ""
   },
+  "/workspace/GuitarTools/tests/unit/fretboardExerciseController.test.js": {
+    "mtime": 1779403610.0525553,
+    "ast_hash": "87ace179b8b6f8eb17685418113d4d08",
+    "semantic_hash": ""
+  },
   "/workspace/GuitarTools/tests/unit/storageService.test.js": {
     "mtime": 1779048725.2579346,
     "ast_hash": "511bbc3410b9ce785f40c871ee67b4da",
@@ -1310,8 +1325,8 @@
     "semantic_hash": ""
   },
   "/workspace/GuitarTools/tests/helpers/sheetMusicSequenceFingerprint.js": {
-    "mtime": 1779402233.6813414,
-    "ast_hash": "ec916f1f95d81938e5206609e0fc2dc0",
+    "mtime": 1779432687.6057627,
+    "ast_hash": "98bae464bef87e801c6bf8bc5aa4afff",
     "semantic_hash": ""
   },
   "/workspace/GuitarTools/tests/helpers/audioFixtureRunner.js": {
@@ -2445,8 +2460,8 @@
     "semantic_hash": ""
   },
   "/workspace/GuitarTools/scripts/sheet-and-note-fingerprint.mjs": {
-    "mtime": 1779402652.9381342,
-    "ast_hash": "3ab649fef477c15df140e3e10cc8a82f",
+    "mtime": 1779432692.069722,
+    "ast_hash": "59602504a36093d7a794ad1c2d14ffdd",
     "semantic_hash": ""
   },
   "/workspace/GuitarTools/scripts/chord-recognition-jsfingerprint.mjs": {
@@ -2600,8 +2615,8 @@
     "semantic_hash": ""
   },
   "/workspace/GuitarTools/version.txt": {
-    "mtime": 1779400658.2964115,
-    "ast_hash": "944855c4227261e3ac2bb92107740884",
+    "mtime": 1779403477.3367097,
+    "ast_hash": "09375eec406fcc54fea4e983173e4e01",
     "semantic_hash": ""
   },
   "/workspace/GuitarTools/copilot.md": {
@@ -2630,8 +2645,8 @@
     "semantic_hash": ""
   },
   "/workspace/GuitarTools/AGENTS.md": {
-    "mtime": 1779402758.584782,
-    "ast_hash": "0ebe4e877d7fce748051172ff56e399a",
+    "mtime": 1779432775.8701248,
+    "ast_hash": "7db9e6210d7265f0676acd850834a291",
     "semantic_hash": ""
   },
   "/workspace/GuitarTools/index.html": {
@@ -2687,6 +2702,11 @@
   "/workspace/GuitarTools/plans/architektur-review.md": {
     "mtime": 1779048724.440268,
     "ast_hash": "61cdc839995d05d3db3ae61ed8a97364",
+    "semantic_hash": ""
+  },
+  "/workspace/GuitarTools/plans/ideen.md": {
+    "mtime": 1779403610.0525553,
+    "ast_hash": "446978980319fdf017cf923d7603ae9d",
     "semantic_hash": ""
   },
   "/workspace/GuitarTools/plans/architektur/code-review-2026-05-05.md": {
@@ -2817,6 +2837,16 @@
   "/workspace/GuitarTools/js/tools/guitarTuner/CLAUDE.md": {
     "mtime": 1779048724.4219348,
     "ast_hash": "383a9919dde27553dc4c1daf4ed026e4",
+    "semantic_hash": ""
+  },
+  "/workspace/GuitarTools/js/domain/CLAUDE.md": {
+    "mtime": 1779403610.0525553,
+    "ast_hash": "3beca6392c17b8e43ddf53ab11124c65",
+    "semantic_hash": ""
+  },
+  "/workspace/GuitarTools/js/shared/audio/CLAUDE.md": {
+    "mtime": 1779403610.0525553,
+    "ast_hash": "d457c539a2d146f2fabd1bacece6697b",
     "semantic_hash": ""
   },
   "/workspace/GuitarTools/js/games/chordExerciseEssentia/CLAUDE.md": {
@@ -3019,6 +3049,11 @@
     "ast_hash": "03085501c12e098a2e10ce8bd6cc5909",
     "semantic_hash": ""
   },
+  "/workspace/GuitarTools/.claude/commands/architecture-check.md": {
+    "mtime": 1779403610.0525553,
+    "ast_hash": "fae34e80bb4c2652defe7339fdfc1cac",
+    "semantic_hash": ""
+  },
   "/workspace/GuitarTools/.claude/commands/implementplan.md": {
     "mtime": 1779048724.2386014,
     "ast_hash": "694e2b71dc85ef1f7ca7f74f0d23b541",
@@ -3027,6 +3062,11 @@
   "/workspace/GuitarTools/.claude/commands/sync.md": {
     "mtime": 1779048724.2386014,
     "ast_hash": "ecd8f9cb1a50c366bea1fd4890d2ba8d",
+    "semantic_hash": ""
+  },
+  "/workspace/GuitarTools/.claude/commands/graphify.md": {
+    "mtime": 1779403610.0525553,
+    "ast_hash": "6d2748975e4d2633b8a05dbb91c11e4c",
     "semantic_hash": ""
   },
   "/workspace/GuitarTools/.claude/commands/plantask.md": {

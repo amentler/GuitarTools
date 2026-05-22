@@ -576,6 +576,8 @@ export function summarizeOnsetStrategyCases(onsetStrategy, cases) {
       misses: onsetSummary.counts.misses,
       falsePositives: onsetSummary.counts.falsePositives,
       duplicates: onsetSummary.counts.duplicates,
+      earlyMatches: onsetSummary.counts.earlyMatches,
+      lateMatches: onsetSummary.counts.lateMatches,
     },
     metrics: {
       onsetCountRatio: safeDivide(totalDetected, totalExpected),
@@ -583,7 +585,12 @@ export function summarizeOnsetStrategyCases(onsetStrategy, cases) {
       onsetRecall: onsetSummary.metrics.onsetRecall,
       onsetF1: onsetSummary.metrics.onsetF1,
       taggedHitRate: onsetSummary.metrics.taggedHitRate,
+      onsetGoodHitRate: onsetSummary.metrics.goodHitRate,
+      onsetMeanAbsErrorMs: onsetSummary.metrics.meanAbsErrorMs,
+      onsetMedianAbsErrorMs: onsetSummary.metrics.medianAbsErrorMs,
       onsetP95AbsErrorMs: onsetSummary.metrics.p95AbsErrorMs,
+      onsetMaxAbsErrorMs: onsetSummary.metrics.maxAbsErrorMs,
+      onsetMeanSignedErrorMs: onsetSummary.metrics.meanSignedErrorMs,
     },
   };
 }
@@ -760,6 +767,45 @@ function formatOnsetStrategyDetailSection(onsetReport) {
   }
 
   return lines;
+}
+
+function formatOnsetStrategySummaryList(row) {
+  const key = row.onsetStrategy.key;
+  const label = row.onsetStrategy.label && row.onsetStrategy.label !== key
+    ? ` (${row.onsetStrategy.label})`
+    : '';
+  const model = row.onsetStrategy.modelId ? `, model ${row.onsetStrategy.modelId}` : '';
+  const { counts, metrics } = row;
+  return [
+    `### ${key}${label}`,
+    `- fixtures: ${counts.total}; exact/under/over/mixed: ${counts.exact}/${counts.under}/${counts.over}/${counts.mixed ?? 0}`,
+    `- confusion matrix: TP=${counts.truePositives ?? 0} FP=${counts.falsePositives ?? 0} FN=${counts.falseNegatives ?? counts.misses ?? 0} TN=n/a`,
+    `- detected/expected: ${counts.totalDetected}/${counts.totalExpected} (${formatPercent(metrics.onsetCountRatio)})`,
+    `- precision/recall/f1: ${formatPercent(metrics.onsetPrecision)} / ${formatPercent(metrics.onsetRecall)} / ${formatPercent(metrics.onsetF1)}`,
+    `- tagged hits: ${counts.goodMatches + counts.acceptableMatches}/${counts.totalTaggedOnsets} (${formatPercent(metrics.taggedHitRate)}); good=${counts.goodMatches}, acceptable=${counts.acceptableMatches}, misses=${counts.misses}, false positives=${counts.falsePositives}, duplicates=${counts.duplicates}`,
+    `- timing avg/median/p95/max/bias: ${formatMs(metrics.onsetMeanAbsErrorMs)} / ${formatMs(metrics.onsetMedianAbsErrorMs)} / ${formatMs(metrics.onsetP95AbsErrorMs)} / ${formatMs(metrics.onsetMaxAbsErrorMs)} / ${formatSignedMs(metrics.onsetMeanSignedErrorMs)}`,
+    `- early/late matches: ${counts.earlyMatches ?? 0}/${counts.lateMatches ?? 0}${model}`,
+  ];
+}
+
+export function formatOnsetStrategySummaryLists(report) {
+  const onsetStrategyReports = report.onsetStrategyReports ?? [];
+  if (onsetStrategyReports.length === 0) {
+    return [
+      '## Onset Strategy Compact Summaries',
+      '',
+      '- no onset strategy reports available',
+    ].join('\n');
+  }
+
+  return [
+    '## Onset Strategy Compact Summaries',
+    '',
+    ...onsetStrategyReports.flatMap((row, index) => [
+      ...(index === 0 ? [] : ['']),
+      ...formatOnsetStrategySummaryList(row),
+    ]),
+  ].join('\n');
 }
 
 export function formatSheetMusicSequenceFingerprintReport(report) {

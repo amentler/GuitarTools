@@ -6,6 +6,7 @@ import {
   evaluateOnsetStrategyReport,
   evaluateXGBoostOnsetModelReport,
   evaluateSequenceStrategyReport,
+  formatOnsetStrategySummaryLists,
   formatSheetMusicSequenceFingerprintReport,
   summarizeOnsetStrategyCases,
 } from '../tests/helpers/sheetMusicSequenceFingerprint.js';
@@ -201,6 +202,8 @@ logProgress('sequence fingerprint done');
 console.log(formatSheetMusicSequenceFingerprintReport(
   sequenceReport,
 ));
+console.log('');
+console.log(formatOnsetStrategySummaryLists(sequenceReport));
 console.log('');
 console.log('---');
 console.log('');
