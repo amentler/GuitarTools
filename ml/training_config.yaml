@@ -97,8 +97,8 @@ features:
     - mfcc_12.current
 
 labels:
-  onset_tolerance_ms: 20
-  positive_window_ms: 20
+  onset_tolerance_ms: 30
+  positive_window_ms: 30
 
 xgboost:
   device: cuda
@@ -123,11 +123,11 @@ sampling:
 
 decision:
   probability_threshold: 0.5
-  lookahead_frames: 4
+  lookahead_frames: 6
   threshold_selection:
     enabled: true
-    target_recall: 0.93
-    min_precision: 0.75
+    target_recall: 0.95
+    min_precision: 0.80
     beta: 2.0
     steps: 999
 
@@ -155,7 +155,7 @@ training:
     scale_pos_weight_multiplier: [0.75, 1.0, 1.25]
     lookahead_frames: [3, 4, 5]
     max_delta_step: [0, 1]
-    negative_sampling_ratio: [4.0, 5.0, 6.0]
+    negative_sampling_ratio: [4.0, 5.0, 6.0, 10.0, 20.0, 100.0]
 
 paths:
   training_data_dir: "./training_data"

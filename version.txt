@@ -1,1 +1,1 @@
-Version 0.196 | 2026-05-22 14:27 | 0e798fa | docs/architecture.md (+15 more)
+Version 0.197 | 2026-05-22 18:04 | 4828066 | graphify-out/.graphify_labels.json (+16 more)
