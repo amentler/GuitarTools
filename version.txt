@@ -1,1 +1,1 @@
-Version 0.195 | 2026-05-21 23:01 | 6011130 | .claude/commands/architecture-review.md (+10 more)
+Version 0.196 | 2026-05-22 09:13 | 584bb0f | graphify-out/.graphify_labels.json (+10 more)
