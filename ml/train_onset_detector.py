@@ -66,6 +66,13 @@ def load_config(config_path: str) -> dict:
         return yaml.safe_load(f)
 
 
+def resolve_refractory_ms(labels_cfg: dict) -> float:
+    return float(labels_cfg.get(
+        "refractory_ms",
+        labels_cfg.get("onset_tolerance_ms", 100),
+    ))
+
+
 # ---------------------------------------------------------------------------
 # Data loading
 # ---------------------------------------------------------------------------
@@ -564,7 +571,7 @@ def evaluate_app_peak_picking(
     hop_size = audio_config.get("hopSize", 256)
     frame_ms = (hop_size / sample_rate) * 1000
     lookahead_frames = int(decision_cfg.get("lookahead_frames", 1))
-    refractory_ms = float(labels_cfg.get("onset_tolerance_ms", 100))
+    refractory_ms = resolve_refractory_ms(labels_cfg)
     tolerance_ms = float(labels_cfg.get("onset_tolerance_ms", 30))
 
     totals = {
@@ -1142,7 +1149,7 @@ def save_schema(
         "missingValue": 0.0,
         "decision": {
             "probabilityThreshold": decision_threshold,
-            "refractoryMs":         cfg.get("labels", {}).get("onset_tolerance_ms", 100),
+            "refractoryMs":         resolve_refractory_ms(cfg.get("labels", {})),
             "lookaheadFrames":      decision_cfg.get("lookahead_frames", 1),
         },
         "metrics": metrics,

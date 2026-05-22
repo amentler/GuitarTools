@@ -1,11 +1,61 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-05-22T19:44:26.543Z",
+  "generatedAt": "2026-05-22T21:26:06.750Z",
   "mediaRoots": [
     "tests/fixtures/sequences/sheet-music-reading"
   ],
   "metricsSource": "models/onset_detector_android_firefox.metrics.json",
   "entries": [
+    {
+      "id": "random_120bpm_c1unw-wgsegh",
+      "name": "random_120bpm_c1unw-tagged",
+      "baseName": "random_120bpm_c1unw",
+      "kind": "zip",
+      "url": "../../tests/fixtures/sequences/sheet-music-reading/random_120bpm_c1unw-tagged.zip",
+      "jsonUrl": null,
+      "sidecarInZip": true,
+      "trainingFile": "training_data_random_120bpm_c1unw.json",
+      "trainingJsonUrl": null,
+      "match": {
+        "status": "tagged-zip",
+        "score": 1000
+      },
+      "metrics": {
+        "expected": 26,
+        "detected": null,
+        "tp": null,
+        "fp": null,
+        "fn": null,
+        "precision": null,
+        "recall": null,
+        "f1": null
+      }
+    },
+    {
+      "id": "random_120bpm_cung3-1nshemt",
+      "name": "random_120bpm_cung3-tagged",
+      "baseName": "random_120bpm_cung3",
+      "kind": "zip",
+      "url": "../../tests/fixtures/sequences/sheet-music-reading/random_120bpm_cung3-tagged.zip",
+      "jsonUrl": null,
+      "sidecarInZip": true,
+      "trainingFile": "training_data_random_120bpm_cung3.json",
+      "trainingJsonUrl": null,
+      "match": {
+        "status": "tagged-zip",
+        "score": 1000
+      },
+      "metrics": {
+        "expected": 17,
+        "detected": null,
+        "tp": null,
+        "fp": null,
+        "fn": null,
+        "precision": null,
+        "recall": null,
+        "f1": null
+      }
+    },
     {
       "id": "sheet-music-reading_100bpm_tffjv-1g5dig8",
       "name": "sheet-music-reading_100bpm_tffjv-tagged",
@@ -732,6 +782,31 @@
       }
     },
     {
+      "id": "train_random_120bpm_aemxp-1qt6mxp",
+      "name": "train_random_120bpm_aemxp-tagged",
+      "baseName": "train_random_120bpm_aemxp",
+      "kind": "zip",
+      "url": "../../tests/fixtures/sequences/sheet-music-reading/train_random_120bpm_aemxp-tagged.zip",
+      "jsonUrl": null,
+      "sidecarInZip": true,
+      "trainingFile": "training_data_train_random_120bpm_aemxp.json",
+      "trainingJsonUrl": null,
+      "match": {
+        "status": "tagged-zip",
+        "score": 1000
+      },
+      "metrics": {
+        "expected": 33,
+        "detected": null,
+        "tp": null,
+        "fp": null,
+        "fn": null,
+        "precision": null,
+        "recall": null,
+        "f1": null
+      }
+    },
+    {
       "id": "train_unknown_120bpm_0p4wt-dy6xfw",
       "name": "train_unknown_120bpm_0p4wt-tagged",
       "baseName": "train_unknown_120bpm_0p4wt",
@@ -1297,6 +1372,31 @@
       },
       "metrics": {
         "expected": 12,
+        "detected": null,
+        "tp": null,
+        "fp": null,
+        "fn": null,
+        "precision": null,
+        "recall": null,
+        "f1": null
+      }
+    },
+    {
+      "id": "validation_random_120bpm_6rk0u-y9c4e3",
+      "name": "validation_random_120bpm_6rk0u-tagged",
+      "baseName": "validation_random_120bpm_6rk0u",
+      "kind": "zip",
+      "url": "../../tests/fixtures/sequences/sheet-music-reading/validation_random_120bpm_6rk0u-tagged.zip",
+      "jsonUrl": null,
+      "sidecarInZip": true,
+      "trainingFile": "training_data_validation_random_120bpm_6rk0u.json",
+      "trainingJsonUrl": null,
+      "match": {
+        "status": "tagged-zip",
+        "score": 1000
+      },
+      "metrics": {
+        "expected": 10,
         "detected": null,
         "tp": null,
         "fp": null,
