@@ -318,6 +318,11 @@ test.describe('Onset Tagger', () => {
     await page.locator('#tagger-wav-input').setInputFiles(WAV_FIXTURE);
     await expect(page.locator('#tagger-waveform-wrap svg')).toBeVisible({ timeout: 10_000 });
 
+    // Wait for the analysis charts to actually render (status text no longer "läuft")
+    await expect(page.locator('#tagger-analysis-status')).not.toContainText('läuft', { timeout: 20_000 });
+    await expect(page.locator('#tagger-analysis-charts-wrapper')).not.toHaveClass(/u-hidden/, { timeout: 5_000 });
+
+    // The flyout must not overflow the viewport
     const flyoutOverflow = await page.locator('#tagger-analysis-flyout').evaluate((el) => (
       el.scrollWidth - el.clientWidth
     ));
@@ -326,6 +331,11 @@ test.describe('Onset Tagger', () => {
     // The flyout width should not exceed viewport width
     const flyoutWidth = await page.locator('#tagger-analysis-flyout').evaluate((el) => el.getBoundingClientRect().width);
     expect(flyoutWidth).toBeLessThanOrEqual(375 + 1);
+
+    // The page body must not have a horizontal scrollbar (chart content inside fixed flyout
+    // must not leak into document flow and make the page wider than the viewport)
+    const bodyOverflow = await page.evaluate(() => document.body.scrollWidth - document.documentElement.clientWidth);
+    expect(bodyOverflow).toBeLessThanOrEqual(1);
   });
 
   test('ZIP export uses auto-generated baseName as filename', async ({ page }) => {
@@ -430,6 +440,10 @@ test.describe('Onset Tagger', () => {
     expect(rect.bottom).toBeLessThanOrEqual(667 + 2);
     expect(rect.width).toBeLessThanOrEqual(375 + 1);
     expect(rect.left).toBeGreaterThanOrEqual(-1);
+
+    // Page body must not cause horizontal scroll (fixed flyout must align with page content)
+    const bodyOverflow = await page.evaluate(() => document.body.scrollWidth - document.documentElement.clientWidth);
+    expect(bodyOverflow).toBeLessThanOrEqual(1);
   });
 
 });

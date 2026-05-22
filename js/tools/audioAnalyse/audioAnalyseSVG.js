@@ -48,11 +48,16 @@ function svgEl(tag, attrs = {}) {
 }
 
 function makeSvg(height) {
-  return svgEl('svg', {
+  const svg = svgEl('svg', {
     viewBox: `0 0 ${CHART_W} ${height}`,
     preserveAspectRatio: 'none',
     class: 'analysis-chart-svg',
   });
+  // Explicit width/height as attributes so mobile browsers don't fall back
+  // to the 1000px intrinsic viewBox width when CSS hasn't yet resolved.
+  svg.setAttribute('width', '100%');
+  svg.setAttribute('height', '100%');
+  return svg;
 }
 
 function makePlayheadLine(svg, height) {
