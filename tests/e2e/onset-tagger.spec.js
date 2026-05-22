@@ -18,7 +18,8 @@ test.describe('Onset Tagger', () => {
     await expect(page.locator('#tagger-json-btn')).toBeVisible();
     await expect(page.locator('#tagger-zip-btn')).toBeVisible();
     await expect(page.locator('#tagger-export-top')).toBeVisible();
-    await expect(page.locator('#tagger-filename-input')).toBeVisible();
+    // filename input was removed – auto-generated name shown as read-only
+    await expect(page.locator('#tagger-filename-input')).toHaveCount(0);
     await expect(page.locator('#tagger-step1')).toBeVisible();
     await expect(page.locator('#tagger-step2')).toBeVisible();
   });
@@ -49,7 +50,7 @@ test.describe('Onset Tagger', () => {
     const flyout = page.locator('#tagger-analysis-flyout');
     await expect(flyout.locator('input[type="checkbox"]')).toHaveCount(3);
     await expect(flyout.locator('input[type="range"]')).toHaveCount(0);
-    await expect(flyout.locator('select')).toHaveCount(0);
+    await expect(flyout.locator('select')).toHaveCount(1); // onset model selector
     await expect(flyout.locator('#tagger-play, #tagger-stop')).toHaveCount(2);
     await expect(flyout.locator('[data-speed]')).toHaveCount(4);
   });
@@ -279,18 +280,32 @@ test.describe('Onset Tagger', () => {
     expect(overflow).toBeLessThanOrEqual(1);
   });
 
-  test('filename edit is used for ZIP export', async ({ page }) => {
+  test('analysis flyout does not overflow horizontally on mobile viewport', async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 667 });
     await page.locator('#tagger-wav-input').setInputFiles(WAV_FIXTURE);
     await expect(page.locator('#tagger-waveform-wrap svg')).toBeVisible({ timeout: 10_000 });
-    await page.locator('#tagger-filename-input').fill('custom tagged take');
-    await page.locator('#tagger-filename-input').dispatchEvent('input');
+
+    const flyoutOverflow = await page.locator('#tagger-analysis-flyout').evaluate((el) => (
+      el.scrollWidth - el.clientWidth
+    ));
+    expect(flyoutOverflow).toBeLessThanOrEqual(1);
+
+    // The flyout width should not exceed viewport width
+    const flyoutWidth = await page.locator('#tagger-analysis-flyout').evaluate((el) => el.getBoundingClientRect().width);
+    expect(flyoutWidth).toBeLessThanOrEqual(375 + 1);
+  });
+
+  test('ZIP export uses auto-generated baseName as filename', async ({ page }) => {
+    await page.locator('#tagger-wav-input').setInputFiles(WAV_FIXTURE);
+    await expect(page.locator('#tagger-waveform-wrap svg')).toBeVisible({ timeout: 10_000 });
 
     const [download] = await Promise.all([
       page.waitForEvent('download'),
       page.locator('#tagger-export-top').click(),
     ]);
 
-    expect(download.suggestedFilename()).toBe('custom_tagged_take-tagged.zip');
+    // Auto-generated name follows: [role_]category_bpmBPM_suffix-tagged.zip
+    expect(download.suggestedFilename()).toMatch(/^.+-tagged\.zip$/);
   });
 
   test('clicking the waveform creates an onset at the clicked position', async ({ page }) => {

@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   formatFileSize,
   formatDate,
+  safeDateIso,
   buildDisplayName,
   buildAudioAnalyseUrl,
   buildOnsetTaggerUrl,
@@ -47,6 +48,28 @@ describe('formatDate', () => {
   });
   it('returns "–" for undefined', () => {
     expect(formatDate(undefined)).toBe('–');
+  });
+});
+
+describe('safeDateIso', () => {
+  it('returns ISO string for a valid Date', () => {
+    const d = new Date('2026-05-14T10:00:00.000Z');
+    expect(safeDateIso(d)).toBe('2026-05-14T10:00:00.000Z');
+  });
+  it('returns null for an Invalid Date (new Date(""))', () => {
+    expect(safeDateIso(new Date(''))).toBeNull();
+  });
+  it('returns null for an Invalid Date (new Date(NaN))', () => {
+    expect(safeDateIso(new Date(NaN))).toBeNull();
+  });
+  it('returns null for null', () => {
+    expect(safeDateIso(null)).toBeNull();
+  });
+  it('returns null for undefined', () => {
+    expect(safeDateIso(undefined)).toBeNull();
+  });
+  it('returns null for a plain string (not a Date object)', () => {
+    expect(safeDateIso('2026-05-14')).toBeNull();
   });
 });
 

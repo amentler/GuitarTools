@@ -9,6 +9,7 @@ import {
 import {
   formatFileSize,
   formatDate,
+  safeDateIso,
   buildAudioAnalyseUrl,
   buildOnsetTaggerUrl,
   buildTrainingDataOnsetTaggerUrl,
@@ -91,7 +92,7 @@ export function createRecordingsOverviewFeature() {
           <span class="recordings-item__info">
             <span class="recordings-item__badge">${badge}</span>
             <span class="recordings-item__name">${rec.name}</span>
-            <span class="recordings-item__meta">${formatFileSize(rec.sizeBytes)} · ${formatDate(rec.date?.toISOString())}</span>
+            <span class="recordings-item__meta">${formatFileSize(rec.sizeBytes)} · ${formatDate(safeDateIso(rec.date))}</span>
           </span>
         </label>
       `;

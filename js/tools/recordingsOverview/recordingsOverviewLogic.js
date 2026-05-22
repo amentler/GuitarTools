@@ -11,6 +11,11 @@ export function formatDate(isoString) {
   return d.toLocaleString('de-DE');
 }
 
+export function safeDateIso(date) {
+  if (!(date instanceof Date) || !isFinite(date)) return null;
+  return date.toISOString();
+}
+
 export function buildDisplayName(source, id, metadata) {
   const baseName = metadata?.baseName ?? metadata?.fileName ?? metadata?.filename;
   if (baseName) return baseName;
