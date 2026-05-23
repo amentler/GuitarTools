@@ -446,4 +446,45 @@ test.describe('Onset Tagger', () => {
     expect(bodyOverflow).toBeLessThanOrEqual(1);
   });
 
+  // ── Flyout layout regression tests ───────────────────────────────────────
+  // These tests document two regressions introduced in commits 7502ba1 and b38ff88:
+  //   1. overflow-x: hidden on body breaks position:fixed in real browsers
+  //      (flyout scrolls with page instead of staying at viewport bottom)
+  //   2. flex-wrap: wrap on controls row causes speed buttons to wrap/drift apart
+
+  test('body must not have overflow-x: hidden (would break position:fixed flyout in real browsers)', async ({ page }) => {
+    // overflow-x: hidden on body propagates to the viewport in browsers and
+    // causes position:fixed elements to be positioned relative to the body
+    // scroll container instead of the viewport. This makes the flyout
+    // disappear at page load and reappear (wrongly positioned) on scroll.
+    const bodyOverflowX = await page.evaluate(() => getComputedStyle(document.body).overflowX);
+    expect(bodyOverflowX).not.toBe('hidden');
+  });
+
+  test('flyout controls row must not use flex-wrap: wrap (causes speed buttons to drift apart)', async ({ page }) => {
+    // flex-wrap: wrap with justify-content: space-between distributes flex items
+    // unevenly when they wrap to a second line. On narrow viewports the speed
+    // buttons end up far from the toggle button or on a separate line entirely.
+    const flexWrap = await page.locator('.tagger-flyout-controls-row').evaluate(
+      el => getComputedStyle(el).flexWrap,
+    );
+    expect(flexWrap).toBe('nowrap');
+  });
+
+  test('flyout is anchored at viewport bottom after WAV load (position:fixed holds)', async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 667 });
+    await page.locator('#tagger-wav-input').setInputFiles(WAV_FIXTURE);
+    await expect(page.locator('#tagger-waveform-wrap svg')).toBeVisible({ timeout: 10_000 });
+
+    // Wait for analysis to complete so the flyout is in its final state
+    await expect(page.locator('#tagger-analysis-status')).not.toContainText('läuft', { timeout: 30_000 });
+
+    // position:fixed; bottom:0 must keep the flyout at the viewport bottom
+    // regardless of page scroll height or body overflow settings.
+    const flyoutBottom = await page.locator('#tagger-analysis-flyout').evaluate(
+      el => el.getBoundingClientRect().bottom,
+    );
+    expect(flyoutBottom).toBeCloseTo(667, 0); // within 1 px of viewport height
+  });
+
 });

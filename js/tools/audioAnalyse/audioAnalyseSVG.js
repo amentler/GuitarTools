@@ -53,10 +53,11 @@ function makeSvg(height) {
     preserveAspectRatio: 'none',
     class: 'analysis-chart-svg',
   });
-  // Explicit width/height as attributes so mobile browsers don't fall back
-  // to the 1000px intrinsic viewBox width when CSS hasn't yet resolved.
+  // Explicit width attribute so mobile browsers don't fall back to the
+  // 1000px intrinsic viewBox width when CSS hasn't yet resolved.
+  // height is intentionally omitted: the wrapper uses aspect-ratio to size
+  // the SVG, and height="100%" before that resolves would give 0px height.
   svg.setAttribute('width', '100%');
-  svg.setAttribute('height', '100%');
   return svg;
 }
 
