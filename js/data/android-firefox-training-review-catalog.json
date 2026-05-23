@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-05-22T21:26:06.750Z",
+  "generatedAt": "2026-05-22T21:45:54.156Z",
   "mediaRoots": [
     "tests/fixtures/sequences/sheet-music-reading"
   ],
@@ -1397,13 +1397,13 @@
       },
       "metrics": {
         "expected": 10,
-        "detected": null,
-        "tp": null,
-        "fp": null,
-        "fn": null,
-        "precision": null,
-        "recall": null,
-        "f1": null
+        "detected": 10,
+        "tp": 10,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1,
+        "recall": 1,
+        "f1": 1
       }
     },
     {
