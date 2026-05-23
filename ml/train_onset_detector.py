@@ -16,6 +16,7 @@ import argparse
 import json
 import os
 import sys
+import time
 import uuid
 import warnings
 from copy import deepcopy
@@ -341,6 +342,7 @@ def apply_negative_sampling(
     y: np.ndarray,
     ratio: float,
     random_state: int,
+    quiet: bool = False,
 ) -> tuple[np.ndarray, np.ndarray]:
     rng = np.random.RandomState(random_state)
     pos_idx = np.where(y == 1)[0]
@@ -353,10 +355,11 @@ def apply_negative_sampling(
 
     keep = np.concatenate([pos_idx, neg_idx])
     keep.sort()
-    print(
-        f"  After negative sampling: {n_pos} positives, "
-        f"{len(neg_idx)} negatives (ratio {len(neg_idx) / max(n_pos, 1):.1f}x)"
-    )
+    if not quiet:
+        print(
+            f"  After negative sampling: {n_pos} positives, "
+            f"{len(neg_idx)} negatives (ratio {len(neg_idx) / max(n_pos, 1):.1f}x)"
+        )
     return X[keep], y[keep]
 
 
@@ -370,6 +373,7 @@ def train_model(
     cfg: dict,
     feature_names: list[str],
     random_state: int,
+    quiet: bool = False,
 ) -> xgb.XGBClassifier:
     xgb_cfg = cfg.get("xgboost", {})
     xgb_version = Version(xgb.__version__)
@@ -388,7 +392,8 @@ def train_model(
         n_pos = int((y_train == 1).sum())
         spw = n_neg / max(n_pos, 1)
         spw *= float(xgb_cfg.get("scale_pos_weight_multiplier", 1.0))
-        print(f"  scale_pos_weight (auto): {spw:.2f}")
+        if not quiet:
+            print(f"  scale_pos_weight (auto): {spw:.2f}")
 
     model_params = {
         "max_depth":           xgb_cfg.get("max_depth", 5),
@@ -413,11 +418,12 @@ def train_model(
     if use_cuda_device_param:
         model_params["device"] = "cuda"
 
-    print(
-        f"  XGBoost backend: version={xgb.__version__}, "
-        f"tree_method={model_params['tree_method']}, "
-        f"device={model_params.get('device', 'cpu')}"
-    )
+    if not quiet:
+        print(
+            f"  XGBoost backend: version={xgb.__version__}, "
+            f"tree_method={model_params['tree_method']}, "
+            f"device={model_params.get('device', 'cpu')}"
+        )
 
     model = xgb.XGBClassifier(**model_params)
 
@@ -441,7 +447,8 @@ def train_model(
             verbose=False,
         )
 
-    print(f"  Best iteration: {model.best_iteration}")
+    if not quiet:
+        print(f"  Best iteration: {model.best_iteration}")
     return model
 
 
@@ -869,6 +876,8 @@ def tune_hyperparameters(
     best_result = None
     best_scaler = None
     best_val_files = val_files
+    _tuning_start = time.time()
+    _last_status = 0.0
 
     for index, candidate in enumerate(candidates, start=1):
         trial_cfg = deepcopy(cfg)
@@ -883,7 +892,6 @@ def tune_hyperparameters(
             trial_cfg.setdefault("decision", {})["lookahead_frames"] = candidate["lookahead_frames"]
 
         sampling_ratio = trial_cfg.get("sampling", {}).get("negative_sampling_ratio", 5.0)
-        print(f"  Candidate {index}/{len(candidates)}: {candidate}")
 
         if kfolds:
             # k-fold cross-validation scoring: average f_beta across folds
@@ -893,7 +901,7 @@ def tune_hyperparameters(
                 X_fold_val,   y_fold_val   = concat_files(fold_val_idx,   file_features, file_labels)
 
                 X_fold_train, y_fold_train = apply_negative_sampling(
-                    X_fold_train, y_fold_train, sampling_ratio, random_state
+                    X_fold_train, y_fold_train, sampling_ratio, random_state, quiet=True
                 )
                 fold_scaler = None
                 fold_file_features = file_features
@@ -909,22 +917,15 @@ def tune_hyperparameters(
                 )
                 fold_model = train_model(
                     X_fold_train, y_fold_train, X_fold_val, y_fold_val,
-                    trial_cfg, feature_names, random_state
+                    trial_cfg, feature_names, random_state, quiet=True
                 )
                 fold_thresh = select_peak_threshold(fold_model, fold_val_files, trial_cfg, audio_config)
                 fold_scores.append(fold_thresh["f_beta"])
-                print(
-                    f"    Fold {fold_i + 1}/{n_folds}: "
-                    f"threshold={fold_thresh['threshold']:.4f} "
-                    f"P={fold_thresh['precision']:.4f} R={fold_thresh['recall']:.4f} "
-                    f"f_beta={fold_thresh['f_beta']:.4f}"
-                )
 
             avg_f_beta = float(np.mean(fold_scores))
-            print(f"    CV mean f_beta={avg_f_beta:.4f} (folds: {[round(s, 4) for s in fold_scores]})")
 
             # Re-train on the full training set with these params for the final model
-            X_tr, y_tr = apply_negative_sampling(X_train_full, y_train_full, sampling_ratio, random_state)
+            X_tr, y_tr = apply_negative_sampling(X_train_full, y_train_full, sampling_ratio, random_state, quiet=True)
             scaler = None
             trial_X_val = X_val
             trial_file_features = file_features
@@ -938,7 +939,7 @@ def tune_hyperparameters(
                 val_idx, trial_file_features, file_labels, file_names,
                 file_times_ms, file_onsets_ms,
             )
-            model = train_model(X_tr, y_tr, trial_X_val, y_val, trial_cfg, feature_names, random_state)
+            model = train_model(X_tr, y_tr, trial_X_val, y_val, trial_cfg, feature_names, random_state, quiet=True)
             threshold_result = select_peak_threshold(model, trial_val_files, trial_cfg, audio_config)
             result = {
                 "params": candidate,
@@ -950,7 +951,7 @@ def tune_hyperparameters(
             }
         else:
             # Single val split (original behaviour)
-            X_train, y_train = apply_negative_sampling(X_train_full, y_train_full, sampling_ratio, random_state)
+            X_train, y_train = apply_negative_sampling(X_train_full, y_train_full, sampling_ratio, random_state, quiet=True)
             scaler = None
             trial_X_val = X_val
             trial_file_features = file_features
@@ -964,7 +965,7 @@ def tune_hyperparameters(
                 val_idx, trial_file_features, file_labels, file_names,
                 file_times_ms, file_onsets_ms,
             )
-            model = train_model(X_train, y_train, trial_X_val, y_val, trial_cfg, feature_names, random_state)
+            model = train_model(X_train, y_train, trial_X_val, y_val, trial_cfg, feature_names, random_state, quiet=True)
             threshold_result = select_peak_threshold(model, trial_val_files, trial_cfg, audio_config)
             result = {
                 "params": candidate,
@@ -974,13 +975,6 @@ def tune_hyperparameters(
                 "f_beta": threshold_result["f_beta"],
                 "mode": threshold_result["mode"],
             }
-            print(
-                "    Validation: "
-                f"threshold={result['threshold']:.6f} "
-                f"peak_precision={result['precision']:.4f} "
-                f"peak_recall={result['recall']:.4f} "
-                f"f_beta={result['f_beta']:.4f}"
-            )
 
         rank = recall_priority_rank(result)
         if best_result is None or rank > best_result["rank"]:
@@ -991,6 +985,13 @@ def tune_hyperparameters(
                 **result,
                 "rank": rank,
             }
+
+        now = time.time()
+        if now - _last_status >= 60 or index == 1 or index == len(candidates):
+            elapsed = now - _tuning_start
+            best_f = best_result["f_beta"] if best_result else float("nan")
+            print(f"  tuning {index}/{len(candidates)} [{elapsed:.0f}s] bestes f_beta={best_f:.4f}")
+            _last_status = now
 
     cfg.setdefault("xgboost", {}).update({
         key: value for key, value in best_result["params"].items()
