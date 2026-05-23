@@ -40,8 +40,8 @@
     "semantic_hash": ""
   },
   "/workspace/GuitarToolsCopilot/sw.js": {
-    "mtime": 1779516371.051728,
-    "ast_hash": "4f0c198b12db54b076f1ecbe4f7e8f05",
+    "mtime": 1779517962.364446,
+    "ast_hash": "9bf70441e2bf5a705be993096a18fa6f",
     "semantic_hash": ""
   },
   "/workspace/GuitarToolsCopilot/sfp.sh": {
@@ -715,8 +715,8 @@
     "semantic_hash": ""
   },
   "/workspace/GuitarToolsCopilot/tests/e2e/onset-tagger.spec.js": {
-    "mtime": 1779517780.8962007,
-    "ast_hash": "b944b21c253fbb3d2a8d32cd38e54a89",
+    "mtime": 1779518054.876007,
+    "ast_hash": "3ec3294dd464dbdd11f46641e1cce12f",
     "semantic_hash": ""
   },
   "/workspace/GuitarToolsCopilot/tests/e2e/fretboard-tone-recognition.spec.js": {
@@ -2635,7 +2635,7 @@
     "semantic_hash": ""
   },
   "/workspace/GuitarToolsCopilot/test-results/.last-run.json": {
-    "mtime": 1779517876.8081508,
+    "mtime": 1779518141.1519077,
     "ast_hash": "f196824657d8858bc7fa44eecbba38b1",
     "semantic_hash": ""
   },
@@ -2700,8 +2700,8 @@
     "semantic_hash": ""
   },
   "/workspace/GuitarToolsCopilot/version.txt": {
-    "mtime": 1779516371.0237346,
-    "ast_hash": "d50122081a31cd91097760cdd8dc984e",
+    "mtime": 1779517962.3404498,
+    "ast_hash": "dc9f7c9e5b46b9b0b294ce9b975e265d",
     "semantic_hash": ""
   },
   "/workspace/GuitarToolsCopilot/copilot.md": {

@@ -513,4 +513,31 @@ test.describe('Onset Tagger', () => {
     expect(flyoutBottom).toBeCloseTo(667, 0); // within 1 px of viewport height
   });
 
+  test('long filename in meta form does not widen page beyond viewport', async ({ page }) => {
+    await page.setViewportSize({ width: 360, height: 780 });
+    // Load a WAV and inject a very long baseName (like real sheet-music-reading fixture names)
+    await page.locator('#tagger-wav-input').setInputFiles(WAV_FIXTURE);
+    await expect(page.locator('#tagger-waveform-wrap svg')).toBeVisible({ timeout: 10_000 });
+
+    // Overwrite the baseName display with a long filename as it appears from recordings
+    const longName = 'sheet-music-reading_120bpm_android-firefox_abcdefghijklmnopqrstuvwxyz-tagged';
+    await page.evaluate((name) => {
+      const el = document.querySelector('.tagger-basename-display');
+      if (el) el.textContent = name;
+    }, longName);
+
+    // The page must not become wider than the viewport
+    const pageOverflow = await page.evaluate(
+      () => document.documentElement.scrollWidth - window.innerWidth,
+    );
+    expect(pageOverflow).toBeLessThanOrEqual(1);
+
+    // The baseName display element must not overflow its grid cell
+    const cellOverflow = await page.evaluate(() => {
+      const el = document.querySelector('.tagger-basename-display');
+      return el ? el.scrollWidth - el.clientWidth : 0;
+    });
+    expect(cellOverflow).toBeLessThanOrEqual(1);
+  });
+
 });

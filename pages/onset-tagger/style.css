@@ -486,6 +486,7 @@
       grid-template-columns: 140px 1fr;
       align-items: start;
       gap: 0.5rem;
+      min-width: 0;
     }
 
     .tagger-meta-label {
@@ -494,6 +495,11 @@
       color: var(--color-text-muted);
       padding-top: 0.3rem;
       word-break: break-word;
+    }
+
+    .tagger-meta-value {
+      min-width: 0;
+      word-break: break-all;
     }
 
     .tagger-meta-input {
