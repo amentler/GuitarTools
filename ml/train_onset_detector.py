@@ -494,29 +494,30 @@ def apply_app_peak_picking(
     lookahead_frames: int,
     refractory_ms: float,
 ) -> list[float]:
-    detected_ms = []
-    last_onset_ms = -float("inf")
+    N = len(probabilities)
     lookahead = max(0, int(lookahead_frames))
 
-    for frame_index in range(lookahead, len(probabilities) - lookahead):
-        probability = float(probabilities[frame_index])
-        if probability <= threshold:
-            continue
+    above = probabilities > threshold
 
-        is_max = True
-        for delta in range(1, lookahead + 1):
-            if probabilities[frame_index - delta] >= probability or probabilities[frame_index + delta] > probability:
-                is_max = False
-                break
-        if not is_max:
-            continue
+    # Local maximum: p[i] strictly greater than all left neighbours,
+    # greater-or-equal to all right neighbours (mirrors original loop condition).
+    is_local_max = np.ones(N, dtype=bool)
+    for delta in range(1, min(lookahead + 1, N)):
+        is_local_max[delta:]    &= probabilities[delta:]    > probabilities[:N - delta]
+        is_local_max[:N - delta] &= probabilities[:N - delta] >= probabilities[delta:]
+    if lookahead > 0:
+        is_local_max[:lookahead]    = False
+        is_local_max[N - lookahead:] = False
 
-        onset_ms = frame_index * frame_ms
-        if onset_ms - last_onset_ms < refractory_ms:
-            continue
-
-        last_onset_ms = onset_ms
-        detected_ms.append(onset_ms)
+    # Refractory filter is sequential by design; iterate only over the sparse
+    # candidate set (peaks above threshold) instead of all frames.
+    detected_ms = []
+    last_onset_ms = -np.inf
+    for idx in np.where(above & is_local_max)[0]:
+        onset_ms = float(idx) * frame_ms
+        if onset_ms - last_onset_ms >= refractory_ms:
+            detected_ms.append(onset_ms)
+            last_onset_ms = onset_ms
 
     return detected_ms
 
