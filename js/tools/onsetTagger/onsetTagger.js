@@ -34,9 +34,9 @@ import {
   readMetaForm,
 } from './onsetTaggerMetaForm.js';
 
-const FOCUS_WINDOW_SEC = 0.6;
+const FOCUS_WINDOW_SEC = 0.48;
 const MIN_VISIBLE_RANGE_SEC = 0.01;
-const ZOOM_STEP_FRACTION = 0.1;
+const ZOOM_STEP_FRACTION = 0.2;
 
 export function createOnsetTaggerFeature() {
   const _debugStore = createGlobalDebugStore();
@@ -293,7 +293,21 @@ export function createOnsetTaggerFeature() {
         _analysisFlyout.setPlayheadSec(pos);
       },
     });
-    if (_ui.playBtn) _ui.playBtn.textContent = '⏸ Pause';
+    if (_svgEl) updatePlayhead(_svgEl, offset, _rangeStart, _rangeEnd);
+    _analysisFlyout.setPlayheadSec(offset);
+    if (_ui.playBtn) _ui.playBtn.textContent = 'Reset';
+  }
+
+  function resetPlaybackToRangeStart() {
+    if (!_samples) return;
+    const offset = _rangeStart;
+    if (_transport.isPlaying()) {
+      startPlayback(offset);
+      return;
+    }
+    _transport.setOffset(offset);
+    if (_svgEl) updatePlayhead(_svgEl, offset, _rangeStart, _rangeEnd);
+    _analysisFlyout.setPlayheadSec(offset);
   }
 
   function stopPlayback(reset = false) {
@@ -495,6 +509,7 @@ export function createOnsetTaggerFeature() {
       loadWav, loadJson, loadZip,
       syncRangeSliders, syncCursorUI,
       setVisibleRange, focusOnTime, stepZoom,
+      resetPlaybackToRangeStart,
       updateOnsetUI, removeOnsetAt,
       schedulePersist,
       handleExport, handleOpenAnalyser,

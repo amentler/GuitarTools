@@ -40,8 +40,8 @@
     "semantic_hash": ""
   },
   "/workspace/GuitarToolsCodex/sw.js": {
-    "mtime": 1779534279.8092556,
-    "ast_hash": "ff8f27b2c29eb3cb09d4a5c667485bbe",
+    "mtime": 1779569760.9470584,
+    "ast_hash": "9d64b757f4c4258236737d20881e3447",
     "semantic_hash": ""
   },
   "/workspace/GuitarToolsCodex/sfp.sh": {
@@ -715,8 +715,8 @@
     "semantic_hash": ""
   },
   "/workspace/GuitarToolsCodex/tests/e2e/onset-tagger.spec.js": {
-    "mtime": 1779529337.0261583,
-    "ast_hash": "3ec3294dd464dbdd11f46641e1cce12f",
+    "mtime": 1779571136.7770643,
+    "ast_hash": "cde2176684a70727a893f7fdf507ec30",
     "semantic_hash": ""
   },
   "/workspace/GuitarToolsCodex/tests/e2e/fretboard-tone-recognition.spec.js": {
@@ -1100,8 +1100,8 @@
     "semantic_hash": ""
   },
   "/workspace/GuitarToolsCodex/tests/unit/onsetTaggerLogic.test.js": {
-    "mtime": 1779485147.2239926,
-    "ast_hash": "530d0182fa90d344648af848c5eef644",
+    "mtime": 1779570351.121441,
+    "ast_hash": "ac28693dff95a77fd8d930ff439f8fdd",
     "semantic_hash": ""
   },
   "/workspace/GuitarToolsCodex/tests/unit/exerciseHeader.test.js": {
@@ -1595,8 +1595,8 @@
     "semantic_hash": ""
   },
   "/workspace/GuitarToolsCodex/js/tools/onsetTagger/onsetTaggerEventWiring.js": {
-    "mtime": 1779485146.8919866,
-    "ast_hash": "0ad658c1e97aa0e1551f5c0dd6d6234e",
+    "mtime": 1779570325.053529,
+    "ast_hash": "6b628476d0febf64d3ebfa2b20a7d294",
     "semantic_hash": ""
   },
   "/workspace/GuitarToolsCodex/js/tools/onsetTagger/onsetTaggerOnsetList.js": {
@@ -1615,8 +1615,8 @@
     "semantic_hash": ""
   },
   "/workspace/GuitarToolsCodex/js/tools/onsetTagger/onsetTagger.js": {
-    "mtime": 1779485146.8919866,
-    "ast_hash": "f2c46170046deb6c3016790d6bbb6928",
+    "mtime": 1779570984.432982,
+    "ast_hash": "fc8f13aacce965a3fb2df08197e9e83c",
     "semantic_hash": ""
   },
   "/workspace/GuitarToolsCodex/js/tools/onsetTagger/onsetTaggerAnalysisFlyout.js": {
@@ -2640,7 +2640,7 @@
     "semantic_hash": ""
   },
   "/workspace/GuitarToolsCodex/test-results/.last-run.json": {
-    "mtime": 1779315256.2625027,
+    "mtime": 1779571233.893543,
     "ast_hash": "f196824657d8858bc7fa44eecbba38b1",
     "semantic_hash": ""
   },
@@ -2720,8 +2720,8 @@
     "semantic_hash": ""
   },
   "/workspace/GuitarToolsCodex/version.txt": {
-    "mtime": 1779534279.7812393,
-    "ast_hash": "140f958e58659aacb477daf152eaa4c3",
+    "mtime": 1779569760.919048,
+    "ast_hash": "2569f2b40e3f24657de20990cfaf07e2",
     "semantic_hash": ""
   },
   "/workspace/GuitarToolsCodex/copilot.md": {
@@ -2930,8 +2930,8 @@
     "semantic_hash": ""
   },
   "/workspace/GuitarToolsCodex/js/tools/onsetTagger/CLAUDE.md": {
-    "mtime": 1779569313.6204748,
-    "ast_hash": "1d7a224c65848a3216f80ed77b42af0e",
+    "mtime": 1779570416.811165,
+    "ast_hash": "d6cc5334b228268b3e26750c15e1da83",
     "semantic_hash": ""
   },
   "/workspace/GuitarToolsCodex/js/tools/onsetTagger/AGENTS.md": {

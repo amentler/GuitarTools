@@ -125,14 +125,21 @@ describe('computeRangeSliderState', () => {
 });
 
 describe('computeSteppedZoomRange', () => {
-  it('zooms in by ten percent of the visible distance on each side', () => {
+  it('zooms in by the provided fraction of the visible distance on each side', () => {
     expect(computeSteppedZoomRange(2, 8, 10, 'in', 0.1, 0.01)).toEqual({
       start: 2.6,
       end: 7.4,
     });
   });
 
-  it('unzooms by ten percent of the visible distance on each side', () => {
+  it('supports the faster twenty percent zoom step used by the UI', () => {
+    expect(computeSteppedZoomRange(2, 8, 10, 'in', 0.2, 0.01)).toEqual({
+      start: 3.2,
+      end: 6.8,
+    });
+  });
+
+  it('unzooms by the provided fraction of the visible distance on each side', () => {
     expect(computeSteppedZoomRange(2, 8, 10, 'out', 0.1, 0.01)).toEqual({
       start: 1.4,
       end: 8.6,
@@ -239,6 +246,10 @@ describe('computeFocusedRange', () => {
 
   it('centers a narrower range around the requested time', () => {
     expect(computeFocusedRange(2, 5, 0.6)).toEqual({ start: 1.7, end: 2.3 });
+  });
+
+  it('supports the tighter onset focus window used by the UI', () => {
+    expect(computeFocusedRange(2, 5, 0.48)).toEqual({ start: 1.76, end: 2.24 });
   });
 
   it('keeps the range inside the recording duration', () => {

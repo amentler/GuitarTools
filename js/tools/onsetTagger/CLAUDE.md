@@ -37,12 +37,12 @@ Playback läuft über `createAudioTransport()` aus `js/shared/audio/audioTranspo
 
 1. `Laden` öffnet den Flyout für WAV-, JSON- oder ZIP-Import; WAV-Datei laden → Waveform erscheint, Schritt 1 aktiv
 2. JSON-Sidecar laden → Metadaten-Formular befüllt, Schritt 2 aktiv
-3. Play/Pause/Stop und Speed-Auswahl stehen oberhalb der Waveform; Wiedergabe läuft in Schleife über Start–Ende
+3. Play/Reset/Stop und Speed-Auswahl stehen oberhalb der Waveform; Wiedergabe läuft in Schleife über Start–Ende, Reset springt an den Start des sichtbaren Ausschnitts
 4. Start/Ende-Slider → Bereich einschränken (Waveform zoomt in den Bereich)
-5. Zoom-Buttons ziehen Start und Ende je Klick um 10% zusammen oder auseinander
+5. Zoom-Buttons ziehen Start und Ende je Klick um 20% zusammen oder auseinander
 6. Onset-Cursor-Slider → grüner Strich positionieren (Range: Start bis Ende in ms)
 7. „+ Hinzufügen" oder Klick in die Waveform → Onset in Liste
-8. Onset in der Liste oder über den Punkt in der Waveform anklicken → Marker wird grün, Cursor springt dorthin
+8. Onset in der Liste oder über den Punkt in der Waveform anklicken → Marker wird grün, Cursor springt dorthin, die Waveform fokussiert ca. 0,48 s um den Onset und laufende Wiedergabe startet am neuen Ausschnittsanfang neu
 9. Ausgewählten Onset mit dem Cursor-Slider verschieben; „Entfernen"-Button entfernt ihn
 10. Strategie-Button → erkannte Onsets additiv importieren (min. 50 ms Abstand)
 11. Analyse-Flyout → Onset-Modell aus der asynchron geladenen XGBoost-Registry auswählen; gespeicherte Registry-Keys bleiben nach dem Laden aktiv

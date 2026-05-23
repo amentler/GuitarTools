@@ -38,6 +38,16 @@ async function seedSheetMusicTake(page, id) {
   }, [id, wavBytes]);
 }
 
+async function getVisibleRange(page) {
+  return page.locator('#tagger-range-end').evaluate((endEl) => {
+    const startEl = document.getElementById('tagger-range-start');
+    return {
+      start: parseFloat(startEl.value),
+      end: parseFloat(endEl.value),
+    };
+  });
+}
+
 test.describe('Onset Tagger', () => {
 
   test.beforeEach(async ({ page }) => {
@@ -148,10 +158,12 @@ test.describe('Onset Tagger', () => {
     const beforeX = await firstPlayhead.getAttribute('x1');
     await page.locator('#tagger-play').click();
 
+    await expect(page.locator('#tagger-play')).toHaveText('Reset');
     await expect(firstPlayhead).toHaveAttribute('opacity', '1');
     await expect.poll(async () => firstPlayhead.getAttribute('x1')).not.toBe(beforeX);
 
     await page.locator('#tagger-stop').click();
+    await expect(page.locator('#tagger-play')).toHaveText('▶ Play');
     await expect(firstPlayhead).toHaveAttribute('opacity', '0');
   });
 
@@ -232,17 +244,13 @@ test.describe('Onset Tagger', () => {
 
     const fullRange = await page.locator('#tagger-range-end').evaluate((el) => parseFloat(el.value));
     await page.locator('#tagger-zoom-in').click();
-    const zoomed = await page.locator('#tagger-range-end').evaluate((endEl) => {
-      const startEl = document.getElementById('tagger-range-start');
-      return parseFloat(endEl.value) - parseFloat(startEl.value);
-    });
-    expect(zoomed).toBeLessThan(fullRange);
+    const zoomedRange = await getVisibleRange(page);
+    const zoomed = zoomedRange.end - zoomedRange.start;
+    expect(zoomed).toBeCloseTo(fullRange * 0.6, 2);
 
     await page.locator('#tagger-zoom-out').click();
-    const unzoomed = await page.locator('#tagger-range-end').evaluate((endEl) => {
-      const startEl = document.getElementById('tagger-range-start');
-      return parseFloat(endEl.value) - parseFloat(startEl.value);
-    });
+    const unzoomedRange = await getVisibleRange(page);
+    const unzoomed = unzoomedRange.end - unzoomedRange.start;
     expect(unzoomed).toBeGreaterThan(zoomed);
   });
 
@@ -257,14 +265,8 @@ test.describe('Onset Tagger', () => {
     await page.locator('#tagger-add-onset').click();
     await page.locator('.tagger-onset-select').click();
 
-    const range = await page.locator('#tagger-range-end').evaluate((endEl) => {
-      const startEl = document.getElementById('tagger-range-start');
-      return {
-        start: parseFloat(startEl.value),
-        end: parseFloat(endEl.value),
-      };
-    });
-    expect(range.end - range.start).toBeLessThanOrEqual(0.61);
+    const range = await getVisibleRange(page);
+    expect(range.end - range.start).toBeLessThanOrEqual(0.49);
     expect((range.start + range.end) / 2).toBeCloseTo(1, 1);
   });
 
@@ -291,15 +293,76 @@ test.describe('Onset Tagger', () => {
     await page.mouse.click(clickPoint.x, clickPoint.y);
 
     await expect(page.locator('.tagger-onset-select')).toHaveText('1');
-    const range = await page.locator('#tagger-range-end').evaluate((endEl) => {
-      const startEl = document.getElementById('tagger-range-start');
+    const range = await getVisibleRange(page);
+    expect(range.end - range.start).toBeLessThanOrEqual(0.49);
+    expect((range.start + range.end) / 2).toBeCloseTo(1, 1);
+  });
+
+  test('play button resets to the visible range start while playback continues', async ({ page }) => {
+    await page.locator('#tagger-wav-input').setInputFiles(WAV_FIXTURE);
+    await expect(page.locator('#tagger-waveform-wrap svg')).toBeVisible({ timeout: 10_000 });
+
+    await page.locator('#tagger-cursor').evaluate((el) => {
+      el.value = '1000';
+      el.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+    await page.locator('#tagger-add-onset').click();
+    await page.locator('.tagger-onset-select').click();
+    const range = await getVisibleRange(page);
+    expect(range.start).toBeGreaterThan(0);
+
+    await page.locator('#tagger-play').click();
+    await expect(page.locator('#tagger-play')).toHaveText('Reset');
+
+    const playhead = page.locator('[data-layer="playhead"]').first();
+    await expect.poll(async () => Number(await playhead.getAttribute('x1'))).toBeGreaterThan(500);
+    const beforeResetX = Number(await playhead.getAttribute('x1'));
+
+    await page.locator('#tagger-play').click();
+    await expect(page.locator('#tagger-play')).toHaveText('Reset');
+    await expect.poll(async () => Number(await playhead.getAttribute('x1')))
+      .toBeLessThan(beforeResetX - 100);
+  });
+
+  test('selecting another onset while playing restarts audio at the new visible range start', async ({ page }) => {
+    await page.locator('#tagger-wav-input').setInputFiles(WAV_FIXTURE);
+    await expect(page.locator('#tagger-waveform-wrap svg')).toBeVisible({ timeout: 10_000 });
+
+    await page.locator('#tagger-cursor').evaluate((el) => {
+      el.value = '1000';
+      el.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+    await page.locator('#tagger-add-onset').click();
+    const secondClickPoint = await page.locator('#tagger-waveform-wrap svg').evaluate((svg) => {
+      const rect = svg.getBoundingClientRect();
+      const viewBox = svg.viewBox.baseVal;
+      const targetSec = 1.8;
+      const rangeEnd = parseFloat(document.getElementById('tagger-range-end').value);
+      const plotLeft = 4;
+      const plotWidth = viewBox.width - 8;
+      const x = plotLeft + (targetSec / rangeEnd) * plotWidth;
       return {
-        start: parseFloat(startEl.value),
-        end: parseFloat(endEl.value),
+        x: rect.left + (x / viewBox.width) * rect.width,
+        y: rect.top + (70 / viewBox.height) * rect.height,
       };
     });
-    expect(range.end - range.start).toBeLessThanOrEqual(0.61);
-    expect((range.start + range.end) / 2).toBeCloseTo(1, 1);
+    await page.mouse.click(secondClickPoint.x, secondClickPoint.y);
+    await expect(page.locator('.tagger-onset-item')).toHaveCount(2);
+
+    await page.locator('.tagger-onset-select').first().click();
+    await page.locator('#tagger-play').click();
+    await expect(page.locator('#tagger-play')).toHaveText('Reset');
+
+    const playhead = page.locator('[data-layer="playhead"]').first();
+    await expect.poll(async () => Number(await playhead.getAttribute('x1'))).toBeGreaterThan(500);
+    const beforeSelectX = Number(await playhead.getAttribute('x1'));
+
+    await page.locator('.tagger-onset-select').nth(1).click();
+    await expect(page.locator('#tagger-play')).toHaveText('Reset');
+    await expect.poll(async () => Number(await playhead.getAttribute('x1')))
+      .toBeLessThan(beforeSelectX - 100);
+    const range = await getVisibleRange(page);
+    expect((range.start + range.end) / 2).toBeGreaterThan(1.5);
   });
 
   test('onset action controls fit on a narrow mobile viewport', async ({ page }) => {

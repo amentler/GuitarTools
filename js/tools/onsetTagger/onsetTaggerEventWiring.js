@@ -31,7 +31,7 @@ const STRATEGY_IMPORT_MIN_DISTANCE_MS = 50;
  *     loadWav(file), loadJson(file), loadZip(file),
  *     syncRangeSliders(edge?), syncCursorUI(),
  *     setVisibleRange(start, end), focusOnTime(sec),
- *     stepZoom(direction),
+ *     stepZoom(direction), resetPlaybackToRangeStart(),
  *     updateOnsetUI(), removeOnsetAt(index, selectNeighbor),
  *     redrawWaveform(), schedulePersist(),
  *     handleExport(), handleOpenAnalyser(),
@@ -51,7 +51,7 @@ export function wireOnsetTaggerEvents(ui, ctx) {
     isPlaying, getSvgEl,
     loadWav, loadJson, loadZip,
     syncRangeSliders, syncCursorUI,
-    focusOnTime, stepZoom,
+    focusOnTime, stepZoom, resetPlaybackToRangeStart,
     updateOnsetUI, removeOnsetAt,
     schedulePersist,
     handleExport, handleOpenAnalyser,
@@ -146,6 +146,7 @@ export function wireOnsetTaggerEvents(ui, ctx) {
       if (Number.isFinite(ms)) {
         setSelectedOnsetIndex(idx);
         focusOnTime(ms / 1000);
+        if (isPlaying()) resetPlaybackToRangeStart();
         updateOnsetUI();
       }
       return;
@@ -177,6 +178,7 @@ export function wireOnsetTaggerEvents(ui, ctx) {
     const ms = getOnsetsMs()[idx];
     if (!Number.isFinite(ms)) return;
     focusOnTime(ms / 1000);
+    if (isPlaying()) resetPlaybackToRangeStart();
     updateOnsetUI();
   });
 
@@ -206,7 +208,7 @@ export function wireOnsetTaggerEvents(ui, ctx) {
   // ── Playback buttons ──────────────────────────────────────────────────────
   ui.playBtn?.addEventListener('click', () => {
     if (isPlaying()) {
-      stopPlayback(false);
+      resetPlaybackToRangeStart();
     } else {
       if (!getSamples()) return;
       const offset = clamp(ctx.getPlayOffset(), getRangeStart(), getRangeEnd());
