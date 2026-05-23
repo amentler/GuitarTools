@@ -2,19 +2,6 @@
   "version": 1,
   "strategies": [
     {
-      "key": "xgboost-20260520-130217",
-      "label": "XGB 2026-05-20 13:02",
-      "description": "XGBoost Android-Firefox, trainiert 2026-05-20 13:02. Peak F1 0.9193, Precision 0.9097, Recall 0.9291. Threshold 0.929. 36 Trainingsdateien. depth=6 lr=0.03 est=300.",
-      "modelFile": "strategies/xgb_20260520_130217_603eea.onnx",
-      "schemaFile": "strategies/xgb_20260520_130217_603eea.schema.json",
-      "trainedOn": "2026-05-20T13:02:17.332301+00:00",
-      "trainingFileCount": 36,
-      "peakF1": 0.9193,
-      "peakPrecision": 0.9097,
-      "peakRecall": 0.9291,
-      "threshold": 0.929
-    },
-    {
       "key": "xgboost-20260521-140821",
       "label": "XGB 2026-05-21 14:08",
       "description": "XGBoost Android-Firefox, trainiert 2026-05-21 14:08. Peak F1 0.8889, Precision 0.9412, Recall 0.8421. Threshold 0.95. 41 Trainingsdateien. depth=6 lr=0.03 est=300.",
@@ -91,6 +78,19 @@
       "peakPrecision": 0.8125,
       "peakRecall": 0.9609,
       "threshold": 0.888
+    },
+    {
+      "key": "xgboost-20260523-075542",
+      "label": "XGB 2026-05-23 07:55",
+      "description": "XGBoost Android-Firefox, trainiert 2026-05-23 07:55. Peak F1 0.8536, Precision 0.815, Recall 0.8961. Threshold 0.934. 59 Trainingsdateien. depth=6 lr=0.03 est=300.",
+      "modelFile": "strategies/xgb_20260523_075542_04170e.onnx",
+      "schemaFile": "strategies/xgb_20260523_075542_04170e.schema.json",
+      "trainedOn": "2026-05-23T07:55:42.969848+00:00",
+      "trainingFileCount": 59,
+      "peakF1": 0.8536,
+      "peakPrecision": 0.815,
+      "peakRecall": 0.8961,
+      "threshold": 0.934
     }
   ]
 }

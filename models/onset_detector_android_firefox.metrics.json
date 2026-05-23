@@ -1,55 +1,47 @@
 {
-  "threshold": 0.888,
-  "precision": 0.8154,
-  "recall": 0.477,
-  "f1": 0.6019,
-  "roc_auc": 0.919,
-  "pr_auc": 0.7162,
+  "threshold": 0.934,
+  "precision": 0.7726,
+  "recall": 0.508,
+  "f1": 0.613,
+  "roc_auc": 0.9431,
+  "pr_auc": 0.653,
   "confusion_matrix": [
     [
-      19692,
-      279
+      31145,
+      186
     ],
     [
-      1351,
-      1232
+      612,
+      632
     ]
   ],
-  "validation_positives": 2583,
-  "validation_negatives": 19971,
+  "validation_positives": 1244,
+  "validation_negatives": 31331,
   "probability_summary": {
-    "min": 0.001377,
-    "p50": 0.161168,
-    "p75": 0.416788,
-    "p90": 0.775896,
-    "p95": 0.94723,
-    "p99": 0.995018,
-    "max": 0.998937
+    "min": 0.012302,
+    "p50": 0.073597,
+    "p75": 0.172109,
+    "p90": 0.467101,
+    "p95": 0.769038,
+    "p99": 0.977261,
+    "max": 0.987226
   },
   "peak_picking": {
-    "threshold": 0.888,
+    "threshold": 0.934,
     "lookahead_frames": 6,
-    "refractory_ms": 30.0,
-    "tolerance_ms": 30.0,
+    "refractory_ms": 80.0,
+    "tolerance_ms": 25.0,
     "frame_ms": 5.3333,
     "confusion_matrix": {
-      "true_positives": 221,
-      "false_positives": 51,
-      "false_negatives": 9,
+      "true_positives": 207,
+      "false_positives": 47,
+      "false_negatives": 24,
       "true_negatives": null
     },
-    "precision": 0.8125,
-    "recall": 0.9609,
-    "f1": 0.8805,
+    "precision": 0.815,
+    "recall": 0.8961,
+    "f1": 0.8536,
     "per_file": [
-      {
-        "file": "training_data_Random_4-4_170bpm_validation_ie97l.json",
-        "expected": 22,
-        "detected": 30,
-        "tp": 21,
-        "fp": 9,
-        "fn": 1
-      },
       {
         "file": "training_data_validation_random_120bpm_6rk0u.json",
         "expected": 10,
@@ -59,47 +51,31 @@
         "fn": 0
       },
       {
-        "file": "training_data_Random_4-4_140bpm_jl6ut.json",
-        "expected": 19,
-        "detected": 27,
-        "tp": 19,
-        "fp": 8,
-        "fn": 0
+        "file": "training_data_validation_unknown_180bpm_s166w.json",
+        "expected": 22,
+        "detected": 24,
+        "tp": 17,
+        "fp": 7,
+        "fn": 5
       },
       {
-        "file": "training_data_Travis_cmajamindmaj_a917zn.json",
-        "expected": 48,
-        "detected": 56,
-        "tp": 45,
-        "fp": 11,
-        "fn": 3
-      },
-      {
-        "file": "training_data_Random_4-4_97bpm_bhcmd.json",
-        "expected": 12,
-        "detected": 18,
-        "tp": 12,
+        "file": "training_data_sheet-music-reading_120bpm_5b5gs.json",
+        "expected": 25,
+        "detected": 31,
+        "tp": 25,
         "fp": 6,
         "fn": 0
       },
       {
-        "file": "training_data_read_my_mind_d8pnf.json",
-        "expected": 15,
-        "detected": 20,
-        "tp": 14,
-        "fp": 6,
-        "fn": 1
-      },
-      {
-        "file": "training_data_Random_fast_cmaj_t8ems.json",
-        "expected": 18,
-        "detected": 23,
-        "tp": 18,
-        "fp": 5,
+        "file": "training_data_sheet-music-reading_78bpm_pdtr1.json",
+        "expected": 16,
+        "detected": 17,
+        "tp": 16,
+        "fp": 1,
         "fn": 0
       },
       {
-        "file": "training_data_4-4_91bpm_GEB_u25pb.json",
+        "file": "training_data_sheet-music-reading_161bpm_z1l0o.json",
         "expected": 16,
         "detected": 16,
         "tp": 16,
@@ -107,49 +83,81 @@
         "fn": 0
       },
       {
-        "file": "training_data_notenlesen_4-4_240bpm_EBA_oytwr.json",
-        "expected": 16,
-        "detected": 14,
-        "tp": 14,
-        "fp": 0,
-        "fn": 2
-      },
-      {
-        "file": "training_data_Random_4-4_170bpm_jl6ut.json",
-        "expected": 22,
-        "detected": 27,
-        "tp": 22,
-        "fp": 5,
+        "file": "training_data_unknown_97bpm_ij9rh.json",
+        "expected": 12,
+        "detected": 15,
+        "tp": 12,
+        "fp": 3,
         "fn": 0
       },
       {
-        "file": "training_data_notenlesen_4-4_120bpm_travis_oytwr.json",
-        "expected": 16,
-        "detected": 14,
-        "tp": 14,
-        "fp": 0,
-        "fn": 2
-      },
-      {
-        "file": "training_data_notenlesen_4-4_161bpm_EGBD_y18iz.json",
+        "file": "training_data_sheet-music-reading_40bpm_by7pc.json",
         "expected": 16,
         "detected": 17,
+        "tp": 0,
+        "fp": 17,
+        "fn": 16
+      },
+      {
+        "file": "training_data_sheet-music-reading_103bpm_utesr.json",
+        "expected": 16,
+        "detected": 17,
+        "tp": 15,
+        "fp": 2,
+        "fn": 1
+      },
+      {
+        "file": "training_data_unknown_150bpm_5k98s.json",
+        "expected": 18,
+        "detected": 19,
+        "tp": 17,
+        "fp": 2,
+        "fn": 1
+      },
+      {
+        "file": "training_data_sheet-music-reading_132bpm_r2fgb.json",
+        "expected": 16,
+        "detected": 17,
+        "tp": 15,
+        "fp": 2,
+        "fn": 1
+      },
+      {
+        "file": "training_data_sheet-music-reading_91bpm_mpx3a.json",
+        "expected": 16,
+        "detected": 20,
         "tp": 16,
+        "fp": 4,
+        "fn": 0
+      },
+      {
+        "file": "training_data_unknown_59bpm_lrssz.json",
+        "expected": 18,
+        "detected": 20,
+        "tp": 18,
+        "fp": 2,
+        "fn": 0
+      },
+      {
+        "file": "training_data_unknown_134bpm_3cu9j.json",
+        "expected": 30,
+        "detected": 31,
+        "tp": 30,
         "fp": 1,
         "fn": 0
       }
     ]
   },
   "threshold_selection": {
-    "mode": "target_recall_peak_picking",
+    "mode": "recall_priority_peak_picking",
     "configured_threshold": 0.5,
-    "selected_threshold": 0.888,
-    "validation_peak_precision": 0.8125,
-    "validation_peak_recall": 0.9609,
-    "validation_peak_f_beta": 0.927,
-    "validation_peak_tp": 221,
-    "validation_peak_fp": 51,
-    "validation_peak_fn": 9,
+    "selected_threshold": 0.934,
+    "validation_peak_precision": 0.815,
+    "validation_peak_recall": 0.8961,
+    "validation_peak_f_beta": 0.8786,
+    "validation_peak_tp": 207,
+    "validation_peak_fp": 47,
+    "validation_peak_fn": 24,
     "target_recall": 0.95,
     "min_precision": 0.8,
     "hyperparameter_tuning": {
@@ -168,11 +176,11 @@
         "negative_sampling_ratio": 4.0,
         "lookahead_frames": 6
       },
-      "threshold": 0.888,
-      "precision": 0.8125,
-      "recall": 0.9608695652173913,
-      "f_beta": 0.8790309443095545,
-      "mode": "target_recall_peak_picking"
+      "threshold": 0.934,
+      "precision": 0.8149606299212598,
+      "recall": 0.8961038961038961,
+      "f_beta": 0.8243808000015747,
+      "mode": "recall_priority_peak_picking"
     }
   }
 }
