@@ -69,7 +69,6 @@ body {
   border-top: 1px solid var(--color-border, #4a3a2a);
   box-shadow: 0 -3px 10px rgba(0, 0, 0, 0.4);
   box-sizing: border-box;
-  overflow-x: hidden;
 }
 
 .analysis-flyout--collapsed {
@@ -107,7 +106,6 @@ body {
 
 .analysis-flyout-scroll {
   overflow-y: auto;
-  overflow-x: hidden;
   overscroll-behavior: contain;
   max-height: min(38.5vh, 26.6rem);
 }

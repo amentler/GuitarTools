@@ -40,8 +40,8 @@
     "semantic_hash": ""
   },
   "/workspace/GuitarToolsCopilot/sw.js": {
-    "mtime": 1779483905.7231474,
-    "ast_hash": "d2b81770fdaab8633cbb18bd0847be65",
+    "mtime": 1779516371.051728,
+    "ast_hash": "4f0c198b12db54b076f1ecbe4f7e8f05",
     "semantic_hash": ""
   },
   "/workspace/GuitarToolsCopilot/sfp.sh": {
@@ -715,8 +715,8 @@
     "semantic_hash": ""
   },
   "/workspace/GuitarToolsCopilot/tests/e2e/onset-tagger.spec.js": {
-    "mtime": 1779488044.6607592,
-    "ast_hash": "c19a171c221e36076cc7ae3e2bf1d614",
+    "mtime": 1779517780.8962007,
+    "ast_hash": "b944b21c253fbb3d2a8d32cd38e54a89",
     "semantic_hash": ""
   },
   "/workspace/GuitarToolsCopilot/tests/e2e/fretboard-tone-recognition.spec.js": {
@@ -1575,8 +1575,8 @@
     "semantic_hash": ""
   },
   "/workspace/GuitarToolsCopilot/js/tools/audioAnalyse/audioAnalyseSVG.js": {
-    "mtime": 1779488016.2167673,
-    "ast_hash": "007080041b8f69e03a4739c68cc78839",
+    "mtime": 1779516224.064441,
+    "ast_hash": "1d74634634dae7c1fe23cc6d59f58479",
     "semantic_hash": ""
   },
   "/workspace/GuitarToolsCopilot/js/tools/akkordUebersicht/akkordUebersicht.js": {
@@ -1885,8 +1885,8 @@
     "semantic_hash": ""
   },
   "/workspace/GuitarToolsCopilot/js/data/android-firefox-training-review-catalog.json": {
-    "mtime": 1779479066.5383444,
-    "ast_hash": "3c286b2c8d363408e155418d79fc004d",
+    "mtime": 1779488186.0604424,
+    "ast_hash": "279bd163b04ea87e196daf166318e77d",
     "semantic_hash": ""
   },
   "/workspace/GuitarToolsCopilot/js/data/akkordData.js": {
@@ -2170,8 +2170,8 @@
     "semantic_hash": ""
   },
   "/workspace/GuitarToolsCopilot/ml/train_onset_detector.py": {
-    "mtime": 1779395546.2728014,
-    "ast_hash": "6d67c5cc9fef7893e336884f7bb1c417",
+    "mtime": 1779488186.0644433,
+    "ast_hash": "5a5d456ee74c59e62ab28d34a1b02bb6",
     "semantic_hash": ""
   },
   "/workspace/GuitarToolsCopilot/ml/data/android_firefox/training_data_4-4_91bpm_GDAB_q6ntm.json": {
@@ -2635,7 +2635,7 @@
     "semantic_hash": ""
   },
   "/workspace/GuitarToolsCopilot/test-results/.last-run.json": {
-    "mtime": 1779488137.6161573,
+    "mtime": 1779517876.8081508,
     "ast_hash": "f196824657d8858bc7fa44eecbba38b1",
     "semantic_hash": ""
   },
@@ -2700,8 +2700,8 @@
     "semantic_hash": ""
   },
   "/workspace/GuitarToolsCopilot/version.txt": {
-    "mtime": 1779483905.6471262,
-    "ast_hash": "b66419c899c57329d46a98a7b2fc79ac",
+    "mtime": 1779516371.0237346,
+    "ast_hash": "d50122081a31cd91097760cdd8dc984e",
     "semantic_hash": ""
   },
   "/workspace/GuitarToolsCopilot/copilot.md": {
@@ -2730,8 +2730,8 @@
     "semantic_hash": ""
   },
   "/workspace/GuitarToolsCopilot/AGENTS.md": {
-    "mtime": 1779474716.2277815,
-    "ast_hash": "991155ce496329334fa6d387c4487c57",
+    "mtime": 1779488186.040438,
+    "ast_hash": "7665753b042ecf51149e6b11bdebd62f",
     "semantic_hash": ""
   },
   "/workspace/GuitarToolsCopilot/index.html": {
@@ -2975,8 +2975,8 @@
     "semantic_hash": ""
   },
   "/workspace/GuitarToolsCopilot/ml/training_config.yaml": {
-    "mtime": 1779474716.3118033,
-    "ast_hash": "29c719105a5a3b85c463012d41e40a6c",
+    "mtime": 1779488186.0644433,
+    "ast_hash": "a0a796397bc6f3c84f7a38e4f6227bca",
     "semantic_hash": ""
   },
   "/workspace/GuitarToolsCopilot/ml/training_config.android_firefox.paths.template.yaml": {

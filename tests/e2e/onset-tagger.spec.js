@@ -447,10 +447,14 @@ test.describe('Onset Tagger', () => {
   });
 
   // ── Flyout layout regression tests ───────────────────────────────────────
-  // These tests document two regressions introduced in commits 7502ba1 and b38ff88:
+  // These tests document regressions introduced in commits 7502ba1 and b38ff88:
   //   1. overflow-x: hidden on body breaks position:fixed in real browsers
   //      (flyout scrolls with page instead of staying at viewport bottom)
-  //   2. flex-wrap: wrap on controls row causes speed buttons to wrap/drift apart
+  //   2. overflow-x: hidden on .analysis-flyout itself breaks position:fixed
+  //      in real Android Chrome (compositing layer causes fixed elem to scroll)
+  //   3. overflow-x: hidden on .analysis-flyout-scroll is not needed
+  //      (chart SVGs have width="100%" and are constrained by their containers)
+  //   4. flex-wrap: wrap on controls row causes speed buttons to wrap/drift apart
 
   test('body must not have overflow-x: hidden (would break position:fixed flyout in real browsers)', async ({ page }) => {
     // overflow-x: hidden on body propagates to the viewport in browsers and
@@ -469,6 +473,28 @@ test.describe('Onset Tagger', () => {
       el => getComputedStyle(el).flexWrap,
     );
     expect(flexWrap).toBe('nowrap');
+  });
+
+  test('.analysis-flyout must not have overflow-x: hidden (breaks position:fixed via compositing on Android Chrome)', async ({ page }) => {
+    // overflow-x: hidden on a position:fixed element triggers compositing
+    // in Android Chrome which causes the element to lose its fixed positioning
+    // and scroll with the page instead. The flyout's left:0/right:0 already
+    // constrains the width to the viewport – no overflow clipping is needed.
+    const flyoutOverflowX = await page.locator('#tagger-analysis-flyout').evaluate(
+      el => getComputedStyle(el).overflowX,
+    );
+    expect(flyoutOverflowX).not.toBe('hidden');
+  });
+
+  test('.analysis-flyout-scroll must not have overflow-x: hidden (added unnecessarily – chart SVGs are already width:100%)', async ({ page }) => {
+    // overflow-x: hidden was added to the scroll container as a defensive measure
+    // but it was not present before the regression commits and is not needed
+    // because all chart SVGs carry width="100%" and are constrained by their
+    // parent containers.
+    const scrollOverflowX = await page.locator('#tagger-analysis-content').evaluate(
+      el => getComputedStyle(el).overflowX,
+    );
+    expect(scrollOverflowX).not.toBe('hidden');
   });
 
   test('flyout is anchored at viewport bottom after WAV load (position:fixed holds)', async ({ page }) => {
