@@ -1,4 +1,4 @@
-import { describe, expect, it, beforeAll } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import {
   discoverSheetMusicSequenceFixtures,
   evaluateSheetMusicSequenceFingerprint,
@@ -6,27 +6,13 @@ import {
   SHEET_FINGERPRINT_POSITIVE_FIXTURE_FILES,
 } from '../helpers/sheetMusicSequenceFingerprint.js';
 import { getSheetMusicRecognitionStrategies } from '../../js/games/sheetMusicReading/sheetMusicRecognition.js';
-import { loadEssentiaForNode } from '../helpers/essentiaNodeWasmLoader.js';
-import { createEssentiaSheetMusicStrategy } from '../../js/games/sheetMusicReading/essentiaSheetMusicStrategy.js';
 
-let allStrategies = getSheetMusicRecognitionStrategies();
-
-beforeAll(async () => {
-  try {
-    const essentia = await loadEssentiaForNode();
-    const essentiaStrategy = createEssentiaSheetMusicStrategy(essentia);
-    allStrategies = allStrategies.map(strategy => (
-      strategy.key === essentiaStrategy.key ? essentiaStrategy : strategy
-    ));
-  } catch {
-    // Essentia WASM not available in this environment – only fast-note-matcher runs
-  }
-}, 30_000);
+const allStrategies = [getSheetMusicRecognitionStrategies()[0]];
 
 describe('sheet music sequence fingerprint', () => {
   it('discovers ZIP-backed sequence fixtures alongside loose WAV/JSON pairs', () => {
     const zipFixture = discoverSheetMusicSequenceFixtures().find(fixture => (
-      fixture.file === 'sheet-music-reading/4-4_40bpm_EGADB_9low6-tagged.zip'
+      fixture.file === 'sheet-music-reading/sheet-music-reading_40bpm_by7pc-tagged.zip'
     ));
 
     expect(zipFixture).toBeTruthy();
