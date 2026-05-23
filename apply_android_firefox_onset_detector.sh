@@ -277,18 +277,13 @@ new_entry = {
 
 registry["strategies"].append(new_entry)
 
-MAX_STRATEGIES = 7
-while len(registry["strategies"]) > MAX_STRATEGIES:
-    removed = registry["strategies"].pop(0)
-    print(f"  Aelteste Strategie aus Registry entfernt: {removed['key']} (Dateien bleiben erhalten)")
-
 with open(registry_path, "w", encoding="utf-8") as f:
     json.dump(registry, f, indent=2, ensure_ascii=False)
     f.write("\n")
 
 print(f"  Strategie registriert: {key!r}")
 print(f"  Label:                 {label}")
-print(f"  Registry:              {len(registry['strategies'])}/{MAX_STRATEGIES} Strategien")
+print(f"  Registry:              {len(registry['strategies'])} Strategien")
 print(f"  Modell:                {strategy_model}")
 PY
 

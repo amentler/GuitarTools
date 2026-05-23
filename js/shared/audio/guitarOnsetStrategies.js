@@ -135,7 +135,7 @@ let _registryPromise = null;
 /**
  * Loads strategies from models/strategies/registry.json.
  *
- * - Returns registry strategies on success (up to 7 entries, newest first).
+ * - Returns all registry strategies on success.
  * - Falls back silently to [] on 404 (no registry yet).
  * - Falls back silently to [] on any network/parse error (logs a warning).
  * - Caches the promise; subsequent calls return the same promise.

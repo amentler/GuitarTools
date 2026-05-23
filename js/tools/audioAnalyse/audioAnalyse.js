@@ -595,8 +595,9 @@ export function createAudioAnalyseFeature() {
       if (!ui.onsetStrategySelect) return;
       const currentKey = ui.onsetStrategySelect.value;
       const strategies = getGuitarOnsetStrategies();
+      const selectedKey = strategies.some(s => s.key === defaultOnset) ? defaultOnset : currentKey;
       ui.onsetStrategySelect.innerHTML = strategies
-        .map(s => `<option value="${s.key}"${s.key === (currentKey || defaultOnset) ? ' selected' : ''}>${s.label}</option>`)
+        .map(s => `<option value="${s.key}"${s.key === selectedKey ? ' selected' : ''}>${s.label}</option>`)
         .join('');
       updateStrategyLabels(ui);
     });

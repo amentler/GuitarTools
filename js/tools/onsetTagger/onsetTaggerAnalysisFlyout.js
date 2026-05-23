@@ -39,7 +39,9 @@ export function createOnsetTaggerAnalysisFlyout({
     if (!ui.analysisOnsetSelectEl) return;
     const strategies = getGuitarOnsetStrategies();
     const currentKey = ui.analysisOnsetSelectEl.value || _onsetStrategyKey;
-    const activeKey = strategies.some(s => s.key === currentKey) ? currentKey : (strategies[0]?.key ?? _onsetStrategyKey);
+    const activeKey = strategies.some(s => s.key === _onsetStrategyKey)
+      ? _onsetStrategyKey
+      : (strategies.some(s => s.key === currentKey) ? currentKey : (strategies[0]?.key ?? _onsetStrategyKey));
     ui.analysisOnsetSelectEl.innerHTML = strategies
       .map(s => `<option value="${s.key}"${s.key === activeKey ? ' selected' : ''}>${s.label}</option>`)
       .join('');

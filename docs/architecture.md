@@ -1,6 +1,6 @@
 # GuitarTools Architecture Guide
 
-Last Updated: 2026-05-22
+Last Updated: 2026-05-23
 
 ## 1. Goal
 GuitarTools is a modular Multi-Page Application (MPA). Each exercise or tool is a self-contained feature that can be mounted into a target DOM element.

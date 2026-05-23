@@ -45,7 +45,7 @@ Playback läuft über `createAudioTransport()` aus `js/shared/audio/audioTranspo
 8. Onset in der Liste oder über den Punkt in der Waveform anklicken → Marker wird grün, Cursor springt dorthin
 9. Ausgewählten Onset mit dem Cursor-Slider verschieben; „Entfernen"-Button entfernt ihn
 10. Strategie-Button → erkannte Onsets additiv importieren (min. 50 ms Abstand)
-11. Analyse-Flyout → Onset-Modell auswählen; darunter erscheint eine Statistik gegen die beim Analyse-Lauf aktuellen Tags
+11. Analyse-Flyout → Onset-Modell aus der asynchron geladenen XGBoost-Registry auswählen; gespeicherte Registry-Keys bleiben nach dem Laden aktiv
 12. Metadaten editieren (Schritt 2)
 13. „Als ZIP exportieren" → WAV + JSON als ZIP-Download
 14. „Im Analyzer öffnen" speichert und öffnet `audio-analyse`

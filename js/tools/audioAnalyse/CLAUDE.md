@@ -34,7 +34,7 @@ Audio-Analyse Werkzeug (mount)
 - `fftSize = getRecommendedFftSize(null, sampleRate)` (4096 bei 44,1 kHz)
 - `hopSize = fftSize` (kein Overlap, wie in der Live-Übung)
 - Pro Frame: `analyzeInputLevel` + `onsetStrategy.update` + `detectPitch` + `frequencyToNote`
-- Onset-Strategie aus `SETTING_KEYS.SHEET_MUSIC_ONSET_STRATEGY` (global settings)
+- Onset-Strategie aus `SETTING_KEYS.SHEET_MUSIC_ONSET_STRATEGY` (global settings); Registry-basierte XGBoost-Modelle werden asynchron geladen und ein gespeicherter Registry-Key bleibt nach dem Laden vorausgewählt.
 
 Rückgabe:
 

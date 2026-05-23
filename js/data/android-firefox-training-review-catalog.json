@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-05-23T10:58:11.517Z",
+  "generatedAt": "2026-05-23T11:39:36.930Z",
   "mediaRoots": [
     "tests/fixtures/sequences/sheet-music-reading"
   ],
@@ -272,13 +272,13 @@
       },
       "metrics": {
         "expected": 25,
-        "detected": 31,
+        "detected": 32,
         "tp": 25,
-        "fp": 6,
+        "fp": 7,
         "fn": 0,
-        "precision": 0.8064516129032258,
+        "precision": 0.78125,
         "recall": 1,
-        "f1": 0.8928571428571428
+        "f1": 0.8771929824561403
       }
     },
     {
@@ -1022,13 +1022,13 @@
       },
       "metrics": {
         "expected": 30,
-        "detected": 31,
+        "detected": 33,
         "tp": 30,
-        "fp": 1,
+        "fp": 3,
         "fn": 0,
-        "precision": 0.967741935483871,
+        "precision": 0.9090909090909091,
         "recall": 1,
-        "f1": 0.9836065573770492
+        "f1": 0.9523809523809523
       }
     },
     {
@@ -1122,13 +1122,13 @@
       },
       "metrics": {
         "expected": 18,
-        "detected": 19,
-        "tp": 17,
-        "fp": 2,
-        "fn": 1,
-        "precision": 0.8947368421052632,
-        "recall": 0.9444444444444444,
-        "f1": 0.918918918918919
+        "detected": 18,
+        "tp": 18,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1,
+        "recall": 1,
+        "f1": 1
       }
     },
     {
@@ -1347,13 +1347,13 @@
       },
       "metrics": {
         "expected": 18,
-        "detected": 20,
+        "detected": 19,
         "tp": 18,
-        "fp": 2,
+        "fp": 1,
         "fn": 0,
-        "precision": 0.9,
+        "precision": 0.9473684210526315,
         "recall": 1,
-        "f1": 0.9473684210526316
+        "f1": 0.972972972972973
       }
     },
     {

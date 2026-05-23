@@ -1,46 +1,46 @@
 {
-  "threshold": 0.934,
-  "precision": 0.7726,
-  "recall": 0.508,
-  "f1": 0.613,
-  "roc_auc": 0.9431,
-  "pr_auc": 0.653,
+  "threshold": 0.936,
+  "precision": 0.7708,
+  "recall": 0.5297,
+  "f1": 0.6279,
+  "roc_auc": 0.9439,
+  "pr_auc": 0.6569,
   "confusion_matrix": [
     [
-      31145,
-      186
+      31135,
+      196
     ],
     [
-      612,
-      632
+      585,
+      659
     ]
   ],
   "validation_positives": 1244,
   "validation_negatives": 31331,
   "probability_summary": {
-    "min": 0.012302,
-    "p50": 0.073597,
-    "p75": 0.172109,
-    "p90": 0.467101,
-    "p95": 0.769038,
-    "p99": 0.977261,
-    "max": 0.987226
+    "min": 0.003655,
+    "p50": 0.058217,
+    "p75": 0.157588,
+    "p90": 0.462996,
+    "p95": 0.77579,
+    "p99": 0.986188,
+    "max": 0.995363
   },
   "peak_picking": {
-    "threshold": 0.934,
-    "lookahead_frames": 6,
+    "threshold": 0.936,
+    "lookahead_frames": 8,
     "refractory_ms": 80.0,
     "tolerance_ms": 25.0,
     "frame_ms": 5.3333,
     "confusion_matrix": {
-      "true_positives": 207,
+      "true_positives": 208,
       "false_positives": 47,
-      "false_negatives": 24,
+      "false_negatives": 23,
       "true_negatives": null
     },
-    "precision": 0.815,
-    "recall": 0.8961,
-    "f1": 0.8536,
+    "precision": 0.8157,
+    "recall": 0.9004,
+    "f1": 0.856,
     "per_file": [
       {
         "file": "training_data_validation_random_120bpm_6rk0u.json",
@@ -61,9 +61,9 @@
       {
         "file": "training_data_sheet-music-reading_120bpm_5b5gs.json",
         "expected": 25,
-        "detected": 31,
+        "detected": 32,
         "tp": 25,
-        "fp": 6,
+        "fp": 7,
         "fn": 0
       },
       {
@@ -109,10 +109,10 @@
       {
         "file": "training_data_unknown_150bpm_5k98s.json",
         "expected": 18,
-        "detected": 19,
-        "tp": 17,
-        "fp": 2,
-        "fn": 1
+        "detected": 18,
+        "tp": 18,
+        "fp": 0,
+        "fn": 0
       },
       {
         "file": "training_data_sheet-music-reading_132bpm_r2fgb.json",
@@ -133,17 +133,17 @@
       {
         "file": "training_data_unknown_59bpm_lrssz.json",
         "expected": 18,
-        "detected": 20,
+        "detected": 19,
         "tp": 18,
-        "fp": 2,
+        "fp": 1,
         "fn": 0
       },
       {
         "file": "training_data_unknown_134bpm_3cu9j.json",
         "expected": 30,
-        "detected": 31,
+        "detected": 33,
         "tp": 30,
-        "fp": 1,
+        "fp": 3,
         "fn": 0
       }
     ]
@@ -151,35 +151,35 @@
   "threshold_selection": {
     "mode": "recall_priority_peak_picking",
     "configured_threshold": 0.5,
-    "selected_threshold": 0.934,
-    "validation_peak_precision": 0.815,
-    "validation_peak_recall": 0.8961,
-    "validation_peak_f_beta": 0.8786,
-    "validation_peak_tp": 207,
+    "selected_threshold": 0.936,
+    "validation_peak_precision": 0.8157,
+    "validation_peak_recall": 0.9004,
+    "validation_peak_f_beta": 0.8821,
+    "validation_peak_tp": 208,
     "validation_peak_fp": 47,
-    "validation_peak_fn": 24,
+    "validation_peak_fn": 23,
     "target_recall": 0.95,
     "min_precision": 0.8,
     "hyperparameter_tuning": {
       "params": {
         "max_depth": 6,
-        "min_child_weight": 5,
+        "min_child_weight": 3,
         "learning_rate": 0.03,
-        "n_estimators": 300,
-        "subsample": 0.8,
+        "n_estimators": 500,
+        "subsample": 0.9,
         "colsample_bytree": 0.8,
-        "gamma": 0.3,
-        "reg_alpha": 0.05,
+        "gamma": 0.6,
+        "reg_alpha": 0.1,
         "reg_lambda": 1.5,
         "scale_pos_weight_multiplier": 1.0,
         "max_delta_step": 0,
         "negative_sampling_ratio": 4.0,
-        "lookahead_frames": 6
+        "lookahead_frames": 8
       },
-      "threshold": 0.934,
-      "precision": 0.8149606299212598,
-      "recall": 0.8961038961038961,
-      "f_beta": 0.8243808000015747,
+      "threshold": 0.936,
+      "precision": 0.8156862745098039,
+      "recall": 0.9004329004329005,
+      "f_beta": 0.8283669913250566,
       "mode": "recall_priority_peak_picking"
     }
   }
