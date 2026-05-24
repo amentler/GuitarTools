@@ -424,6 +424,10 @@ def train_model(
             f"tree_method={model_params['tree_method']}, "
             f"device={model_params.get('device', 'cpu')}"
         )
+        print(
+            f"  Fitting XGBoost: train={len(y_train)} frames, "
+            f"val={len(y_val)} frames, n_estimators={model_params['n_estimators']}"
+        )
 
     model = xgb.XGBClassifier(**model_params)
 
@@ -733,6 +737,7 @@ def select_peak_threshold(
     eval_files: list[dict],
     cfg: dict,
     audio_config: dict,
+    progress_label: str | None = None,
 ) -> dict:
     decision_cfg = cfg.get("decision", {})
     selection_cfg = decision_cfg.get("threshold_selection", {})
@@ -750,10 +755,15 @@ def select_peak_threshold(
 
     eval_files_with_probabilities = predict_eval_files(model, eval_files)
     candidates = np.linspace(0.001, 0.999, int(selection_cfg.get("steps", 999)))
-    scored = [
-        score_peak_threshold(model, eval_files_with_probabilities, threshold, cfg, audio_config, beta)
-        for threshold in candidates
-    ]
+    if progress_label:
+        print(f"  {progress_label}: scoring {len(candidates)} peak thresholds")
+    scored = []
+    last_status = time.time()
+    for index, threshold in enumerate(candidates, start=1):
+        scored.append(score_peak_threshold(model, eval_files_with_probabilities, threshold, cfg, audio_config, beta))
+        if progress_label and (index == 1 or index == len(candidates) or time.time() - last_status >= 30):
+            print(f"  {progress_label}: {index}/{len(candidates)} thresholds")
+            last_status = time.time()
 
     recall_ok = [
         row for row in scored
@@ -1271,7 +1281,7 @@ def main():
             file_features_for_eval = file_features
 
     print("\n--- Selecting threshold on validation set after app peak picking ---")
-    threshold_selection = select_peak_threshold(model, val_files, cfg, audio_config or {})
+    threshold_selection = select_peak_threshold(model, val_files, cfg, audio_config or {}, "threshold selection")
     threshold = threshold_selection["threshold"]
     threshold_selection = {
         "mode": threshold_selection["mode"],

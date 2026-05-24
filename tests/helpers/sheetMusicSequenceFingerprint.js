@@ -528,7 +528,16 @@ export function evaluateOnsetStrategyReport(
     strategyKey: onsetStrategy.key,
     fixtureCount: evaluated.length,
   });
-  const cases = evaluated.map(fixture => {
+  const cases = evaluated.map((fixture, index) => {
+    if (index === 0 || (index + 1) % 5 === 0 || index === evaluated.length - 1) {
+      progress?.({
+        phase: 'sequence-onset-strategy-progress',
+        strategyKey: onsetStrategy.key,
+        current: index + 1,
+        total: evaluated.length,
+        fixture: fixture.file,
+      });
+    }
     const { samples: rawSamples, sampleRate: rawRate } = loadSequenceFixtureAudio(fixture);
     const samples = resampleLinear(rawSamples, rawRate, BROWSER_SAMPLE_RATE);
     const sampleRate = BROWSER_SAMPLE_RATE;
@@ -610,7 +619,16 @@ export async function evaluateXGBoostOnsetModelReport(
   });
   const cases = [];
 
-  for (const fixture of evaluated) {
+  for (const [index, fixture] of evaluated.entries()) {
+    if (index === 0 || (index + 1) % 5 === 0 || index === evaluated.length - 1) {
+      progress?.({
+        phase: 'sequence-onset-strategy-progress',
+        strategyKey: onsetStrategy.key,
+        current: index + 1,
+        total: evaluated.length,
+        fixture: fixture.file,
+      });
+    }
     const { samples: rawSamples, sampleRate: rawRate } = loadSequenceFixtureAudio(fixture);
     const samples = resampleLinear(rawSamples, rawRate, BROWSER_SAMPLE_RATE);
     const sampleRate = BROWSER_SAMPLE_RATE;

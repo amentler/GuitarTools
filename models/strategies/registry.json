@@ -117,6 +117,19 @@
       "peakPrecision": 0.8157,
       "peakRecall": 0.9004,
       "threshold": 0.936
+    },
+    {
+      "key": "xgboost-20260523-222113",
+      "label": "XGB 2026-05-23 22:21",
+      "description": "XGBoost Android-Firefox, trainiert 2026-05-23 22:21. Peak F1 0.9061, Precision 0.8849, Recall 0.9283. Threshold 0.949. 63 Trainingsdateien. depth=6 lr=0.03 est=500.",
+      "modelFile": "strategies/xgb_20260523_222113_deed74.onnx",
+      "schemaFile": "strategies/xgb_20260523_222113_deed74.schema.json",
+      "trainedOn": "2026-05-23T22:21:13.924710+00:00",
+      "trainingFileCount": 63,
+      "peakF1": 0.9061,
+      "peakPrecision": 0.8849,
+      "peakRecall": 0.9283,
+      "threshold": 0.949
     }
   ]
 }

@@ -15,8 +15,8 @@
     "semantic_hash": ""
   },
   "/workspace/GuitarToolsCodex/train_android_firefox.sh": {
-    "mtime": 1779301710.1972144,
-    "ast_hash": "a0456a143723e586b46a069b6ffec47b",
+    "mtime": 1779572535.53979,
+    "ast_hash": "48582c5bdd753c9d6e4a2a9cc9751495",
     "semantic_hash": ""
   },
   "/workspace/GuitarToolsCodex/apply_android_firefox_onset_detector.sh": {
@@ -40,8 +40,8 @@
     "semantic_hash": ""
   },
   "/workspace/GuitarToolsCodex/sw.js": {
-    "mtime": 1779569760.9470584,
-    "ast_hash": "9d64b757f4c4258236737d20881e3447",
+    "mtime": 1779571500.352,
+    "ast_hash": "3265fad0eca3ddbafbcab029c3fa813c",
     "semantic_hash": ""
   },
   "/workspace/GuitarToolsCodex/sfp.sh": {
@@ -1375,8 +1375,8 @@
     "semantic_hash": ""
   },
   "/workspace/GuitarToolsCodex/tests/helpers/sheetMusicSequenceFingerprint.js": {
-    "mtime": 1779485147.2239926,
-    "ast_hash": "a29b88d90760651865ea9320d6948524",
+    "mtime": 1779572535.53979,
+    "ast_hash": "0e406b11f8a9608077c88cfdc2f43d8c",
     "semantic_hash": ""
   },
   "/workspace/GuitarToolsCodex/tests/helpers/audioFixtureRunner.js": {
@@ -1425,8 +1425,8 @@
     "semantic_hash": ""
   },
   "/workspace/GuitarToolsCodex/tests/helpers/essentiaFingerprintMetrics.js": {
-    "mtime": 1779048725.2506013,
-    "ast_hash": "11742ed905e1557562844fa1d35d02c1",
+    "mtime": 1779572535.53979,
+    "ast_hash": "dff7e787b48d1617cebcf992e033ef4c",
     "semantic_hash": ""
   },
   "/workspace/GuitarToolsCodex/tests/helpers/sequenceFixtureLoader.js": {
@@ -2175,8 +2175,8 @@
     "semantic_hash": ""
   },
   "/workspace/GuitarToolsCodex/ml/train_onset_detector.py": {
-    "mtime": 1779534250.006493,
-    "ast_hash": "8598f6f2cca6a32dd4af7aefabe491fd",
+    "mtime": 1779572535.54379,
+    "ast_hash": "80260e0b7e98ce1541a68fe38f93e287",
     "semantic_hash": ""
   },
   "/workspace/GuitarToolsCodex/ml/data/android_firefox/training_data_4-4_91bpm_GDAB_q6ntm.json": {
@@ -2560,8 +2560,8 @@
     "semantic_hash": ""
   },
   "/workspace/GuitarToolsCodex/scripts/chord-recognition-fingerprint.mjs": {
-    "mtime": 1779048724.4439347,
-    "ast_hash": "ada6750da7561d28ca654276bebb642b",
+    "mtime": 1779572535.53979,
+    "ast_hash": "32660e39d46e290841d5c53100d180d2",
     "semantic_hash": ""
   },
   "/workspace/GuitarToolsCodex/scripts/sheetMusicOnsetConfig.mjs": {
@@ -2595,8 +2595,8 @@
     "semantic_hash": ""
   },
   "/workspace/GuitarToolsCodex/scripts/sheet-music-sequence-fingerprint.mjs": {
-    "mtime": 1779048724.4439347,
-    "ast_hash": "f43be2ab909716ff55904294b34953e3",
+    "mtime": 1779572535.5357897,
+    "ast_hash": "17102b7f66e04c2a3e1adee809c919b2",
     "semantic_hash": ""
   },
   "/workspace/GuitarToolsCodex/scripts/sfpOnsetModels.mjs": {
@@ -2720,8 +2720,8 @@
     "semantic_hash": ""
   },
   "/workspace/GuitarToolsCodex/version.txt": {
-    "mtime": 1779569760.919048,
-    "ast_hash": "2569f2b40e3f24657de20990cfaf07e2",
+    "mtime": 1779571500.3239968,
+    "ast_hash": "4577d36410c557ffd5d0ca2c8cb5667e",
     "semantic_hash": ""
   },
   "/workspace/GuitarToolsCodex/copilot.md": {

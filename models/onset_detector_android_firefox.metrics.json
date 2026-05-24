@@ -1,46 +1,46 @@
 {
-  "threshold": 0.936,
-  "precision": 0.7708,
-  "recall": 0.5297,
-  "f1": 0.6279,
-  "roc_auc": 0.9439,
-  "pr_auc": 0.6569,
+  "threshold": 0.949,
+  "precision": 0.8064,
+  "recall": 0.4589,
+  "f1": 0.5849,
+  "roc_auc": 0.9466,
+  "pr_auc": 0.6794,
   "confusion_matrix": [
     [
-      31135,
-      196
+      25612,
+      158
     ],
     [
-      585,
-      659
+      776,
+      658
     ]
   ],
-  "validation_positives": 1244,
-  "validation_negatives": 31331,
+  "validation_positives": 1434,
+  "validation_negatives": 25770,
   "probability_summary": {
-    "min": 0.003655,
-    "p50": 0.058217,
-    "p75": 0.157588,
-    "p90": 0.462996,
-    "p95": 0.77579,
-    "p99": 0.986188,
-    "max": 0.995363
+    "min": 7e-05,
+    "p50": 0.034102,
+    "p75": 0.146972,
+    "p90": 0.569347,
+    "p95": 0.849306,
+    "p99": 0.992392,
+    "max": 0.999703
   },
   "peak_picking": {
-    "threshold": 0.936,
+    "threshold": 0.949,
     "lookahead_frames": 8,
     "refractory_ms": 80.0,
     "tolerance_ms": 25.0,
     "frame_ms": 5.3333,
     "confusion_matrix": {
-      "true_positives": 208,
-      "false_positives": 47,
-      "false_negatives": 23,
+      "true_positives": 246,
+      "false_positives": 32,
+      "false_negatives": 19,
       "true_negatives": null
     },
-    "precision": 0.8157,
-    "recall": 0.9004,
-    "f1": 0.856,
+    "precision": 0.8849,
+    "recall": 0.9283,
+    "f1": 0.9061,
     "per_file": [
       {
         "file": "training_data_validation_random_120bpm_6rk0u.json",
@@ -53,21 +53,13 @@
       {
         "file": "training_data_validation_unknown_180bpm_s166w.json",
         "expected": 22,
-        "detected": 24,
+        "detected": 25,
         "tp": 17,
-        "fp": 7,
+        "fp": 8,
         "fn": 5
       },
       {
-        "file": "training_data_sheet-music-reading_120bpm_5b5gs.json",
-        "expected": 25,
-        "detected": 32,
-        "tp": 25,
-        "fp": 7,
-        "fn": 0
-      },
-      {
-        "file": "training_data_sheet-music-reading_78bpm_pdtr1.json",
+        "file": "training_data_sheet-music-reading_103bpm_qkc5n.json",
         "expected": 16,
         "detected": 17,
         "tp": 16,
@@ -83,38 +75,6 @@
         "fn": 0
       },
       {
-        "file": "training_data_unknown_97bpm_ij9rh.json",
-        "expected": 12,
-        "detected": 15,
-        "tp": 12,
-        "fp": 3,
-        "fn": 0
-      },
-      {
-        "file": "training_data_sheet-music-reading_40bpm_by7pc.json",
-        "expected": 16,
-        "detected": 17,
-        "tp": 0,
-        "fp": 17,
-        "fn": 16
-      },
-      {
-        "file": "training_data_sheet-music-reading_103bpm_utesr.json",
-        "expected": 16,
-        "detected": 17,
-        "tp": 15,
-        "fp": 2,
-        "fn": 1
-      },
-      {
-        "file": "training_data_unknown_150bpm_5k98s.json",
-        "expected": 18,
-        "detected": 18,
-        "tp": 18,
-        "fp": 0,
-        "fn": 0
-      },
-      {
         "file": "training_data_sheet-music-reading_132bpm_r2fgb.json",
         "expected": 16,
         "detected": 17,
@@ -123,41 +83,81 @@
         "fn": 1
       },
       {
-        "file": "training_data_sheet-music-reading_91bpm_mpx3a.json",
-        "expected": 16,
-        "detected": 20,
-        "tp": 16,
-        "fp": 4,
+        "file": "training_data_unknown_97bpm_ij9rh.json",
+        "expected": 12,
+        "detected": 14,
+        "tp": 12,
+        "fp": 2,
         "fn": 0
       },
       {
-        "file": "training_data_unknown_59bpm_lrssz.json",
-        "expected": 18,
-        "detected": 19,
-        "tp": 18,
+        "file": "training_data_sheet-music-reading_161bpm_l9qco.json",
+        "expected": 16,
+        "detected": 14,
+        "tp": 12,
+        "fp": 2,
+        "fn": 4
+      },
+      {
+        "file": "training_data_random_120bpm_ejj6r.json",
+        "expected": 42,
+        "detected": 39,
+        "tp": 38,
         "fp": 1,
-        "fn": 0
+        "fn": 4
       },
       {
         "file": "training_data_unknown_134bpm_3cu9j.json",
         "expected": 30,
-        "detected": 33,
+        "detected": 32,
         "tp": 30,
-        "fp": 3,
+        "fp": 2,
         "fn": 0
+      },
+      {
+        "file": "training_data_sheet-music-reading_120bpm_5b5gs.json",
+        "expected": 25,
+        "detected": 27,
+        "tp": 23,
+        "fp": 4,
+        "fn": 2
+      },
+      {
+        "file": "training_data_sheet-music-reading_91bpm_40q6f.json",
+        "expected": 16,
+        "detected": 16,
+        "tp": 16,
+        "fp": 0,
+        "fn": 0
+      },
+      {
+        "file": "training_data_unknown_150bpm_z3vrd.json",
+        "expected": 26,
+        "detected": 31,
+        "tp": 24,
+        "fp": 7,
+        "fn": 2
+      },
+      {
+        "file": "training_data_unknown_120bpm_muwwe.json",
+        "expected": 18,
+        "detected": 20,
+        "tp": 17,
+        "fp": 3,
+        "fn": 1
       }
     ]
   },
   "threshold_selection": {
     "mode": "recall_priority_peak_picking",
     "configured_threshold": 0.5,
-    "selected_threshold": 0.936,
-    "validation_peak_precision": 0.8157,
-    "validation_peak_recall": 0.9004,
-    "validation_peak_f_beta": 0.8821,
-    "validation_peak_tp": 208,
-    "validation_peak_fp": 47,
-    "validation_peak_fn": 23,
+    "selected_threshold": 0.949,
+    "validation_peak_precision": 0.8849,
+    "validation_peak_recall": 0.9283,
+    "validation_peak_f_beta": 0.9193,
+    "validation_peak_tp": 246,
+    "validation_peak_fp": 32,
+    "validation_peak_fn": 19,
     "target_recall": 0.95,
     "min_precision": 0.8,
     "hyperparameter_tuning": {
@@ -176,10 +176,10 @@
         "negative_sampling_ratio": 4.0,
         "lookahead_frames": 8
       },
-      "threshold": 0.936,
-      "precision": 0.8156862745098039,
-      "recall": 0.9004329004329005,
-      "f_beta": 0.8283669913250566,
+      "threshold": 0.949,
+      "precision": 0.8848920863309353,
+      "recall": 0.9283018867924528,
+      "f_beta": 0.8356003513578077,
       "mode": "recall_priority_peak_picking"
     }
   }

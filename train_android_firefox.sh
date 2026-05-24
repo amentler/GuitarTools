@@ -195,7 +195,7 @@ if ! node scripts/generate-xgboost-training-data-from-media.mjs \
   --media-dir "$TRAINING_MEDIA_DIR" \
   --output-dir "$DATA_DIR" \
   --jobs "$TRAINING_DATA_JOBS" \
-  --clean >"$generation_log" 2>&1; then
+  --clean 2>&1 | tee "$generation_log"; then
   echo "ERROR: training data generation failed. Last log lines:" >&2
   tail -n 40 "$generation_log" >&2
   echo "Full log: $generation_log" >&2
@@ -208,7 +208,6 @@ if ! compgen -G "$DATA_DIR/training_data_*.json" >/dev/null; then
   exit 1
 fi
 
-tail -n 1 "$generation_log"
 rm -f "$generation_log"
 generation_log=""
 
@@ -282,7 +281,7 @@ sed \
 print_section "Training"
 print_kv "log" "$training_log"
 
-if ! "$PYTHON" ml/train_onset_detector.py --config "$tmp_config" >"$training_log" 2>&1; then
+if ! PYTHONUNBUFFERED=1 "$PYTHON" -u ml/train_onset_detector.py --config "$tmp_config" 2>&1 | tee "$training_log"; then
   echo "ERROR: training failed. Last log lines:" >&2
   tail -n 40 "$training_log" >&2
   echo "Full log: $training_log" >&2

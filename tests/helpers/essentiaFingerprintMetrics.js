@@ -24,7 +24,8 @@ function summarizeRow(row) {
   return `${row.fixture.wavFile}: target=${row.fixture.chordName}, probe=${row.probeChordName}, actual=${row.actualPositive}, bestMatch=${row.bestMatch}, confidence=${row.confidence.toFixed(3)}`;
 }
 
-export function evaluateEssentiaFingerprintConfusion(preparedFixtures) {
+export function evaluateEssentiaFingerprintConfusion(preparedFixtures, options = {}) {
+  const progress = typeof options.onProgress === 'function' ? options.onProgress : null;
   const templates = buildChordTemplates();
   const chordNames = Object.keys(templates);
   const positiveFixtures = preparedFixtures.filter(fixture =>
@@ -35,8 +36,20 @@ export function evaluateEssentiaFingerprintConfusion(preparedFixtures) {
   const exhaustiveNegativeFixturePattern = /^open-strums\/\d_strum(?:_alt\d*)?\.wav$/;
 
   const rows = [];
+  progress?.({
+    phase: 'fingerprint-start',
+    positiveFixtureCount: positiveFixtures.length,
+    negativeFixtureCount: explicitNegativeFixtures.length,
+    chordCount: chordNames.length,
+  });
 
-  for (const fixture of positiveFixtures) {
+  for (const [fixtureIndex, fixture] of positiveFixtures.entries()) {
+    progress?.({
+      phase: 'fingerprint-positive-progress',
+      current: fixtureIndex + 1,
+      total: positiveFixtures.length,
+      fixture: fixture.wavFile,
+    });
     const avgHpcp = toAverageHpcp(fixture);
     const bassSupportByChord = fixture.bassSupportByChord ?? null;
 
@@ -58,7 +71,13 @@ export function evaluateEssentiaFingerprintConfusion(preparedFixtures) {
     }
   }
 
-  for (const fixture of explicitNegativeFixtures) {
+  for (const [fixtureIndex, fixture] of explicitNegativeFixtures.entries()) {
+    progress?.({
+      phase: 'fingerprint-negative-progress',
+      current: fixtureIndex + 1,
+      total: explicitNegativeFixtures.length,
+      fixture: fixture.wavFile,
+    });
     const avgHpcp = toAverageHpcp(fixture);
     const bassSupportByChord = fixture.bassSupportByChord ?? null;
     const probeChordNames = exhaustiveNegativeFixturePattern.test(fixture.wavFile)
@@ -86,6 +105,10 @@ export function evaluateEssentiaFingerprintConfusion(preparedFixtures) {
   const falseNegatives = rows.filter(row => row.expectedPositive && !row.actualPositive);
   const falsePositives = rows.filter(row => !row.expectedPositive && row.actualPositive);
   const trueNegatives = rows.filter(row => !row.expectedPositive && !row.actualPositive);
+  progress?.({
+    phase: 'fingerprint-done',
+    rowCount: rows.length,
+  });
 
   const sensitivity = safeDivide(truePositives.length, truePositives.length + falseNegatives.length);
   const specificity = safeDivide(trueNegatives.length, trueNegatives.length + falsePositives.length);
