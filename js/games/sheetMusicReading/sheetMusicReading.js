@@ -64,6 +64,7 @@ export function createSheetMusicReadingFeature() {
   let state = {
     active: prefs.active,
     bars:    [],
+    chordLabels: null,
     showTab: prefs.showTab,
     bpm: prefs.bpm,
     timeSig: prefs.timeSig,
@@ -168,6 +169,7 @@ export function createSheetMusicReadingFeature() {
       state.bars,
       state.showTab,
       state.timeSig,
+      state.chordLabels,
     );
 
     if (result?.notationDiv && result?.staveLayout) {
@@ -182,10 +184,14 @@ export function createSheetMusicReadingFeature() {
     const injectedBars = resolveInjectedBars();
     if (Array.isArray(injectedBars)) {
       state.bars = injectedBars.map(bar => bar.map(note => ({ ...note })));
+      state.chordLabels = null;
     } else if (state.settings.arpeggio) {
-      state.bars = generateArpeggioBars(BARS_PER_ROW, config.beatsPerBar, getNotesPool(), state.settings.key);
+      const result = generateArpeggioBars(BARS_PER_ROW, config.beatsPerBar, getNotesPool(), state.settings.key);
+      state.bars = result.bars;
+      state.chordLabels = result.chordLabels;
     } else {
       state.bars = generateBars(BARS_PER_ROW, config.beatsPerBar, getNotesPool());
+      state.chordLabels = null;
     }
     noteHandler.resetActiveSequenceState();
     renderCurrentScore();
@@ -200,6 +206,16 @@ export function createSheetMusicReadingFeature() {
     syncSheetMusicUI(ui, state, syncFretSlider, syncMinFretSlider);
     syncActiveUiVisibility(ui, state);
     updateCurrentNoteDisplay(ui, state, noteHandler.getCurrentNote());
+  }
+
+  // Shared handler used by settings-change listeners that need to stop
+  // playback, clean up endless state, regenerate bars, and sync the UI.
+  function onSettingsChanged() {
+    playbackControl.stopPlayback();
+    if (state.endless) cleanupEndlessState();
+    regenerate();
+    updateFeedback(ui, state);
+    syncSettingsUI();
   }
 
   // ── Active mode ─────────────────────────────────────────────────────────
@@ -296,56 +312,28 @@ export function createSheetMusicReadingFeature() {
       ui.keySelect?.addEventListener('change', e => {
         state.settings.key = normalizeMajorKey(e.target.value);
         saveSheetMusicKey(state.settings.key);
-        playbackControl.stopPlayback();
-        if (state.endless) cleanupEndlessState();
-        regenerate();
-        updateFeedback(ui, state);
-        syncSettingsUI();
+        onSettingsChanged();
       });
 
       ui.useKeyCheckbox?.addEventListener('change', () => {
         state.settings.useKey = ui.useKeyCheckbox.checked;
         saveSheetMusicUseKey(state.settings.useKey);
-        playbackControl.stopPlayback();
-        if (state.endless) cleanupEndlessState();
-        regenerate();
-        updateFeedback(ui, state);
-        syncSettingsUI();
+        onSettingsChanged();
       });
 
       ui.arpeggioCheckbox?.addEventListener('change', () => {
         state.settings.arpeggio = ui.arpeggioCheckbox.checked;
         saveSheetMusicArpeggio(state.settings.arpeggio);
-        playbackControl.stopPlayback();
-        if (state.endless) cleanupEndlessState();
-        regenerate();
-        updateFeedback(ui, state);
-        syncSettingsUI();
+        onSettingsChanged();
       });
 
-      wireFretSlider(ui.fretSlider, ui.fretLabel, state.settings, () => {
-        playbackControl.stopPlayback();
-        if (state.endless) cleanupEndlessState();
-        regenerate();
-        updateFeedback(ui, state);
-        syncSettingsUI();
-      }, ui.minFretSlider);
+      wireFretSlider(ui.fretSlider, ui.fretLabel, state.settings, onSettingsChanged, ui.minFretSlider);
 
-      wireMinFretSlider(ui.minFretSlider, ui.fretLabel, state.settings, ui.fretSlider, () => {
-        playbackControl.stopPlayback();
-        if (state.endless) cleanupEndlessState();
-        regenerate();
-        updateFeedback(ui, state);
-        syncSettingsUI();
-      });
+      wireMinFretSlider(ui.minFretSlider, ui.fretLabel, state.settings, ui.fretSlider, onSettingsChanged);
 
       document.querySelector('#sheet-music-string-toggles').addEventListener('string-change', ({ detail }) => {
         state.settings.activeStrings = detail.activeStrings;
-        syncSettingsUI();
-        playbackControl.stopPlayback();
-        if (state.endless) cleanupEndlessState();
-        regenerate();
-        updateFeedback(ui, state);
+        onSettingsChanged();
       });
 
       document.addEventListener('keydown', e => {

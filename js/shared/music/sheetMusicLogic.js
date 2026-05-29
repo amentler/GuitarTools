@@ -126,13 +126,16 @@ export function getDiatonicChords(key = DEFAULT_KEY) {
  * @param {number} beatsPerBar
  * @param {Array} notesPool - notes filtered by fret/string range
  * @param {string} key - current major key
- * @returns {Array<Array<object>>}
+ * @returns {{ bars: Array<Array<object>>, chordLabels: string[] }}
  */
 export function generateArpeggioBars(numBars = 4, beatsPerBar = 4, notesPool = NOTES, key = DEFAULT_KEY) {
   const chords = getDiatonicChords(key);
   const pool = (notesPool && notesPool.length > 0) ? notesPool : NOTES;
 
-  return Array.from({ length: numBars }, () => {
+  const bars = [];
+  const chordLabels = [];
+
+  for (let bi = 0; bi < numBars; bi++) {
     // Pick a random diatonic chord
     const chord = chords[Math.floor(Math.random() * chords.length)];
 
@@ -140,7 +143,7 @@ export function generateArpeggioBars(numBars = 4, beatsPerBar = 4, notesPool = N
     let chordNotes = pool.filter(n => chord.pitchClasses.has(NOTE_TO_PC[n.name]));
 
     // Fall back to full pool if no chord notes are available in range
-    if (chordNotes.length === 0) chordNotes = pool.length > 0 ? pool : NOTES;
+    if (chordNotes.length === 0) chordNotes = pool;
 
     // Build arpeggio: ascending through chord tones, cycling as needed
     // Deduplicate by pitch (name+octave) keeping lowest-index entry
@@ -152,14 +155,13 @@ export function generateArpeggioBars(numBars = 4, beatsPerBar = 4, notesPool = N
       return true;
     });
 
-    const beats = Array.from({ length: beatsPerBar }, (_, i) => ({
+    bars.push(Array.from({ length: beatsPerBar }, (_, i) => ({
       ...unique[i % unique.length],
-    }));
+    })));
+    chordLabels.push(chord.label);
+  }
 
-    // Attach chord label to first beat (used by SVG renderer)
-    beats.chordLabel = chord.label;
-    return beats;
-  });
+  return { bars, chordLabels };
 }
 
 export function getTimeSignatureConfig(timeSignature) {

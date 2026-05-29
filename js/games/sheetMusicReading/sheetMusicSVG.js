@@ -105,11 +105,12 @@ function renderTab(tabDiv, bars) {
  * Renders bars as VexFlow notation into a new notation-wrapper div.
  * Does not attach the div to any parent — caller is responsible.
  *
- * @param {Array<Array<object>>} bars  Each bar array may have a `.chordLabel` property.
+ * @param {Array<Array<object>>} bars
  * @param {string} [timeSignature='4/4']
+ * @param {string[]} [chordLabels] - optional chord label per bar (arpeggio mode)
  * @returns {{ notationDiv: HTMLElement, staveLayout: Array<{ noteStartX: number, noteEndX: number }>, vw: number }}
  */
-function _renderNotation(bars, timeSignature = '4/4') {
+function _renderNotation(bars, timeSignature = '4/4', chordLabels = null) {
   const tsConfig = getTimeSignatureConfig(timeSignature) || getTimeSignatureConfig('4/4');
   const { vfTimeSig, noteDuration, beatsPerBar } = tsConfig;
   const beatValue = noteDuration === 'e' ? 8 : 4;
@@ -211,11 +212,10 @@ function _renderNotation(bars, timeSignature = '4/4') {
   applyResponsive();
 
   // ── Render chord labels above bars (arpeggio mode) ──────────────────────
-  const hasChordLabels = bars.some(bar => bar.chordLabel);
-  if (hasChordLabels && vfSvg) {
+  if (chordLabels && vfSvg) {
     const labelY = STAVE_Y - 18;
     for (let bi = 0; bi < bars.length; bi++) {
-      const label = bars[bi].chordLabel;
+      const label = chordLabels[bi];
       if (!label) continue;
       const stave = staves[bi];
       // Center the label over the note area of the bar (after clef/time sig)
@@ -265,12 +265,13 @@ function _renderNotation(bars, timeSignature = '4/4') {
  * @param {Array<Array<object>>} bars
  * @param {boolean} showTab
  * @param {string} [timeSignature='4/4']
+ * @param {string[]} [chordLabels] - optional chord label per bar (arpeggio mode)
  * @returns {{ notationDiv: HTMLElement, staveLayout: Array<{ noteStartX: number, noteEndX: number }>, vw: number }}
  */
-export function renderScore(container, bars, showTab, timeSignature = '4/4') {
+export function renderScore(container, bars, showTab, timeSignature = '4/4', chordLabels = null) {
   container.innerHTML = '';
 
-  const { notationDiv, staveLayout, vw } = _renderNotation(bars, timeSignature);
+  const { notationDiv, staveLayout, vw } = _renderNotation(bars, timeSignature, chordLabels);
   container.appendChild(notationDiv);
 
   if (showTab) {
@@ -291,13 +292,14 @@ export function renderScore(container, bars, showTab, timeSignature = '4/4') {
  * @param {Array<Array<object>>} bars
  * @param {boolean} showTab
  * @param {string} [timeSignature='4/4']
+ * @param {string[]} [chordLabels] - optional chord label per bar (arpeggio mode)
  * @returns {{ notationDiv: HTMLElement, staveLayout: Array<{ noteStartX: number, noteEndX: number }>, rowDiv: HTMLElement, vw: number }}
  */
-export function appendRow(container, bars, showTab, timeSignature = '4/4') {
+export function appendRow(container, bars, showTab, timeSignature = '4/4', chordLabels = null) {
   const rowDiv = document.createElement('div');
   rowDiv.className = 'score-row';
 
-  const { notationDiv, staveLayout, vw } = _renderNotation(bars, timeSignature);
+  const { notationDiv, staveLayout, vw } = _renderNotation(bars, timeSignature, chordLabels);
   rowDiv.appendChild(notationDiv);
 
   if (showTab) {
