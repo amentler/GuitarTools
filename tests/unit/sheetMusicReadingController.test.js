@@ -326,7 +326,7 @@ describe('SheetMusicReading controller behavior', () => {
     keySelect.dispatchEvent(new Event('change', { bubbles: true }));
 
     expect(localStorage.getItem('sheetMusic_key')).toBe('F');
-    expect(getFilteredNotes).toHaveBeenLastCalledWith(3, [0, 1, 2, 3, 4, 5], 0, 'F');
+    expect(getFilteredNotes).toHaveBeenLastCalledWith(3, [0, 1, 2, 3, 4, 5], 0, 'F', true);
   });
 
   it('keeps fallback note pools inside the selected key when filters are empty', async () => {
@@ -340,8 +340,8 @@ describe('SheetMusicReading controller behavior', () => {
     const feature = createSheetMusicReadingFeature();
     feature.mount();
 
-    expect(getFilteredNotes).toHaveBeenNthCalledWith(1, 3, [0, 1, 2, 3, 4, 5], 0, 'F');
-    expect(getFilteredNotes).toHaveBeenNthCalledWith(2, 8, [0, 1, 2, 3, 4, 5], 0, 'F');
+    expect(getFilteredNotes).toHaveBeenNthCalledWith(1, 3, [0, 1, 2, 3, 4, 5], 0, 'F', true);
+    expect(getFilteredNotes).toHaveBeenNthCalledWith(2, 8, [0, 1, 2, 3, 4, 5], 0, 'F', true);
   });
 
   it('play button toggles playback state and stop text', () => {

@@ -1,5 +1,5 @@
 import {
-  generateBars, getFilteredNotes, getTimeSignatureConfig, normalizeMajorKey,
+  generateBars, generateArpeggioBars, getFilteredNotes, getTimeSignatureConfig, normalizeMajorKey,
 } from './sheetMusicLogic.js';
 import { renderScore } from './sheetMusicSVG.js';
 import { PlaybackController } from './playbackController.js';
@@ -13,6 +13,8 @@ import {
   saveSheetMusicTimeSig,
   saveSheetMusicShowTab,
   saveSheetMusicEndless,
+  saveSheetMusicUseKey,
+  saveSheetMusicArpeggio,
 } from './sheetMusicReadingStorage.js';
 import {
   resolveSheetMusicUI,
@@ -80,6 +82,8 @@ export function createSheetMusicReadingFeature() {
       minFret: 0,
       key: normalizeMajorKey(prefs.key),
       activeStrings: [0, 1, 2, 3, 4, 5],
+      useKey: prefs.useKey,
+      arpeggio: prefs.arpeggio,
     },
   };
 
@@ -106,9 +110,10 @@ export function createSheetMusicReadingFeature() {
       state.settings.activeStrings,
       state.settings.minFret,
       state.settings.key,
+      state.settings.useKey,
     );
     if (filtered.length > 0) return filtered;
-    return getFilteredNotes(8, ALL_STRING_INDICES, 0, state.settings.key);
+    return getFilteredNotes(8, ALL_STRING_INDICES, 0, state.settings.key, state.settings.useKey);
   }
 
   function getTimeSigConfig() {
@@ -175,9 +180,13 @@ export function createSheetMusicReadingFeature() {
   function regenerate() {
     const config = getTimeSigConfig();
     const injectedBars = resolveInjectedBars();
-    state.bars = Array.isArray(injectedBars)
-      ? injectedBars.map(bar => bar.map(note => ({ ...note })))
-      : generateBars(BARS_PER_ROW, config.beatsPerBar, getNotesPool());
+    if (Array.isArray(injectedBars)) {
+      state.bars = injectedBars.map(bar => bar.map(note => ({ ...note })));
+    } else if (state.settings.arpeggio) {
+      state.bars = generateArpeggioBars(BARS_PER_ROW, config.beatsPerBar, getNotesPool(), state.settings.key);
+    } else {
+      state.bars = generateBars(BARS_PER_ROW, config.beatsPerBar, getNotesPool());
+    }
     noteHandler.resetActiveSequenceState();
     renderCurrentScore();
     updateCurrentNoteDisplay(ui, state, noteHandler.getCurrentNote());
@@ -287,6 +296,26 @@ export function createSheetMusicReadingFeature() {
       ui.keySelect?.addEventListener('change', e => {
         state.settings.key = normalizeMajorKey(e.target.value);
         saveSheetMusicKey(state.settings.key);
+        playbackControl.stopPlayback();
+        if (state.endless) cleanupEndlessState();
+        regenerate();
+        updateFeedback(ui, state);
+        syncSettingsUI();
+      });
+
+      ui.useKeyCheckbox?.addEventListener('change', () => {
+        state.settings.useKey = ui.useKeyCheckbox.checked;
+        saveSheetMusicUseKey(state.settings.useKey);
+        playbackControl.stopPlayback();
+        if (state.endless) cleanupEndlessState();
+        regenerate();
+        updateFeedback(ui, state);
+        syncSettingsUI();
+      });
+
+      ui.arpeggioCheckbox?.addEventListener('change', () => {
+        state.settings.arpeggio = ui.arpeggioCheckbox.checked;
+        saveSheetMusicArpeggio(state.settings.arpeggio);
         playbackControl.stopPlayback();
         if (state.endless) cleanupEndlessState();
         regenerate();

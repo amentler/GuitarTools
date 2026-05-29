@@ -16,6 +16,15 @@ const NOTE_TO_PC = {
   A: 9, 'A#': 10, Bb: 10,
   B: 11,
 };
+
+// Diatonic chord types for scale degrees 0–6 (I ii iii IV V vi vii°)
+const DIATONIC_CHORD_QUALITIES = ['', 'm', 'm', '', '', 'm', 'dim'];
+// Intervals (in semitones) for each chord degree within the triad
+const TRIAD_INTERVALS = {
+  '':    [0, 4, 7],
+  'm':   [0, 3, 7],
+  'dim': [0, 3, 6],
+};
 const DEFAULT_KEY = 'C';
 const MAX_NOTE_JUMP_STEPS = 3;
 
@@ -80,15 +89,76 @@ export function getMajorScalePitchClasses(key = DEFAULT_KEY) {
   return new Set(MAJOR_SCALE_INTERVALS.map(interval => (rootPc + interval) % CHROMATIC_SHARP.length));
 }
 
-export function getFilteredNotes(maxFret, activeStrings, minFret = 0, key = DEFAULT_KEY) {
-  const scalePitchClasses = getMajorScalePitchClasses(key);
+export function getFilteredNotes(maxFret, activeStrings, minFret = 0, key = DEFAULT_KEY, useKey = true) {
+  const scalePitchClasses = useKey ? getMajorScalePitchClasses(key) : null;
   return NOTES.filter(note => {
     const stringIndex = 6 - note.string;
     const pitchClass = NOTE_TO_PC[note.name];
     return note.fret >= minFret &&
       note.fret <= maxFret &&
       activeStrings.includes(stringIndex) &&
-      scalePitchClasses.has(pitchClass);
+      (!scalePitchClasses || scalePitchClasses.has(pitchClass));
+  });
+}
+
+/**
+ * Returns the 7 diatonic triads for a major key.
+ * Each entry: { root: string, quality: ''|'m'|'dim', label: string, pitchClasses: Set<number> }
+ */
+export function getDiatonicChords(key = DEFAULT_KEY) {
+  const rootPc = NOTE_TO_PC[normalizeMajorKey(key)];
+  return MAJOR_SCALE_INTERVALS.map((interval, degree) => {
+    const chordRootPc = (rootPc + interval) % 12;
+    const quality = DIATONIC_CHORD_QUALITIES[degree];
+    const label = CHROMATIC_SHARP[chordRootPc] + quality;
+    const pitchClasses = new Set(
+      TRIAD_INTERVALS[quality].map(i => (chordRootPc + i) % 12)
+    );
+    return { root: CHROMATIC_SHARP[chordRootPc], quality, label, pitchClasses };
+  });
+}
+
+/**
+ * Generates bars where each bar is an arpeggio over a diatonic chord.
+ * Each bar object gets an extra `chordLabel` property.
+ *
+ * @param {number} numBars
+ * @param {number} beatsPerBar
+ * @param {Array} notesPool - notes filtered by fret/string range
+ * @param {string} key - current major key
+ * @returns {Array<Array<object>>}
+ */
+export function generateArpeggioBars(numBars = 4, beatsPerBar = 4, notesPool = NOTES, key = DEFAULT_KEY) {
+  const chords = getDiatonicChords(key);
+  const pool = (notesPool && notesPool.length > 0) ? notesPool : NOTES;
+
+  return Array.from({ length: numBars }, () => {
+    // Pick a random diatonic chord
+    const chord = chords[Math.floor(Math.random() * chords.length)];
+
+    // Filter pool to notes matching this chord's pitch classes
+    let chordNotes = pool.filter(n => chord.pitchClasses.has(NOTE_TO_PC[n.name]));
+
+    // Fall back to full pool if no chord notes are available in range
+    if (chordNotes.length === 0) chordNotes = pool.length > 0 ? pool : NOTES;
+
+    // Build arpeggio: ascending through chord tones, cycling as needed
+    // Deduplicate by pitch (name+octave) keeping lowest-index entry
+    const seen = new Set();
+    const unique = chordNotes.filter(n => {
+      const k = `${n.name}${n.octave}`;
+      if (seen.has(k)) return false;
+      seen.add(k);
+      return true;
+    });
+
+    const beats = Array.from({ length: beatsPerBar }, (_, i) => ({
+      ...unique[i % unique.length],
+    }));
+
+    // Attach chord label to first beat (used by SVG renderer)
+    beats.chordLabel = chord.label;
+    return beats;
   });
 }
 

@@ -105,7 +105,7 @@ function renderTab(tabDiv, bars) {
  * Renders bars as VexFlow notation into a new notation-wrapper div.
  * Does not attach the div to any parent — caller is responsible.
  *
- * @param {Array<Array<object>>} bars
+ * @param {Array<Array<object>>} bars  Each bar array may have a `.chordLabel` property.
  * @param {string} [timeSignature='4/4']
  * @returns {{ notationDiv: HTMLElement, staveLayout: Array<{ noteStartX: number, noteEndX: number }>, vw: number }}
  */
@@ -209,6 +209,30 @@ function _renderNotation(bars, timeSignature = '4/4') {
   // Re-apply responsive attributes after VexFlow finishes drawing
   // (VexFlow may reset width/height during render)
   applyResponsive();
+
+  // ── Render chord labels above bars (arpeggio mode) ──────────────────────
+  const hasChordLabels = bars.some(bar => bar.chordLabel);
+  if (hasChordLabels && vfSvg) {
+    const labelY = STAVE_Y - 18;
+    for (let bi = 0; bi < bars.length; bi++) {
+      const label = bars[bi].chordLabel;
+      if (!label) continue;
+      const stave = staves[bi];
+      // Center the label over the note area of the bar (after clef/time sig)
+      const labelX = stave.getNoteStartX() + uniformNoteArea / 2;
+      const textEl = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      textEl.setAttribute('x', String(labelX));
+      textEl.setAttribute('y', String(labelY));
+      textEl.setAttribute('text-anchor', 'middle');
+      textEl.setAttribute('dominant-baseline', 'middle');
+      textEl.setAttribute('font-size', '14');
+      textEl.setAttribute('font-family', 'serif');
+      textEl.setAttribute('font-weight', 'bold');
+      textEl.setAttribute('fill', fg);
+      textEl.textContent = label;
+      vfSvg.appendChild(textEl);
+    }
+  }
 
   // ── Override VexFlow's hardcoded black to match dark theme ──────────────
   if (vfSvg) {
