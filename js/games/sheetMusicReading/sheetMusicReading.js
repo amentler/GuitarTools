@@ -1,5 +1,5 @@
 import {
-  generateBars, getFilteredNotes, getTimeSignatureConfig, normalizeMajorKey,
+  generateBars, getFilteredNotes, getTimeSignatureConfig, normalizeMajorKey, generateArpeggioBars,
 } from './sheetMusicLogic.js';
 import { renderScore } from './sheetMusicSVG.js';
 import { PlaybackController } from './playbackController.js';
@@ -13,6 +13,8 @@ import {
   saveSheetMusicTimeSig,
   saveSheetMusicShowTab,
   saveSheetMusicEndless,
+  saveSheetMusicUseKey,
+  saveSheetMusicArpeggio,
 } from './sheetMusicReadingStorage.js';
 import {
   resolveSheetMusicUI,
@@ -66,6 +68,9 @@ export function createSheetMusicReadingFeature() {
     bpm: prefs.bpm,
     timeSig: prefs.timeSig,
     endless: prefs.endless,
+    useKey: prefs.useKey,
+    arpeggioMode: prefs.arpeggioMode,
+    barChords: null,
     currentBarIndex: 0,
     currentBeatIndex: 0,
     isListening: false,
@@ -101,14 +106,15 @@ export function createSheetMusicReadingFeature() {
     createEndlessHelpers(endlessS, () => state, () => ui, BARS_PER_ROW, ENDLESS_SCROLL_TARGET_FRACTION, ENDLESS_SCROLL_SHIFT_DELAY_MS);
 
   function getNotesPool() {
+    const key = state.useKey ? state.settings.key : null;
     const filtered = getFilteredNotes(
       state.settings.maxFret,
       state.settings.activeStrings,
       state.settings.minFret,
-      state.settings.key,
+      key,
     );
     if (filtered.length > 0) return filtered;
-    return getFilteredNotes(8, ALL_STRING_INDICES, 0, state.settings.key);
+    return getFilteredNotes(8, ALL_STRING_INDICES, 0, key);
   }
 
   function getTimeSigConfig() {
@@ -163,6 +169,7 @@ export function createSheetMusicReadingFeature() {
       state.bars,
       state.showTab,
       state.timeSig,
+      state.barChords,
     );
 
     if (result?.notationDiv && result?.staveLayout) {
@@ -175,9 +182,17 @@ export function createSheetMusicReadingFeature() {
   function regenerate() {
     const config = getTimeSigConfig();
     const injectedBars = resolveInjectedBars();
-    state.bars = Array.isArray(injectedBars)
-      ? injectedBars.map(bar => bar.map(note => ({ ...note })))
-      : generateBars(BARS_PER_ROW, config.beatsPerBar, getNotesPool());
+    if (Array.isArray(injectedBars)) {
+      state.bars = injectedBars.map(bar => bar.map(note => ({ ...note })));
+      state.barChords = null;
+    } else if (state.arpeggioMode) {
+      const result = generateArpeggioBars(BARS_PER_ROW, config.beatsPerBar, getNotesPool(), state.settings.key);
+      state.bars = result.bars;
+      state.barChords = result.barChords;
+    } else {
+      state.bars = generateBars(BARS_PER_ROW, config.beatsPerBar, getNotesPool());
+      state.barChords = null;
+    }
     noteHandler.resetActiveSequenceState();
     renderCurrentScore();
     updateCurrentNoteDisplay(ui, state, noteHandler.getCurrentNote());
@@ -287,6 +302,27 @@ export function createSheetMusicReadingFeature() {
       ui.keySelect?.addEventListener('change', e => {
         state.settings.key = normalizeMajorKey(e.target.value);
         saveSheetMusicKey(state.settings.key);
+        playbackControl.stopPlayback();
+        if (state.endless) cleanupEndlessState();
+        regenerate();
+        updateFeedback(ui, state);
+        syncSettingsUI();
+      });
+
+      ui.useKeyCheckbox?.addEventListener('change', () => {
+        state.useKey = ui.useKeyCheckbox.checked;
+        saveSheetMusicUseKey(state.useKey);
+        playbackControl.stopPlayback();
+        if (state.endless) cleanupEndlessState();
+        regenerate();
+        updateFeedback(ui, state);
+        syncSettingsUI();
+      });
+
+      ui.arpeggioCheckbox?.addEventListener('change', () => {
+        state.arpeggioMode = ui.arpeggioCheckbox.checked;
+        state.barChords = null;
+        saveSheetMusicArpeggio(state.arpeggioMode);
         playbackControl.stopPlayback();
         if (state.endless) cleanupEndlessState();
         regenerate();

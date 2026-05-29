@@ -5,9 +5,11 @@ export function createEndlessHelpers(s, getState, getUI, BARS_PER_ROW, SCROLL_TA
   function buildEndlessRow(container) {
     const target = container ?? getUI()?.container;
     const state = getState();
-    const bars = s.gen.nextBatch(BARS_PER_ROW);
+    const { bars, barChords } = typeof s.gen.nextBatchWithChords === 'function'
+      ? s.gen.nextBatchWithChords(BARS_PER_ROW)
+      : { bars: s.gen.nextBatch(BARS_PER_ROW), barChords: null };
     const { notationDiv, staveLayout, rowDiv, vw } = appendRow(
-      target, bars, state.showTab, state.timeSig,
+      target, bars, state.showTab, state.timeSig, barChords,
     );
     const bar = new PlaybackBar();
     bar.render(notationDiv, staveLayout, vw);

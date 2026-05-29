@@ -107,9 +107,10 @@ function renderTab(tabDiv, bars) {
  *
  * @param {Array<Array<object>>} bars
  * @param {string} [timeSignature='4/4']
+ * @param {string[]|null} [barLabels] - Optional chord names to display above each bar
  * @returns {{ notationDiv: HTMLElement, staveLayout: Array<{ noteStartX: number, noteEndX: number }>, vw: number }}
  */
-function _renderNotation(bars, timeSignature = '4/4') {
+function _renderNotation(bars, timeSignature = '4/4', barLabels = null) {
   const tsConfig = getTimeSignatureConfig(timeSignature) || getTimeSignatureConfig('4/4');
   const { vfTimeSig, noteDuration, beatsPerBar } = tsConfig;
   const beatValue = noteDuration === 'e' ? 8 : 4;
@@ -231,6 +232,28 @@ function _renderNotation(bars, timeSignature = '4/4') {
     noteEndX:   stave.getNoteStartX() + uniformNoteArea,
   }));
 
+  // ── Render optional chord labels above each bar ─────────────────────────
+  if (barLabels && barLabels.length > 0 && vfSvg) {
+    let barX = 0;
+    for (let bi = 0; bi < bars.length; bi++) {
+      const label = barLabels[bi];
+      if (!label) { barX += bi === 0 ? firstBarW : REST_BAR_W; continue; }
+      const barW = bi === 0 ? firstBarW : REST_BAR_W;
+      const cx = barX + barW / 2;
+      const textEl = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      textEl.setAttribute('x', String(cx));
+      textEl.setAttribute('y', '16');
+      textEl.setAttribute('text-anchor', 'middle');
+      textEl.setAttribute('dominant-baseline', 'middle');
+      textEl.setAttribute('font-size', '15');
+      textEl.setAttribute('font-weight', 'bold');
+      textEl.setAttribute('fill', fg);
+      textEl.textContent = label;
+      vfSvg.appendChild(textEl);
+      barX += barW;
+    }
+  }
+
   return { notationDiv, staveLayout, vw: actualVW };
 }
 
@@ -241,12 +264,13 @@ function _renderNotation(bars, timeSignature = '4/4') {
  * @param {Array<Array<object>>} bars
  * @param {boolean} showTab
  * @param {string} [timeSignature='4/4']
+ * @param {string[]|null} [barLabels] - Optional chord names to display above each bar
  * @returns {{ notationDiv: HTMLElement, staveLayout: Array<{ noteStartX: number, noteEndX: number }>, vw: number }}
  */
-export function renderScore(container, bars, showTab, timeSignature = '4/4') {
+export function renderScore(container, bars, showTab, timeSignature = '4/4', barLabels = null) {
   container.innerHTML = '';
 
-  const { notationDiv, staveLayout, vw } = _renderNotation(bars, timeSignature);
+  const { notationDiv, staveLayout, vw } = _renderNotation(bars, timeSignature, barLabels);
   container.appendChild(notationDiv);
 
   if (showTab) {
@@ -267,13 +291,14 @@ export function renderScore(container, bars, showTab, timeSignature = '4/4') {
  * @param {Array<Array<object>>} bars
  * @param {boolean} showTab
  * @param {string} [timeSignature='4/4']
+ * @param {string[]|null} [barLabels] - Optional chord names to display above each bar
  * @returns {{ notationDiv: HTMLElement, staveLayout: Array<{ noteStartX: number, noteEndX: number }>, rowDiv: HTMLElement, vw: number }}
  */
-export function appendRow(container, bars, showTab, timeSignature = '4/4') {
+export function appendRow(container, bars, showTab, timeSignature = '4/4', barLabels = null) {
   const rowDiv = document.createElement('div');
   rowDiv.className = 'score-row';
 
-  const { notationDiv, staveLayout, vw } = _renderNotation(bars, timeSignature);
+  const { notationDiv, staveLayout, vw } = _renderNotation(bars, timeSignature, barLabels);
   rowDiv.appendChild(notationDiv);
 
   if (showTab) {

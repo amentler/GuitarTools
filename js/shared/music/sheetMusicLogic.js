@@ -19,6 +19,26 @@ const NOTE_TO_PC = {
 const DEFAULT_KEY = 'C';
 const MAX_NOTE_JUMP_STEPS = 3;
 
+// Scale note names per key (used to build correct chord names with sharps/flats)
+const KEY_SCALE_NOTES = {
+  C:  ['C', 'D', 'E', 'F', 'G', 'A', 'B'],
+  G:  ['G', 'A', 'B', 'C', 'D', 'E', 'F#'],
+  D:  ['D', 'E', 'F#', 'G', 'A', 'B', 'C#'],
+  A:  ['A', 'B', 'C#', 'D', 'E', 'F#', 'G#'],
+  E:  ['E', 'F#', 'G#', 'A', 'B', 'C#', 'D#'],
+  B:  ['B', 'C#', 'D#', 'E', 'F#', 'G#', 'A#'],
+  'F#': ['F#', 'G#', 'A#', 'B', 'C#', 'D#', 'E#'],
+  'C#': ['C#', 'D#', 'E#', 'F#', 'G#', 'A#', 'B#'],
+  F:  ['F', 'G', 'A', 'Bb', 'C', 'D', 'E'],
+  Bb: ['Bb', 'C', 'D', 'Eb', 'F', 'G', 'A'],
+  Eb: ['Eb', 'F', 'G', 'Ab', 'Bb', 'C', 'D'],
+  Ab: ['Ab', 'Bb', 'C', 'Db', 'Eb', 'F', 'G'],
+};
+
+// Chord qualities (intervals from chord root) and display suffixes per diatonic degree
+const DIATONIC_CHORD_INTERVALS = [[0,4,7], [0,3,7], [0,3,7], [0,4,7], [0,4,7], [0,3,7], [0,3,6]];
+const DIATONIC_CHORD_SUFFIXES  = ['', 'm', 'm', '', '', 'm', '°'];
+
 export const MAJOR_KEYS = [
   { value: 'C', label: 'C-Dur' },
   { value: 'G', label: 'G-Dur' },
@@ -81,14 +101,14 @@ export function getMajorScalePitchClasses(key = DEFAULT_KEY) {
 }
 
 export function getFilteredNotes(maxFret, activeStrings, minFret = 0, key = DEFAULT_KEY) {
-  const scalePitchClasses = getMajorScalePitchClasses(key);
+  const scalePitchClasses = key != null ? getMajorScalePitchClasses(key) : null;
   return NOTES.filter(note => {
     const stringIndex = 6 - note.string;
     const pitchClass = NOTE_TO_PC[note.name];
     return note.fret >= minFret &&
       note.fret <= maxFret &&
       activeStrings.includes(stringIndex) &&
-      scalePitchClasses.has(pitchClass);
+      (scalePitchClasses === null || scalePitchClasses.has(pitchClass));
   });
 }
 
@@ -123,6 +143,46 @@ export function generateBars(numBars = 4, beatsPerBar = 4, notesPool = NOTES) {
   );
 }
 
+/**
+ * Returns the 7 diatonic triads for the given major key.
+ * Each chord object has a { name, pitchClasses } shape.
+ */
+export function getDiatonicChords(key = DEFAULT_KEY) {
+  const normKey = normalizeMajorKey(key);
+  const scaleNotes = KEY_SCALE_NOTES[normKey] ?? KEY_SCALE_NOTES[DEFAULT_KEY];
+  return scaleNotes.map((noteName, i) => {
+    const rootPc = NOTE_TO_PC[noteName];
+    const pitchClasses = new Set(DIATONIC_CHORD_INTERVALS[i].map(interval => (rootPc + interval) % 12));
+    return { name: noteName + DIATONIC_CHORD_SUFFIXES[i], pitchClasses };
+  });
+}
+
+/**
+ * Generates bars where each bar's notes are chord tones of a randomly chosen
+ * diatonic chord from the given key.
+ *
+ * @returns {{ bars: Array<Array<object>>, barChords: string[] }}
+ */
+export function generateArpeggioBars(numBars = 4, beatsPerBar = 4, notesPool = NOTES, key = DEFAULT_KEY) {
+  const chords = getDiatonicChords(key);
+  const pool = (notesPool && notesPool.length > 0) ? notesPool : NOTES;
+  const bars = [];
+  const barChords = [];
+
+  for (let bi = 0; bi < numBars; bi++) {
+    const chord = chords[Math.floor(Math.random() * chords.length)];
+    barChords.push(chord.name);
+
+    // Filter the available pool to notes whose pitch class is a chord tone.
+    let chordPool = pool.filter(n => chord.pitchClasses.has(NOTE_TO_PC[n.name]));
+    if (chordPool.length === 0) chordPool = pool;
+
+    bars.push(generateBars(1, beatsPerBar, chordPool)[0]);
+  }
+
+  return { bars, barChords };
+}
+
 export class EndlessBarGenerator {
   constructor(beatsPerBar, notesPool = NOTES) {
     this._beatsPerBar = beatsPerBar;
@@ -155,9 +215,40 @@ export class EndlessBarGenerator {
     );
   }
 
+  nextBatchWithChords(count = 4) {
+    // Endless mode does not support chord labels; barChords is always null here.
+    return { bars: this.nextBatch(count), barChords: null };
+  }
+
   reset() {
     this._idx = -1;
   }
+}
+
+export class ArpeggioBarGenerator {
+  constructor(beatsPerBar, notesPool, key = DEFAULT_KEY) {
+    this._beatsPerBar = beatsPerBar;
+    this._notesPool = (notesPool && notesPool.length > 0) ? notesPool : NOTES;
+    this._key = normalizeMajorKey(key);
+  }
+
+  setNotesPool(pool) {
+    this._notesPool = (pool && pool.length > 0) ? pool : NOTES;
+  }
+
+  setBeatsPerBar(beats) {
+    this._beatsPerBar = beats;
+  }
+
+  nextBatch(count = 4) {
+    return this.nextBatchWithChords(count).bars;
+  }
+
+  nextBatchWithChords(count = 4) {
+    return generateArpeggioBars(count, this._beatsPerBar, this._notesPool, this._key);
+  }
+
+  reset() {}
 }
 
 export function calcScrollTarget(rowIndex, rowDisplayHeight, viewportHeight, targetFraction = 0.33) {
