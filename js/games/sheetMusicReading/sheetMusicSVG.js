@@ -13,11 +13,17 @@ const STAVE_Y = 80;    // y of top staff line (leaves 80 px for clef curl; low n
 const REST_BAR_W = 128;
 
 // Tab constants (custom SVG below VexFlow notation)
-const TAB_VB_W    = 900;
-const TAB_STAFF_L = 20;
-const TAB_STAFF_R = 885;
-const STR_SP      = 13;
-const STR_COUNT   = 6;
+const TAB_STAFF_TOP = 12;
+const TAB_STAFF_BOTTOM_PAD = 26;
+const TAB_LABEL_X = 12;
+const TAB_LABEL_SIZE = 16;
+const TAB_FRET_FONT_SIZE = 16;
+const TAB_FRET_BOX_HEIGHT = 18;
+const TAB_LINE_STROKE = 1.75;
+const TAB_OUTER_BAR_STROKE = 2.75;
+const TAB_INNER_BAR_STROKE = 1.75;
+const STR_SP = 21;
+const STR_COUNT = 6;
 const STATUS_COLORS = {
   correct: '#2ecc71',
   wrong: '#e74c3c',
@@ -36,63 +42,80 @@ function accidentalFromVfKey(vfKey) {
   return match?.[2] ?? null;
 }
 
-function renderTab(tabDiv, bars) {
+function renderTab(tabDiv, bars, staveLayout = [], viewBoxWidth = REST_BAR_W * Math.max(bars.length, 1)) {
   tabDiv.innerHTML = '';
 
-  const vbH = (STR_COUNT - 1) * STR_SP + 28;
+  const safeViewBoxWidth = Number.isFinite(viewBoxWidth) && viewBoxWidth > 0
+    ? viewBoxWidth
+    : REST_BAR_W * Math.max(bars.length, 1);
+  const staffBottomY = TAB_STAFF_TOP + (STR_COUNT - 1) * STR_SP;
+  const barLineBottomY = staffBottomY + 8;
+  const vbH = staffBottomY + TAB_STAFF_BOTTOM_PAD;
   const svg = tabEl('svg', {
-    viewBox: `0 0 ${TAB_VB_W} ${vbH}`,
+    viewBox: `0 0 ${safeViewBoxWidth} ${vbH}`,
     width: '100%',
     height: 'auto',
   });
 
   svg.appendChild(tabEl('rect', {
-    x: 0, y: 0, width: TAB_VB_W, height: vbH,
-    fill: 'var(--color-surface)', rx: 6,
+    x: 0, y: 0, width: safeViewBoxWidth, height: vbH,
+    fill: 'var(--color-surface)', rx: 8,
   }));
+
+  for (let s = 0; s < STR_COUNT; s++) {
+    svg.appendChild(tabEl('line', {
+      x1: 0, y1: TAB_STAFF_TOP + s * STR_SP,
+      x2: safeViewBoxWidth, y2: TAB_STAFF_TOP + s * STR_SP,
+      stroke: 'var(--color-border)', 'stroke-width': TAB_LINE_STROKE,
+    }));
+  }
 
   for (const [char, i] of [['T', 0], ['A', 1], ['B', 2]]) {
     svg.appendChild(tabEl('text', {
-      x: 10, y: 8 + i * STR_SP,
-      fill: 'var(--color-text-muted)', 'font-size': 11, 'font-weight': 700,
+      x: TAB_LABEL_X, y: TAB_STAFF_TOP + i * STR_SP,
+      fill: 'var(--color-text-muted)', 'font-size': TAB_LABEL_SIZE, 'font-weight': 700,
       'text-anchor': 'middle', 'dominant-baseline': 'middle',
     }, char));
   }
 
-  for (let s = 0; s < STR_COUNT; s++) {
+  const fallbackBarWidth = safeViewBoxWidth / Math.max(bars.length, 1);
+  for (let i = 0; i <= bars.length; i++) {
+    const x = i === bars.length
+      ? safeViewBoxWidth
+      : (staveLayout[i]?.barStartX ?? (fallbackBarWidth * i));
     svg.appendChild(tabEl('line', {
-      x1: TAB_STAFF_L, y1: 8 + s * STR_SP,
-      x2: TAB_STAFF_R, y2: 8 + s * STR_SP,
-      stroke: 'var(--color-border)', 'stroke-width': 1,
+      x1: x, y1: 0, x2: x, y2: barLineBottomY,
+      stroke: 'var(--color-border)',
+      'stroke-width': i === 0 || i === bars.length ? TAB_OUTER_BAR_STROKE : TAB_INNER_BAR_STROKE,
     }));
   }
 
-  const barW = (TAB_STAFF_R - TAB_STAFF_L) / 4;
-  for (let i = 0; i <= 4; i++) {
-    const x = TAB_STAFF_L + i * barW;
-    svg.appendChild(tabEl('line', {
-      x1: x, y1: 0, x2: x, y2: (STR_COUNT - 1) * STR_SP + 12,
-      stroke: 'var(--color-border)', 'stroke-width': i === 0 || i === 4 ? 2 : 1,
-    }));
-  }
-
-  const beatSpacing = barW / 5;
   for (let bi = 0; bi < bars.length; bi++) {
+    const layout = staveLayout[bi] ?? {};
+    const fallbackBarStartX = fallbackBarWidth * bi;
+    const fallbackBarEndX = fallbackBarStartX + fallbackBarWidth;
+    const barStartX = layout.barStartX ?? fallbackBarStartX;
+    const barEndX = layout.barEndX ?? fallbackBarEndX;
+    const noteStartX = layout.noteStartX ?? barStartX;
+    const noteEndX = layout.noteEndX ?? barEndX;
+    const usableStartX = Number.isFinite(noteStartX) ? noteStartX : barStartX;
+    const usableEndX = Number.isFinite(noteEndX) && noteEndX > usableStartX ? noteEndX : barEndX;
+    const noteSlotWidth = (usableEndX - usableStartX) / Math.max(bars[bi].length, 1);
     for (let ni = 0; ni < bars[bi].length; ni++) {
       const note = bars[bi][ni];
-      const x    = TAB_STAFF_L + bi * barW + beatSpacing * (ni + 1);
-      const sy   = 8 + (note.string - 1) * STR_SP;
-      const txt  = String(note.fret);
-      const bgW  = txt.length > 1 ? 16 : 12;
+      const x = usableStartX + noteSlotWidth * (ni + 0.5);
+      const sy = TAB_STAFF_TOP + (note.string - 1) * STR_SP;
+      const txt = String(note.fret);
+      const bgW = txt.length > 1 ? 22 : 16;
       const color = STATUS_COLORS[note.status] ?? null;
 
       svg.appendChild(tabEl('rect', {
-        x: x - bgW / 2, y: sy - 6, width: bgW, height: 12,
+        x: x - bgW / 2, y: sy - (TAB_FRET_BOX_HEIGHT / 2), width: bgW, height: TAB_FRET_BOX_HEIGHT,
         fill: 'var(--color-surface)',
       }));
       svg.appendChild(tabEl('text', {
         x, y: sy,
-        fill: color ?? 'var(--color-text)', 'font-size': 11, 'font-family': 'monospace',
+        fill: color ?? 'var(--color-text)', 'font-size': TAB_FRET_FONT_SIZE, 'font-family': 'monospace',
         'text-anchor': 'middle', 'dominant-baseline': 'middle',
       }, txt));
     }
@@ -227,10 +250,18 @@ function _renderNotation(bars, timeSignature = '4/4', barLabels = null) {
   // ── Collect stave layout for PlaybackBar ───────────────────────────────
   // noteStartX: absolute x where notes begin (after clef / time signature).
   // noteEndX:   noteStartX + uniformNoteArea (same for every bar).
-  const staveLayout = staves.map(stave => ({
-    noteStartX: stave.getNoteStartX(),
-    noteEndX:   stave.getNoteStartX() + uniformNoteArea,
-  }));
+  let barStartX = 0;
+  const staveLayout = staves.map((stave, barIndex) => {
+    const barWidth = barIndex === 0 ? firstBarW : REST_BAR_W;
+    const layout = {
+      barStartX,
+      barEndX: barStartX + barWidth,
+      noteStartX: stave.getNoteStartX(),
+      noteEndX: stave.getNoteStartX() + uniformNoteArea,
+    };
+    barStartX += barWidth;
+    return layout;
+  });
 
   // ── Render optional chord labels above each bar ─────────────────────────
   if (barLabels && barLabels.length > 0 && vfSvg) {
@@ -277,7 +308,7 @@ export function renderScore(container, bars, showTab, timeSignature = '4/4', bar
     const tabDiv = document.createElement('div');
     tabDiv.className = 'tab-wrapper';
     container.appendChild(tabDiv);
-    renderTab(tabDiv, bars);
+    renderTab(tabDiv, bars, staveLayout, vw);
   }
 
   return { notationDiv, staveLayout, vw };
@@ -305,7 +336,7 @@ export function appendRow(container, bars, showTab, timeSignature = '4/4', barLa
     const tabDiv = document.createElement('div');
     tabDiv.className = 'tab-wrapper';
     rowDiv.appendChild(tabDiv);
-    renderTab(tabDiv, bars);
+    renderTab(tabDiv, bars, staveLayout, vw);
   }
 
   container.appendChild(rowDiv);

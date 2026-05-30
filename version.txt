@@ -1,1 +1,1 @@
-Version 0.215 | 2026-05-29 19:15 | b834204 | js/games/sheetMusicReading/sheetMusicPlaybackControl.js (+9 more)
+Version 0.216 | 2026-05-30 10:41 | 02f567d | js/games/sheetMusicReading/sheetMusicSVG.js (+1 more)
