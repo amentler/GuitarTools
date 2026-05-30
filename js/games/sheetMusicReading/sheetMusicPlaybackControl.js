@@ -1,4 +1,4 @@
-import { EndlessBarGenerator } from './sheetMusicLogic.js';
+import { EndlessBarGenerator, ArpeggioBarGenerator } from './sheetMusicLogic.js';
 import { updateBeatDot, clearBeatDots, setPlaybackButtonState } from './sheetMusicReadingUI.js';
 import { saveSheetMusicBpm } from './sheetMusicReadingStorage.js';
 
@@ -50,7 +50,9 @@ export function createPlaybackControl({
     clearEndlessShiftTimeout();
 
     const config = getTimeSigConfig();
-    endlessS.gen = new EndlessBarGenerator(config.beatsPerBar, getNotesPool());
+    endlessS.gen = state.arpeggioMode
+      ? new ArpeggioBarGenerator(config.beatsPerBar, getNotesPool(), state.settings.key)
+      : new EndlessBarGenerator(config.beatsPerBar, getNotesPool());
 
     for (let i = 0; i < ENDLESS_VISIBLE_ROWS; i++) appendEndlessRow();
 

@@ -60,6 +60,20 @@
     <!-- SETTINGS: Fret Range + String Selection -->
     <div class="settings-panel">
       <div class="settings-row">
+        <label class="settings-label">
+          <input type="checkbox" id="sheet-music-use-key" checked />
+          Tonart beachten
+        </label>
+      </div>
+
+      <div class="settings-row">
+        <label class="settings-label">
+          <input type="checkbox" id="sheet-music-arpeggio" />
+          Akkord Arpeggios
+        </label>
+      </div>
+
+      <div class="settings-row">
         <label for="sheet-music-key" class="settings-label">Tonart:</label>
         <select id="sheet-music-key" class="settings-item__select">
           <option value="C" selected>C-Dur</option>

@@ -442,7 +442,7 @@ describe('SheetMusicReading controller behavior', () => {
     const container = document.getElementById('score-container');
     expect(container.children).toHaveLength(3);
     expect(appendRow).toHaveBeenCalledTimes(3);
-    expect(appendRow).toHaveBeenNthCalledWith(1, container, expect.any(Array), true, '4/4');
+    expect(appendRow).toHaveBeenNthCalledWith(1, container, expect.any(Array), true, '4/4', null);
 
     playbackBeatCallback({ barIndex: 4, beatIndex: 0 });
     expect(container.scrollTo).toHaveBeenCalledWith(expect.objectContaining({

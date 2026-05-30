@@ -6,6 +6,8 @@ const LS_TAB = 'sheetMusic_showTab';
 const LS_ENDLESS = 'sheetMusic_endless';
 const LS_ACTIVE = 'sheetMusic_active';
 const LS_KEY = 'sheetMusic_key';
+const LS_USE_KEY = 'sheetMusic_useKey';
+const LS_ARPEGGIO = 'sheetMusic_arpeggio';
 
 function getSheetMusicStorage(storage = globalThis.localStorage) {
   return createStorageService({ storage });
@@ -24,6 +26,8 @@ export function loadSheetMusicPrefs(storage = globalThis.localStorage) {
     timeSig: sharedStorage.getString(LS_TIMESIG, { defaultValue: '4/4' }),
     key: sharedStorage.getString(LS_KEY, { defaultValue: 'C' }),
     endless: sharedStorage.getBoolean(LS_ENDLESS, { defaultValue: false }),
+    useKey: sharedStorage.getBoolean(LS_USE_KEY, { defaultValue: true }),
+    arpeggioMode: sharedStorage.getBoolean(LS_ARPEGGIO, { defaultValue: false }),
   };
 }
 
@@ -49,4 +53,12 @@ export function saveSheetMusicShowTab(value, storage = globalThis.localStorage) 
 
 export function saveSheetMusicEndless(value, storage = globalThis.localStorage) {
   getSheetMusicStorage(storage).set(LS_ENDLESS, value);
+}
+
+export function saveSheetMusicUseKey(value, storage = globalThis.localStorage) {
+  getSheetMusicStorage(storage).set(LS_USE_KEY, value);
+}
+
+export function saveSheetMusicArpeggio(value, storage = globalThis.localStorage) {
+  getSheetMusicStorage(storage).set(LS_ARPEGGIO, value);
 }

@@ -137,6 +137,8 @@ export function resolveSheetMusicUI(root = document) {
     micPanel:        root.getElementById?.('mic-select-panel') ?? document.getElementById('mic-select-panel'),
     micSelect:       root.getElementById?.('sheet-music-mic-select') ?? document.getElementById('sheet-music-mic-select'),
     beatIndicator:   root.getElementById?.('beat-indicator') ?? document.getElementById('beat-indicator'),
+    useKeyCheckbox:  root.getElementById?.('sheet-music-use-key') ?? document.getElementById('sheet-music-use-key'),
+    arpeggioCheckbox: root.getElementById?.('sheet-music-arpeggio') ?? document.getElementById('sheet-music-arpeggio'),
   };
 }
 
@@ -152,6 +154,8 @@ export function syncSheetMusicUI(ui, state, syncFretSlider, syncMinFretSlider) {
   if (ui.activeBtn) ui.activeBtn.classList.toggle('active', Boolean(state.active));
   if (ui.showTabBtn) ui.showTabBtn.classList.toggle('active', state.showTab);
   if (ui.endlessBtn) ui.endlessBtn.classList.toggle('active', state.endless);
+  if (ui.useKeyCheckbox) ui.useKeyCheckbox.checked = state.useKey;
+  if (ui.arpeggioCheckbox) ui.arpeggioCheckbox.checked = state.arpeggioMode;
 }
 
 export function setPlaybackButtonState(button, isPlaying) {
