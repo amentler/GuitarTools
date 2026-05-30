@@ -45,7 +45,8 @@ function accidentalFromVfKey(vfKey) {
 function renderTab(tabDiv, bars, staveLayout = [], viewBoxWidth = REST_BAR_W * Math.max(bars.length, 1)) {
   tabDiv.innerHTML = '';
 
-  const fallbackViewBoxWidth = REST_BAR_W * Math.max(bars.length, 1);
+  const safeBarCount = Math.max(bars.length, 1);
+  const fallbackViewBoxWidth = REST_BAR_W * safeBarCount;
   const safeViewBoxWidth = Number.isFinite(viewBoxWidth) && viewBoxWidth > 0
     ? viewBoxWidth
     : fallbackViewBoxWidth;
@@ -79,7 +80,7 @@ function renderTab(tabDiv, bars, staveLayout = [], viewBoxWidth = REST_BAR_W * M
     }, char));
   }
 
-  const fallbackBarWidth = safeViewBoxWidth / Math.max(bars.length, 1);
+  const fallbackBarWidth = safeViewBoxWidth / safeBarCount;
   for (let i = 0; i <= bars.length; i++) {
     const x = i === bars.length
       ? safeViewBoxWidth
@@ -251,18 +252,18 @@ function _renderNotation(bars, timeSignature = '4/4', barLabels = null) {
   // ── Collect stave layout for PlaybackBar ───────────────────────────────
   // noteStartX: absolute x where notes begin (after clef / time signature).
   // noteEndX:   noteStartX + uniformNoteArea (same for every bar).
-  let barStartX = 0;
-  const staveLayout = staves.map((stave, barIndex) => {
+  const { layout: staveLayout } = staves.reduce((acc, stave, barIndex) => {
     const barWidth = barIndex === 0 ? firstBarW : REST_BAR_W;
-    const layout = {
-      barStartX,
-      barEndX: barStartX + barWidth,
+    const nextBarStartX = acc.barStartX + barWidth;
+    acc.layout.push({
+      barStartX: acc.barStartX,
+      barEndX: nextBarStartX,
       noteStartX: stave.getNoteStartX(),
       noteEndX: stave.getNoteStartX() + uniformNoteArea,
-    };
-    barStartX += barWidth;
-    return layout;
-  });
+    });
+    acc.barStartX = nextBarStartX;
+    return acc;
+  }, { barStartX: 0, layout: [] });
 
   // ── Render optional chord labels above each bar ─────────────────────────
   if (barLabels && barLabels.length > 0 && vfSvg) {
