@@ -45,9 +45,10 @@ function accidentalFromVfKey(vfKey) {
 function renderTab(tabDiv, bars, staveLayout = [], viewBoxWidth = REST_BAR_W * Math.max(bars.length, 1)) {
   tabDiv.innerHTML = '';
 
+  const fallbackViewBoxWidth = REST_BAR_W * Math.max(bars.length, 1);
   const safeViewBoxWidth = Number.isFinite(viewBoxWidth) && viewBoxWidth > 0
     ? viewBoxWidth
-    : REST_BAR_W * Math.max(bars.length, 1);
+    : fallbackViewBoxWidth;
   const staffBottomY = TAB_STAFF_TOP + (STR_COUNT - 1) * STR_SP;
   const barLineBottomY = staffBottomY + 8;
   const vbH = staffBottomY + TAB_STAFF_BOTTOM_PAD;

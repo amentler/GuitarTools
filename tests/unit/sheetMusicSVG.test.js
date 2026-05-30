@@ -1,6 +1,9 @@
 // @vitest-environment jsdom
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+const DEFAULT_NOTE_START_X_OFFSET = 10;
+const TIME_SIGNATURE_NOTE_START_X_OFFSET = 90;
+
 vi.mock('https://cdn.jsdelivr.net/npm/vexflow@4.2.2/+esm', () => {
   class Renderer {
     static Backends = { SVG: 'svg' };
@@ -54,7 +57,7 @@ vi.mock('https://cdn.jsdelivr.net/npm/vexflow@4.2.2/+esm', () => {
     }
 
     getNoteStartX() {
-      return this.x + (this.hasTimeSignature ? 90 : 10);
+      return this.x + (this.hasTimeSignature ? TIME_SIGNATURE_NOTE_START_X_OFFSET : DEFAULT_NOTE_START_X_OFFSET);
     }
   }
 
